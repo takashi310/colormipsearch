@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
  */
 public class ColorMIPMaskCompare
 {
-	private static final Logger log = LoggerFactory.getLogger(ColorMIPMaskCompare.class);
+    private static final Logger log = LoggerFactory.getLogger(ColorMIPMaskCompare.class);
 
-	public static class Parameters {
+    public static class Parameters {
         /** The image to search within */
         ImagePlus searchImage;
         /** The mask image */
         ImagePlus maskImage;
-		/** Threshold for mask */
+        /** Threshold for mask */
         int Thresm = 50;
         /** Threshold for data */
         int Thres = 100;
@@ -33,7 +33,7 @@ public class ColorMIPMaskCompare
         boolean isMatch;
     }
 
-	public Output runSearch(Parameters params) {
+    public Output runSearch(Parameters params) {
 
         ImageProcessor ip1, ip3;
         int pix1 = 0;
@@ -49,13 +49,13 @@ public class ColorMIPMaskCompare
         ImagePlus imask = params.maskImage;
         ImagePlus idata = params.searchImage;
 
-		ip1 = imask.getProcessor(); //Mask
+        ip1 = imask.getProcessor(); //Mask
 
         if (ip1.getBitDepth()!=24) {
             throw new IllegalArgumentException("Mask image must have 24 bit color depth");
         }
 
-		int sumpx = ip1.getPixelCount();
+        int sumpx = ip1.getPixelCount();
 
         int red1 = 0;
         int green1 = 0;
@@ -70,22 +70,22 @@ public class ColorMIPMaskCompare
 
         int masksize=0;
 
-		int [] maskposi = new int [sumpx];
+        int [] maskposi = new int [sumpx];
 
-		///Mask size measurement///////////////////////////////
-		for(int n4=0; n4<sumpx; n4++){
+        ///Mask size measurement///////////////////////////////
+        for(int n4=0; n4<sumpx; n4++){
 
-			pix1= ip1.get(n4);//Mask
+            pix1= ip1.get(n4);//Mask
 
-			red1 = (pix1>>>16) & 0xff;//mask
-			green1 = (pix1>>>8) & 0xff;//mask
-			blue1 = pix1 & 0xff;//mask
+            red1 = (pix1>>>16) & 0xff;//mask
+            green1 = (pix1>>>8) & 0xff;//mask
+            blue1 = pix1 & 0xff;//mask
 
-			if(red1>Thresm || green1>Thresm || blue1>Thresm){//Mask value
-				maskposi[masksize]=n4;
-				masksize=masksize+1;
-			}
-		}
+            if(red1>Thresm || green1>Thresm || blue1>Thresm){//Mask value
+                maskposi[masksize]=n4;
+                masksize=masksize+1;
+            }
+        }
 
         ip3 = idata.getProcessor();
         if (ip3.getBitDepth()!=24) {
@@ -202,7 +202,7 @@ public class ColorMIPMaskCompare
                             pxGap=BrGap+BgGap;
                         }
                     }
-                    //		log.info("pxGap; "+String.valueOf(pxGap)+"  BR1;"+String.valueOf(BR1)+", br1; "+String.valueOf(br1)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2)+", BG2; "+String.valueOf(BG2)+", bg2; "+String.valueOf(bg2));
+                    //      log.info("pxGap; "+String.valueOf(pxGap)+"  BR1;"+String.valueOf(BR1)+", br1; "+String.valueOf(br1)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2)+", BG2; "+String.valueOf(BG2)+", bg2; "+String.valueOf(bg2));
                 }else if(BG1>0){//2, mask/////////////////////////////
                     if(BG2>0){//2, data, 2,mask
 
@@ -216,13 +216,13 @@ public class ColorMIPMaskCompare
                             if(bg1==255 & bg2==255)
                             pxGap=1000;
                         }
-                        //	log.info(" pxGap BG2;"+String.valueOf(pxGap)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2));
+                        //  log.info(" pxGap BG2;"+String.valueOf(pxGap)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2));
                     }else if(GB2>0){//3, data, 2,mask
                         if(bg1>0.8 && gb2>0.8){
                             BgGap=BgGb-bg1;//BgGb=0.996078431;
                             GbGap=BgGb-gb2;//BgGb=0.996078431;
                             pxGap=BgGap+GbGap;
-                            //			log.info(" pxGap GB2;"+String.valueOf(pxGap));
+                            //          log.info(" pxGap GB2;"+String.valueOf(pxGap));
                         }
                     }else if(BR2>0){//1, data, 2,mask
                         if(bg1<0.54 && br2<0.44){
@@ -231,7 +231,7 @@ public class ColorMIPMaskCompare
                             pxGap=BrGap+BgGap;
                         }
                     }
-                    //		log.info("pxGap; "+String.valueOf(pxGap)+"  BG1;"+String.valueOf(BG1)+"  BG2;"+String.valueOf(BG2)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2)+", GB2; "+String.valueOf(GB2)+", gb2; "+String.valueOf(gb2)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2));
+                    //      log.info("pxGap; "+String.valueOf(pxGap)+"  BG1;"+String.valueOf(BG1)+"  BG2;"+String.valueOf(BG2)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2)+", GB2; "+String.valueOf(GB2)+", gb2; "+String.valueOf(gb2)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2));
                 }else if(GB1>0){//3, mask/////////////////////////////
                     if(GB2>0){//3, data, 3mask
                         if(gb1>0 && gb2>0){
@@ -239,7 +239,7 @@ public class ColorMIPMaskCompare
                                 pxGap=gb2-gb1;
                                 pxGap=Math.abs(pxGap);
 
-                                //	log.info(" pxGap GB2;"+String.valueOf(pxGap));
+                                //  log.info(" pxGap GB2;"+String.valueOf(pxGap));
                             }else
                             pxGap=0;
                             if(gb1==255 & gb2==255)
@@ -299,7 +299,7 @@ public class ColorMIPMaskCompare
                             GrGap=GrRg-gr2;//GrRg=0.996078431;
                             RgGap=GrRg-rg1;//GrRg=0.996078431;
                             pxGap=GrGap+RgGap;
-                            //	log.info(" pxGap GR2;"+String.valueOf(pxGap));
+                            //  log.info(" pxGap GR2;"+String.valueOf(pxGap));
                         }
                     }else if(RB2>0){//6 data, 5mask
                         if(rg1<0.7 && rb2<0.7){
@@ -324,7 +324,7 @@ public class ColorMIPMaskCompare
                             RgGap=rg2-RgRb;//RgRb=0.505882353;
                             RbGap=rb1-RgRb;//RgRb=0.505882353;
                             pxGap=RgGap+RbGap;
-                            //	log.info(" pxGap RG;"+String.valueOf(pxGap));
+                            //  log.info(" pxGap RG;"+String.valueOf(pxGap));
                         }
                     }
                 }//2 color advance core
@@ -352,13 +352,13 @@ public class ColorMIPMaskCompare
             posislice=posislice+1;
         }//if(posipersent>pixThresdub){
 
-		imask.unlock();
-		idata.unlock();
+        imask.unlock();
+        idata.unlock();
 
-		//	log.info("Done; "+increment+" mean; "+mean3+" Totalmaxvalue; "+totalmax+" desiremean; "+desiremean);
+        //  log.info("Done; "+increment+" mean; "+mean3+" Totalmaxvalue; "+totalmax+" desiremean; "+desiremean);
 
         return output;
-	} //public Output runSearch(Parameters params) {
+    } //public Output runSearch(Parameters params) {
 } //public class ColorMIPMaskCompare {
 
 
