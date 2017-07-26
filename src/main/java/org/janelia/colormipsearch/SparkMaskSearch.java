@@ -28,8 +28,6 @@ public class SparkMaskSearch implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(SparkMaskSearch.class);
 
-    private static final String master = "local";
-
 //    private static BufferedImage readTiff(PortableDataStream stream) throws IOException {
 //        ByteArraySeekableStream seekStream = new ByteArraySeekableStream(stream.toArray());
 //        TIFFDecodeParam decodeParam = new TIFFDecodeParam();
@@ -90,9 +88,7 @@ public class SparkMaskSearch implements Serializable {
         try {
             byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilename));
 
-            SparkConf conf = new SparkConf()
-                    .setAppName(SparkMaskSearch.class.getName())
-                    .setMaster(master);
+            SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
 
             context = new JavaSparkContext(conf);
 
