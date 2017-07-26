@@ -49,8 +49,15 @@ public class ColorMIPMaskCompare
         ImagePlus imask = params.maskImage;
         ImagePlus idata = params.searchImage;
 
-        ip1 = imask.getProcessor(); //Mask
+        if (imask==null) {
+            throw new IllegalArgumentException("No mask image provided");
+        }
 
+        if (idata==null) {
+            throw new IllegalArgumentException("No data image provided");
+        }
+
+        ip1 = imask.getProcessor(); //Mask
         if (ip1.getBitDepth()!=24) {
             throw new IllegalArgumentException("Mask image must have 24 bit color depth");
         }

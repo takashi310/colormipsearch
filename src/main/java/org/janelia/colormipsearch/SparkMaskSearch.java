@@ -61,6 +61,11 @@ public class SparkMaskSearch implements Serializable {
 
     private MaskSearchResult search(String filepath, ImagePlus image, byte[] maskBytes) throws Exception {
 
+        if (image==null) {
+            log.error("Problem loading search image: {}", filepath);
+            return new MaskSearchResult(filepath, 0, 0, false);
+        }
+
         ImagePlus mask = new Opener().deserialize(maskBytes);
 
         ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
@@ -69,8 +74,7 @@ public class SparkMaskSearch implements Serializable {
         ColorMIPMaskCompare search = new ColorMIPMaskCompare();
         ColorMIPMaskCompare.Output output = search.runSearch(params);
 
-        MaskSearchResult result = new MaskSearchResult(filepath, output.matchingSlices, output.matchingSlicesPct, output.isMatch);
-        return result;
+        return new MaskSearchResult(filepath, output.matchingSlices, output.matchingSlicesPct, output.isMatch);
     }
 
     /**
@@ -82,6 +86,8 @@ public class SparkMaskSearch implements Serializable {
      */
     public Collection<MaskSearchResult> search(String imagesFilepath, String maskFilename) throws Exception {
 
+        log.info("Searching image archive at: {}", imagesFilepath);
+
         JavaSparkContext context = null;
         List<MaskSearchResult> results = null;
 
@@ -89,7 +95,6 @@ public class SparkMaskSearch implements Serializable {
             byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilename));
 
             SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
-
             context = new JavaSparkContext(conf);
 
             JavaRDD<MaskSearchResult> resultRdd = context.binaryFiles(imagesFilepath)
