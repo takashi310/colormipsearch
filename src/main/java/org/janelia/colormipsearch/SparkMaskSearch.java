@@ -5,6 +5,7 @@ import com.beust.jcommander.Parameter;
 import ij.ImagePlus;
 import ij.io.Opener;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.input.PortableDataStream;
@@ -97,10 +98,16 @@ public class SparkMaskSearch implements Serializable {
             SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
             context = new JavaSparkContext(conf);
 
-            JavaRDD<MaskSearchResult> resultRdd = context.binaryFiles(imagesFilepath)
+            log.info("defaultMinPartitions: {}", context.defaultMinPartitions());
+            log.info("defaultParallelism: {}", context.defaultParallelism());
+
+            JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(imagesFilepath);
+            log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
+
+            JavaRDD<MaskSearchResult> resultRdd = filesRdd
                     .mapToPair(pair -> new Tuple2<>(pair._1, readTiffToImagePlus(pair._2)))
                     .map(pair -> search(pair._1, pair._2, maskBytes))
-                    .sortBy(result -> result.getMatchingSlices(), false, 1);
+                    .sortBy(result -> result.getMatchingSlices(), false, 16);
 
             results = resultRdd.collect();
         }
