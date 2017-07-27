@@ -9,11 +9,22 @@
     <version>1.0</version>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <scopes.provided>provided</scopes.provided>
         <spark.version>2.1.0</spark.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <runSuite>**/TestSuite.class</runSuite>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>intellij</id>
+            <properties>
+                <scopes.provided>compile</scopes.provided>
+            </properties>
+        </profile>
+    </profiles>
 
     <repositories>
         <repository>
@@ -35,17 +46,21 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
+            <scope>${scopes.provided}</scope>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+            <scope>${scopes.provided}</scope>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>1.2.3</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.8.2</version>
+            <scope>${scopes.provided}</scope>
         </dependency>
+
 
         <!-- Utilities -->
         <dependency>
@@ -74,17 +89,7 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.11</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
+            <scope>${scopes.provided}</scope>
         </dependency>
 
         <!-- Image Processing -->
