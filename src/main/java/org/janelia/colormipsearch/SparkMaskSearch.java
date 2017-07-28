@@ -29,7 +29,17 @@ public class SparkMaskSearch implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(SparkMaskSearch.class);
 
-//    private static BufferedImage readTiff(PortableDataStream stream) throws IOException {
+    private transient final int numPartitions;
+    private transient final JavaSparkContext context;
+    private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
+
+    public SparkMaskSearch(int numPartitions) {
+        this.numPartitions = numPartitions;
+        SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
+        this.context = new JavaSparkContext(conf);
+    }
+
+    //    private static BufferedImage readTiff(PortableDataStream stream) throws IOException {
 //        ByteArraySeekableStream seekStream = new ByteArraySeekableStream(stream.toArray());
 //        TIFFDecodeParam decodeParam = new TIFFDecodeParam();
 //        decodeParam.setDecodePaletteAsShorts(true);
@@ -79,48 +89,45 @@ public class SparkMaskSearch implements Serializable {
     }
 
     /**
-     * Perform the search.
+     * Load an image archive into memory.
      * @param imagesFilepath
+     */
+    public void loadImages(String imagesFilepath) {
+
+        log.info("Loading image archive at: {}", imagesFilepath);
+
+        JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(imagesFilepath, numPartitions);
+        log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
+
+        this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readTiffToImagePlus(pair._2))).cache();
+        log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
+        log.info("imagePlusRDD.count: {}", imagePlusRDD.count());
+    }
+
+    /**
+     * Perform the search.
      * @param maskFilename
      * @return
      * @throws Exception
      */
-    public Collection<MaskSearchResult> search(String imagesFilepath, String maskFilename, int numPartitions) throws Exception {
+    public Collection<MaskSearchResult> search(String maskFilename) throws Exception {
 
-        log.info("Searching image archive at: {}", imagesFilepath);
+        log.info("Searching with {}", maskFilename);
+        byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilename));
 
-        JavaSparkContext context = null;
-        List<MaskSearchResult> results = null;
+        JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> search(pair._1, pair._2, maskBytes));
+        log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
-        try {
-            byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilename));
+        JavaRDD<MaskSearchResult> sortedResultRdd = resultRdd.sortBy(result -> result.getMatchingSlices(), false, 1);
+        log.info("sortedResultRdd.numPartitions: {}", sortedResultRdd.getNumPartitions());
 
-            SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
-            context = new JavaSparkContext(conf);
-
-            log.info("numPartitions: {}", numPartitions);
-            log.info("defaultMinPartitions: {}", context.defaultMinPartitions());
-            log.info("defaultParallelism: {}", context.defaultParallelism());
-
-            JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(imagesFilepath, numPartitions);
-            log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
-
-            JavaPairRDD<String, ImagePlus> imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readTiffToImagePlus(pair._2)));
-            log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
-
-            JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> search(pair._1, pair._2, maskBytes));
-            log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
-
-            JavaRDD<MaskSearchResult> sortedResultRdd = resultRdd.sortBy(result -> result.getMatchingSlices(), false, 1);
-            log.info("sortedResultRdd.numPartitions: {}", sortedResultRdd.getNumPartitions());
-
-            results = sortedResultRdd.collect();
-        }
-        finally {
-            if (context!=null) context.stop();
-        }
-
+        List<MaskSearchResult> results = sortedResultRdd.collect();
+        log.info("Returning {} results", results.size());
         return results;
+    }
+
+    public void close() {
+        if (context!=null) context.stop();
     }
 
     public static class Args {
@@ -144,17 +151,29 @@ public class SparkMaskSearch implements Serializable {
                 .parse(argv);
 
         int partitions = (args.numPartitions==null) ? 4 : args.numPartitions;
+        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(partitions);
 
-        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch();
-        Collection<MaskSearchResult> results = sparkMaskSearch.search(
-                args.imageDir,
-                args.maskFilename,
-                partitions);
+        try {
+            sparkMaskSearch.loadImages(args.imageDir);
 
-        for (MaskSearchResult result : results) {
-            if (result.isMatch()) {
-                log.info("{} - {}", result.getMatchingSlicesPct(), result.getFilepath());
+            log.info("Do first search");
+            Collection<MaskSearchResult> results = sparkMaskSearch.search(args.maskFilename);
+            for (MaskSearchResult result : results) {
+                if (result.isMatch()) {
+                    log.info("{} - {}", result.getMatchingSlicesPct(), result.getFilepath());
+                }
             }
+
+            log.info("Do second search");
+            Collection<MaskSearchResult> results2 = sparkMaskSearch.search(args.maskFilename);
+            for (MaskSearchResult result : results2) {
+                if (result.isMatch()) {
+                    log.info("{} - {}", result.getMatchingSlicesPct(), result.getFilepath());
+                }
+            }
+        }
+        finally {
+            sparkMaskSearch.close();
         }
     }
 
