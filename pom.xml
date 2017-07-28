@@ -61,7 +61,6 @@
             <scope>${scopes.provided}</scope>
         </dependency>
 
-
         <!-- Utilities -->
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -99,6 +98,10 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -112,7 +115,6 @@
             <groupId>loci</groupId>
             <artifactId>bio-formats</artifactId>
             <version>4.4.12</version>
-
             <exclusions>
                 <exclusion>
                     <groupId>loci</groupId>
@@ -124,6 +126,12 @@
             <groupId>loci</groupId>
             <artifactId>loci_plugins</artifactId>
             <version>4.4.12</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Testing -->
