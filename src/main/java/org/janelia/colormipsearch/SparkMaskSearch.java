@@ -166,7 +166,8 @@ public class SparkMaskSearch implements Serializable {
                 log.info("Writing search results to "+args.outputFile);
                 try (PrintWriter printWriter = new PrintWriter(args.outputFile)) {
                     results.forEach(r -> {
-                        printWriter.printf("%#.5f\t%s", r.getMatchingSlicesPct(), r.getFilepath());
+                        String filepath = r.getFilepath().replaceFirst("^file:","");
+                        printWriter.printf("%#.5f\t%s\n", r.getMatchingSlicesPct(), filepath);
                     });
                 }
             }
