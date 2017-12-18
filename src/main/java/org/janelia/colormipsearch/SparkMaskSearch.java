@@ -14,11 +14,13 @@ import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.io.DataInputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -65,8 +67,7 @@ public class SparkMaskSearch implements Serializable {
         // But using ImageJ works:
         Opener opener = new Opener();
         try (DataInputStream dis = stream.open()) {
-            ImagePlus mask = opener.openTiff(dis, "search");
-            return mask;
+            return opener.openTiff(dis, "search");
         }
     }
 
@@ -77,6 +78,7 @@ public class SparkMaskSearch implements Serializable {
             return new MaskSearchResult(filepath, 0, 0, false);
         }
 
+        log.info("Searching "+filepath);
         ImagePlus mask = new Opener().deserialize(maskBytes);
 
         ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
@@ -106,14 +108,14 @@ public class SparkMaskSearch implements Serializable {
 
     /**
      * Perform the search.
-     * @param maskFilename
+     * @param maskFilepath
      * @return
      * @throws Exception
      */
-    public Collection<MaskSearchResult> search(String maskFilename) throws Exception {
+    public Collection<MaskSearchResult> search(String maskFilepath) throws Exception {
 
-        log.info("Searching with {}", maskFilename);
-        byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilename));
+        log.info("Searching with {}", maskFilepath);
+        byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilepath));
 
         JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> search(pair._1, pair._2, maskBytes));
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
@@ -133,13 +135,16 @@ public class SparkMaskSearch implements Serializable {
     public static class Args {
 
         @Parameter(names = {"--mask", "-m"}, description = "TIFF file to use as the search mask", required = true)
-        private String maskFilename;
+        private String maskFile;
 
         @Parameter(names = {"--imageDir", "-i"}, description = "TIFF files to search", required = true)
         private String imageDir;
 
         @Parameter(names = {"--partitions", "-p"}, description = "Number of partitions to use")
         private Integer numPartitions;
+
+        @Parameter(names = {"--outputFile", "-o"}, description = "Output file for results in CSV format. If this is not specified, the output will be printed to the log.")
+        private String outputFile;
     }
 
     public static void main(String[] argv) throws Exception {
@@ -155,21 +160,21 @@ public class SparkMaskSearch implements Serializable {
 
         try {
             sparkMaskSearch.loadImages(args.imageDir);
+            Stream<MaskSearchResult> results = sparkMaskSearch.search(args.maskFile).stream().filter(r -> r.isMatch());
 
-            log.info("Do first search");
-            Collection<MaskSearchResult> results = sparkMaskSearch.search(args.maskFilename);
-            for (MaskSearchResult result : results) {
-                if (result.isMatch()) {
-                    log.info("{} - {}", result.getMatchingSlicesPct(), result.getFilepath());
+            if (args.outputFile != null) {
+                log.info("Writing search results to "+args.outputFile);
+                try (PrintWriter printWriter = new PrintWriter(args.outputFile)) {
+                    results.forEach(r -> {
+                        printWriter.printf("%#.5f\t%s", r.getMatchingSlicesPct(), r.getFilepath());
+                    });
                 }
             }
-
-            log.info("Do second search");
-            Collection<MaskSearchResult> results2 = sparkMaskSearch.search(args.maskFilename);
-            for (MaskSearchResult result : results2) {
-                if (result.isMatch()) {
-                    log.info("{} - {}", result.getMatchingSlicesPct(), result.getFilepath());
-                }
+            else {
+                log.info("Search results:");
+                results.forEach(r -> {
+                    log.info("{} - {}", r.getMatchingSlicesPct(), r.getFilepath());
+                });
             }
         }
         finally {
