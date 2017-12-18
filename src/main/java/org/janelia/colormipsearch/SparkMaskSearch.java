@@ -8,6 +8,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.input.PortableDataStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,33 @@ public class SparkMaskSearch implements Serializable {
     private transient final int numPartitions;
     private transient final JavaSparkContext context;
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
+
+    // Java implementation of Scala's lazy val
+    // https://stackoverflow.com/questions/40015777/how-to-perform-one-operation-on-each-executor-once-in-spark
+
+//    private boolean maskLoaded;
+//
+//    private String laodMask()
+//    {
+//        synchronized(this)
+//        {
+//            if(!bitmap$0)
+//            {
+//                foo = "foo bar";
+//                bitmap$0 = true;
+//            }
+//            BoxedUnit _tmp = BoxedUnit.UNIT;
+//        }
+//        return foo;
+//    }
+//
+//    public String foo()
+//    {
+//        return bitmap$0 ? foo : foo$lzycompute();
+//    }
+//
+//
+
 
     public SparkMaskSearch(int numPartitions) {
         this.numPartitions = numPartitions;
@@ -71,15 +99,14 @@ public class SparkMaskSearch implements Serializable {
         }
     }
 
-    private MaskSearchResult search(String filepath, ImagePlus image, byte[] maskBytes) throws Exception {
+    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask) throws Exception {
 
         if (image==null) {
-            log.error("Problem loading search image: {}", filepath);
+            log.error("Problem loading image: {}", filepath);
             return new MaskSearchResult(filepath, 0, 0, false);
         }
 
         log.info("Searching "+filepath);
-        ImagePlus mask = new Opener().deserialize(maskBytes);
 
         ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
         params.maskImage = mask;
@@ -115,9 +142,18 @@ public class SparkMaskSearch implements Serializable {
     public Collection<MaskSearchResult> search(String maskFilepath) throws Exception {
 
         log.info("Searching with {}", maskFilepath);
+
+        // Read mask file
         byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilepath));
 
-        JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> search(pair._1, pair._2, maskBytes));
+        // Send mask to all workers
+        Broadcast<byte[]> maskHandle =  context.broadcast(maskBytes);
+
+        JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> {
+            log.info("Deserializing mask bytes..");
+            ImagePlus mask = new Opener().deserialize(maskHandle.value());
+            return search(pair._1, pair._2, mask);
+        });
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
         JavaRDD<MaskSearchResult> sortedResultRdd = resultRdd.sortBy(result -> result.getMatchingSlices(), false, 1);
