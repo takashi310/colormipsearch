@@ -2,6 +2,7 @@ package org.janelia.colormipsearch;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import ij.ImagePlus;
 import ij.io.Opener;
 import org.apache.spark.SparkConf;
@@ -62,37 +63,13 @@ public class SparkMaskSearch implements Serializable {
 //
 //
 
-
     public SparkMaskSearch(int numPartitions) {
         this.numPartitions = numPartitions;
         SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
         this.context = new JavaSparkContext(conf);
     }
 
-    //    private static BufferedImage readTiff(PortableDataStream stream) throws IOException {
-//        ByteArraySeekableStream seekStream = new ByteArraySeekableStream(stream.toArray());
-//        TIFFDecodeParam decodeParam = new TIFFDecodeParam();
-//        decodeParam.setDecodePaletteAsShorts(true);
-//        ParameterBlock params = new ParameterBlock();
-//        params.add(seekStream);
-//        RenderedOp image1 = JAI.create("tiff", params);
-//        return image1.getAsBufferedImage();
-//    }
-
     private ImagePlus readTiffToImagePlus(PortableDataStream stream) throws Exception {
-
-        // Attempt using BioFormats importer failed to give a 32 bit composite image:
-//        IRandomAccess ira = new ByteArrayHandle(stream.toArray());
-//        String id = UUID.randomUUID().toString();
-//        Location.mapFile(id, ira);
-//        ImporterOptions options = new ImporterOptions();
-//        options.setId(id);
-//        options.setAutoscale(false);
-//        options.setColorMode(ImporterOptions.COLOR_MODE_COMPOSITE);
-//        ImagePlus[] imps = BF.openImagePlus(options);
-//        ImagePlus mask = imps[0];
-
-        // But using ImageJ works:
         Opener opener = new Opener();
         try (DataInputStream dis = stream.open()) {
             return opener.openTiff(dis, "search");
@@ -123,9 +100,23 @@ public class SparkMaskSearch implements Serializable {
      */
     public void loadImages(String imagesFilepath) {
 
-        log.info("Loading image archive at: {}", imagesFilepath);
+        // We have to ensure each filepath has a glob, because it's very slow without.
+        // See https://issues.apache.org/jira/browse/SPARK-8437
+        StringBuffer filepaths = new StringBuffer();
+        for(String filepath : imagesFilepath.split(",")) {
+            if (!filepath.contains("*")) {
+                if (!filepath.endsWith("/")) {
+                    filepath += "/";
+                }
+                filepath += "*";
+            }
+            if (filepaths.length()>0) filepaths.append(",");
+            filepaths.append(filepath);
+        }
 
-        JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(imagesFilepath, numPartitions);
+        log.info("Loading image archive at: {}", filepaths);
+
+        JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(filepaths.toString(), numPartitions);
         log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
 
         this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readTiffToImagePlus(pair._2))).cache();
@@ -170,17 +161,19 @@ public class SparkMaskSearch implements Serializable {
 
     public static class Args {
 
-        @Parameter(names = {"--mask", "-m"}, description = "TIFF file to use as the search mask", required = true)
-        private String maskFile;
+        @Parameter(names = {"--mask", "-m"}, description = "Image file(s) to use as the search masks", required = true, variableArity = true)
+        private List<String> maskFiles;
 
-        @Parameter(names = {"--imageDir", "-i"}, description = "TIFF files to search", required = true)
+        @Parameter(names = {"--imageDir", "-i"}, description = "Comma-delimited list of directories containing images to search", required = true)
         private String imageDir;
 
         @Parameter(names = {"--partitions", "-p"}, description = "Number of partitions to use")
         private Integer numPartitions;
 
-        @Parameter(names = {"--outputFile", "-o"}, description = "Output file for results in CSV format. If this is not specified, the output will be printed to the log.")
-        private String outputFile;
+        @Parameter(names = {"--outputFile", "-o"}, description = "Output file(s) for results in CSV format. " +
+                "If this is not specified, the output will be printed to the log. " +
+                "If this is specified, then there should be one output file per mask file.", variableArity = true)
+        private List<String> outputFiles;
     }
 
     public static void main(String[] argv) throws Exception {
@@ -196,22 +189,36 @@ public class SparkMaskSearch implements Serializable {
 
         try {
             sparkMaskSearch.loadImages(args.imageDir);
-            Stream<MaskSearchResult> results = sparkMaskSearch.search(args.maskFile).stream().filter(r -> r.isMatch());
 
-            if (args.outputFile != null) {
-                log.info("Writing search results to "+args.outputFile);
-                try (PrintWriter printWriter = new PrintWriter(args.outputFile)) {
-                    results.forEach(r -> {
-                        String filepath = r.getFilepath().replaceFirst("^file:","");
-                        printWriter.printf("%#.5f\t%s\n", r.getMatchingSlicesPct(), filepath);
-                    });
+            if (args.outputFiles != null) {
+                if (args.maskFiles.size() != args.outputFiles.size()) {
+                    throw new ParameterException("Number of output files must match the number of masks used");
                 }
             }
-            else {
-                log.info("Search results:");
-                results.forEach(r -> {
-                    log.info("{} - {}", r.getMatchingSlicesPct(), r.getFilepath());
-                });
+
+            int i=0;
+            for(String maskFile : args.maskFiles) {
+
+                Stream<MaskSearchResult> results = sparkMaskSearch.search(maskFile).stream().filter(r -> r.isMatch());
+
+                if (args.outputFiles != null) {
+                    String outputFile = args.outputFiles.get(i);
+                    log.info("Writing search results for {} to {}", maskFile, outputFile);
+                    try (PrintWriter printWriter = new PrintWriter(outputFile)) {
+                        printWriter.println(maskFile);
+                        results.forEach(r -> {
+                            String filepath = r.getFilepath().replaceFirst("^file:", "");
+                            printWriter.printf("%#.5f\t%s\n", r.getMatchingSlicesPct(), filepath);
+                        });
+                    }
+                } else {
+                    log.info("Search results for {}:", maskFile);
+                    results.forEach(r -> {
+                        log.info("{} - {}", r.getMatchingSlicesPct(), r.getFilepath());
+                    });
+                }
+
+                i++;
             }
         }
         finally {
