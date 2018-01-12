@@ -36,35 +36,15 @@ public class SparkMaskSearch implements Serializable {
     private transient final int numPartitions;
     private transient final JavaSparkContext context;
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
+    private Integer dataThreshold;
+    private Double pixColorFluctuation;
+    private Double pctPositivePixels;
 
-    // Java implementation of Scala's lazy val
-    // https://stackoverflow.com/questions/40015777/how-to-perform-one-operation-on-each-executor-once-in-spark
-
-//    private boolean maskLoaded;
-//
-//    private String laodMask()
-//    {
-//        synchronized(this)
-//        {
-//            if(!bitmap$0)
-//            {
-//                foo = "foo bar";
-//                bitmap$0 = true;
-//            }
-//            BoxedUnit _tmp = BoxedUnit.UNIT;
-//        }
-//        return foo;
-//    }
-//
-//    public String foo()
-//    {
-//        return bitmap$0 ? foo : foo$lzycompute();
-//    }
-//
-//
-
-    public SparkMaskSearch(int numPartitions) {
+    public SparkMaskSearch(int numPartitions, Integer dataThreshold, Double pixColorFluctuation, Double pctPositivePixels) {
         this.numPartitions = numPartitions;
+        this.dataThreshold = dataThreshold;
+        this.pixColorFluctuation = pixColorFluctuation;
+        this.pctPositivePixels = pctPositivePixels;
         SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
         this.context = new JavaSparkContext(conf);
     }
@@ -76,7 +56,9 @@ public class SparkMaskSearch implements Serializable {
         }
     }
 
-    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask) throws Exception {
+    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask,
+                                    Integer dataThreshold, Integer maskThreshold,
+                                    Double pixColorFluctuation, Double pctPositivePixels) throws Exception {
 
         if (image==null) {
             log.error("Problem loading image: {}", filepath);
@@ -88,6 +70,10 @@ public class SparkMaskSearch implements Serializable {
         ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
         params.maskImage = mask;
         params.searchImage = image;
+        params.pixflu = pixColorFluctuation;
+        params.pixThres = pctPositivePixels;
+        params.Thres = dataThreshold;
+        params.Thresm = maskThreshold;
         ColorMIPMaskCompare search = new ColorMIPMaskCompare();
         ColorMIPMaskCompare.Output output = search.runSearch(params);
 
@@ -130,7 +116,7 @@ public class SparkMaskSearch implements Serializable {
      * @return
      * @throws Exception
      */
-    public Collection<MaskSearchResult> search(String maskFilepath) throws Exception {
+    public Collection<MaskSearchResult> search(String maskFilepath, Integer maskThreshold) throws Exception {
 
         log.info("Searching with {}", maskFilepath);
 
@@ -143,7 +129,7 @@ public class SparkMaskSearch implements Serializable {
         JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> {
             log.info("Deserializing mask bytes..");
             ImagePlus mask = new Opener().deserialize(maskHandle.value());
-            return search(pair._1, pair._2, mask);
+            return search(pair._1, pair._2, mask, dataThreshold, maskThreshold, pixColorFluctuation, pctPositivePixels);
         });
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
@@ -168,7 +154,19 @@ public class SparkMaskSearch implements Serializable {
         private String imageDir;
 
         @Parameter(names = {"--partitions", "-p"}, description = "Number of partitions to use")
-        private Integer numPartitions;
+        private Integer numPartitions = 4;
+
+        @Parameter(names = {"--dataThreshold"}, description = "Data threshold")
+        private Integer dataThreshold = 100;
+
+        @Parameter(names = {"--maskThresholds"}, description = "Mask thresholds", variableArity = true)
+        private List<Integer> maskThresholds;
+
+        @Parameter(names = {"--pixColorFluctuation"}, description = "Pix Color Fluctuation, 1.18 per slice")
+        private Double pixColorFluctuation = 2.0;
+
+        @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
+        private Double pctPositivePixels = 2.0;
 
         @Parameter(names = {"--outputFile", "-o"}, description = "Output file(s) for results in CSV format. " +
                 "If this is not specified, the output will be printed to the log. " +
@@ -184,22 +182,36 @@ public class SparkMaskSearch implements Serializable {
                 .build()
                 .parse(argv);
 
-        int partitions = (args.numPartitions==null) ? 4 : args.numPartitions;
-        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(partitions);
+        int partitions = args.numPartitions;
+        Integer dataThreshold = args.dataThreshold;
+        Double pixColorFluctuation = args.pixColorFluctuation;
+        Double pctPositivePixels = args.pctPositivePixels;
+
+        if (args.maskThresholds != null) {
+            if (args.maskThresholds.size() != args.maskFiles.size()) {
+                throw new ParameterException("Number of mask thresholds must match the number of masks used");
+            }
+        }
+
+        if (args.outputFiles != null) {
+            if (args.maskFiles.size() != args.outputFiles.size()) {
+                throw new ParameterException("Number of output files must match the number of masks used");
+            }
+        }
+
+        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(partitions, dataThreshold, pixColorFluctuation, pctPositivePixels);
 
         try {
             sparkMaskSearch.loadImages(args.imageDir);
-
-            if (args.outputFiles != null) {
-                if (args.maskFiles.size() != args.outputFiles.size()) {
-                    throw new ParameterException("Number of output files must match the number of masks used");
-                }
-            }
-
             int i=0;
             for(String maskFile : args.maskFiles) {
 
-                Stream<MaskSearchResult> results = sparkMaskSearch.search(maskFile).stream().filter(r -> r.isMatch());
+                Integer maskThreshold = 50;
+                if (args.maskThresholds != null) {
+                    maskThreshold = args.maskThresholds.get(i);
+                }
+
+                Stream<MaskSearchResult> results = sparkMaskSearch.search(maskFile, maskThreshold).stream().filter(r -> r.isMatch());
 
                 if (args.outputFiles != null) {
                     String outputFile = args.outputFiles.get(i);
@@ -208,7 +220,7 @@ public class SparkMaskSearch implements Serializable {
                         printWriter.println(maskFile);
                         results.forEach(r -> {
                             String filepath = r.getFilepath().replaceFirst("^file:", "");
-                            printWriter.printf("%#.5f\t%s\n", r.getMatchingSlicesPct(), filepath);
+                            printWriter.printf("%d\t%#.5f\t%s\n", r.getMatchingSlices(), r.getMatchingSlicesPct(), filepath);
                         });
                     }
                 } else {
