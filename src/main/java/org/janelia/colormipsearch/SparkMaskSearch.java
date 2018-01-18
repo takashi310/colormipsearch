@@ -15,9 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.io.DataInputStream;
-import java.io.PrintWriter;
-import java.io.Serializable;
+import javax.imageio.ImageIO;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -49,16 +48,32 @@ public class SparkMaskSearch implements Serializable {
         this.context = new JavaSparkContext(conf);
     }
 
-    private ImagePlus readTiffToImagePlus(PortableDataStream stream) throws Exception {
-        Opener opener = new Opener();
+    private ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
+        return new ImagePlus(title, ImageIO.read(stream));
+    }
+
+    private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
+        return new Opener().openTiff(stream, title);
+//        mask = new Opener().deserialize(bytes);
+    }
+
+    private ImagePlus readImagePlus(String filepath, String title, InputStream stream) throws Exception {
+        switch (getImageFormat(filepath)) {
+            case PNG:
+                return readPngToImagePlus(title, stream);
+            case TIFF:
+                return readTiffToImagePlus(title, stream);
+        }
+        throw new IllegalArgumentException("Mask must be in PNG or TIFF format");
+    }
+
+    private ImagePlus readImagePlus(String filepath, String title, PortableDataStream stream) throws Exception {
         try (DataInputStream dis = stream.open()) {
-            return opener.openTiff(dis, "search");
+            return readImagePlus(filepath, title, dis);
         }
     }
 
-    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask,
-                                    Integer dataThreshold, Integer maskThreshold,
-                                    Double pixColorFluctuation, Double pctPositivePixels) throws Exception {
+    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask, Integer maskThreshold) throws Exception {
 
         if (image==null) {
             log.error("Problem loading image: {}", filepath);
@@ -105,7 +120,7 @@ public class SparkMaskSearch implements Serializable {
         JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(filepaths.toString(), numPartitions);
         log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
 
-        this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readTiffToImagePlus(pair._2))).cache();
+        this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readImagePlus(pair._1, "search", pair._2))).cache();
         log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
         log.info("imagePlusRDD.count: {}", imagePlusRDD.count());
     }
@@ -118,18 +133,27 @@ public class SparkMaskSearch implements Serializable {
      */
     public Collection<MaskSearchResult> search(String maskFilepath, Integer maskThreshold) throws Exception {
 
-        log.info("Searching with {}", maskFilepath);
+        log.info("Searching with mask: {}", maskFilepath);
 
         // Read mask file
         byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilepath));
+        log.info("Loaded {} bytes for mask file", maskBytes.length);
 
         // Send mask to all workers
-        Broadcast<byte[]> maskHandle =  context.broadcast(maskBytes);
+        Broadcast<byte[]> maskHandle = context.broadcast(maskBytes);
+        log.info("Broadcast mask file as {}", maskHandle.id());
 
         JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> {
             log.info("Deserializing mask bytes..");
-            ImagePlus mask = new Opener().deserialize(maskHandle.value());
-            return search(pair._1, pair._2, mask, dataThreshold, maskThreshold, pixColorFluctuation, pctPositivePixels);
+            byte[] bytes = maskHandle.value();
+            log.info("Got {} mask bytes", bytes.length);
+
+            ImagePlus mask;
+            try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
+                mask = readImagePlus(maskFilepath, "mask", stream);
+            }
+
+            return search(pair._1, pair._2, mask, maskThreshold);
         });
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
@@ -139,6 +163,26 @@ public class SparkMaskSearch implements Serializable {
         List<MaskSearchResult> results = sortedResultRdd.collect();
         log.info("Returning {} results", results.size());
         return results;
+    }
+
+    private enum ImageFormat {
+        PNG,
+        TIFF,
+        UNKNOWN
+    }
+
+    private ImageFormat getImageFormat(String filepath) {
+
+        String lowerPath = filepath.toLowerCase();
+
+        if (lowerPath.endsWith(".png")) {
+            return ImageFormat.PNG;
+        }
+        else if (lowerPath.endsWith(".tiff") || lowerPath.endsWith(".tif")) {
+            return ImageFormat.TIFF;
+        }
+
+        return ImageFormat.UNKNOWN;
     }
 
     public void close() {
