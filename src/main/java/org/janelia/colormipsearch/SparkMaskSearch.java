@@ -116,9 +116,12 @@ public class SparkMaskSearch implements Serializable {
         }
 
         log.info("Loading image archive at: {}", filepaths);
+        log.info("defaultMinPartitions: {}", context.defaultMinPartitions());
+        log.info("defaultParallelism: {}", context.defaultParallelism());
+        log.info("Requesting minPartitions: {}", numPartitions);
 
         JavaPairRDD<String, PortableDataStream> filesRdd = context.binaryFiles(filepaths.toString(), numPartitions);
-        log.info("binaryFiles.numPartitions: {}", filesRdd.getNumPartitions());
+        log.info("filesRdd.numPartitions: {}", filesRdd.getNumPartitions());
 
         this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readImagePlus(pair._1, "search", pair._2))).cache();
         log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
@@ -197,7 +200,8 @@ public class SparkMaskSearch implements Serializable {
         @Parameter(names = {"--imageDir", "-i"}, description = "Comma-delimited list of directories containing images to search", required = true)
         private String imageDir;
 
-        @Parameter(names = {"--partitions", "-p"}, description = "Number of partitions to use")
+        @Parameter(names = {"--partitions", "-p"}, description = "Number of partitions to use. " +
+                "This value is currently ignored by Spark, use spark.default.parallelism instead.")
         private Integer numPartitions = 4;
 
         @Parameter(names = {"--dataThreshold"}, description = "Data threshold")
@@ -227,6 +231,7 @@ public class SparkMaskSearch implements Serializable {
                 .parse(argv);
 
         int partitions = args.numPartitions;
+
         Integer dataThreshold = args.dataThreshold;
         Double pixColorFluctuation = args.pixColorFluctuation;
         Double pctPositivePixels = args.pctPositivePixels;
