@@ -13,12 +13,14 @@ public class MaskSearchResult implements Serializable {
     private final int matchingSlices;
     private final double matchingSlicesPct;
     private final boolean isMatch;
+    private final boolean isError;
 
-    public MaskSearchResult(String filepath, int matchingSlices, double matchingSlicesPct, boolean isMatch) {
+    public MaskSearchResult(String filepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
         this.filepath = filepath;
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
+        this.isError = isError;
     }
 
     public String getFilepath() {
@@ -35,5 +37,9 @@ public class MaskSearchResult implements Serializable {
 
     public boolean isMatch() {
         return isMatch;
+    }
+
+    public boolean isError() {
+        return isError;
     }
 }

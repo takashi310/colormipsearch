@@ -32,6 +32,8 @@ public class SparkMaskSearch implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(SparkMaskSearch.class);
 
+    private static final int ERROR_THRESHOLD = 20;
+
     private transient final JavaSparkContext context;
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
     private Integer dataThreshold;
@@ -71,26 +73,32 @@ public class SparkMaskSearch implements Serializable {
         }
     }
 
-    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask, Integer maskThreshold) throws Exception {
+    private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask, Integer maskThreshold) {
 
-        if (image==null) {
-            log.error("Problem loading image: {}", filepath);
-            return new MaskSearchResult(filepath, 0, 0, false);
+        try {
+            if (image == null) {
+                log.error("Problem loading image: {}", filepath);
+                return new MaskSearchResult(filepath, 0, 0, false, true);
+            }
+
+            log.info("Searching " + filepath);
+
+            ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
+            params.maskImage = mask;
+            params.searchImage = image;
+            params.pixflu = pixColorFluctuation;
+            params.pixThres = pctPositivePixels;
+            params.Thres = dataThreshold;
+            params.Thresm = maskThreshold;
+            ColorMIPMaskCompare search = new ColorMIPMaskCompare();
+            ColorMIPMaskCompare.Output output = search.runSearch(params);
+
+            return new MaskSearchResult(filepath, output.matchingSlices, output.matchingSlicesPct, output.isMatch, false);
         }
-
-        log.info("Searching "+filepath);
-
-        ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
-        params.maskImage = mask;
-        params.searchImage = image;
-        params.pixflu = pixColorFluctuation;
-        params.pixThres = pctPositivePixels;
-        params.Thres = dataThreshold;
-        params.Thresm = maskThreshold;
-        ColorMIPMaskCompare search = new ColorMIPMaskCompare();
-        ColorMIPMaskCompare.Output output = search.runSearch(params);
-
-        return new MaskSearchResult(filepath, output.matchingSlices, output.matchingSlicesPct, output.isMatch);
+        catch (Throwable e) {
+            log.error("Problem searching image: {}", filepath, e);
+            return new MaskSearchResult(filepath, 0, 0, false, true);
+        }
     }
 
     /**
@@ -250,21 +258,35 @@ public class SparkMaskSearch implements Serializable {
                     maskThreshold = args.maskThresholds.get(i);
                 }
 
-                Stream<MaskSearchResult> results = sparkMaskSearch.search(maskFile, maskThreshold).stream().filter(r -> r.isMatch());
+                Collection<MaskSearchResult> results = sparkMaskSearch.search(maskFile, maskThreshold);
+
+                long numErrors = results.stream().filter(r -> r.isError()).count();
+
+                if (numErrors>ERROR_THRESHOLD) {
+                    throw new Exception("Number of search errors exceeded reasonable threshold ("+ERROR_THRESHOLD+")");
+                }
+                else if (numErrors>0) {
+                    log.warn("{} errors encountered while searching. These errors may represent corrupt image files:", numErrors);
+                    results.stream().filter(r -> r.isError()).forEach(r -> {
+                        log.warn("Error searching {}", r.getFilepath());
+                    });
+                }
+
+                Stream<MaskSearchResult> matchingResults = results.stream().filter(r -> r.isMatch());
 
                 if (args.outputFiles != null) {
                     String outputFile = args.outputFiles.get(i);
                     log.info("Writing search results for {} to {}", maskFile, outputFile);
                     try (PrintWriter printWriter = new PrintWriter(outputFile)) {
                         printWriter.println(maskFile);
-                        results.forEach(r -> {
+                        matchingResults.forEach(r -> {
                             String filepath = r.getFilepath().replaceFirst("^file:", "");
                             printWriter.printf("%d\t%#.5f\t%s\n", r.getMatchingSlices(), r.getMatchingSlicesPct(), filepath);
                         });
                     }
                 } else {
                     log.info("Search results for {}:", maskFile);
-                    results.forEach(r -> {
+                    matchingResults.forEach(r -> {
                         log.info("{} - {}", r.getMatchingSlicesPct(), r.getFilepath());
                     });
                 }
