@@ -64,7 +64,7 @@ public class SparkMaskSearch implements Serializable {
             case TIFF:
                 return readTiffToImagePlus(title, stream);
         }
-        throw new IllegalArgumentException("Mask must be in PNG or TIFF format");
+        throw new IllegalArgumentException("Image must be in PNG or TIFF format");
     }
 
     private ImagePlus readImagePlus(String filepath, String title, PortableDataStream stream) throws Exception {
@@ -189,6 +189,7 @@ public class SparkMaskSearch implements Serializable {
             return ImageFormat.TIFF;
         }
 
+        log.info("Image format unknown: {}", filepath);
         return ImageFormat.UNKNOWN;
     }
 
