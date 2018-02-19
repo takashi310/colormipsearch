@@ -4,6 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import ij.ImagePlus;
+import ij.io.FileSaver;
 import ij.io.Opener;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -39,6 +40,7 @@ public class SparkMaskSearch implements Serializable {
     private Integer dataThreshold;
     private Double pixColorFluctuation;
     private Double pctPositivePixels;
+    private transient ImagePlus maskImagePlus;
 
     public SparkMaskSearch(Integer dataThreshold, Double pixColorFluctuation, Double pctPositivePixels) {
         this.dataThreshold = dataThreshold;
@@ -107,7 +109,7 @@ public class SparkMaskSearch implements Serializable {
      */
     public void loadImages(String imagesFilepath) {
 
-        // We have to ensure each filepath has a glob, because it's very slow without.
+        // We have to ensure each filepath ends with a wildcard, because it's very slow without.
         // See https://issues.apache.org/jira/browse/SPARK-8437
         StringBuffer filepaths = new StringBuffer();
         for(String filepath : imagesFilepath.split(",")) {
@@ -128,6 +130,7 @@ public class SparkMaskSearch implements Serializable {
         log.info("filesRdd.numPartitions: {}", filesRdd.getNumPartitions());
 
         this.imagePlusRDD = filesRdd.mapToPair(pair -> new Tuple2<>(pair._1, readImagePlus(pair._1, "search", pair._2))).cache();
+
         log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
         log.info("imagePlusRDD.count: {}", imagePlusRDD.count());
     }
@@ -151,16 +154,17 @@ public class SparkMaskSearch implements Serializable {
         log.info("Broadcast mask file as {}", maskHandle.id());
 
         JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> {
-            log.info("Deserializing mask bytes..");
-            byte[] bytes = maskHandle.value();
-            log.info("Got {} mask bytes", bytes.length);
 
-            ImagePlus mask;
-            try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
-                mask = readImagePlus(maskFilepath, "mask", stream);
+            // Cache ImagePlus at the task level
+            if (maskImagePlus == null) {
+                byte[] bytes = maskHandle.value();
+                log.info("Got {} mask bytes", bytes.length);
+                try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
+                    maskImagePlus = readImagePlus(maskFilepath, "mask", stream);
+                }
             }
 
-            return search(pair._1, pair._2, mask, maskThreshold);
+            return search(pair._1, pair._2, maskImagePlus, maskThreshold);
         });
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
