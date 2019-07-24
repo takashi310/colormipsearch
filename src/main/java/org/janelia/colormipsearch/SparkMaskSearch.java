@@ -1,10 +1,30 @@
 package org.janelia.colormipsearch;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.imageio.ImageIO;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import ij.ImagePlus;
-import ij.io.FileSaver;
 import ij.io.Opener;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -15,18 +35,6 @@ import org.apache.spark.input.PortableDataStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
-
-import javax.imageio.ImageIO;
-import java.io.*;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -60,7 +68,6 @@ public class SparkMaskSearch implements Serializable {
 
     private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
         return new Opener().openTiff(stream, title);
-//        mask = new Opener().deserialize(bytes);
     }
 
     private ImagePlus readImagePlus(String filepath, String title, InputStream stream) throws Exception {
@@ -118,20 +125,28 @@ public class SparkMaskSearch implements Serializable {
     }
 
     /**
-     * Load an image archive into memory.
+     * Load provided image libraries into memory.
      * @param imagesFilepath
      */
     public void loadImages(String imagesFilepath) throws IOException {
 
         List<String> paths = new ArrayList<>();
         for(String filepath : imagesFilepath.split(",")) {
-            log.info("Loading image archive at: {}", filepath);
-            Path folder = Paths.get(filepath);
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
-                for (Path entry : stream) {
-                    paths.add(entry.toString());
+
+            Path path = Paths.get(filepath);
+            File file = path.toFile();
+            log.info("Loading image library at: {}", filepath);
+
+            if (file.isDirectory()) {
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
+                    for (Path entry : stream) {
+                        paths.add(entry.toString());
+                    }
+                    log.info("  Read {} files", paths.size());
                 }
-                log.info("  Read {} files", paths.size());
+            }
+            else {
+                paths.addAll(Files.lines(path).collect(Collectors.toList()));
             }
         }
 
@@ -222,7 +237,7 @@ public class SparkMaskSearch implements Serializable {
         if (context!=null) context.stop();
     }
 
-    public static class Args {
+    private static class Args {
 
         @Parameter(names = {"--mask", "-m"}, description = "Image file(s) to use as the search masks", required = true, variableArity = true)
         private List<String> maskFiles;

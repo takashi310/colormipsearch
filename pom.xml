@@ -11,7 +11,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scopes.provided>provided</scopes.provided>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.0</spark.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <runSuite>**/TestSuite.class</runSuite>
@@ -27,16 +27,13 @@
     </profiles>
 
     <repositories>
+        <!-- for BioFormats -->
         <repository>
-            <id>jboss-maven2-release-repository</id>
-            <name>JBoss 3rd-party Repository</name>
-            <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/</url>
-        </repository>
-
-        <repository>
-            <id>openmicroscopy-maven-repository</id>
-            <name>OpenMicroscopy Repository</name>
-            <url>http://artifacts.openmicroscopy.org/artifactory/ome.releases/</url>
+            <id>imagej-repository</id>
+            <url>https://maven.scijava.org/content/repositories/ome-releases/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
