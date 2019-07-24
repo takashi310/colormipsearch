@@ -128,12 +128,10 @@ public class SparkMaskSearch implements Serializable {
             log.info("Loading image archive at: {}", filepath);
             Path folder = Paths.get(filepath);
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
-                int c = 0;
                 for (Path entry : stream) {
                     paths.add(entry.toString());
-                    c++;
                 }
-                log.info("  Read {} files", c);
+                log.info("  Read {} files", paths.size());
             }
         }
 
