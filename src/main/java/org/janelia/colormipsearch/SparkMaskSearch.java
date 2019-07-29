@@ -301,6 +301,7 @@ public class SparkMaskSearch implements Serializable {
         Integer dataThreshold = args.dataThreshold;
         Double pixColorFluctuation = args.pixColorFluctuation;
         Integer xyShift = args.xyShift;
+        boolean mirrorMask = args.mirrorMask;
         Double pctPositivePixels = args.pctPositivePixels;
 
         if (args.maskThresholds != null) {
