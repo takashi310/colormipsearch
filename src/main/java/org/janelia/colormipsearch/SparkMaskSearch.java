@@ -52,14 +52,17 @@ public class SparkMaskSearch implements Serializable {
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
     private Integer dataThreshold;
     private Integer xyShift;
+    private boolean mirrorMask;
     private Double pixColorFluctuation;
     private Double pctPositivePixels;
     private transient ImagePlus maskImagePlus;
 
-    public SparkMaskSearch(Integer dataThreshold, Double pixColorFluctuation, Integer xyShift, Double pctPositivePixels) {
+    public SparkMaskSearch(Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
+                           boolean mirrorMask, Double pctPositivePixels) {
         this.dataThreshold = dataThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
         this.xyShift = xyShift;
+        this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
         SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
         this.context = new JavaSparkContext(conf);
@@ -119,7 +122,7 @@ public class SparkMaskSearch implements Serializable {
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
                     mask.getProcessor(), maskThreshold, false, null, 0,
-                    false, dataThreshold, pixfludub, xyShift);
+                    mirrorMask, dataThreshold, pixfludub, xyShift);
             ColorMIPMaskCompare.Output output = cc.runSearch(image.getProcessor(), null);
 
             double pixThresdub = pctPositivePixels / 100;
@@ -275,6 +278,9 @@ public class SparkMaskSearch implements Serializable {
         @Parameter(names = {"--xyShift"}, description = "Number of pixels to try shifting in XY plane")
         private Integer xyShift = 0;
 
+        @Parameter(names = {"--mirrorMask"}, description = "Should the mask be mirrored across the Y axis?")
+        private boolean mirrorMask = false;
+
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         private Double pctPositivePixels = 2.0;
 
@@ -310,7 +316,7 @@ public class SparkMaskSearch implements Serializable {
         }
 
         SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(
-                dataThreshold, pixColorFluctuation, xyShift, pctPositivePixels);
+                dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
 
         try {
             sparkMaskSearch.loadImages(args.imageDir);
