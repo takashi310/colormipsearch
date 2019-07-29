@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import ij.process.ImageProcessor;
 
-public class ColorMIPMaskCompare2 {
+public class ColorMIPMaskCompare {
 	
 	ImageProcessor m_query;
 	ImageProcessor m_negquery;
@@ -37,7 +37,7 @@ public class ColorMIPMaskCompare2 {
     }
 	
 	//Basic Search
-	ColorMIPMaskCompare2 (ImageProcessor query, int mask_th, int search_th, double toleranceZ) {
+	ColorMIPMaskCompare (ImageProcessor query, int mask_th, int search_th, double toleranceZ) {
 		m_query = query;
 		m_width = m_query.getWidth();
 		m_height = m_query.getHeight();
@@ -63,7 +63,7 @@ public class ColorMIPMaskCompare2 {
 	}
 	
 	//Advanced Search
-	ColorMIPMaskCompare2 (ImageProcessor query, int mask_th, boolean mirror_mask, ImageProcessor negquery, int negmask_th, boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
+	ColorMIPMaskCompare (ImageProcessor query, int mask_th, boolean mirror_mask, ImageProcessor negquery, int negmask_th, boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
 		m_query = query;
 		m_negquery = negquery;
 		m_width = m_query.getWidth();

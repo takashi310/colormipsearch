@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import java.util.*;
 
 
-public class ColorMIP_Mask_Search2 implements PlugInFilter
+public class ColorMIP_Mask_Search implements PlugInFilter
 {
 	ImagePlus imp, imp2;
 	ImageProcessor ip1, nip1, ip2, ip3, ip4, ip5, ip6, ip33;
@@ -50,7 +50,7 @@ public class ColorMIP_Mask_Search2 implements PlugInFilter
 	
 	public int setup(String arg, ImagePlus imp)
 	{
-		IJ.register (ColorMIP_Mask_Search2.class);
+		IJ.register (ColorMIP_Mask_Search.class);
 		if (IJ.versionLessThan("1.32c")){
 			IJ.showMessage("Error", "Please Update ImageJ.");
 			return 0;
@@ -372,7 +372,7 @@ public class ColorMIP_Mask_Search2 implements PlugInFilter
 		double posipersent2 = 0;
 		double pixThresdub2 = 0;
 		
-		final ColorMIPMaskCompare2 cc = new ColorMIPMaskCompare2 (ip1, Thresm, mirror_mask, nip1, NegThresm, mirror_negmask, Thres, pixfludub, xyshift);
+		final ColorMIPMaskCompare cc = new ColorMIPMaskCompare (ip1, Thresm, mirror_mask, nip1, NegThresm, mirror_negmask, Thres, pixfludub, xyshift);
 		m_executor = Executors.newFixedThreadPool(threadNum);
 		
 		final int maskpos_st = cc.getMaskStartPos()*3;
@@ -432,7 +432,7 @@ public class ColorMIP_Mask_Search2 implements PlugInFilter
 									
 									linename=st3.getSliceLabel(slice);
 									
-									ColorMIPMaskCompare2.Output res = cc.runSearch(impxs, colocs);
+									ColorMIPMaskCompare.Output res = cc.runSearch(impxs, colocs);
 									
 									int posi = res.matchingPixNum;
 									double posipersent = res.matchingPct;
@@ -534,7 +534,7 @@ public class ColorMIP_Mask_Search2 implements PlugInFilter
 									
 									String linename = st3.getSliceLabel(slice);
 									
-									ColorMIPMaskCompare2.Output res = cc.runSearch(impxs, colocs);
+									ColorMIPMaskCompare.Output res = cc.runSearch(impxs, colocs);
 									
 									int posi = res.matchingPixNum;
 									double posipersent = res.matchingPct;
@@ -613,7 +613,7 @@ public class ColorMIP_Mask_Search2 implements PlugInFilter
 							ImageProcessor ip3 = st3.getProcessor(slice);
 							String linename = st3.getSliceLabel(slice);
 							
-							ColorMIPMaskCompare2.Output res = cc.runSearch(ip3, ipnew);
+							ColorMIPMaskCompare.Output res = cc.runSearch(ip3, ipnew);
 						
 							int posi = res.matchingPixNum;
 							double posipersent = res.matchingPct;
