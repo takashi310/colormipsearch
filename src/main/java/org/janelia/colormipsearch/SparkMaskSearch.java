@@ -24,6 +24,7 @@ import javax.imageio.ImageIO;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.google.common.base.Stopwatch;
 import ij.ImagePlus;
 import ij.io.Opener;
 import org.apache.spark.SparkConf;
@@ -63,11 +64,17 @@ public class SparkMaskSearch implements Serializable {
     }
 
     private ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
-        return new ImagePlus(title, ImageIO.read(stream));
+        Stopwatch s = Stopwatch.createStarted();
+        ImagePlus imagePlus = new ImagePlus(title, ImageIO.read(stream));
+        log.info("Reading {} took {} ms", title, s.elapsed().toMillis());
+        return imagePlus;
     }
 
     private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
-        return new Opener().openTiff(stream, title);
+        Stopwatch s = Stopwatch.createStarted();
+        ImagePlus imagePlus = new Opener().openTiff(stream, title);
+        log.info("Reading {} took {} ms", title, s.elapsed().toMillis());
+        return imagePlus;
     }
 
     private ImagePlus readImagePlus(String filepath, String title, InputStream stream) throws Exception {
@@ -164,8 +171,10 @@ public class SparkMaskSearch implements Serializable {
         log.info("filesRdd.numPartitions: {}", pathRDD.getNumPartitions());
 
         // This RDD is cached so that it can be reused to search with multiple masks
-        this.imagePlusRDD = pathRDD.mapToPair(filepath ->
-                new Tuple2<>(filepath, readImagePlus(filepath, "search"))).cache();
+        this.imagePlusRDD = pathRDD.mapToPair(filepath -> {
+            String title = new File(filepath).getName();
+            return new Tuple2<>(filepath, readImagePlus(filepath, title));
+        }).cache();
 
         log.info("imagePlusRDD.numPartitions: {}", imagePlusRDD.getNumPartitions());
         log.info("imagePlusRDD.count: {}", imagePlusRDD.count());
@@ -179,36 +188,43 @@ public class SparkMaskSearch implements Serializable {
      */
     public Collection<MaskSearchResult> search(String maskFilepath, Integer maskThreshold) throws Exception {
 
+        Stopwatch s = Stopwatch.createStarted();
+
+        File maskFile = new File(maskFilepath);
+        String maskName = maskFile.getName();
         log.info("Searching with mask: {}", maskFilepath);
 
-        // Read mask file
+        // Read mask bytes in the driver
         byte[] maskBytes = Files.readAllBytes(Paths.get(maskFilepath));
         log.info("Loaded {} bytes for mask file", maskBytes.length);
 
-        // Send mask to all workers
+        // Send mask bytes to all workers
         Broadcast<byte[]> maskHandle = context.broadcast(maskBytes);
         log.info("Broadcast mask file as {}", maskHandle.id());
 
         JavaRDD<MaskSearchResult> resultRdd = imagePlusRDD.map(pair -> {
 
-            // Cache ImagePlus at the task level
+            // Cache mask object at the task level
             if (maskImagePlus == null) {
                 byte[] bytes = maskHandle.value();
                 log.info("Got {} mask bytes", bytes.length);
                 try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
-                    maskImagePlus = readImagePlus(maskFilepath, "mask", stream);
+                    maskImagePlus = readImagePlus(maskFilepath, maskName, stream);
                 }
             }
 
             return search(pair._1, pair._2, maskImagePlus, maskThreshold);
         });
+
         log.info("resultRdd.numPartitions: {}", resultRdd.getNumPartitions());
 
-        JavaRDD<MaskSearchResult> sortedResultRdd = resultRdd.sortBy(result -> result.getMatchingSlices(), false, 1);
+        JavaRDD<MaskSearchResult> sortedResultRdd = resultRdd.sortBy(MaskSearchResult::getMatchingSlices, false, 1);
         log.info("sortedResultRdd.numPartitions: {}", sortedResultRdd.getNumPartitions());
 
         List<MaskSearchResult> results = sortedResultRdd.collect();
         log.info("Returning {} results", results.size());
+
+        log.info("Searching took {} ms", s.elapsed().toMillis());
         return results;
     }
 
