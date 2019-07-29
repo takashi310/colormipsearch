@@ -51,13 +51,15 @@ public class SparkMaskSearch implements Serializable {
     private transient final JavaSparkContext context;
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
     private Integer dataThreshold;
+    private Integer xyShift;
     private Double pixColorFluctuation;
     private Double pctPositivePixels;
     private transient ImagePlus maskImagePlus;
 
-    public SparkMaskSearch(Integer dataThreshold, Double pixColorFluctuation, Double pctPositivePixels) {
+    public SparkMaskSearch(Integer dataThreshold, Double pixColorFluctuation, Integer xyShift, Double pctPositivePixels) {
         this.dataThreshold = dataThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
+        this.xyShift = xyShift;
         this.pctPositivePixels = pctPositivePixels;
         SparkConf conf = new SparkConf().setAppName(SparkMaskSearch.class.getName());
         this.context = new JavaSparkContext(conf);
@@ -113,17 +115,17 @@ public class SparkMaskSearch implements Serializable {
 
             log.info("Searching " + filepath);
 
-            ColorMIPMaskCompare.Parameters params = new ColorMIPMaskCompare.Parameters();
-            params.maskImage = mask;
-            params.searchImage = image;
-            params.pixflu = pixColorFluctuation;
-            params.pixThres = pctPositivePixels;
-            params.Thres = dataThreshold;
-            params.Thresm = maskThreshold;
-            ColorMIPMaskCompare search = new ColorMIPMaskCompare();
-            ColorMIPMaskCompare.Output output = search.runSearch(params);
+            double pixfludub = pixColorFluctuation / 100;
 
-            return new MaskSearchResult(filepath, output.matchingSlices, output.matchingSlicesPct, output.isMatch, false);
+            final ColorMIPMaskCompare2 cc = new ColorMIPMaskCompare2(
+                    mask.getProcessor(), maskThreshold, false, null, 0,
+                    false, dataThreshold, pixfludub, xyShift);
+            ColorMIPMaskCompare2.Output output = cc.runSearch(image.getProcessor(), null);
+
+            double pixThresdub = pctPositivePixels / 100;
+            boolean isMatch = output.matchingPct > pixThresdub;
+
+            return new MaskSearchResult(filepath, output.matchingPixNum, output.matchingPct, isMatch, false);
         }
         catch (Throwable e) {
             log.error("Problem searching image: {}", filepath, e);
@@ -270,6 +272,9 @@ public class SparkMaskSearch implements Serializable {
         @Parameter(names = {"--pixColorFluctuation"}, description = "Pix Color Fluctuation, 1.18 per slice")
         private Double pixColorFluctuation = 2.0;
 
+        @Parameter(names = {"--xyShift"}, description = "Number of pixels to try shifting in XY plane")
+        private Integer xyShift = 0;
+
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         private Double pctPositivePixels = 2.0;
 
@@ -289,6 +294,7 @@ public class SparkMaskSearch implements Serializable {
 
         Integer dataThreshold = args.dataThreshold;
         Double pixColorFluctuation = args.pixColorFluctuation;
+        Integer xyShift = args.xyShift;
         Double pctPositivePixels = args.pctPositivePixels;
 
         if (args.maskThresholds != null) {
@@ -303,7 +309,8 @@ public class SparkMaskSearch implements Serializable {
             }
         }
 
-        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(dataThreshold, pixColorFluctuation, pctPositivePixels);
+        SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(
+                dataThreshold, pixColorFluctuation, xyShift, pctPositivePixels);
 
         try {
             sparkMaskSearch.loadImages(args.imageDir);
