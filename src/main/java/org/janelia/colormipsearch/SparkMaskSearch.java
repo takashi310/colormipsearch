@@ -24,9 +24,9 @@ import javax.imageio.ImageIO;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import com.google.common.base.Stopwatch;
 import ij.ImagePlus;
 import ij.io.Opener;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -68,44 +68,47 @@ public class SparkMaskSearch implements Serializable {
         this.context = new JavaSparkContext(conf);
     }
 
-    private ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
-        Stopwatch s = Stopwatch.createStarted();
+    private ImagePlus readPngToImagePlus(String title, InputStream stream) throws IOException {
+        StopWatch s = new StopWatch();
+        s.start();
         ImagePlus imagePlus = new ImagePlus(title, ImageIO.read(stream));
-        log.info("Reading {} took {} ms", title, s.elapsed().toMillis());
+        log.info("Reading {} took {} ms", title, s.getTime());
         return imagePlus;
     }
 
-    private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
-        Stopwatch s = Stopwatch.createStarted();
+    private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws IOException {
+        StopWatch s = new StopWatch();
+        s.start();
         ImagePlus imagePlus = new Opener().openTiff(stream, title);
-        log.info("Reading {} took {} ms", title, s.elapsed().toMillis());
+        log.info("Reading {} took {} ms", title, s.getTime());
         return imagePlus;
     }
 
-    private ImagePlus readImagePlus(String filepath, String title, InputStream stream) throws Exception {
-        switch (getImageFormat(filepath)) {
-            case PNG:
-                return readPngToImagePlus(title, stream);
-            case TIFF:
-                return readTiffToImagePlus(title, stream);
+    private ImagePlus readImagePlus(String filepath, String title, InputStream stream) throws IOException {
+        try {
+            switch (getImageFormat(filepath)) {
+                case PNG:
+                    return readPngToImagePlus(title, stream);
+                case TIFF:
+                    return readTiffToImagePlus(title, stream);
+            }
+        }
+        catch (IOException e) {
+            throw new IOException("Error reading "+filepath, e);
         }
         throw new IllegalArgumentException("Image must be in PNG or TIFF format");
+    }
+
+    private ImagePlus readImagePlus(String filepath, String title) throws Exception {
+        try (FileInputStream stream = new FileInputStream(filepath)) {
+            return readImagePlus(filepath, title, stream);
+        }
     }
 
     private ImagePlus readImagePlus(String filepath, String title, PortableDataStream stream) throws Exception {
         try (DataInputStream dis = stream.open()) {
             return readImagePlus(filepath, title, dis);
         }
-    }
-
-    private ImagePlus readImagePlus(String filepath, String title) throws Exception {
-        switch (getImageFormat(filepath)) {
-            case PNG:
-                return readPngToImagePlus(title, new FileInputStream(filepath));
-            case TIFF:
-                return readTiffToImagePlus(title, new FileInputStream(filepath));
-        }
-        throw new IllegalArgumentException("Image must be in PNG or TIFF format");
     }
 
     private MaskSearchResult search(String filepath, ImagePlus image, ImagePlus mask, Integer maskThreshold) {
@@ -193,7 +196,8 @@ public class SparkMaskSearch implements Serializable {
      */
     public Collection<MaskSearchResult> search(String maskFilepath, Integer maskThreshold) throws Exception {
 
-        Stopwatch s = Stopwatch.createStarted();
+        StopWatch s = new StopWatch();
+        s.start();
 
         File maskFile = new File(maskFilepath);
         String maskName = maskFile.getName();
@@ -229,7 +233,7 @@ public class SparkMaskSearch implements Serializable {
         List<MaskSearchResult> results = sortedResultRdd.collect();
         log.info("Returning {} results", results.size());
 
-        log.info("Searching took {} ms", s.elapsed().toMillis());
+        log.info("Searching took {} ms", s.getTime());
         return results;
     }
 
