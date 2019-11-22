@@ -124,8 +124,8 @@ public class SparkMaskSearch implements Serializable {
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    mask.getProcessor(), maskThreshold, false, null, 0,
-                    mirrorMask, dataThreshold, pixfludub, xyShift);
+                    mask.getProcessor(), maskThreshold, mirrorMask, null, 0,
+                    false, dataThreshold, pixfludub, xyShift);
             ColorMIPMaskCompare.Output output = cc.runSearch(image.getProcessor(), null);
 
             double pixThresdub = pctPositivePixels / 100;
