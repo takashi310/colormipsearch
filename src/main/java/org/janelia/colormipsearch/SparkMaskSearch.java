@@ -286,7 +286,7 @@ public class SparkMaskSearch implements Serializable {
         private boolean mirrorMask = false;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
-        private Double pctPositivePixels = 2.0;
+        private Double pctPositivePixels = 0.0;
 
         @Parameter(names = {"--outputFile", "-o"}, description = "Output file(s) for results in CSV format. " +
                 "If this is not specified, the output will be printed to the log. " +
@@ -319,6 +319,13 @@ public class SparkMaskSearch implements Serializable {
                 throw new ParameterException("Number of output files must match the number of masks used");
             }
         }
+
+        log.info("Executing spark mask search with parameters:");
+        log.info("dataThreshold: {}", dataThreshold);
+        log.info("pixColorFluctuation: {}", pixColorFluctuation);
+        log.info("xyShift: {}", xyShift);
+        log.info("mirrorMask: {}", mirrorMask);
+        log.info("pctPositivePixels: {}", pctPositivePixels);
 
         SparkMaskSearch sparkMaskSearch = new SparkMaskSearch(
                 dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
