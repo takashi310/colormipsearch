@@ -1,6 +1,7 @@
 *.class
 *.log
 *.iml
+.idea
 hs_err_pid*
 testdata
 target

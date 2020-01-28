@@ -7,24 +7,30 @@ import java.io.Serializable;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class MaskSearchResult implements Serializable {
+public class ColorMIPSearchResult implements Serializable {
 
-    private final String filepath;
+    private final String patternFilepath;
+    private final String libraryFilepath;
     private final int matchingSlices;
     private final double matchingSlicesPct;
     private final boolean isMatch;
     private final boolean isError;
 
-    public MaskSearchResult(String filepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
-        this.filepath = filepath;
+    public ColorMIPSearchResult(String patternFilepath, String libraryFilepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+        this.patternFilepath = patternFilepath;
+        this.libraryFilepath = libraryFilepath;
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
         this.isError = isError;
     }
 
-    public String getFilepath() {
-        return filepath;
+    public String getPatternFilepath() {
+        return patternFilepath;
+    }
+
+    public String getLibraryFilepath() {
+        return libraryFilepath;
     }
 
     public int getMatchingSlices() {

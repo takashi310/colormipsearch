@@ -168,7 +168,7 @@
                     </descriptorRefs>
                     <archive>
                       <manifest>
-                        <mainClass>org.janelia.colormipsearch.SparkMaskSearch</mainClass>
+                        <mainClass>org.janelia.colormipsearch.Main</mainClass>
                       </manifest>
                     </archive>
                 </configuration>
