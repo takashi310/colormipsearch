@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import com.google.common.base.Stopwatch;
-
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.process.ImageProcessor;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -54,18 +53,16 @@ class ColorMIPSearch implements Serializable {
     private Double pctPositivePixels;
     private transient final JavaSparkContext sparkContext;
     private transient JavaPairRDD<String, ImagePlus> imagePlusRDD;
-    private transient ImagePlus maskImage;
 
-
-    ColorMIPSearch(Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
-                   boolean mirrorMask, Double pctPositivePixels,
-                   JavaSparkContext sparkContext) {
+    ColorMIPSearch(String appName,
+                   Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
+                   boolean mirrorMask, Double pctPositivePixels) {
         this.dataThreshold = dataThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
-        this.sparkContext = sparkContext;
+        this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
     /**
@@ -133,75 +130,57 @@ class ColorMIPSearch implements Serializable {
     }
 
     private ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
-        Stopwatch s = Stopwatch.createStarted();
-        ImagePlus imagePlus = new ImagePlus(title, ImageIO.read(stream));
-        LOG.info("Reading {} took {} ms", title, s.elapsed().toMillis());
-        return imagePlus;
+        return new ImagePlus(title, ImageIO.read(stream));
     }
 
     private ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
-        Stopwatch s = Stopwatch.createStarted();
-        ImagePlus imagePlus = new Opener().openTiff(stream, title);
-        LOG.info("Reading {} took {} ms", title, s.elapsed().toMillis());
-        return imagePlus;
+        return new Opener().openTiff(stream, title);
     }
 
-    Collection<ColorMIPSearchResult> searchMasksInAllImages(List<String> maskPathnames, Integer maskThreshold) {
-        Stopwatch s = Stopwatch.createStarted();
-
+    Collection<ColorMIPSearchResult> searchEveryMaskInAllImages(List<String> maskPathnames, Integer maskThreshold) {
         LOG.info("Searching {} masks", maskPathnames.size());
         JavaRDD<String> maskPartitions = sparkContext.parallelize(maskPathnames);
-        JavaRDD<ColorMIPSearchResult> searchResults = maskPartitions.flatMap(maskPathname -> searchSingleMaskInAllImages(maskPathname, maskThreshold).iterator());
+        LOG.info("Mask partitions/count: {} / {}", maskPartitions.getNumPartitions(), maskPartitions.count());
 
-        LOG.info("Search results partitions for {} masks: {}", maskPathnames.size(), searchResults.getNumPartitions());
+        JavaPairRDD<Tuple2<String, ImagePlus>, String> imageAndMaskPairs = imagePlusRDD.cartesian(maskPartitions);
 
-        List<ColorMIPSearchResult> results = searchResults.collect();
-        LOG.info("Returning {} results", results.size());
+        JavaRDD<ColorMIPSearchResult> searchResults = imageAndMaskPairs.map(imageAndMaskPair -> {
+            String maskPathname = imageAndMaskPair._2;
+            LOG.info("Search mask {} against {}", maskPathname, imageAndMaskPair._1._1);
+            Path maskPath = Paths.get(maskPathname);
+            ImagePlus maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
+            return runImageComparison(imageAndMaskPair._1._1, imageAndMaskPair._1._2.getProcessor(), maskPathname, maskImage.getProcessor(), maskThreshold);
+        });
 
-        LOG.info("Searching took {} ms", s.elapsed().toMillis());
-        return results;
+        JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
+        LOG.info("Sorted search results partitions: {}", sortedSearchResultsRDD.getNumPartitions());
+
+        List<ColorMIPSearchResult> sortedSearchResults = sortedSearchResultsRDD.collect();
+        LOG.info("Returned {} results for {} masks", sortedSearchResults, maskPathnames.size());
+
+        return sortedSearchResults;
     }
 
-    private Collection<ColorMIPSearchResult> searchSingleMaskInAllImages(String maskPathname, Integer maskThreshold) {
-        Stopwatch s = Stopwatch.createStarted();
+    List<ColorMIPSearchResult> searchMaskFromFileInAllImages(String maskPathname, Integer maskThreshold) {
+        LOG.info("Searching mask {} against {} loaded libraries", maskPathname, imagePlusRDD.count());
 
-        LOG.info("Searching mask {}", maskPathname);
-        Path maskPath = Paths.get(maskPathname);
-        byte[] maskBytes;
-        try {
-            // Read mask bytes in the driver
-            maskBytes = Files.readAllBytes(maskPath);
-            LOG.info("Loaded {} bytes from mask file {}", maskBytes.length, maskPath);
-        } catch (IOException e) {
-            LOG.warn("Error reading {} bytes", maskPath, e);
-            throw new UncheckedIOException(e);
-        }
-        // Send mask bytes to all workers
-        Broadcast<byte[]> maskHandle = sparkContext.broadcast(maskBytes);
-        LOG.info("Broadcast mask file {} as {}", maskPath, maskHandle.id());
-
-        JavaRDD<ColorMIPSearchResult> searchResults = imagePlusRDD.map(pair -> {
+        JavaRDD<ColorMIPSearchResult> searchResults = imagePlusRDD.map(imagePathPair -> {
             // Cache mask object at the task level
-            if (maskImage == null) {
-                byte[] bytes = maskHandle.value();
-                LOG.info("Got {} mask bytes", bytes.length);
-                try (ByteArrayInputStream stream = new ByteArrayInputStream(bytes)) {
-                    maskImage = readImagePlus(maskPath.getFileName().toString(), getImageFormat(maskPathname), stream);
-                }
-            }
-            return runImageComparison(pair._1, pair._2.getProcessor(), maskPathname, maskImage.getProcessor(), maskThreshold);
+            Path maskPath = Paths.get(maskPathname);
+            ImagePlus maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
+            return runImageComparison(imagePathPair._1, imagePathPair._2.getProcessor(), maskPathname, maskImage.getProcessor(), maskThreshold);
         });
         LOG.info("Search results partitions: {}", searchResults.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> sortedSearchResults = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
+        JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
 
-        LOG.info("Sorted search results partitions: {}", sortedSearchResults.getNumPartitions());
+        LOG.info("Sorted search results partitions: {}", sortedSearchResultsRDD.getNumPartitions());
 
-        List<ColorMIPSearchResult> results = sortedSearchResults.collect();
-        LOG.info("Returning {} results", results.size());
+        List<ColorMIPSearchResult> sortedSearchResults = sortedSearchResultsRDD.collect();
 
-        LOG.info("Searching took {} ms", s.elapsed().toMillis());
-        return results;
+        LOG.info("Returned {} results for mask {}", sortedSearchResults, maskPathname);
+
+        return sortedSearchResults;
     }
 
     private ColorMIPSearchResult runImageComparison(String libraryImagePath, ImageProcessor libraryImage,
@@ -226,4 +205,9 @@ class ColorMIPSearch implements Serializable {
             return new ColorMIPSearchResult(patternImagePath, libraryImagePath, 0, 0, false, true);
         }
     }
+
+    void terminate() {
+        sparkContext.close();
+    }
+
 }

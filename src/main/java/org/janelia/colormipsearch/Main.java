@@ -31,7 +31,7 @@ public class Main {
         private Integer dataThreshold = 100;
 
         @Parameter(names = {"--maskThreshold"}, description = "Mask threshold")
-        private Integer maskThreshold;
+        private Integer maskThreshold = 100;
 
         @Parameter(names = {"--pixColorFluctuation"}, description = "Pix Color Fluctuation, 1.18 per slice")
         private Double pixColorFluctuation = 2.0;
@@ -49,25 +49,22 @@ public class Main {
         private String outputDir;
     }
 
-    public static void main(String[] argv) throws Exception {
-
+    public static void main(String[] argv) {
         Args args = new Args();
         JCommander.newBuilder()
                 .addObject(args)
                 .build()
                 .parse(argv);
 
-        SparkConf sparkConf = new SparkConf().setAppName(args.appName);
-        JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
-
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
+                args.appName, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
+        );
         try {
-            ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                    args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels, sparkContext
-            );
             colorMIPSearch.loadImages(args.imageFiles);
-            colorMIPSearch.searchMasksInAllImages(ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()), args.maskThreshold);
+//            ImageFinder.findImages(args.maskFiles).forEach(maskPath -> colorMIPSearch.searchMaskFromFileInAllImages(maskPath, args.maskThreshold));
+            colorMIPSearch.searchEveryMaskInAllImages(ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()), args.maskThreshold);
         } finally {
-            sparkContext.close();
+            colorMIPSearch.terminate();
         }
     }
 
