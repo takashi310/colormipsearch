@@ -13,7 +13,10 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.imageio.ImageIO;
 
@@ -144,12 +147,29 @@ class ColorMIPSearch implements Serializable {
 
         JavaPairRDD<Tuple2<String, ImagePlus>, String> imageAndMaskPairs = imagePlusRDD.cartesian(maskPartitions);
 
-        JavaRDD<ColorMIPSearchResult> searchResults = imageAndMaskPairs.map(imageAndMaskPair -> {
-            String maskPathname = imageAndMaskPair._2;
-            LOG.info("Search mask {} against {}", maskPathname, imageAndMaskPair._1._1);
-            Path maskPath = Paths.get(maskPathname);
-            ImagePlus maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
-            return runImageComparison(imageAndMaskPair._1._1, imageAndMaskPair._1._2.getProcessor(), maskPathname, maskImage.getProcessor(), maskThreshold);
+        JavaRDD<ColorMIPSearchResult> searchResults = imageAndMaskPairs.mapPartitions(imageAndMaskPairsItr -> {
+            // group them by mask and load every  mask only once per partition
+            Map<String, List<Tuple2<Tuple2<String, ImagePlus>, String>>> maskWithAllImagesFromCurrentPartitionMapping =
+                    StreamSupport.stream(Spliterators.spliterator(imageAndMaskPairsItr, Integer.MAX_VALUE, 0), false)
+                            .collect(Collectors.groupingBy(imageAndMaskPair -> imageAndMaskPair._2));
+            return maskWithAllImagesFromCurrentPartitionMapping.entrySet()
+                    .stream()
+                    .flatMap(maskWithImagesEntry -> {
+                        String maskPathname = maskWithImagesEntry.getKey();
+                        LOG.info("Load mask image from {}", maskPathname);
+                        Path maskPath = Paths.get(maskPathname);
+                        ImagePlus maskImage;
+                        try {
+                            maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
+                        } catch (Exception e) {
+                            LOG.error("Error loading {}", maskPathname, e);
+                            throw new IllegalStateException("Error loading " + maskPathname, e);
+                        }
+                        return maskWithImagesEntry.getValue().stream()
+                                .map(maskWithImage -> new Tuple2<>(maskWithImage._1, new Tuple2<>(maskWithImage._2, maskImage)));
+                    })
+                    .map((Tuple2<Tuple2<String, ImagePlus>, Tuple2<String, ImagePlus>> imageAndMaskPair) -> runImageComparison(imageAndMaskPair._1._1, imageAndMaskPair._1._2.getProcessor(), imageAndMaskPair._2._1, imageAndMaskPair._2._2.getProcessor(), maskThreshold))
+                    .iterator();
         });
 
         JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
@@ -187,7 +207,7 @@ class ColorMIPSearch implements Serializable {
                                                     String patternImagePath, ImageProcessor patternImage,
                                                     Integer searchThreshold) {
         try {
-            LOG.info("Compare library file {} with mask {}", libraryImagePath,  patternImagePath);
+            LOG.info("Compare library file {} with mask {} using threshold {}", libraryImagePath,  patternImagePath, searchThreshold);
 
             double pixfludub = pixColorFluctuation / 100;
 

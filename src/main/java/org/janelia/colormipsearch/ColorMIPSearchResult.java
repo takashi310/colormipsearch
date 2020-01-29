@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * The result of comparing a search mask against a given image.
  *
@@ -47,5 +49,17 @@ public class ColorMIPSearchResult implements Serializable {
 
     public boolean isError() {
         return isError;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("patternFilepath", patternFilepath)
+                .append("libraryFilepath", libraryFilepath)
+                .append("matchingSlices", matchingSlices)
+                .append("matchingSlicesPct", matchingSlicesPct)
+                .append("isMatch", isMatch)
+                .append("isError", isError)
+                .toString();
     }
 }
