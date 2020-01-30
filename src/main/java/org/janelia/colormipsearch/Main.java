@@ -60,9 +60,13 @@ public class Main {
                 args.appName, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
         );
         try {
-            colorMIPSearch.loadImages(args.imageFiles);
-//            ImageFinder.findImages(args.maskFiles).forEach(maskPath -> colorMIPSearch.searchMaskFromFileInAllImages(maskPath, args.maskThreshold));
-            colorMIPSearch.searchEveryMaskInAllImages(ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()), args.maskThreshold);
+//            colorMIPSearch.loadImages(ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()));
+//            ImageFinder.findImages(args.maskFiles).forEach(maskPath -> colorMIPSearch.searchMaskFromFileInAllImages(maskPath, args.imageFiles, args.maskThreshold));
+            colorMIPSearch.searchEveryMaskInEveryLibrary(
+                    ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()),
+                    ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()),
+                    args.maskThreshold,
+                    100);
         } finally {
             colorMIPSearch.terminate();
         }
