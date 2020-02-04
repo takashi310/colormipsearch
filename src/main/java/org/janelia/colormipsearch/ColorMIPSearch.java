@@ -1,20 +1,18 @@
 package org.janelia.colormipsearch;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -47,6 +45,11 @@ class ColorMIPSearch implements Serializable {
         PNG,
         TIFF,
         UNKNOWN
+    }
+
+    private enum ResultGroupingCriteria {
+        BY_LIBRARY,
+        BY_MASK;
     }
 
     private static final int ERROR_THRESHOLD = 20;
@@ -134,16 +137,9 @@ class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    Collection<ColorMIPSearchResult>  searchEveryMaskInEveryLibrary(List<String> masksPaths, List<String> librariesPaths, Integer maskThreshold, int defaultPartitionSize) {
-        LOG.info("Searching {} masks against {} libraries", masksPaths.size(), librariesPaths.size());
+    void  compareEveryMaskWithEveryLoadedLibrary(List<String> masksPaths, Integer maskThreshold, int defaultPartitionSize) {
+        LOG.info("Searching {} masks against {} libraries", masksPaths.size(), imagePlusRDD.count());
 
-
-        JavaPairRDD<String, byte[]> librariesWithContentRDDPartitions = sparkContext.parallelize(librariesPaths).mapToPair(libraryImagePath -> {
-            byte[] libraryImageContent = Files.readAllBytes((Paths.get(libraryImagePath)));
-            return new Tuple2<>(libraryImagePath, libraryImageContent);
-        }).cache();
-
-        LOG.info("Libraries partitions/count: {} / {}", librariesWithContentRDDPartitions.getNumPartitions(), librariesWithContentRDDPartitions.count());
         BiFunction<Tuple2<List<List<String>>, List<String>>, String, Tuple2<List<List<String>>, List<String>>> partitionAcumulator = (partitionResult, s) -> {
             List<String> currentPartition;
             if (partitionResult._2.size() == defaultPartitionSize) {
@@ -158,7 +154,7 @@ class ColorMIPSearch implements Serializable {
             return new Tuple2<>(partitionResult._1, currentPartition);
         };
         List<List<String>> masksPartitions = masksPaths.stream().reduce(
-                new Tuple2<List<List<String>>, List<String>>(new ArrayList<>(), new ArrayList<>()),
+                new Tuple2<>(new ArrayList<>(), new ArrayList<>()),
                 partitionAcumulator,
                 (r1, r2) -> r2._1.stream().flatMap(p -> p.stream())
                         .map(s -> partitionAcumulator.apply(r1, s))
@@ -166,30 +162,16 @@ class ColorMIPSearch implements Serializable {
                         .orElse(r1))._1
                 ;
 
-                Lists.partition(masksPaths, defaultPartitionSize);
         JavaRDD<List<String>> masksRDDPartitions = sparkContext.parallelize(masksPartitions);
         LOG.info("Masks partitions/count: {} / {}", masksRDDPartitions.getNumPartitions(), masksRDDPartitions.count());
 
-        JavaPairRDD<Tuple2<String, byte[]>, List<String>> libraryImageAndMasksPairsRDD = librariesWithContentRDDPartitions.cartesian(masksRDDPartitions);
+        JavaPairRDD<Tuple2<String, ImagePlus>, List<String>> libraryImageAndMasksPairsRDD = imagePlusRDD.cartesian(masksRDDPartitions);
         LOG.info("Library masks cartesian product size: {} / {} (partitions/count)", libraryImageAndMasksPairsRDD.getNumPartitions(), libraryImageAndMasksPairsRDD.count());
 
 
         JavaRDD<ColorMIPSearchResult> searchResults = libraryImageAndMasksPairsRDD.mapPartitions(libraryImageAndMasksItr -> {
             Map<String, List<Tuple2<String, Tuple2<String, ImagePlus>>>> maskWithAllImagesFromCurrentPartitionMapping = StreamSupport.stream(Spliterators.spliterator(libraryImageAndMasksItr, Integer.MAX_VALUE, 0), false)
                     .flatMap(libraryImageAndMasks -> libraryImageAndMasks._2.stream().map(maskPath -> new Tuple2<>(maskPath, libraryImageAndMasks._1)))
-                    .map(maskAndImageBytesPair -> {
-                        String imagePathname = maskAndImageBytesPair._2._1;
-                        LOG.debug("Load library image {} from {} bytes", imagePathname, maskAndImageBytesPair._2._2.length);
-                        Path imagePath = Paths.get(imagePathname);
-                        ImagePlus libraryImage;
-                        try {
-                            libraryImage = readImagePlus(imagePath.getFileName().toString(), getImageFormat(imagePathname), new ByteArrayInputStream(maskAndImageBytesPair._2._2));
-                        } catch (Exception e) {
-                            LOG.error("Error loading {}", imagePathname, e);
-                            throw new IllegalStateException("Error loading " + imagePathname, e);
-                        }
-                        return new Tuple2<>(maskAndImageBytesPair._1, new Tuple2<>(imagePathname, libraryImage));
-                    })
                     .collect(Collectors.groupingBy(maskAndImagePair -> maskAndImagePair._1, Collectors.toList()));
 
             return maskWithAllImagesFromCurrentPartitionMapping.entrySet()
@@ -216,91 +198,14 @@ class ColorMIPSearch implements Serializable {
                     .iterator();
         });
 
-        JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
-        LOG.info("Sorted search results partitions: {}", sortedSearchResultsRDD.getNumPartitions());
+        LOG.info("Found {} results in {} partitions", searchResults.count(), searchResults.getNumPartitions());
 
-        List<ColorMIPSearchResult> sortedSearchResults = sortedSearchResultsRDD.collect();
-        LOG.info("Returned {} results for {} masks", sortedSearchResults.size(), masksPaths.size());
-
-        return sortedSearchResults;
-    }
-
-    Collection<ColorMIPSearchResult> searchEveryMaskInAllImages(List<String> maskPathnames, Integer maskThreshold) {
-        LOG.info("Searching {} masks against {} libraries", maskPathnames.size(), imagePlusRDD.count());
-        JavaRDD<String> maskPartitions = sparkContext.parallelize(maskPathnames);
-        LOG.info("Mask partitions/count: {} / {}", maskPartitions.getNumPartitions(), maskPartitions.count());
-
-        JavaPairRDD<Tuple2<String, ImagePlus>, String> imageAndMaskPairs = imagePlusRDD.cartesian(maskPartitions);
-        LOG.info("Image and mask pairs partitions/count: {} / {}", imageAndMaskPairs.getNumPartitions(), imageAndMaskPairs.count());
-
-        JavaRDD<ColorMIPSearchResult> searchResults = imageAndMaskPairs.mapPartitions(imageAndMaskPairsItr -> {
-            // the image should already be in memory so in each partition we only have to load the mask
-            // for that we group the pairs of images and mask from the current partition and load every mask only once per partition
-            Map<String, List<Tuple2<Tuple2<String, ImagePlus>, String>>> maskWithAllImagesFromCurrentPartitionMapping =
-                    StreamSupport.stream(Spliterators.spliterator(imageAndMaskPairsItr, Integer.MAX_VALUE, 0), false)
-                            .collect(Collectors.groupingBy(imageAndMaskPair -> imageAndMaskPair._2));
-            return maskWithAllImagesFromCurrentPartitionMapping.entrySet()
-                    .stream()
-                    .flatMap(maskWithImagesEntry -> {
-                        String maskPathname = maskWithImagesEntry.getKey();
-                        LOG.info("Load mask image from {}", maskPathname);
-                        Path maskPath = Paths.get(maskPathname);
-                        ImagePlus maskImage;
-                        try {
-                            maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
-                        } catch (Exception e) {
-                            LOG.error("Error loading {}", maskPathname, e);
-                            throw new IllegalStateException("Error loading " + maskPathname, e);
-                        }
-                        return maskWithImagesEntry.getValue().stream()
-                                .map(maskWithImage -> {
-                                    Preconditions.checkArgument(maskPathname.equals(maskWithImage._2)); // extra check to ensure the mask is the same as the one we loaded
-                                    return new Tuple2<>(maskWithImage._1, new Tuple2<>(maskWithImage._2, maskImage));
-                                });
-                    })
-                    .map((Tuple2<Tuple2<String, ImagePlus>, Tuple2<String, ImagePlus>> imageAndMaskPair) -> runImageComparison(imageAndMaskPair._1._1, imageAndMaskPair._1._2.getProcessor(), imageAndMaskPair._2._1, imageAndMaskPair._2._2.getProcessor(), maskThreshold))
-                    .iterator();
-        });
-
-        JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
-        LOG.info("Sorted search results partitions: {}", sortedSearchResultsRDD.getNumPartitions());
-
-        List<ColorMIPSearchResult> sortedSearchResults = sortedSearchResultsRDD.collect();
-        LOG.info("Returned {} results for {} masks", sortedSearchResults.size(), maskPathnames.size());
-
-        return sortedSearchResults;
-    }
-
-    List<ColorMIPSearchResult> searchMaskFromFileInAllImages(String maskPathname, Integer maskThreshold) {
-        LOG.info("Searching mask {} against {} libraries", maskPathname, imagePlusRDD.count());
-
-        // for each image partition load the mask once and run the color depth comparison
-        JavaRDD<ColorMIPSearchResult> searchResults = imagePlusRDD.mapPartitions(imagePathPairItr -> StreamSupport.stream(Spliterators.spliterator(imagePathPairItr, Integer.MAX_VALUE, 0), false)
-                .map(imagePathPair -> {
-                    // Cache mask object at the task level
-                    Path maskPath = Paths.get(maskPathname);
-                    ImagePlus maskImage ;
-                    try {
-                        maskImage = readImagePlus(maskPath.getFileName().toString(), maskPathname);
-                    } catch (Exception e) {
-                        LOG.error("Error loading {}", maskPathname, e);
-                        throw new IllegalStateException("Error loading " + maskPathname, e);
-                    }
-                    return runImageComparison(imagePathPair._1, imagePathPair._2.getProcessor(), maskPathname, maskImage.getProcessor(), maskThreshold);
-                })
-                .iterator())
-                ;
-        LOG.info("Search results partitions: {}", searchResults.getNumPartitions());
-
-        JavaRDD<ColorMIPSearchResult> sortedSearchResultsRDD = searchResults.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
-
-        LOG.info("Sorted search results partitions: {}", sortedSearchResultsRDD.getNumPartitions());
-
-        List<ColorMIPSearchResult> sortedSearchResults = sortedSearchResultsRDD.collect();
-
-        LOG.info("Returned {} results for mask {}", sortedSearchResults.size(), maskPathname);
-
-        return sortedSearchResults;
+        // write results for each library
+        LOG.info("Write results for each library item");
+        writeAllSearchResults(searchResults, ResultGroupingCriteria.BY_LIBRARY);
+        // write results for each mask
+        LOG.info("Write results for each mask");
+        writeAllSearchResults(searchResults, ResultGroupingCriteria.BY_MASK);
     }
 
     private ColorMIPSearchResult runImageComparison(String libraryImagePath, ImageProcessor libraryImage,
@@ -326,6 +231,30 @@ class ColorMIPSearch implements Serializable {
         }
     }
 
+    private void writeAllSearchResults(JavaRDD<ColorMIPSearchResult> searchResults, ResultGroupingCriteria groupingCriteria) {
+        JavaPairRDD<String, Iterable<ColorMIPSearchResult>> groupedSearchResults = searchResults.groupBy(sr -> {
+            switch (groupingCriteria) {
+                case BY_MASK:
+                    return sr.getPatternFilepath();
+                case BY_LIBRARY:
+                    return sr.getLibraryFilepath();
+                default:
+                    throw new IllegalArgumentException("Invalid grouping criteria");
+            }
+        });
+        groupedSearchResults.combineByKey(
+                srForKey -> sparkContext.parallelize(Lists.newArrayList(srForKey)),
+                (srForKeyRDD, srForKey) -> srForKeyRDD.union(sparkContext.parallelize(Lists.newArrayList(srForKey))),
+                (sr1RDD, sr2RDD) -> sr1RDD.union(sr2RDD))
+                .foreach(keyWithSearchResults -> {
+                    LOG.info("Sorting results for {}/{} for {}", keyWithSearchResults._2.getNumPartitions(), keyWithSearchResults._2.count(), keyWithSearchResults._1);
+                    JavaRDD<ColorMIPSearchResult> sortedSearchResultsForKey = keyWithSearchResults._2.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
+                    sortedSearchResultsForKey.foreach(sr -> {
+                        LOG.info("Write search results for {}: {} vs {}", keyWithSearchResults._1, sr.getLibraryFilepath(), sr.getPatternFilepath());
+                    });
+                });
+    }
+    
     void terminate() {
         sparkContext.close();
     }

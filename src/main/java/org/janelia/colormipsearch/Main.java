@@ -45,6 +45,9 @@ public class Main {
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         private Double pctPositivePixels = 2.0;
 
+        @Parameter(names = {"--masksFilesPartitionSize"}, description = "Specify how to partition masks files")
+        private Integer masksFilesPartitionSize = 100;
+
         @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
         private String outputDir;
     }
@@ -60,13 +63,11 @@ public class Main {
                 args.appName, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
         );
         try {
-//            colorMIPSearch.loadImages(ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()));
-//            ImageFinder.findImages(args.maskFiles).forEach(maskPath -> colorMIPSearch.searchMaskFromFileInAllImages(maskPath, args.imageFiles, args.maskThreshold));
-            colorMIPSearch.searchEveryMaskInEveryLibrary(
+            colorMIPSearch.loadImages(ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()));
+            colorMIPSearch.compareEveryMaskWithEveryLoadedLibrary(
                     ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()),
-                    ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()),
                     args.maskThreshold,
-                    100);
+                    args.masksFilesPartitionSize);
         } finally {
             colorMIPSearch.terminate();
         }
