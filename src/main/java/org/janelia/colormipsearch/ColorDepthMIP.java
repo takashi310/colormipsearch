@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 class ColorDepthMIP {
     @JsonProperty("_id")
@@ -28,6 +29,8 @@ class ColorDepthMIP {
     @JsonProperty
     List<String> libraries;
     @JsonProperty
+    String sampleRef;
+    @JsonProperty
     CDMIPSample sample;
 
     String findLibrary() {
@@ -38,4 +41,11 @@ class ColorDepthMIP {
         }
     }
 
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("name", name)
+                .toString();
+    }
 }

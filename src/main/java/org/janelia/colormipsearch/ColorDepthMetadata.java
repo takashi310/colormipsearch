@@ -11,13 +11,16 @@ class ColorDepthMetadata {
     @JsonProperty
     String id;
     @JsonProperty
-    String name;
+    String internalName;
     @JsonProperty
-    String lineOrSkeleton;
+    String sampleRef;
+    @JsonProperty
+    String publishedLineOrSkeleton;
     @JsonProperty("image_path")
     String imageUrl;
     @JsonProperty("thumbnail_path")
     String thumbnailUrl;
+    String libraryName;
     @JsonProperty("attrs")
     Map<String, String> attrs = new LinkedHashMap<>();
 

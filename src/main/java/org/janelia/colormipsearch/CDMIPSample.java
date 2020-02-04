@@ -30,5 +30,7 @@ class CDMIPSample {
     @JsonProperty
     String crossBarcode;
     @JsonProperty
+    String sampleRef;
+    @JsonProperty
     String status;
 }

@@ -14,6 +14,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -52,13 +53,11 @@ import org.slf4j.LoggerFactory;
 public class ExtractColorMIPsMetadata {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExtractColorMIPsMetadata.class);
+    // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
+    private static final String EM_LIBRARY = "flyem_hemibrain";
+    private static final String NO_CONSENSUS_LINE = "No Consensus";
 
-    private static final int DEFAULT_PAGE_LENGTH = 100;
-
-    private enum SerializationMethod {
-        AS_LM_LINE,
-        AS_EM_BODY
-    }
+    private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     private static class Args {
         @Parameter(names = {"--jacsURL", "--dataServiceURL"}, description = "JACS data service base URL", required = true)
@@ -76,11 +75,11 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
         private String outputDir;
 
-        @Parameter(names = {"--serializeAs"}, description = "Serialization method - as LM line or as EM body")
-        private SerializationMethod serializeAs = SerializationMethod.AS_LM_LINE;
-
         @Parameter(names = {"--maxResults"}, description = "Maximum number of results to process")
         private int maxResults = 0;
+
+        @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
+        private boolean displayHelpMessage = false;
     }
 
     private final Client httpClient;
@@ -95,43 +94,61 @@ public class ExtractColorMIPsMetadata {
         this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
-    private void writeColorDepthMetadata(String alignmentSpace, String library, String outputDir, SerializationMethod serializationMethod, int maxResults) {
+    private void writeColorDepthMetadata(String alignmentSpace, String library, String outputDir, int maxResults) {
         // get color depth mips from JACS for the specified alignmentSpace and library
         int cdmsCount = countColorDepthMips(alignmentSpace, library);
+        LOG.info("Found {} entities in library {} with alignment space {}", cdmsCount, library, alignmentSpace);
         int maxCdms = maxResults > 0 ? Math.min(cdmsCount, maxResults) : cdmsCount;
+
+        Predicate<String> isEmLibrary = aLibraryName -> StringUtils.equalsIgnoreCase(EM_LIBRARY, aLibraryName);
+        Predicate<ColorDepthMIP> isEmSkeleton = cdmip -> isEmLibrary.test(cdmip.findLibrary());
+        Predicate<ColorDepthMIP> hasSample = cdmip -> cdmip.sample != null;
+        Predicate<ColorDepthMIP> hasConsensusLine = cdmip -> !StringUtils.equalsIgnoreCase(NO_CONSENSUS_LINE, cdmip.sample.line);
+
+        Path outputPath;
+        if (isEmLibrary.test(library)) {
+            outputPath = Paths.get(outputDir, "by_body");
+        } else {
+            outputPath = Paths.get(outputDir, "by_line");
+        }
+        try {
+            Files.createDirectories(outputPath);
+        } catch (IOException e) {
+            LOG.error("Error creating the output directory for {}", outputPath, e);
+        }
 
         for (int pageOffset = 0; pageOffset < maxCdms; pageOffset += DEFAULT_PAGE_LENGTH) {
             List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMips(alignmentSpace, library, pageOffset, DEFAULT_PAGE_LENGTH);
+            LOG.info("Process {} entries from {} out of {}", cdmipsPage.size(), pageOffset, maxCdms);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
-                    .map(cdmip -> asCDMetadata(cdmip, serializationMethod))
-                    .collect(Collectors.groupingBy(cdmip -> cdmip.lineOrSkeleton, Collectors.toList()))
+                    .filter(isEmSkeleton.or(hasSample.and(hasConsensusLine))) // here we may have to filter if it has published name
+                    .map(cdmip -> isEmSkeleton.test(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
+                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedLineOrSkeleton, Collectors.toList()))
                     ;
-            resultsByLineOrSkeleton.forEach((lineOrSkeleton, results) -> writeColorDepthMetadataByLineOrSkeleton(lineOrSkeleton, results, outputDir, serializationMethod));
+            // write the results to the output
+            resultsByLineOrSkeleton
+                    .forEach((lineOrSkeletonName, results) -> writeColorDepthMetadata(outputPath.resolve(lineOrSkeletonName + ".json"), results))
+                    ;
             if (cdmipsPage.size() < DEFAULT_PAGE_LENGTH) {
                 break;
             }
-        }
-        // and write the results to the output
-    }
-
-    private ColorDepthMetadata asCDMetadata(ColorDepthMIP cdmip, SerializationMethod serializationMethod) {
-        switch (serializationMethod) {
-            case AS_LM_LINE: return asLMLineMetadata(cdmip);
-            case AS_EM_BODY: return asEMBodyMetadata(cdmip);
-            default: throw new IllegalArgumentException("Invalid serialization method");
         }
     }
 
     private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.id = cdmip.id;
-        cdMetadata.name = cdmip.name;
+        cdMetadata.internalName = cdmip.name;
+        cdMetadata.sampleRef = cdmip.sampleRef;
+        cdMetadata.libraryName = cdmip.findLibrary();
         cdMetadata.imageUrl = cdmip.publicImageUrl;
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         if (cdmip.sample != null) {
-            cdMetadata.lineOrSkeleton = cdmip.sample.line;
+            cdMetadata.publishedLineOrSkeleton = cdmip.sample.line; // This will have to change to the published line
             cdMetadata.addAttr("Line", cdmip.sample.line);
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
+            cdMetadata.addAttr("Gender", cdmip.sample.gender);
+            cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);
         } else {
             populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
         }
@@ -154,7 +171,7 @@ public class ExtractColorMIPsMetadata {
         } else {
             lineID = line.substring(piSeparator + 1);
         }
-        cdMetadata.lineOrSkeleton = StringUtils.defaultIfBlank(lineID, "Unknown");
+        cdMetadata.publishedLineOrSkeleton = StringUtils.defaultIfBlank(lineID, "Unknown");
         cdMetadata.addAttr("Line", line);
         String slideCode = mipNameComponents.size() > 1 ? mipNameComponents.get(1) : null;
         cdMetadata.addAttr("Slide Code", slideCode);
@@ -163,10 +180,12 @@ public class ExtractColorMIPsMetadata {
     private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.id = cdmip.id;
-        cdMetadata.name = cdmip.name;
+        cdMetadata.internalName = cdmip.name;
+        cdMetadata.sampleRef = cdmip.sampleRef;
+        cdMetadata.libraryName = cdmip.findLibrary();
         cdMetadata.imageUrl = cdmip.publicImageUrl;
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
-        cdMetadata.lineOrSkeleton = extractEMSkeletonIdFromName(cdmip.name);
+        cdMetadata.publishedLineOrSkeleton = extractEMSkeletonIdFromName(cdmip.name);
         cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         return cdMetadata;
@@ -175,25 +194,6 @@ public class ExtractColorMIPsMetadata {
     private String extractEMSkeletonIdFromName(String name) {
         List<String> mipNameComponents = Splitter.on('_').splitToList(name);
         return mipNameComponents.size() > 0 ? mipNameComponents.get(0) : null;
-    }
-
-    private void writeColorDepthMetadataByLineOrSkeleton(String lineOrSkeleton, List<ColorDepthMetadata> results, String outputDir, SerializationMethod serializationMethod) {
-        Path outputFilePath;
-        switch (serializationMethod) {
-            case AS_LM_LINE:
-                outputFilePath = Paths.get(outputDir, "by_line", lineOrSkeleton + ".json");
-                break;
-            case AS_EM_BODY:
-                outputFilePath = Paths.get(outputDir, "by_body", lineOrSkeleton + ".json");
-                break;
-            default: throw new IllegalArgumentException("Invalid serialization method");
-        }
-        try {
-            Files.createDirectories(outputFilePath.getParent());
-            writeColorDepthMetadata(outputFilePath, results);
-        } catch (IOException e) {
-            LOG.error("Error creating the output directory for {}", outputFilePath, e);
-        }
     }
 
     /**
@@ -207,7 +207,7 @@ public class ExtractColorMIPsMetadata {
             RandomAccessFile rf;
             OutputStream outputStream;
             try {
-                LOG.info("Append to {}", outputPath);
+                LOG.debug("Append to {}", outputPath);
                 rf = new RandomAccessFile(outputPath.toFile(), "rw");
                 long rfLength = rf.length();
                 // position FP after the end of the last item
@@ -364,14 +364,20 @@ public class ExtractColorMIPsMetadata {
 
     public static void main(String[] argv) {
         Args args = new Args();
-        JCommander.newBuilder()
+        JCommander cmdline = JCommander.newBuilder()
                 .addObject(args)
-                .build()
-                .parse(argv);
+                .build();
+
+        cmdline.parse(argv);
+
+        if (args.displayHelpMessage) {
+            cmdline.usage();
+            System.exit(0);
+        }
 
         ExtractColorMIPsMetadata cdmipMetadataExtractor = new ExtractColorMIPsMetadata(args.dataServiceURL, args.authorization);
         args.libraries.forEach(library -> {
-            cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.outputDir, args.serializeAs, args.maxResults);
+            cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.outputDir, args.maxResults);
         });
     }
 
