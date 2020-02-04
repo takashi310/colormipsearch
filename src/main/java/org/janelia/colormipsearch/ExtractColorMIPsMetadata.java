@@ -56,7 +56,6 @@ public class ExtractColorMIPsMetadata {
     // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
     private static final String EM_LIBRARY = "flyem_hemibrain";
     private static final String NO_CONSENSUS_LINE = "No Consensus";
-
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     private static class Args {
@@ -141,13 +140,15 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        cdMetadata.imageUrl = cdmip.publicImageUrl;
+        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, TestData.aRandomURL());
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         if (cdmip.sample != null) {
             cdMetadata.publishedLineOrSkeleton = cdmip.sample.line; // This will have to change to the published line
             cdMetadata.addAttr("Line", cdmip.sample.line);
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
+            cdMetadata.addAttr("Published Name", cdmip.sample.publishingName);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
+            cdMetadata.addAttr("Genotype", cdmip.sample.genotype);
             cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);
         } else {
             populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
