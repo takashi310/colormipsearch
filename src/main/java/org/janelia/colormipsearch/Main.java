@@ -8,6 +8,8 @@ import com.beust.jcommander.Parameter;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -15,6 +17,8 @@ import org.apache.spark.api.java.JavaSparkContext;
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
 public class Main {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static class Args {
 
@@ -63,11 +67,19 @@ public class Main {
                 args.appName, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
         );
         try {
-            colorMIPSearch.loadImages(ImageFinder.findImages(args.imageFiles).collect(Collectors.toList()));
-            colorMIPSearch.compareEveryMaskWithEveryLoadedLibrary(
-                    ImageFinder.findImages(args.maskFiles).collect(Collectors.toList()),
-                    args.maskThreshold,
-                    args.masksFilesPartitionSize);
+            List<String> librariesFiles = ImageFinder.findImages(args.imageFiles).collect(Collectors.toList());
+            LOG.info("Found {} libraries files", librariesFiles.size());
+            List<String> masksFiles = ImageFinder.findImages(args.maskFiles).collect(Collectors.toList());
+            LOG.info("Found {} masks files", masksFiles.size());
+            if (librariesFiles.isEmpty() || masksFiles.isEmpty()) {
+                LOG.info("Nothing to do - either the libraries or the masks list is empty");
+            } else {
+                colorMIPSearch.loadImages(librariesFiles);
+                colorMIPSearch.compareEveryMaskWithEveryLoadedLibrary(
+                        masksFiles,
+                        args.maskThreshold,
+                        args.masksFilesPartitionSize);
+            }
         } finally {
             colorMIPSearch.terminate();
         }

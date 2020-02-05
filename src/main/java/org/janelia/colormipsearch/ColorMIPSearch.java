@@ -8,23 +8,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.imageio.ImageIO;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.process.ImageProcessor;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -163,7 +167,7 @@ class ColorMIPSearch implements Serializable {
                 ;
 
         JavaRDD<List<String>> masksRDDPartitions = sparkContext.parallelize(masksPartitions);
-        LOG.info("Masks partitions/count: {} / {}", masksRDDPartitions.getNumPartitions(), masksRDDPartitions.count());
+        LOG.info("Created masks partitions/count: {} / {} from {} items", masksRDDPartitions.getNumPartitions(), masksRDDPartitions.count(), masksPartitions.size());
 
         JavaPairRDD<Tuple2<String, ImagePlus>, List<String>> libraryImageAndMasksPairsRDD = imagePlusRDD.cartesian(masksRDDPartitions);
         LOG.info("Library masks cartesian product size: {} / {} (partitions/count)", libraryImageAndMasksPairsRDD.getNumPartitions(), libraryImageAndMasksPairsRDD.count());
@@ -242,17 +246,30 @@ class ColorMIPSearch implements Serializable {
                     throw new IllegalArgumentException("Invalid grouping criteria");
             }
         });
-        groupedSearchResults.combineByKey(
-                srForKey -> sparkContext.parallelize(Lists.newArrayList(srForKey)),
-                (srForKeyRDD, srForKey) -> srForKeyRDD.union(sparkContext.parallelize(Lists.newArrayList(srForKey))),
-                (sr1RDD, sr2RDD) -> sr1RDD.union(sr2RDD))
-                .foreach(keyWithSearchResults -> {
-                    LOG.info("Sorting results for {}/{} for {}", keyWithSearchResults._2.getNumPartitions(), keyWithSearchResults._2.count(), keyWithSearchResults._1);
-                    JavaRDD<ColorMIPSearchResult> sortedSearchResultsForKey = keyWithSearchResults._2.sortBy(ColorMIPSearchResult::getMatchingSlices, false, 1);
-                    sortedSearchResultsForKey.foreach(sr -> {
-                        LOG.info("Write search results for {}: {} vs {}", keyWithSearchResults._1, sr.getLibraryFilepath(), sr.getPatternFilepath());
-                    });
-                });
+        LOG.info("Grouped {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
+
+        JavaPairRDD<String, List<ColorMIPSearchResult>> combinedSearchResults = groupedSearchResults.combineByKey(
+                srForKey -> StreamSupport.stream(srForKey.spliterator(), true)
+                        .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
+                        .collect(Collectors.toList()),
+                (srForKeyList, srForKey) -> {
+                    LOG.info("Merging {} elements with {} elements", srForKeyList.size(), Iterables.size(srForKey));
+                    return Stream.concat(srForKeyList.stream(), StreamSupport.stream(srForKey.spliterator(), true))
+                            .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
+                            .collect(Collectors.toList());
+                },
+                (sr1List, sr2List) -> {
+                    LOG.info("Merging {} combined elements with {} combined elements", sr1List.size(), sr2List.size());
+                    return Stream.concat(sr1List.stream(), sr2List.stream())
+                            .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
+                            .collect(Collectors.toList());
+               }
+        );
+        LOG.info("Combined {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
+
+        combinedSearchResults.foreach(keyWithSearchResults -> {
+            LOG.info("Write {} sorted results for {}", keyWithSearchResults._2.size(), keyWithSearchResults._1);
+        });
     }
     
     void terminate() {
