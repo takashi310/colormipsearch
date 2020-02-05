@@ -30,6 +30,8 @@ import javax.ws.rs.core.Response;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
+import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -76,9 +78,31 @@ public class ExtractColorMIPsMetadata {
 
         @Parameter(names = {"--maxResults"}, description = "Maximum number of results to process")
         private int maxResults = 0;
+    }
 
+    private static class MainArgs {
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
+    }
+
+    @Parameters(commandDescription = "Group color depth mips")
+    private static class GroupCDMIPArgs {
+        @ParametersDelegate
+        private final Args argsDelegate;
+
+        GroupCDMIPArgs(Args argsDelegate) {
+            this.argsDelegate = argsDelegate;
+        }
+    }
+
+    @Parameters(commandDescription = "Prepare the input arguments for color depth search")
+    private static class PrepareColorDepthSearchArgs {
+        @ParametersDelegate
+        private final Args argsDelegate;
+
+        PrepareColorDepthSearchArgs(Args argsDelegate) {
+            this.argsDelegate = argsDelegate;
+        }
     }
 
     private final Client httpClient;
@@ -117,7 +141,7 @@ public class ExtractColorMIPsMetadata {
         }
 
         for (int pageOffset = 0; pageOffset < maxCdms; pageOffset += DEFAULT_PAGE_LENGTH) {
-            List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMips(alignmentSpace, library, pageOffset, DEFAULT_PAGE_LENGTH);
+            List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, library, pageOffset, DEFAULT_PAGE_LENGTH);
             LOG.info("Process {} entries from {} out of {}", cdmipsPage.size(), pageOffset, maxCdms);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(isEmSkeleton.or(hasSample.and(hasConsensusLine))) // here we may have to filter if it has published name
@@ -287,6 +311,56 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
+    private void prepareColorDepthSearchArgs(String alignmentSpace, String library, String outputDir, int maxResults) {
+        int cdmsCount = countColorDepthMips(alignmentSpace, library);
+        LOG.info("Found {} entities in library {} with alignment space {}", cdmsCount, library, alignmentSpace);
+        int maxCdms = maxResults > 0 ? Math.min(cdmsCount, maxResults) : cdmsCount;
+
+        Path outputPath = Paths.get(outputDir);
+        try {
+            Files.createDirectories(outputPath);
+        } catch (IOException e) {
+            LOG.error("Error creating the output directory for {}", outputPath, e);
+        }
+
+        FileOutputStream outputStream;
+        try {
+            outputStream = new FileOutputStream(outputPath.resolve(library + ".json").toFile());
+        } catch (FileNotFoundException e) {
+            LOG.error("Error opening the outputfile {}", outputPath, e);
+            return;
+        }
+        try {
+            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+            gen.useDefaultPrettyPrinter();
+            gen.writeStartArray();
+            for (int pageOffset = 0; pageOffset < maxCdms; pageOffset += DEFAULT_PAGE_LENGTH) {
+                List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithoutSamples(alignmentSpace, library, pageOffset, DEFAULT_PAGE_LENGTH);
+                LOG.info("Process {} entries from {} out of {}", cdmipsPage.size(), pageOffset, maxCdms);
+                cdmipsPage
+                        .forEach(cdmip -> {
+                            try {
+                                gen.writeStartObject();
+                                gen.writeStringField("id", cdmip.id);
+                                gen.writeStringField("filepath", cdmip.filepath);
+                                gen.writeEndObject();
+                            } catch (IOException e) {
+                                LOG.error("Error writing entry for {}", cdmip, e);
+                            }
+                        });
+            }
+            gen.writeEndArray();
+            gen.flush();
+        } catch (IOException e) {
+            LOG.error("Error writing json args for library {}", library, e);
+        } finally {
+            try {
+                outputStream.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
     private int countColorDepthMips(String alignmentSpace, String library) {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
@@ -300,16 +374,26 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMIP> retrieveColorDepthMips(String alignmentSpace, String library, int offset, int pageLength) {
-        WebTarget target = serverEndpoint.path("/data/colorDepthMIPsWithSamples")
+    private List<ColorDepthMIP> retrieveColorDepthMipsWithSamples(String alignmentSpace, String library, int offset, int pageLength) {
+        return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
+                        .queryParam("libraryName", library)
+                        .queryParam("alignmentSpace", alignmentSpace)
+                        .queryParam("offset", offset)
+                        .queryParam("length", pageLength));
+    }
+
+    private List<ColorDepthMIP> retrieveColorDepthMipsWithoutSamples(String alignmentSpace, String library, int offset, int pageLength) {
+        return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPs")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
                 .queryParam("offset", offset)
-                .queryParam("length", pageLength)
-                ;
-        Response response = createRequestWithCredentials(target.request(MediaType.APPLICATION_JSON)).get();
+                .queryParam("length", pageLength));
+    }
+
+    private List<ColorDepthMIP> retrieveColorDepthMips(WebTarget endpoint) {
+        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON)).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + target + " -> " + response);
+            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
             return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>(){}.getType()));
         }
@@ -364,21 +448,35 @@ public class ExtractColorMIPsMetadata {
     }
 
     public static void main(String[] argv) {
+        MainArgs mainArgs = new MainArgs();
         Args args = new Args();
         JCommander cmdline = JCommander.newBuilder()
-                .addObject(args)
+                .addObject(mainArgs)
+                .addCommand("groupMIPS", new GroupCDMIPArgs(args))
+                .addCommand("prepareCDSArgs", new PrepareColorDepthSearchArgs(args))
                 .build();
 
-        cmdline.parse(argv);
+        try {
+            cmdline.parse(argv);
+        } catch (Exception e) {
+            cmdline.usage();
+            System.exit(1);
+        }
 
-        if (args.displayHelpMessage) {
+        if (mainArgs.displayHelpMessage || StringUtils.isBlank(cmdline.getParsedCommand())) {
             cmdline.usage();
             System.exit(0);
         }
 
         ExtractColorMIPsMetadata cdmipMetadataExtractor = new ExtractColorMIPsMetadata(args.dataServiceURL, args.authorization);
         args.libraries.forEach(library -> {
-            cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.outputDir, args.maxResults);
+            switch (cmdline.getParsedCommand()) {
+                case "groupMIPS":
+                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.outputDir, args.maxResults);
+                    break;
+                case "prepareCDSArgs":
+                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.outputDir, args.maxResults);
+            }
         });
     }
 

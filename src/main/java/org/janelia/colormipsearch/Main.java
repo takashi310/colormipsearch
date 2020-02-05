@@ -47,7 +47,7 @@ public class Main {
         private boolean mirrorMask = false;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
-        private Double pctPositivePixels = 2.0;
+        private Double pctPositivePixels = 0.0;
 
         @Parameter(names = {"--masksFilesPartitionSize"}, description = "Specify how to partition masks files")
         private Integer masksFilesPartitionSize = 100;
