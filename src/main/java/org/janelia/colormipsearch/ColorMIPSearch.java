@@ -87,11 +87,11 @@ class ColorMIPSearch implements Serializable {
         // directory listing stream which does not consider file sizes. As a bonus, it actually respects the parallelism
         // setting, unlike binaryFiles which ignores it unless you set other arcane settings like openCostInByte.
         JavaRDD<MIPImage> cdmipsRDD = sparkContext.parallelize(cdmips);
-        LOG.info("cdmipsRDD {} items in {} partitions", cdmipsRDD.count(), cdmipsRDD.getNumPartitions());
+        LOG.info("cdmipsRDD {} items in {} partitions", cdmips.size(), cdmipsRDD.getNumPartitions());
 
         // This RDD is cached so that it can be reused to search with multiple masks
         JavaRDD<MIPImage> cdmipImagesRDD = cdmipsRDD.map(cdmip -> cdmip.withImage(readImagePlus(cdmip.id, cdmip.filepath)));
-        LOG.info("cdmipImagesRDD {} images in {} partitions", cdmipImagesRDD.count(), cdmipImagesRDD.getNumPartitions());
+        LOG.info("cdmipImagesRDD {} images in {} partitions", cdmips.size(), cdmipImagesRDD.getNumPartitions());
         return cdmipImagesRDD;
     }
 
@@ -137,14 +137,17 @@ class ColorMIPSearch implements Serializable {
     void  compareEveryMaskWithEveryLibrary(List<MIPImage> maskMIPS, List<MIPImage> libraryMIPS, Integer maskThreshold) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
+        long nlibraries = libraryMIPS.size();
+        long nmasks = maskMIPS.size();
+
         JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS);
-        LOG.info("Created RDD libraries and put {} items into {} partitions", librariesRDD.count(), librariesRDD.getNumPartitions());
+        LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
         JavaRDD<MIPImage> masksRDD = sparkContext.parallelize(maskMIPS);
-        LOG.info("Created RDD masks and put {} items into {} partitions", masksRDD.count(), masksRDD.getNumPartitions());
+        LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
         JavaPairRDD<MIPImage, MIPImage> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
-        LOG.info("Created {} library masks pairs in {} partitions", librariesMasksPairsRDD.count(), librariesMasksPairsRDD.getNumPartitions());
+        LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
         JavaRDD<ColorMIPSearchResult> allSearchResults = librariesMasksPairsRDD
                 .filter(libraryMaskPair -> new File(libraryMaskPair._1.filepath).exists() && new File(libraryMaskPair._2.filepath).exists())
@@ -170,13 +173,11 @@ class ColorMIPSearch implements Serializable {
                 })
                 ;
 
-        LOG.info("Found {} results in {} partitions", allSearchResults.count(), allSearchResults.getNumPartitions());
+        LOG.info("Finished searching all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResults.getNumPartitions());
 
         JavaRDD<ColorMIPSearchResult> matchingSearchResults = allSearchResults.filter(sr -> sr.isMatch());
         JavaRDD<ColorMIPSearchResult> errorSearchResults = allSearchResults.filter(sr -> sr.isMatch());
-        LOG.info("Found {} matching results in {} partitions and {} error results in {} partitions",
-                matchingSearchResults.count(), matchingSearchResults.getNumPartitions(),
-                errorSearchResults.count(), errorSearchResults.getNumPartitions());
+        LOG.info("Finished filtering matching and error results");
 
         // write results for each library
         LOG.info("Write matching results for each library item");
@@ -226,7 +227,7 @@ class ColorMIPSearch implements Serializable {
                     throw new IllegalArgumentException("Invalid grouping criteria");
             }
         });
-        LOG.info("Grouped {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
+        LOG.info("Finished grouping into {} partitions using {} criteria", groupedSearchResults.getNumPartitions(), groupingCriteria);
 
         JavaPairRDD<String, List<ColorMIPSearchResult>> combinedSearchResults = groupedSearchResults.combineByKey(
                 srForKey -> {
@@ -248,10 +249,12 @@ class ColorMIPSearch implements Serializable {
                             .collect(Collectors.toList());
                 })
                 ;
-        LOG.info("Combined {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
+        LOG.info("Finished combining all results by key in {} partitions using {} criteria", combinedSearchResults.getNumPartitions(), groupingCriteria);
 
         combinedSearchResults
-                .foreach(keyWithSearchResults -> writeSearchResults(keyWithSearchResults._1, keyWithSearchResults._2));
+                .foreach(keyWithSearchResults -> writeSearchResults(keyWithSearchResults._1, keyWithSearchResults._2))
+        ;
+        LOG.info("Finished writing the search results by {}", groupingCriteria);
     }
 
     private Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
