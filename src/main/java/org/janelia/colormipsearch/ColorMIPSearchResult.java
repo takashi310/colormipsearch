@@ -66,7 +66,9 @@ public class ColorMIPSearchResult implements Serializable {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .append("patternId", patternId)
                 .append("patternFilepath", patternFilepath)
+                .append("libraryId", libraryId)
                 .append("libraryFilepath", libraryFilepath)
                 .append("matchingSlices", matchingSlices)
                 .append("matchingSlicesPct", matchingSlicesPct)

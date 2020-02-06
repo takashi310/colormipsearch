@@ -90,20 +90,17 @@ class ColorMIPSearch implements Serializable {
      * Load provided image libraries into memory.
      * @param cdmips
      */
-    JavaPairRDD<String, ImagePlus> loadMIPS(List<ColorDepthMIP> cdmips) {
+    JavaRDD<MIPImage> loadMIPS(List<MIPImage> cdmips) {
         LOG.info("Load {} mips", cdmips.size());
 
         // This is a lot faster than using binaryFiles because 1) the paths are shuffled, 2) we use an optimized
         // directory listing stream which does not consider file sizes. As a bonus, it actually respects the parallelism
         // setting, unlike binaryFiles which ignores it unless you set other arcane settings like openCostInByte.
-        JavaRDD<ColorDepthMIP> cdmipsRDD = sparkContext.parallelize(cdmips);
+        JavaRDD<MIPImage> cdmipsRDD = sparkContext.parallelize(cdmips);
         LOG.info("cdmipsRDD {} items in {} partitions", cdmipsRDD.count(), cdmipsRDD.getNumPartitions());
 
         // This RDD is cached so that it can be reused to search with multiple masks
-        JavaPairRDD<String, ImagePlus> cdmipImagesRDD = cdmipsRDD.mapToPair(cdmip -> {
-            return new Tuple2<>(cdmip.id, readImagePlus(cdmip.id, cdmip.filepath));
-        });
-
+        JavaRDD<MIPImage> cdmipImagesRDD = cdmipsRDD.map(cdmip -> cdmip.withImage(readImagePlus(cdmip.id, cdmip.filepath)));
         LOG.info("cdmipImagesRDD {} images in {} partitions", cdmipImagesRDD.count(), cdmipImagesRDD.getNumPartitions());
         return cdmipImagesRDD;
     }
@@ -147,38 +144,40 @@ class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MIPImage> maskMIPS, List<MIPImage> libraryMIPS, Integer maskThreshold, int defaultPartitionSize) {
+    void  compareEveryMaskWithEveryLibrary(List<MIPImage> maskMIPS, List<MIPImage> libraryMIPS, Integer maskThreshold) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
-        List<List<MIPImage>> partitionedLibraries = partitionList(libraryMIPS, defaultPartitionSize);
-        LOG.info("Split {} libraries into {} partitions", libraryMIPS.size(), partitionedLibraries.size());
-
-        List<List<MIPImage>> partitionedMasks = partitionList(maskMIPS, defaultPartitionSize);
-        LOG.info("Split {} masks into {} partitions", maskMIPS.size(), partitionedMasks.size());
-
-        JavaRDD<List<MIPImage>> librariesRDD = sparkContext.parallelize(partitionedLibraries);
+        JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS);
         LOG.info("Created RDD libraries and put {} items into {} partitions", librariesRDD.count(), librariesRDD.getNumPartitions());
 
-        JavaRDD<List<MIPImage>> masksRDD = sparkContext.parallelize(partitionedMasks);
+        JavaRDD<MIPImage> masksRDD = sparkContext.parallelize(maskMIPS);
         LOG.info("Created RDD masks and put {} items into {} partitions", masksRDD.count(), masksRDD.getNumPartitions());
 
-        JavaPairRDD<List<MIPImage>, List<MIPImage>> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<MIPImage, MIPImage> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", librariesMasksPairsRDD.count(), librariesMasksPairsRDD.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> searchResults = librariesMasksPairsRDD.mapPartitions(librariesAndMasksItr -> {
-            return StreamSupport.stream(Spliterators.spliterator(librariesAndMasksItr, Integer.MAX_VALUE, 0), true)
-                    .flatMap(librariesAndMasks -> librariesAndMasks._1.stream()
-                            .filter(libraryMIP -> new File(libraryMIP.filepath).exists())
-                            .map(libraryMIP -> libraryMIP.withImage(readImagePlus(libraryMIP.id, libraryMIP.filepath)))
-                            .flatMap(libraryMIPWithImage -> librariesAndMasks._2.stream()
-                                    .filter(maskMIP -> new File(maskMIP.filepath).exists())
-                                    .map(maskMIP -> maskMIP.withImage(readImagePlus(maskMIP.id, maskMIP.filepath)))
-                                    .map(maskMIPWithImage -> new Tuple2<>(libraryMIPWithImage, maskMIPWithImage)))
-                    )
-                    .map((Tuple2<MIPImage, MIPImage> libraryAndMaskPair) -> runImageComparison(libraryAndMaskPair._1, libraryAndMaskPair._2, maskThreshold))
-                    .iterator()
-            ;
-        });
+        JavaRDD<ColorMIPSearchResult> searchResults = librariesMasksPairsRDD
+                .filter(libraryMaskPair -> new File(libraryMaskPair._1.filepath).exists() && new File(libraryMaskPair._2.filepath).exists())
+                .groupBy(libraryMaskPair -> libraryMaskPair._2)
+                .flatMap(maskAndLibrariesPair -> {
+                    MIPImage maskMIP = maskAndLibrariesPair._1;
+                    if (maskMIP.hasNoImage()) {
+                        LOG.info("Load mask image for {}", maskMIP);
+                        maskMIP.withImage(readImagePlus(maskMIP.id, maskMIP.filepath));
+                    }
+                    return StreamSupport.stream(maskAndLibrariesPair._2.spliterator(), true)
+                            .map(libraryMaskPair -> libraryMaskPair._1)
+                            .map(libraryMIP -> {
+                                if (libraryMIP.hasNoImage()) {
+                                    LOG.info("Load library image for {}", libraryMIP);
+                                    libraryMIP.withImage(readImagePlus(libraryMIP.id, libraryMIP.filepath));
+                                }
+                                return runImageComparison(libraryMIP, maskMIP, maskThreshold);
+                            })
+                            .iterator()
+                            ;
+                })
+                .filter(sr -> sr.getMatchingSlices() > 0);
 
         LOG.info("Found {} results in {} partitions", searchResults.count(), searchResults.getNumPartitions());
 
@@ -243,13 +242,43 @@ class ColorMIPSearch implements Serializable {
         }
     }
 
+    private void writeSingleSearchResult(ColorMIPSearchResult searchResult) {
+        FileOutputStream outputStream;
+        File outputFile = new File(outputPath, searchResult.getLibraryId() + "-" + searchResult.getPatternId() + ".json");
+        LOG.info("Write search result {} to {}", searchResult, outputFile);
+        try {
+            outputStream = new FileOutputStream(outputFile);
+        } catch (FileNotFoundException e) {
+            LOG.error("Error opening the outputfile {}", outputPath, e);
+            return;
+        }
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+            gen.useDefaultPrettyPrinter();
+            gen.writeStartObject();
+            gen.writeArrayFieldStart("results");
+            gen.writeObject(searchResult);
+            gen.writeEndArray();
+            gen.writeEndObject();
+            gen.flush();
+        } catch (IOException e) {
+            LOG.error("Error writing json output for {} outputfile {}", searchResult, outputPath, e);
+        } finally {
+            try {
+                outputStream.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
     private void writeAllSearchResults(JavaRDD<ColorMIPSearchResult> searchResults, ResultGroupingCriteria groupingCriteria) {
         JavaPairRDD<String, Iterable<ColorMIPSearchResult>> groupedSearchResults = searchResults.groupBy(sr -> {
             switch (groupingCriteria) {
                 case BY_MASK:
-                    return sr.getPatternFilepath();
+                    return sr.getPatternId();
                 case BY_LIBRARY:
-                    return sr.getLibraryFilepath();
+                    return sr.getLibraryId();
                 default:
                     throw new IllegalArgumentException("Invalid grouping criteria");
             }
@@ -276,9 +305,9 @@ class ColorMIPSearch implements Serializable {
         LOG.info("Combined {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
 
         combinedSearchResults.foreach(keyWithSearchResults -> {
-            LOG.info("Write {} sorted results for {}", keyWithSearchResults._2.size(), keyWithSearchResults._1);
             FileOutputStream outputStream;
             File outputFile = new File(outputPath, keyWithSearchResults._1 + ".json");
+            LOG.info("Write {} sorted results for {} to {}", keyWithSearchResults._2.size(), keyWithSearchResults._1, outputFile);
             try {
                 outputStream = new FileOutputStream(outputFile);
             } catch (FileNotFoundException e) {
@@ -305,7 +334,6 @@ class ColorMIPSearch implements Serializable {
                 } catch (IOException ignore) {
                 }
             }
-
         });
     }
     

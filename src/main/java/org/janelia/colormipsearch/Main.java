@@ -114,7 +114,7 @@ public class Main {
                     })
                     .collect(Collectors.toList());
 
-            colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips, args.maskThreshold, args.masksFilesPartitionSize);
+            colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips, args.maskThreshold);
         } finally {
             colorMIPSearch.terminate();
         }
