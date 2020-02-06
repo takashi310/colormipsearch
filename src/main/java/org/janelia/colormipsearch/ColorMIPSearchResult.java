@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
@@ -61,6 +63,34 @@ public class ColorMIPSearchResult implements Serializable {
 
     public boolean isError() {
         return isError;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ColorMIPSearchResult that = (ColorMIPSearchResult) o;
+
+        return new EqualsBuilder()
+                .append(matchingSlices, that.matchingSlices)
+                .append(patternId, that.patternId)
+                .append(patternFilepath, that.patternFilepath)
+                .append(libraryId, that.libraryId)
+                .append(libraryFilepath, that.libraryFilepath)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(patternId)
+                .append(patternFilepath)
+                .append(libraryId)
+                .append(libraryFilepath)
+                .append(matchingSlices)
+                .toHashCode();
     }
 
     @Override

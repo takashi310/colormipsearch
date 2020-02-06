@@ -258,7 +258,7 @@ public class ExtractColorMIPsMetadata {
                 gen.flush();
                 // reset the position
                 rf.seek(endOfLastItemPos);
-                // and now start writing theactual elements
+                // and now start writing the actual elements
                 writeColorDepthArrayValues(gen, results);
                 gen.writeEndArray();
                 gen.writeEndObject();

@@ -6,17 +6,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.io.Serializable;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.UncheckedIOException;
+import java.nio.channels.Channels;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Spliterators;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -26,22 +22,16 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 import ij.ImagePlus;
 import ij.io.Opener;
-import ij.process.ImageProcessor;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Tuple2;
-import scala.Tuple3;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -156,7 +146,7 @@ class ColorMIPSearch implements Serializable {
         JavaPairRDD<MIPImage, MIPImage> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", librariesMasksPairsRDD.count(), librariesMasksPairsRDD.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> searchResults = librariesMasksPairsRDD
+        JavaRDD<ColorMIPSearchResult> allSearchResults = librariesMasksPairsRDD
                 .filter(libraryMaskPair -> new File(libraryMaskPair._1.filepath).exists() && new File(libraryMaskPair._2.filepath).exists())
                 .groupBy(libraryMaskPair -> libraryMaskPair._2)
                 .flatMap(maskAndLibrariesPair -> {
@@ -174,43 +164,26 @@ class ColorMIPSearch implements Serializable {
                                 }
                                 return runImageComparison(libraryMIP, maskMIP, maskThreshold);
                             })
+                            .filter(sr -> sr.isMatch() || sr.isError())
                             .iterator()
                             ;
                 })
-                .filter(sr -> sr.getMatchingSlices() > 0);
+                ;
 
-        LOG.info("Found {} results in {} partitions", searchResults.count(), searchResults.getNumPartitions());
+        LOG.info("Found {} results in {} partitions", allSearchResults.count(), allSearchResults.getNumPartitions());
+
+        JavaRDD<ColorMIPSearchResult> matchingSearchResults = allSearchResults.filter(sr -> sr.isMatch());
+        JavaRDD<ColorMIPSearchResult> errorSearchResults = allSearchResults.filter(sr -> sr.isMatch());
+        LOG.info("Found {} matching results in {} partitions and {} error results in {} partitions",
+                matchingSearchResults.count(), matchingSearchResults.getNumPartitions(),
+                errorSearchResults.count(), errorSearchResults.getNumPartitions());
 
         // write results for each library
-        LOG.info("Write results for each library item");
-        writeAllSearchResults(searchResults, ResultGroupingCriteria.BY_LIBRARY);
+        LOG.info("Write matching results for each library item");
+        writeAllSearchResults(matchingSearchResults, ResultGroupingCriteria.BY_LIBRARY);
         // write results for each mask
-        LOG.info("Write results for each mask");
-        writeAllSearchResults(searchResults, ResultGroupingCriteria.BY_MASK);
-    }
-
-    private <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
-        BiFunction<Tuple2<List<List<T>>, List<T>>, T, Tuple2<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
-            List<T> currentPartition;
-            if (partitionResult._2.size() == partitionSize) {
-                currentPartition = new ArrayList<>();
-            } else {
-                currentPartition = partitionResult._2;
-            }
-            currentPartition.add(s);
-            if (currentPartition.size() == 1) {
-                partitionResult._1.add(currentPartition);
-            }
-            return new Tuple2<>(partitionResult._1, currentPartition);
-        };
-        return l.stream().reduce(
-                new Tuple2<>(new ArrayList<>(), new ArrayList<>()),
-                partitionAcumulator,
-                (r1, r2) -> r2._1.stream().flatMap(p -> p.stream())
-                        .map(s -> partitionAcumulator.apply(r1, s))
-                        .reduce((first, second) -> second)
-                        .orElse(r1))._1
-                ;
+        LOG.info("Write matching results for each mask");
+        writeAllSearchResults(matchingSearchResults, ResultGroupingCriteria.BY_MASK);
     }
 
     private ColorMIPSearchResult runImageComparison(MIPImage libraryMIP, MIPImage patternMIP, Integer searchThreshold) {
@@ -242,36 +215,6 @@ class ColorMIPSearch implements Serializable {
         }
     }
 
-    private void writeSingleSearchResult(ColorMIPSearchResult searchResult) {
-        FileOutputStream outputStream;
-        File outputFile = new File(outputPath, searchResult.getLibraryId() + "-" + searchResult.getPatternId() + ".json");
-        LOG.info("Write search result {} to {}", searchResult, outputFile);
-        try {
-            outputStream = new FileOutputStream(outputFile);
-        } catch (FileNotFoundException e) {
-            LOG.error("Error opening the outputfile {}", outputPath, e);
-            return;
-        }
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
-            gen.useDefaultPrettyPrinter();
-            gen.writeStartObject();
-            gen.writeArrayFieldStart("results");
-            gen.writeObject(searchResult);
-            gen.writeEndArray();
-            gen.writeEndObject();
-            gen.flush();
-        } catch (IOException e) {
-            LOG.error("Error writing json output for {} outputfile {}", searchResult, outputPath, e);
-        } finally {
-            try {
-                outputStream.close();
-            } catch (IOException ignore) {
-            }
-        }
-    }
-
     private void writeAllSearchResults(JavaRDD<ColorMIPSearchResult> searchResults, ResultGroupingCriteria groupingCriteria) {
         JavaPairRDD<String, Iterable<ColorMIPSearchResult>> groupedSearchResults = searchResults.groupBy(sr -> {
             switch (groupingCriteria) {
@@ -286,57 +229,118 @@ class ColorMIPSearch implements Serializable {
         LOG.info("Grouped {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
 
         JavaPairRDD<String, List<ColorMIPSearchResult>> combinedSearchResults = groupedSearchResults.combineByKey(
-                srForKey -> StreamSupport.stream(srForKey.spliterator(), true)
-                        .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
-                        .collect(Collectors.toList()),
+                srForKey -> {
+                    LOG.info("Combine and sort {} elements", Iterables.size(srForKey));
+                    return StreamSupport.stream(srForKey.spliterator(), true)
+                            .sorted(getColorMIPSearchComparator())
+                            .collect(Collectors.toList());
+                },
                 (srForKeyList, srForKey) -> {
                     LOG.info("Merging {} elements with {} elements", srForKeyList.size(), Iterables.size(srForKey));
                     return Stream.concat(srForKeyList.stream(), StreamSupport.stream(srForKey.spliterator(), true))
-                            .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
+                            .sorted(getColorMIPSearchComparator())
                             .collect(Collectors.toList());
                 },
                 (sr1List, sr2List) -> {
                     LOG.info("Merging {} combined elements with {} combined elements", sr1List.size(), sr2List.size());
                     return Stream.concat(sr1List.stream(), sr2List.stream())
-                            .sorted(Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices))
+                            .sorted(getColorMIPSearchComparator())
                             .collect(Collectors.toList());
-               }
-        );
+                })
+                ;
         LOG.info("Combined {} results into {} partitions using {} criteria", groupedSearchResults.count(), groupedSearchResults.getNumPartitions(), groupingCriteria);
 
-        combinedSearchResults.foreach(keyWithSearchResults -> {
-            FileOutputStream outputStream;
-            File outputFile = new File(outputPath, keyWithSearchResults._1 + ".json");
-            LOG.info("Write {} sorted results for {} to {}", keyWithSearchResults._2.size(), keyWithSearchResults._1, outputFile);
+        combinedSearchResults
+                .foreach(keyWithSearchResults -> writeSearchResults(keyWithSearchResults._1, keyWithSearchResults._2));
+    }
+
+    private Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
+        return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
+    }
+
+    private void writeSearchResults(String filename, List<ColorMIPSearchResult> searchResults) {
+        OutputStream outputStream;
+        File outputFile = new File(outputPath, filename + ".json");
+        LOG.info("Write {} results {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
+
+        ObjectMapper mapper = new ObjectMapper();
+        if (outputFile.exists()) {
+            LOG.debug("Append to {}", outputFile);
+            RandomAccessFile rf;
             try {
-                outputStream = new FileOutputStream(outputFile);
-            } catch (FileNotFoundException e) {
+                rf = new RandomAccessFile(outputFile, "rw");
+                long rfLength = rf.length();
+                // position FP after the end of the last item
+                // this may not work on Windows because of the new line separator
+                // - so on windows it may need to rollback more than 4 chars
+                rf.seek(rfLength - 4);
+                outputStream = Channels.newOutputStream(rf.getChannel());
+            } catch (IOException e) {
                 LOG.error("Error opening the outputfile {}", outputPath, e);
-                return;
+                throw new UncheckedIOException(e);
             }
             try {
-                ObjectMapper mapper = new ObjectMapper();
+                // FP is positioned at the end of the last element
+                long endOfLastItemPos = rf.getFilePointer();
+                outputStream.write(", ".getBytes()); // write the separator for the next array element
+                // append the new elements to the existing results
                 JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
                 gen.useDefaultPrettyPrinter();
-                gen.writeStartObject();
+                gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
                 gen.writeArrayFieldStart("results");
-                for (ColorMIPSearchResult sr : keyWithSearchResults._2) {
+                gen.writeObject(searchResults.get(0)); // write the first element - it can be any element or dummy object
+                                                       // just to fool the generator that there is already an element in the array
+                gen.flush();
+                // reset the position
+                rf.seek(endOfLastItemPos);
+                // and now start writing the actual elements
+                for (ColorMIPSearchResult sr : searchResults) {
                     gen.writeObject(sr);
                 }
                 gen.writeEndArray();
                 gen.writeEndObject();
                 gen.flush();
+                long currentPos = rf.getFilePointer();
+                rf.setLength(currentPos); // truncate
             } catch (IOException e) {
-                LOG.error("Error writing json output for {} outputfile {}", keyWithSearchResults._2, outputPath, e);
+                LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
+                throw new UncheckedIOException(e);
             } finally {
                 try {
                     outputStream.close();
                 } catch (IOException ignore) {
                 }
             }
-        });
+        } else {
+            try {
+                outputStream = new FileOutputStream(outputFile);
+            } catch (FileNotFoundException e) {
+                LOG.error("Error opening the outputfile {}", outputPath, e);
+                throw new UncheckedIOException(e);
+            }
+            try {
+                JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+                gen.useDefaultPrettyPrinter();
+                gen.writeStartObject();
+                gen.writeArrayFieldStart("results");
+                for (ColorMIPSearchResult sr : searchResults) {
+                    gen.writeObject(sr);
+                }
+                gen.writeEndArray();
+                gen.writeEndObject();
+                gen.flush();
+            } catch (IOException e) {
+                LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
+                throw new UncheckedIOException(e);
+            } finally {
+                try {
+                    outputStream.close();
+                } catch (IOException ignore) {
+                }
+            }
+        }
     }
-    
+
     void terminate() {
         sparkContext.close();
     }
