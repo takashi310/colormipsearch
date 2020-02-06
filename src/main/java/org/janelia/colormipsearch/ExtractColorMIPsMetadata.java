@@ -60,6 +60,11 @@ public class ExtractColorMIPsMetadata {
     private static final String NO_CONSENSUS_LINE = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
+    private static class MainArgs {
+        @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
+        private boolean displayHelpMessage = false;
+    }
+
     private static class Args {
         @Parameter(names = {"--jacsURL", "--dataServiceURL"}, description = "JACS data service base URL", required = true)
         private String dataServiceURL;
@@ -78,11 +83,6 @@ public class ExtractColorMIPsMetadata {
 
         @Parameter(names = {"--maxResults"}, description = "Maximum number of results to process")
         private int maxResults = 0;
-    }
-
-    private static class MainArgs {
-        @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
-        private boolean displayHelpMessage = false;
     }
 
     @Parameters(commandDescription = "Group color depth mips")

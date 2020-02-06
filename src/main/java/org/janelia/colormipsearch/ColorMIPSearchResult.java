@@ -11,15 +11,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class ColorMIPSearchResult implements Serializable {
 
+    private final String patternId;
     private final String patternFilepath;
+    private final String libraryId;
     private final String libraryFilepath;
     private final int matchingSlices;
     private final double matchingSlicesPct;
     private final boolean isMatch;
     private final boolean isError;
 
-    public ColorMIPSearchResult(String patternFilepath, String libraryFilepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+    public ColorMIPSearchResult(String patternId, String patternFilepath, String libraryId, String libraryFilepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+        this.patternId = patternId;
         this.patternFilepath = patternFilepath;
+        this.libraryId = libraryId;
         this.libraryFilepath = libraryFilepath;
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
@@ -27,8 +31,16 @@ public class ColorMIPSearchResult implements Serializable {
         this.isError = isError;
     }
 
+    public String getPatternId() {
+        return patternId;
+    }
+
     public String getPatternFilepath() {
         return patternFilepath;
+    }
+
+    public String getLibraryId() {
+        return libraryId;
     }
 
     public String getLibraryFilepath() {

@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class ColorDepthMIP {
+class ColorDepthMIP implements Serializable {
     @JsonProperty("_id")
     String id;
     @JsonProperty

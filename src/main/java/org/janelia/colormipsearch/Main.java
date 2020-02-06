@@ -1,13 +1,17 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +30,10 @@ public class Main {
         private String appName = ColorMIPSearch.class.getName();
 
         @Parameter(names = {"--images", "-i"}, description = "Comma-delimited list of directories containing images to search", required = true, variableArity = true)
-        private List<String> imageFiles;
+        private List<String> librariesInputs;
 
         @Parameter(names = {"--masks", "-m"}, description = "Image file(s) to use as the search masks", required = true, variableArity = true)
-        private List<String> maskFiles;
+        private List<String> masksInputs;
 
         @Parameter(names = {"--dataThreshold"}, description = "Data threshold")
         private Integer dataThreshold = 100;
@@ -54,32 +58,63 @@ public class Main {
 
         @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
         private String outputDir;
+
+        @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
+        private boolean displayHelpMessage = false;
     }
 
     public static void main(String[] argv) {
         Args args = new Args();
-        JCommander.newBuilder()
+        JCommander cmdline = JCommander.newBuilder()
                 .addObject(args)
-                .build()
-                .parse(argv);
+                .build();
+
+        try {
+            cmdline.parse(argv);
+        } catch (Exception e) {
+            cmdline.usage();
+            System.exit(1);
+        }
+
+        if (args.displayHelpMessage) {
+            cmdline.usage();
+            System.exit(0);
+        }
 
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.appName, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
+                args.appName, args.outputDir, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
         );
         try {
-            List<String> librariesFiles = ImageFinder.findImages(args.imageFiles).collect(Collectors.toList());
-            LOG.info("Found {} libraries files", librariesFiles.size());
-            List<String> masksFiles = ImageFinder.findImages(args.maskFiles).collect(Collectors.toList());
-            LOG.info("Found {} masks files", masksFiles.size());
-            if (librariesFiles.isEmpty() || masksFiles.isEmpty()) {
-                LOG.info("Nothing to do - either the libraries or the masks list is empty");
-            } else {
-                colorMIPSearch.loadImages(librariesFiles);
-                colorMIPSearch.compareEveryMaskWithEveryLoadedLibrary(
-                        masksFiles,
-                        args.maskThreshold,
-                        args.masksFilesPartitionSize);
-            }
+            ObjectMapper mapper = new ObjectMapper()
+                                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            ;
+            List<MIPImage> libraryMips = args.librariesInputs.stream()
+                    .flatMap(libraryInput -> {
+                        try {
+                            List<MIPImage> content = mapper.readValue(new File(libraryInput), new TypeReference<List<MIPImage>>(){});
+                            LOG.info("Read {} mips from library {}", content.size(), libraryInput);
+                            return content.stream();
+                        } catch (IOException e) {
+                            LOG.error("Error reading {}", libraryInput, e);
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            List<MIPImage> masksMips = args.masksInputs.stream()
+                    .flatMap(masksInput -> {
+                        try {
+                            List<MIPImage> content = mapper.readValue(new File(masksInput), new TypeReference<List<MIPImage>>(){});
+                            LOG.info("Read {} mips from mask {}", content.size(), masksInput);
+                            return content.stream();
+                        } catch (IOException e) {
+                            LOG.error("Error reading {}", masksInput, e);
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips, args.maskThreshold, args.masksFilesPartitionSize);
         } finally {
             colorMIPSearch.terminate();
         }
