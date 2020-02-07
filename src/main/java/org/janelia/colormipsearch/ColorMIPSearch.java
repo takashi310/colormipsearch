@@ -166,13 +166,6 @@ class ColorMIPSearch implements Serializable {
                 ;
         LOG.info("Created RDD search results fpr  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
-        Map<MinimalColorDepthMIP, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
-                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream().filter(ColorMIPSearchResult::isError).collect(Collectors.toList())))
-                .filter(srByMask -> !srByMask._2.isEmpty())
-                .collectAsMap()
-                ;
-        LOG.error("Errors found for the following searches: {}", errorSearchResultsByMaskMIP);
-
         // write results for each mask
         JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> matchingSearchResultsByMask = allSearchResultsPartitionedByMaskMIP
                 .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream()
@@ -184,6 +177,14 @@ class ColorMIPSearch implements Serializable {
 
         // write results for each library now
         writeAllSearchResults(matchingSearchResultsByMask.flatMap(srByLibraryMIP -> srByLibraryMIP._2.iterator()), ResultGroupingCriteria.BY_LIBRARY);
+
+        // check for errors
+        Map<MinimalColorDepthMIP, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
+                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream().filter(ColorMIPSearchResult::isError).collect(Collectors.toList())))
+                .filter(srByMask -> !srByMask._2.isEmpty())
+                .collectAsMap()
+                ;
+        LOG.error("Errors found for the following searches: {}", errorSearchResultsByMaskMIP);
     }
 
     private ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
