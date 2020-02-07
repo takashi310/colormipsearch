@@ -34,4 +34,8 @@ class MIPWithImage extends MinimalColorDepthMIP {
     void set(int pi, int pixel) {
         pixels[pi] = pixel;
     }
+
+    MinimalColorDepthMIP mipInfo() {
+        return new MinimalColorDepthMIP(id, filepath);
+    }
 }

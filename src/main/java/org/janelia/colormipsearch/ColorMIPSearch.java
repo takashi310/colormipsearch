@@ -13,6 +13,7 @@ import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,7 +24,6 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
 
 import ij.ImagePlus;
@@ -80,7 +80,7 @@ class ColorMIPSearch implements Serializable {
     }
 
     private MIPWithImage loadMIP(MinimalColorDepthMIP mip) {
-        Stopwatch watch = Stopwatch.createStarted();
+        long startTime = System.currentTimeMillis();
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
         try {
@@ -97,7 +97,7 @@ class ColorMIPSearch implements Serializable {
                 inputStream.close();
             } catch (IOException ignore) {
             }
-            LOG.debug("Loaded MIP {} in {}ms", mip, watch.elapsed(TimeUnit.MILLISECONDS));
+            LOG.debug("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -152,30 +152,42 @@ class ColorMIPSearch implements Serializable {
         JavaPairRDD<MIPWithImage, MinimalColorDepthMIP> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> allSearchResults = librariesMasksPairsRDD
-                .map(libraryWithMaskPair -> new Tuple2<>(libraryWithMaskPair._1, loadMIP(libraryWithMaskPair._2)))
-                .map(libraryWithMaskPair -> runImageComparison(libraryWithMaskPair._1, libraryWithMaskPair._2, maskThreshold))
-                .filter(sr -> sr.isMatch() || sr.isError())
+        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
+                .groupBy(lms -> lms._2) // group by mask
+                .mapValues(lms -> StreamSupport.stream(lms.spliterator(), false).map(lm -> lm._1).collect(Collectors.toList()))
+                .mapToPair(mls -> {
+                    MIPWithImage maskMIP = loadMIP(mls._1);
+                    List<ColorMIPSearchResult> srByMask = mls._2.stream()
+                            .map(l -> runImageComparison(l, maskMIP, maskThreshold))
+                            .filter(sr -> sr.isMatch() || sr.isError())
+                            .collect(Collectors.toList());
+                    return new Tuple2<>(maskMIP.mipInfo(), srByMask);
+                })
                 ;
-        LOG.info("Finished searching all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResults.getNumPartitions());
+        LOG.info("Created RDD search results fpr  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> matchingSearchResultsRDD = allSearchResults.filter(sr -> sr.isMatch());
-        JavaRDD<ColorMIPSearchResult> errorSearchResultsRDD = allSearchResults.filter(sr -> sr.isError());
-        LOG.info("Finished filtering matching and error results");
+        Map<MinimalColorDepthMIP, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
+                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream().filter(ColorMIPSearchResult::isError).collect(Collectors.toList())))
+                .filter(srByMask -> !srByMask._2.isEmpty())
+                .collectAsMap()
+                ;
+        LOG.error("Errors found for the following searches: {}", errorSearchResultsByMaskMIP);
 
-        // write results for each library
-        LOG.info("Write matching results for each library item");
-        writeAllSearchResults(matchingSearchResultsRDD, ResultGroupingCriteria.BY_LIBRARY);
         // write results for each mask
-        LOG.info("Write matching results for each mask");
-        writeAllSearchResults(matchingSearchResultsRDD, ResultGroupingCriteria.BY_MASK);
+        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> matchingSearchResultsByMask = allSearchResultsPartitionedByMaskMIP
+                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream()
+                        .filter(ColorMIPSearchResult::isMatch)
+                        .sorted(getColorMIPSearchComparator())
+                        .collect(Collectors.toList())));
 
-        List<ColorMIPSearchResult> errorSearchResults = errorSearchResultsRDD.collect();
-        LOG.error("Errors found for the following searches: {}", errorSearchResults);
+        matchingSearchResultsByMask.foreach(srByMask -> writeSearchResults(srByMask._1.id, srByMask._2));
+
+        // write results for each library now
+        writeAllSearchResults(matchingSearchResultsByMask.flatMap(srByLibraryMIP -> srByLibraryMIP._2.iterator()), ResultGroupingCriteria.BY_LIBRARY);
     }
 
     private ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
-        Stopwatch watch = Stopwatch.createStarted();
+        long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  patternMIP, searchThreshold);
             double pixfludub = pixColorFluctuation / 100;
@@ -201,7 +213,7 @@ class ColorMIPSearch implements Serializable {
             LOG.info("Error comparing library file {} with mask {}", libraryMIP,  patternMIP, e);
             return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, 0, 0, false, true);
         } finally {
-            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  patternMIP, watch.elapsed(TimeUnit.MILLISECONDS));
+            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  patternMIP, System.currentTimeMillis() - startTime);
         }
     }
 

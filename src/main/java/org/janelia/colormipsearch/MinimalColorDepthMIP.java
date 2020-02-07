@@ -14,6 +14,14 @@ class MinimalColorDepthMIP implements Serializable {
     @JsonProperty
     String filepath;
 
+    MinimalColorDepthMIP() {
+    }
+
+    MinimalColorDepthMIP(String id, String filepath) {
+        this.id = id;
+        this.filepath = filepath;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
