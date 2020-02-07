@@ -1,33 +1,18 @@
 package org.janelia.colormipsearch;
 
 import java.io.Serializable;
-import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import ij.ImagePlus;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class MIPImage implements Serializable {
+class MinimalColorDepthMIP implements Serializable {
     @JsonProperty
     String id;
     @JsonProperty
     String filepath;
-    @JsonIgnore
-    transient ImagePlus image;
-
-    MIPImage withImage(ImagePlus image) {
-        this.image = image;
-        return this;
-    }
-
-    boolean hasNoImage() {
-        return image == null;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -35,7 +20,7 @@ class MIPImage implements Serializable {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        MIPImage mipImage = (MIPImage) o;
+        MinimalColorDepthMIP mipImage = (MinimalColorDepthMIP) o;
 
         return new EqualsBuilder()
                 .append(id, mipImage.id)
@@ -56,7 +41,6 @@ class MIPImage implements Serializable {
         return new ToStringBuilder(this)
                 .append("id", id)
                 .append("filepath", filepath)
-                .append("image", image != null ? "loaded" : "not loaded")
                 .toString();
     }
 }

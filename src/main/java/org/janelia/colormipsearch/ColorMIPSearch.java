@@ -13,6 +13,7 @@ import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -22,6 +23,7 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
 
 import ij.ImagePlus;
@@ -32,6 +34,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -76,30 +79,25 @@ class ColorMIPSearch implements Serializable {
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
-    /**
-     * Load provided image libraries into memory.
-     * @param cdmips
-     */
-    JavaRDD<MIPImage> loadMIPS(List<MIPImage> cdmips) {
-        LOG.info("Load {} mips", cdmips.size());
-
-        // This is a lot faster than using binaryFiles because 1) the paths are shuffled, 2) we use an optimized
-        // directory listing stream which does not consider file sizes. As a bonus, it actually respects the parallelism
-        // setting, unlike binaryFiles which ignores it unless you set other arcane settings like openCostInByte.
-        JavaRDD<MIPImage> cdmipsRDD = sparkContext.parallelize(cdmips);
-        LOG.info("cdmipsRDD {} items in {} partitions", cdmips.size(), cdmipsRDD.getNumPartitions());
-
-        // This RDD is cached so that it can be reused to search with multiple masks
-        JavaRDD<MIPImage> cdmipImagesRDD = cdmipsRDD.map(cdmip -> cdmip.withImage(readImagePlus(cdmip.id, cdmip.filepath)));
-        LOG.info("cdmipImagesRDD {} images in {} partitions", cdmips.size(), cdmipImagesRDD.getNumPartitions());
-        return cdmipImagesRDD;
-    }
-
-    private ImagePlus readImagePlus(String title, String filepath) {
+    private MIPWithImage loadMIP(MinimalColorDepthMIP mip) {
+        Stopwatch watch = Stopwatch.createStarted();
+        LOG.debug("Load MIP {}", mip);
+        InputStream inputStream;
         try {
-            return readImagePlus(title, getImageFormat(filepath), new FileInputStream(filepath));
+            inputStream = new FileInputStream(mip.filepath);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        try {
+            return new MIPWithImage(mip, readImagePlus(mip.id, getImageFormat(mip.filepath), inputStream));
         } catch (Exception e) {
             throw new IllegalStateException(e);
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException ignore) {
+            }
+            LOG.debug("Loaded MIP {} in {}ms", mip, watch.elapsed(TimeUnit.MILLISECONDS));
         }
     }
 
@@ -134,67 +132,56 @@ class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MIPImage> maskMIPS, List<MIPImage> libraryMIPS, Integer maskThreshold) {
+    void  compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
         long nlibraries = libraryMIPS.size();
         long nmasks = maskMIPS.size();
 
-        JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS);
+        JavaRDD<MIPWithImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
+                .filter(mip -> new File(mip.filepath).exists())
+                .map(this::loadMIP)
+                ;
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
-        JavaRDD<MIPImage> masksRDD = sparkContext.parallelize(maskMIPS);
+        JavaRDD<MinimalColorDepthMIP> masksRDD = sparkContext.parallelize(maskMIPS)
+                .filter(mip -> new File(mip.filepath).exists())
+                ;
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<MIPImage, MIPImage> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<MIPWithImage, MinimalColorDepthMIP> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
         JavaRDD<ColorMIPSearchResult> allSearchResults = librariesMasksPairsRDD
-                .filter(libraryMaskPair -> new File(libraryMaskPair._1.filepath).exists() && new File(libraryMaskPair._2.filepath).exists())
-                .groupBy(libraryMaskPair -> libraryMaskPair._2)
-                .flatMap(maskAndLibrariesPair -> {
-                    MIPImage maskMIP = maskAndLibrariesPair._1;
-                    if (maskMIP.hasNoImage()) {
-                        LOG.info("Load mask image for {}", maskMIP);
-                        maskMIP.withImage(readImagePlus(maskMIP.id, maskMIP.filepath));
-                    }
-                    return StreamSupport.stream(maskAndLibrariesPair._2.spliterator(), true)
-                            .map(libraryMaskPair -> libraryMaskPair._1)
-                            .map(libraryMIP -> {
-                                if (libraryMIP.hasNoImage()) {
-                                    LOG.info("Load library image for {}", libraryMIP);
-                                    libraryMIP.withImage(readImagePlus(libraryMIP.id, libraryMIP.filepath));
-                                }
-                                return runImageComparison(libraryMIP, maskMIP, maskThreshold);
-                            })
-                            .filter(sr -> sr.isMatch() || sr.isError())
-                            .iterator()
-                            ;
-                })
+                .map(libraryWithMaskPair -> new Tuple2<>(libraryWithMaskPair._1, loadMIP(libraryWithMaskPair._2)))
+                .map(libraryWithMaskPair -> runImageComparison(libraryWithMaskPair._1, libraryWithMaskPair._2, maskThreshold))
+                .filter(sr -> sr.isMatch() || sr.isError())
                 ;
-
         LOG.info("Finished searching all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResults.getNumPartitions());
 
-        JavaRDD<ColorMIPSearchResult> matchingSearchResults = allSearchResults.filter(sr -> sr.isMatch());
-        JavaRDD<ColorMIPSearchResult> errorSearchResults = allSearchResults.filter(sr -> sr.isMatch());
+        JavaRDD<ColorMIPSearchResult> matchingSearchResultsRDD = allSearchResults.filter(sr -> sr.isMatch());
+        JavaRDD<ColorMIPSearchResult> errorSearchResultsRDD = allSearchResults.filter(sr -> sr.isError());
         LOG.info("Finished filtering matching and error results");
 
         // write results for each library
         LOG.info("Write matching results for each library item");
-        writeAllSearchResults(matchingSearchResults, ResultGroupingCriteria.BY_LIBRARY);
+        writeAllSearchResults(matchingSearchResultsRDD, ResultGroupingCriteria.BY_LIBRARY);
         // write results for each mask
         LOG.info("Write matching results for each mask");
-        writeAllSearchResults(matchingSearchResults, ResultGroupingCriteria.BY_MASK);
+        writeAllSearchResults(matchingSearchResultsRDD, ResultGroupingCriteria.BY_MASK);
+
+        List<ColorMIPSearchResult> errorSearchResults = errorSearchResultsRDD.collect();
+        LOG.error("Errors found for the following searches: {}", errorSearchResults);
     }
 
-    private ColorMIPSearchResult runImageComparison(MIPImage libraryMIP, MIPImage patternMIP, Integer searchThreshold) {
+    private ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
+        Stopwatch watch = Stopwatch.createStarted();
         try {
-            LOG.info("Compare library file {} with mask {} using threshold {}", libraryMIP,  patternMIP, searchThreshold);
-
+            LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  patternMIP, searchThreshold);
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    patternMIP.image.getProcessor(),
+                    patternMIP,
                     searchThreshold,
                     mirrorMask,
                     null,
@@ -204,7 +191,7 @@ class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIP.image.getProcessor(), null);
+            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIP, null);
 
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
@@ -213,6 +200,8 @@ class ColorMIPSearch implements Serializable {
         } catch (Throwable e) {
             LOG.info("Error comparing library file {} with mask {}", libraryMIP,  patternMIP, e);
             return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, 0, 0, false, true);
+        } finally {
+            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  patternMIP, watch.elapsed(TimeUnit.MILLISECONDS));
         }
     }
 

@@ -2,12 +2,10 @@ package org.janelia.colormipsearch;
 
 import java.util.ArrayList;
 
-import ij.process.ImageProcessor;
-
 public class ColorMIPMaskCompare {
 
-    ImageProcessor m_query;
-    ImageProcessor m_negquery;
+    MIPWithImage m_query;
+    MIPWithImage m_negquery;
     int[] m_mask;
     int[] m_negmask;
     int[][] m_tarmasklist;
@@ -38,13 +36,13 @@ public class ColorMIPMaskCompare {
     }
 
     //Advanced Search
-    ColorMIPMaskCompare(ImageProcessor query, int mask_th, boolean mirror_mask,
-                        ImageProcessor negquery, int negmask_th,
+    ColorMIPMaskCompare(MIPWithImage query, int mask_th, boolean mirror_mask,
+                        MIPWithImage negquery, int negmask_th,
                         boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
         m_query = query;
         m_negquery = negquery;
-        m_width = m_query.getWidth();
-        m_height = m_query.getHeight();
+        m_width = m_query.width;
+        m_height = m_query.height;
 
         m_mask = get_mskpos_array(m_query, mask_th);
         if (m_negquery != null) m_negmask = get_mskpos_array(m_negquery, negmask_th);
@@ -189,7 +187,7 @@ public class ColorMIPMaskCompare {
         return new Output(posi, posipersent);
     }
 
-    public Output runSearch(ImageProcessor tarimg_in, ImageProcessor coloc_out) {
+    public Output runSearch(MIPWithImage tarimg_in, MIPWithImage coloc_out) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = m_mask.length;
@@ -248,7 +246,7 @@ public class ColorMIPMaskCompare {
         return new Output(posi, posipersent);
     }
 
-    public static int[] get_mskpos_array(ImageProcessor msk, int thresm) {
+    public static int[] get_mskpos_array(MIPWithImage msk, int thresm) {
         int sumpx = msk.getPixelCount();
         ArrayList<Integer> pos = new ArrayList<Integer>();
         int pix, red, green, blue;
@@ -311,7 +309,7 @@ public class ColorMIPMaskCompare {
         return out;
     }
 
-    public int calc_score(ImageProcessor src, int[] srcmaskposi, byte[] tar, int[] tarmaskposi, int th, double pixfludub, byte[] coloc_out) {
+    public int calc_score(MIPWithImage src, int[] srcmaskposi, byte[] tar, int[] tarmaskposi, int th, double pixfludub, byte[] coloc_out) {
         int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
         int posi = 0;
         for (int masksig = 0; masksig < masksize; masksig++) {
@@ -346,7 +344,7 @@ public class ColorMIPMaskCompare {
         return posi;
     }
 
-    public static int calc_score(ImageProcessor src, int[] srcmaskposi, ImageProcessor tar, int[] tarmaskposi, int th, double pixfludub, ImageProcessor coloc_out) {
+    public static int calc_score(MIPWithImage src, int[] srcmaskposi, MIPWithImage tar, int[] tarmaskposi, int th, double pixfludub, MIPWithImage coloc_out) {
         int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
         int posi = 0;
         for (int masksig = 0; masksig < masksize; masksig++) {

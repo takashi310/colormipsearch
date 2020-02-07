@@ -3,6 +3,8 @@ package org.janelia.colormipsearch;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,6 +83,14 @@ public class Main {
             System.exit(0);
         }
 
+        try {
+            // create output directory
+            Files.createDirectories(Paths.get(args.outputDir));
+        } catch (IOException e) {
+            LOG.error("Error creating output directory", e);
+            System.exit(1);
+        }
+
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
                 args.appName, args.outputDir, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
         );
@@ -88,10 +98,11 @@ public class Main {
             ObjectMapper mapper = new ObjectMapper()
                                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             ;
-            List<MIPImage> libraryMips = args.librariesInputs.stream()
+
+            List<MinimalColorDepthMIP> libraryMips = args.librariesInputs.stream()
                     .flatMap(libraryInput -> {
                         try {
-                            List<MIPImage> content = mapper.readValue(new File(libraryInput), new TypeReference<List<MIPImage>>(){});
+                            List<MinimalColorDepthMIP> content = mapper.readValue(new File(libraryInput), new TypeReference<List<MinimalColorDepthMIP>>(){});
                             LOG.info("Read {} mips from library {}", content.size(), libraryInput);
                             return content.stream();
                         } catch (IOException e) {
@@ -101,10 +112,10 @@ public class Main {
                     })
                     .collect(Collectors.toList());
 
-            List<MIPImage> masksMips = args.masksInputs.stream()
+            List<MinimalColorDepthMIP> masksMips = args.masksInputs.stream()
                     .flatMap(masksInput -> {
                         try {
-                            List<MIPImage> content = mapper.readValue(new File(masksInput), new TypeReference<List<MIPImage>>(){});
+                            List<MinimalColorDepthMIP> content = mapper.readValue(new File(masksInput), new TypeReference<List<MinimalColorDepthMIP>>(){});
                             LOG.info("Read {} mips from mask {}", content.size(), masksInput);
                             return content.stream();
                         } catch (IOException e) {
