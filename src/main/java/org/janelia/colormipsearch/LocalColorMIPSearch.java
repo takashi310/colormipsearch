@@ -62,6 +62,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Write results by mask");
         writeAllSearchResults(srByMask);
+
+        LOG.info("Finished searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
     }
 
     private void writeAllSearchResults(Map<String, List<ColorMIPSearchResult>> searchResults) {
