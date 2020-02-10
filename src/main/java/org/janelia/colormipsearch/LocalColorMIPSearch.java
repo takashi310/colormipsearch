@@ -36,23 +36,31 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         .parallel()
                         .map(this::loadMIP)
                         .map(maskMIP -> runImageComparison(libraryMIP, maskMIP, maskThreshold))
-                        .filter(sr -> sr.isMatch() || sr.isError())
+                        .peek(sr -> {
+                            if (sr.isError()) {
+                                LOG.warn("Error encountered in {}", sr);
+                            }
+                        })
+                        .filter(ColorMIPSearchResult::isMatch)
                 )
                 ;
 
         // write results by library
+        LOG.info("Group results by library");
         Map<String, List<ColorMIPSearchResult>> srByLibrary = srStream
-                .filter(ColorMIPSearchResult::isMatch)
-                .collect(
-                        Collectors.groupingBy(ColorMIPSearchResult::getLibraryId, Collectors.toList()));
+                .collect(Collectors.groupingBy(ColorMIPSearchResult::getLibraryId, Collectors.toList()));
 
+        LOG.info("Write results by library");
         writeAllSearchResults(srByLibrary);
 
         // write results by mask
+        LOG.info("Group results by mask");
         Map<String, List<ColorMIPSearchResult>> srByMask = srByLibrary.entrySet().parallelStream()
                 .flatMap(srsByLibrary -> srsByLibrary.getValue().stream())
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getPatternId, Collectors.toList()))
                 ;
+
+        LOG.info("Write results by mask");
         writeAllSearchResults(srByMask);
     }
 
