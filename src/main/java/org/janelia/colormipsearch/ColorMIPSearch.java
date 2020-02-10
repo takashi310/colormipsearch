@@ -14,34 +14,26 @@ import java.nio.channels.Channels;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
 
 import ij.ImagePlus;
 import ij.io.Opener;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Tuple2;
 
 /**
  * Perform color depth mask search on a Spark cluster.
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-class ColorMIPSearch implements Serializable {
+abstract class ColorMIPSearch implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearch.class);
 
@@ -49,11 +41,6 @@ class ColorMIPSearch implements Serializable {
         PNG,
         TIFF,
         UNKNOWN
-    }
-
-    private enum ResultGroupingCriteria {
-        BY_LIBRARY,
-        BY_MASK;
     }
 
     private static final int ERROR_THRESHOLD = 20;
@@ -64,10 +51,8 @@ class ColorMIPSearch implements Serializable {
     private boolean mirrorMask;
     private Double pixColorFluctuation;
     private Double pctPositivePixels;
-    private transient final JavaSparkContext sparkContext;
 
-    ColorMIPSearch(String appName,
-                   String outputPath,
+    ColorMIPSearch(String outputPath,
                    Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
                    boolean mirrorMask, Double pctPositivePixels) {
         this.outputPath =  outputPath;
@@ -76,10 +61,9 @@ class ColorMIPSearch implements Serializable {
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
-        this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
-    private MIPWithImage loadMIP(MinimalColorDepthMIP mip) {
+    MIPWithImage loadMIP(MinimalColorDepthMIP mip) {
         long startTime = System.currentTimeMillis();
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
@@ -88,14 +72,19 @@ class ColorMIPSearch implements Serializable {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+        ImagePlus ij = null;
         try {
-            return new MIPWithImage(mip, readImagePlus(mip.id, getImageFormat(mip.filepath), inputStream));
+            ij = readImagePlus(mip.id, getImageFormat(mip.filepath), inputStream);
+            return new MIPWithImage(mip, ij);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         } finally {
             try {
                 inputStream.close();
             } catch (IOException ignore) {
+            }
+            if (ij != null) {
+                ij.close();
             }
             LOG.debug("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
         }
@@ -132,62 +121,9 @@ class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold) {
-        LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
+    abstract void compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold);
 
-        long nlibraries = libraryMIPS.size();
-        long nmasks = maskMIPS.size();
-
-        JavaRDD<MIPWithImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
-                .filter(mip -> new File(mip.filepath).exists())
-                .map(this::loadMIP)
-                ;
-        LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
-
-        JavaRDD<MinimalColorDepthMIP> masksRDD = sparkContext.parallelize(maskMIPS)
-                .filter(mip -> new File(mip.filepath).exists())
-                ;
-        LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
-
-        JavaPairRDD<MIPWithImage, MinimalColorDepthMIP> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
-        LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
-
-        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
-                .groupBy(lms -> lms._2) // group by mask
-                .mapValues(lms -> StreamSupport.stream(lms.spliterator(), false).map(lm -> lm._1).collect(Collectors.toList()))
-                .mapToPair(mls -> {
-                    MIPWithImage maskMIP = loadMIP(mls._1);
-                    List<ColorMIPSearchResult> srByMask = mls._2.stream()
-                            .map(l -> runImageComparison(l, maskMIP, maskThreshold))
-                            .filter(sr -> sr.isMatch() || sr.isError())
-                            .collect(Collectors.toList());
-                    return new Tuple2<>(maskMIP.mipInfo(), srByMask);
-                })
-                ;
-        LOG.info("Created RDD search results fpr  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
-
-        // write results for each mask
-        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> matchingSearchResultsByMask = allSearchResultsPartitionedByMaskMIP
-                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream()
-                        .filter(ColorMIPSearchResult::isMatch)
-                        .sorted(getColorMIPSearchComparator())
-                        .collect(Collectors.toList())));
-
-        matchingSearchResultsByMask.foreach(srByMask -> writeSearchResults(srByMask._1.id, srByMask._2));
-
-        // write results for each library now
-        writeAllSearchResults(matchingSearchResultsByMask.flatMap(srByLibraryMIP -> srByLibraryMIP._2.iterator()), ResultGroupingCriteria.BY_LIBRARY);
-
-        // check for errors
-        Map<MinimalColorDepthMIP, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
-                .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream().filter(ColorMIPSearchResult::isError).collect(Collectors.toList())))
-                .filter(srByMask -> !srByMask._2.isEmpty())
-                .collectAsMap()
-                ;
-        LOG.error("Errors found for the following searches: {}", errorSearchResultsByMaskMIP);
-    }
-
-    private ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
+    ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  patternMIP, searchThreshold);
@@ -218,52 +154,11 @@ class ColorMIPSearch implements Serializable {
         }
     }
 
-    private void writeAllSearchResults(JavaRDD<ColorMIPSearchResult> searchResults, ResultGroupingCriteria groupingCriteria) {
-        JavaPairRDD<String, Iterable<ColorMIPSearchResult>> groupedSearchResults = searchResults.groupBy(sr -> {
-            switch (groupingCriteria) {
-                case BY_MASK:
-                    return sr.getPatternId();
-                case BY_LIBRARY:
-                    return sr.getLibraryId();
-                default:
-                    throw new IllegalArgumentException("Invalid grouping criteria");
-            }
-        });
-        LOG.info("Finished grouping into {} partitions using {} criteria", groupedSearchResults.getNumPartitions(), groupingCriteria);
-
-        JavaPairRDD<String, List<ColorMIPSearchResult>> combinedSearchResults = groupedSearchResults.combineByKey(
-                srForKey -> {
-                    LOG.info("Combine and sort {} elements", Iterables.size(srForKey));
-                    return StreamSupport.stream(srForKey.spliterator(), true)
-                            .sorted(getColorMIPSearchComparator())
-                            .collect(Collectors.toList());
-                },
-                (srForKeyList, srForKey) -> {
-                    LOG.info("Merging {} elements with {} elements", srForKeyList.size(), Iterables.size(srForKey));
-                    return Stream.concat(srForKeyList.stream(), StreamSupport.stream(srForKey.spliterator(), true))
-                            .sorted(getColorMIPSearchComparator())
-                            .collect(Collectors.toList());
-                },
-                (sr1List, sr2List) -> {
-                    LOG.info("Merging {} combined elements with {} combined elements", sr1List.size(), sr2List.size());
-                    return Stream.concat(sr1List.stream(), sr2List.stream())
-                            .sorted(getColorMIPSearchComparator())
-                            .collect(Collectors.toList());
-                })
-                ;
-        LOG.info("Finished combining all results by key in {} partitions using {} criteria", combinedSearchResults.getNumPartitions(), groupingCriteria);
-
-        combinedSearchResults
-                .foreach(keyWithSearchResults -> writeSearchResults(keyWithSearchResults._1, keyWithSearchResults._2))
-        ;
-        LOG.info("Finished writing the search results by {}", groupingCriteria);
-    }
-
-    private Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
+    Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
     }
 
-    private void writeSearchResults(String filename, List<ColorMIPSearchResult> searchResults) {
+    void writeSearchResults(String filename, List<ColorMIPSearchResult> searchResults) {
         OutputStream outputStream;
         File outputFile = new File(outputPath, filename + ".json");
         LOG.info("Write {} results {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
@@ -347,7 +242,5 @@ class ColorMIPSearch implements Serializable {
     }
 
     void terminate() {
-        sparkContext.close();
     }
-
 }

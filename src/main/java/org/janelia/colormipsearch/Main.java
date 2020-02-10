@@ -29,7 +29,7 @@ public class Main {
     private static class Args {
 
         @Parameter(names = "--app")
-        private String appName = ColorMIPSearch.class.getName();
+        private String appName = "ColorMIPSearch";
 
         @Parameter(names = {"--images", "-i"}, description = "Comma-delimited list of directories containing images to search", required = true, variableArity = true)
         private List<String> librariesInputs;
@@ -61,6 +61,9 @@ public class Main {
         @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
         private String outputDir;
 
+        @Parameter(names = "-locally", description = "Perform the search in the current process", arity = 0)
+        private boolean useLocalProcessing = false;
+
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
     }
@@ -91,9 +94,15 @@ public class Main {
             System.exit(1);
         }
 
-        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.appName, args.outputDir, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
-        );
+        ColorMIPSearch colorMIPSearch;
+        if (args.useLocalProcessing) {
+            colorMIPSearch = new LocalColorMIPSearch(args.outputDir, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels);
+        } else {
+            colorMIPSearch = new SparkColorMIPSearch(
+                    args.appName, args.outputDir, args.dataThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels
+            );
+        }
+
         try {
             ObjectMapper mapper = new ObjectMapper()
                                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
