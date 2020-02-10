@@ -55,9 +55,6 @@ public class Main {
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         private Double pctPositivePixels = 0.0;
 
-        @Parameter(names = {"--masksFilesPartitionSize"}, description = "Specify how to partition masks files")
-        private Integer masksFilesPartitionSize = 100;
-
         @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
         private String outputDir;
 
