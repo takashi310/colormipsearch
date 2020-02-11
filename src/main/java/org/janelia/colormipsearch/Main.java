@@ -8,12 +8,15 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,16 +29,70 @@ public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
+    private static class MIPListArg {
+        String inputFilename;
+        int offset = 0;
+        int length = -1;
+
+        private void setOffset(int offset) {
+            if (offset > 0) {
+                this.offset = offset;
+            } else {
+                this.offset = 0;
+            }
+        }
+
+        private void setLength(int length) {
+            this.length = length > 0 ? length : -1;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(inputFilename);
+            if (offset > 0 || length > 0) {
+                sb.append(':');
+            }
+            if (offset > 0) {
+                sb.append(offset);
+            }
+            if (length > 0) {
+                sb.append(':').append(length);
+            }
+            return sb.toString();
+        }
+    }
+
+    private static class MIPListArgConverter implements IStringConverter<MIPListArg> {
+        @Override
+        public MIPListArg convert(String value) {
+            List<String> argComponents = Splitter.on(":").trimResults().splitToList(value);
+            MIPListArg arg = new MIPListArg();
+            if (argComponents.size() > 0) {
+                arg.inputFilename = argComponents.get(0);
+            }
+            if (argComponents.size() > 1 && StringUtils.isNotBlank(argComponents.get(1))) {
+                arg.setOffset(Integer.parseInt(argComponents.get(1)));
+            }
+            if (argComponents.size() > 2 && StringUtils.isNotBlank(argComponents.get(1))) {
+                arg.setLength(Integer.parseInt(argComponents.get(2)));
+            }
+            return arg;
+        }
+    }
+
     private static class Args {
 
         @Parameter(names = "--app")
         private String appName = "ColorMIPSearch";
 
-        @Parameter(names = {"--images", "-i"}, description = "Comma-delimited list of directories containing images to search", required = true, variableArity = true)
-        private List<String> librariesInputs;
+        @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = MIPListArgConverter.class,
+                description = "Comma-delimited list of directories containing images to search")
+        private List<MIPListArg> librariesInputs;
 
-        @Parameter(names = {"--masks", "-m"}, description = "Image file(s) to use as the search masks", required = true, variableArity = true)
-        private List<String> masksInputs;
+        @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = MIPListArgConverter.class,
+                description = "Image file(s) to use as the search masks")
+        private List<MIPListArg> masksInputs;
 
         @Parameter(names = {"--dataThreshold"}, description = "Data threshold")
         private Integer dataThreshold = 100;
@@ -102,33 +159,15 @@ public class Main {
 
         try {
             ObjectMapper mapper = new ObjectMapper()
-                                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             ;
 
             List<MinimalColorDepthMIP> libraryMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> {
-                        try {
-                            List<MinimalColorDepthMIP> content = mapper.readValue(new File(libraryInput), new TypeReference<List<MinimalColorDepthMIP>>(){});
-                            LOG.info("Read {} mips from library {}", content.size(), libraryInput);
-                            return content.stream();
-                        } catch (IOException e) {
-                            LOG.error("Error reading {}", libraryInput, e);
-                            throw new UncheckedIOException(e);
-                        }
-                    })
+                    .flatMap(libraryInput -> readMIPs(libraryInput).stream())
                     .collect(Collectors.toList());
 
             List<MinimalColorDepthMIP> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> {
-                        try {
-                            List<MinimalColorDepthMIP> content = mapper.readValue(new File(masksInput), new TypeReference<List<MinimalColorDepthMIP>>(){});
-                            LOG.info("Read {} mips from mask {}", content.size(), masksInput);
-                            return content.stream();
-                        } catch (IOException e) {
-                            LOG.error("Error reading {}", masksInput, e);
-                            throw new UncheckedIOException(e);
-                        }
-                    })
+                    .flatMap(masksInput -> readMIPs(masksInput).stream())
                     .collect(Collectors.toList());
 
             colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips, args.maskThreshold);
@@ -137,4 +176,18 @@ public class Main {
         }
     }
 
+    private static List<MinimalColorDepthMIP> readMIPs(MIPListArg mipsArg) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            List<MinimalColorDepthMIP> content = mapper.readValue(new File(mipsArg.inputFilename), new TypeReference<List<MinimalColorDepthMIP>>() {});
+            LOG.info("Read {} mips from {}", content.size(), mipsArg);
+            int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
+            int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
+            return content.subList(from, to);
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsArg, e);
+            throw new UncheckedIOException(e);
+        }
+    }
 }
