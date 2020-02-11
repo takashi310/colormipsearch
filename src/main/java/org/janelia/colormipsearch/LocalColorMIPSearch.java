@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import com.google.common.collect.Streams;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,8 +43,9 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Loaded {} masks in memory", nmasks);
 
         LOG.info("Compute and save search results by library");
-        List<Pair<String, List<ColorMIPSearchResult>>> srByLibraries = libraryMIPS.stream().parallel()
-                .map(this::loadMIP)
+
+        List<Pair<String, List<ColorMIPSearchResult>>> srByLibraries = libraryMIPS.stream()
+                .map(this::loadMIP).parallel()
                 .map(libraryMIP -> {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
@@ -69,7 +73,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     return srByMask;
                 })))
                 ;
-        srByMasks.entrySet().stream().parallel()
+        srByMasks.entrySet()
                 .forEach(srByMask -> writeSearchResults(srByMask.getKey(), srByMask.getValue()));
         LOG.info("Saved {} search results by mask for {} masks against {} libraries in {}s", srByMasks.size(), nmasks, nlibraries, (System.currentTimeMillis() - startTime) / 1000);
 

@@ -164,8 +164,9 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, TestData.aRandomURL());
-        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
+        TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
+        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
+        cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
         if (cdmip.sample != null) {
             cdMetadata.publishedLineOrSkeleton = cdmip.sample.line; // This will have to change to the published line
             cdMetadata.addAttr("Line", cdmip.sample.line);
@@ -208,8 +209,9 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, TestData.aRandomURL());
-        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
+        TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
+        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
+        cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
         cdMetadata.publishedLineOrSkeleton = extractEMSkeletonIdFromName(cdmip.name);
         cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
