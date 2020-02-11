@@ -157,6 +157,7 @@ abstract class ColorMIPSearch implements Serializable {
 
     void writeSearchResults(String filename, List<ColorMIPSearchResult> searchResults) {
         OutputStream outputStream;
+        long startTime = System.currentTimeMillis();
         File outputFile = new File(outputPath, filename + ".json");
         LOG.info("Write {} results {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
 
@@ -207,6 +208,7 @@ abstract class ColorMIPSearch implements Serializable {
                     outputStream.close();
                 } catch (IOException ignore) {
                 }
+                LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
             }
         } else {
             try {
@@ -234,6 +236,7 @@ abstract class ColorMIPSearch implements Serializable {
                     outputStream.close();
                 } catch (IOException ignore) {
                 }
+                LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
             }
         }
     }

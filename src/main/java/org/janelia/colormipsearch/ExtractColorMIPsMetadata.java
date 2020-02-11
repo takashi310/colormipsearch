@@ -208,7 +208,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        cdMetadata.imageUrl = cdmip.publicImageUrl;
+        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, TestData.aRandomURL());
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         cdMetadata.publishedLineOrSkeleton = extractEMSkeletonIdFromName(cdmip.name);
         cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
