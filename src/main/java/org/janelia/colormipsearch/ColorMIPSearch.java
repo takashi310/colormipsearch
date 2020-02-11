@@ -13,9 +13,6 @@ import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
@@ -147,7 +144,7 @@ abstract class ColorMIPSearch implements Serializable {
 
             return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, output.matchingPixNum, output.matchingPct, isMatch, false);
         } catch (Throwable e) {
-            LOG.info("Error comparing library file {} with mask {}", libraryMIP,  patternMIP, e);
+            LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  patternMIP, e);
             return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, 0, 0, false, true);
         } finally {
             LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  patternMIP, System.currentTimeMillis() - startTime);
