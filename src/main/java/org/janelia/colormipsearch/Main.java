@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.SubParameter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,8 +31,11 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static class MIPListArg {
+        @SubParameter(order = 0)
         String inputFilename;
+        @SubParameter(order = 1)
         int offset = 0;
+        @SubParameter(order = 2)
         int length = -1;
 
         private void setOffset(int offset) {
@@ -74,7 +78,7 @@ public class Main {
             if (argComponents.size() > 1 && StringUtils.isNotBlank(argComponents.get(1))) {
                 arg.setOffset(Integer.parseInt(argComponents.get(1)));
             }
-            if (argComponents.size() > 2 && StringUtils.isNotBlank(argComponents.get(1))) {
+            if (argComponents.size() > 2 && StringUtils.isNotBlank(argComponents.get(2))) {
                 arg.setLength(Integer.parseInt(argComponents.get(2)));
             }
             return arg;
@@ -180,10 +184,11 @@ public class Main {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
+            LOG.info("Reading {}", mipsArg);
             List<MinimalColorDepthMIP> content = mapper.readValue(new File(mipsArg.inputFilename), new TypeReference<List<MinimalColorDepthMIP>>() {});
-            LOG.info("Read {} mips from {}", content.size(), mipsArg);
             int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
             int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
+            LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
             return content.subList(from, to);
         } catch (IOException e) {
             LOG.error("Error reading {}", mipsArg, e);
