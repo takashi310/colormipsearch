@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class MinimalColorDepthMIP implements Serializable {
+class MIPInfo implements Serializable {
     @JsonProperty
     String id;
     @JsonProperty
@@ -20,10 +20,10 @@ class MinimalColorDepthMIP implements Serializable {
     @JsonProperty
     String thumbnailURL;
 
-    MinimalColorDepthMIP() {
+    MIPInfo() {
     }
 
-    MinimalColorDepthMIP(MinimalColorDepthMIP that) {
+    MIPInfo(MIPInfo that) {
         this.id = that.id;
         this.libraryName = that.libraryName;
         this.filepath = that.filepath;
@@ -37,7 +37,7 @@ class MinimalColorDepthMIP implements Serializable {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        MinimalColorDepthMIP mipImage = (MinimalColorDepthMIP) o;
+        MIPInfo mipImage = (MIPInfo) o;
 
         return new EqualsBuilder()
                 .append(id, mipImage.id)

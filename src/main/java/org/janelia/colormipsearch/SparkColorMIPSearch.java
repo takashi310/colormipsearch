@@ -67,31 +67,31 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold) {
+    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
         long nlibraries = libraryMIPS.size();
         long nmasks = maskMIPS.size();
 
-        JavaRDD<MIPWithImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
+        JavaRDD<MIPWithPixels> librariesRDD = sparkContext.parallelize(libraryMIPS)
                 .filter(mip -> new File(mip.filepath).exists())
                 .map(this::loadMIP)
                 ;
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
-        JavaRDD<MinimalColorDepthMIP> masksRDD = sparkContext.parallelize(maskMIPS)
+        JavaRDD<MIPInfo> masksRDD = sparkContext.parallelize(maskMIPS)
                 .filter(mip -> new File(mip.filepath).exists())
                 ;
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<MIPWithImage, MinimalColorDepthMIP> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<MIPWithPixels, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
-        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
+        JavaPairRDD<MIPInfo, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
                 .groupBy(lms -> lms._2) // group by mask
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
-                            MIPWithImage maskMIP = loadMIP(mls._1);
+                            MIPWithPixels maskMIP = loadMIP(mls._1);
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(lmPair -> runImageComparison(lmPair._1, maskMIP, maskThreshold))
                                     .filter(srByMask ->srByMask.isMatch() || srByMask.isError())
@@ -106,7 +106,7 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         LOG.info("Created RDD search results fpr  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
         // write results for each mask
-        JavaPairRDD<MinimalColorDepthMIP, List<ColorMIPSearchResult>> matchingSearchResultsByMask = allSearchResultsPartitionedByMaskMIP
+        JavaPairRDD<MIPInfo, List<ColorMIPSearchResult>> matchingSearchResultsByMask = allSearchResultsPartitionedByMaskMIP
                 .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream()
                         .filter(ColorMIPSearchResult::isMatch)
                         .sorted(getColorMIPSearchComparator())
@@ -122,7 +122,7 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         writeAllSearchResults(matchingSearchResultsByMask.flatMap(srByLibraryMIP -> srByLibraryMIP._2.iterator()), ResultGroupingCriteria.BY_LIBRARY);
 
         // check for errors
-        Map<MinimalColorDepthMIP, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
+        Map<MIPInfo, List<ColorMIPSearchResult>> errorSearchResultsByMaskMIP = allSearchResultsPartitionedByMaskMIP
                 .mapToPair(srByMask -> new Tuple2<>(srByMask._1, srByMask._2.stream().filter(ColorMIPSearchResult::isError).collect(Collectors.toList())))
                 .filter(srByMask -> !srByMask._2.isEmpty())
                 .collectAsMap()

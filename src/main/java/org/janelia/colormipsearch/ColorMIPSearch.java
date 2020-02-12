@@ -58,7 +58,7 @@ abstract class ColorMIPSearch implements Serializable {
         this.pctPositivePixels = pctPositivePixels;
     }
 
-    MIPWithImage loadMIP(MinimalColorDepthMIP mip) {
+    MIPWithPixels loadMIP(MIPInfo mip) {
         long startTime = System.currentTimeMillis();
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
@@ -70,7 +70,7 @@ abstract class ColorMIPSearch implements Serializable {
         ImagePlus ij = null;
         try {
             ij = readImagePlus(mip.id, getImageFormat(mip.filepath), inputStream);
-            return new MIPWithImage(mip, ij);
+            return new MIPWithPixels(mip, ij);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         } finally {
@@ -116,9 +116,9 @@ abstract class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    abstract void compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold);
+    abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold);
 
-    ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage maskMIP, Integer searchThreshold) {
+    ColorMIPSearchResult runImageComparison(MIPWithPixels libraryMIP, MIPWithPixels maskMIP, Integer searchThreshold) {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  maskMIP, searchThreshold);

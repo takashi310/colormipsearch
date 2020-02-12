@@ -1,19 +1,15 @@
 package org.janelia.colormipsearch;
 
-import java.util.stream.IntStream;
-
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 
-class MIPWithImage extends MinimalColorDepthMIP {
-
+class MIPWithPixels extends MIPInfo {
     int width;
     int height;
     int[] pixels;
 
-    MIPWithImage(MinimalColorDepthMIP mipInfo, ImagePlus image) {
-        this.id = mipInfo.id;
-        this.filepath = mipInfo.filepath;
+    MIPWithPixels(MIPInfo mipInfo, ImagePlus image) {
+        super(mipInfo);
         ImageProcessor ip = image.getProcessor();
         this.width = ip.getWidth();
         this.height = ip.getHeight();
@@ -33,9 +29,5 @@ class MIPWithImage extends MinimalColorDepthMIP {
 
     void set(int pi, int pixel) {
         pixels[pi] = pixel;
-    }
-
-    MinimalColorDepthMIP mipInfo() {
-        return new MinimalColorDepthMIP(this);
     }
 }

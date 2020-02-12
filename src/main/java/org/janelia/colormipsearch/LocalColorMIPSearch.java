@@ -25,7 +25,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         super(outputPath, dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold) {
+    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -33,7 +33,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
 
         LOG.info("Load {} masks", nmasks);
-        List<MIPWithImage> masksMIPSWithImages = maskMIPS.stream().parallel()
+        List<MIPWithPixels> masksMIPSWithImages = maskMIPS.stream().parallel()
                 .filter(mip -> new File(mip.filepath).exists())
                 .map(this::loadMIP)
                 .collect(Collectors.toList());

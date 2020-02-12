@@ -15,14 +15,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class ColorMIPSearchResult implements Serializable {
 
-    final MinimalColorDepthMIP maskMIP;
-    final MinimalColorDepthMIP libraryMIP;
+    final MIPInfo maskMIP;
+    final MIPInfo libraryMIP;
     final int matchingSlices;
     final double matchingSlicesPct;
     final boolean isMatch;
     final boolean isError;
 
-    public ColorMIPSearchResult(MinimalColorDepthMIP maskMIP, MinimalColorDepthMIP libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+    public ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;

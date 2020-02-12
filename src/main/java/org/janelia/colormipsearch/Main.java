@@ -166,11 +166,11 @@ public class Main {
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             ;
 
-            List<MinimalColorDepthMIP> libraryMips = args.librariesInputs.stream()
+            List<MIPInfo> libraryMips = args.librariesInputs.stream()
                     .flatMap(libraryInput -> readMIPs(libraryInput).stream())
                     .collect(Collectors.toList());
 
-            List<MinimalColorDepthMIP> masksMips = args.masksInputs.stream()
+            List<MIPInfo> masksMips = args.masksInputs.stream()
                     .flatMap(masksInput -> readMIPs(masksInput).stream())
                     .collect(Collectors.toList());
 
@@ -180,12 +180,12 @@ public class Main {
         }
     }
 
-    private static List<MinimalColorDepthMIP> readMIPs(MIPListArg mipsArg) {
+    private static List<MIPInfo> readMIPs(MIPListArg mipsArg) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
             LOG.info("Reading {}", mipsArg);
-            List<MinimalColorDepthMIP> content = mapper.readValue(new File(mipsArg.inputFilename), new TypeReference<List<MinimalColorDepthMIP>>() {});
+            List<MIPInfo> content = mapper.readValue(new File(mipsArg.inputFilename), new TypeReference<List<MIPInfo>>() {});
             int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
             int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
             LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);

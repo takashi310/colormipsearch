@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 class ColorMIPMaskCompare {
 
-    MIPWithImage m_query;
-    MIPWithImage m_negquery;
+    MIPWithPixels m_query;
+    MIPWithPixels m_negquery;
     int[] m_mask;
     int[] m_negmask;
     int[][] m_tarmasklist;
@@ -36,8 +36,8 @@ class ColorMIPMaskCompare {
     }
 
     //Advanced Search
-    ColorMIPMaskCompare(MIPWithImage query, int mask_th, boolean mirror_mask,
-                        MIPWithImage negquery, int negmask_th,
+    ColorMIPMaskCompare(MIPWithPixels query, int mask_th, boolean mirror_mask,
+                        MIPWithPixels negquery, int negmask_th,
                         boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
         m_query = query;
         m_negquery = negquery;
@@ -104,7 +104,7 @@ class ColorMIPMaskCompare {
 
     }
 
-    Output runSearch(MIPWithImage tarimg_in, MIPWithImage coloc_out) {
+    Output runSearch(MIPWithPixels tarimg_in, MIPWithPixels coloc_out) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = m_mask.length;
@@ -163,7 +163,7 @@ class ColorMIPMaskCompare {
         return new Output(posi, posipersent);
     }
 
-    private static int[] get_mskpos_array(MIPWithImage msk, int thresm) {
+    private static int[] get_mskpos_array(MIPWithPixels msk, int thresm) {
         int sumpx = msk.getPixelCount();
         ArrayList<Integer> pos = new ArrayList<Integer>();
         int pix, red, green, blue;
@@ -226,7 +226,7 @@ class ColorMIPMaskCompare {
         return out;
     }
 
-    private static int calc_score(MIPWithImage src, int[] srcmaskposi, MIPWithImage tar, int[] tarmaskposi, int th, double pixfludub, MIPWithImage coloc_out) {
+    private static int calc_score(MIPWithPixels src, int[] srcmaskposi, MIPWithPixels tar, int[] tarmaskposi, int th, double pixfludub, MIPWithPixels coloc_out) {
         int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
         int posi = 0;
         for (int masksig = 0; masksig < masksize; masksig++) {
@@ -380,10 +380,8 @@ class ColorMIPMaskCompare {
                     pxGap = BrGap + BgGap;
                 }
             }
-            //		IJ.log("pxGap; "+String.valueOf(pxGap)+"  BR1;"+String.valueOf(BR1)+", br1; "+String.valueOf(br1)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2)+", BG2; "+String.valueOf(BG2)+", bg2; "+String.valueOf(bg2));
         } else if (BG1 > 0) {//2, mask/////////////////////////////
             if (BG2 > 0) {//2, data, 2,mask
-
                 if (bg1 > 0 && bg2 > 0) {
                     if (bg1 != bg2) {
                         pxGap = bg2 - bg1;
@@ -394,13 +392,11 @@ class ColorMIPMaskCompare {
                     if (bg1 == 255 & bg2 == 255)
                         pxGap = 1000;
                 }
-                //	IJ.log(" pxGap BG2;"+String.valueOf(pxGap)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2));
             } else if (GB2 > 0) {//3, data, 2,mask
                 if (bg1 > 0.8 && gb2 > 0.8) {
                     BgGap = BgGb - bg1;//BgGb=0.996078431;
                     GbGap = BgGb - gb2;//BgGb=0.996078431;
                     pxGap = BgGap + GbGap;
-                    //			IJ.log(" pxGap GB2;"+String.valueOf(pxGap));
                 }
             } else if (BR2 > 0) {//1, data, 2,mask
                 if (bg1 < 0.54 && br2 < 0.44) {
@@ -409,15 +405,12 @@ class ColorMIPMaskCompare {
                     pxGap = BrGap + BgGap;
                 }
             }
-            //		IJ.log("pxGap; "+String.valueOf(pxGap)+"  BG1;"+String.valueOf(BG1)+"  BG2;"+String.valueOf(BG2)+", bg1; "+String.valueOf(bg1)+", bg2; "+String.valueOf(bg2)+", GB2; "+String.valueOf(GB2)+", gb2; "+String.valueOf(gb2)+", BR2; "+String.valueOf(BR2)+", br2; "+String.valueOf(br2));
         } else if (GB1 > 0) {//3, mask/////////////////////////////
             if (GB2 > 0) {//3, data, 3mask
                 if (gb1 > 0 && gb2 > 0) {
                     if (gb1 != gb2) {
                         pxGap = gb2 - gb1;
                         pxGap = Math.abs(pxGap);
-
-                        //	IJ.log(" pxGap GB2;"+String.valueOf(pxGap));
                     } else
                         pxGap = 0;
                     if (gb1 == 255 & gb2 == 255)
@@ -477,7 +470,6 @@ class ColorMIPMaskCompare {
                     GrGap = GrRg - gr2;//GrRg=0.996078431;
                     RgGap = GrRg - rg1;//GrRg=0.996078431;
                     pxGap = GrGap + RgGap;
-                    //	IJ.log(" pxGap GR2;"+String.valueOf(pxGap));
                 }
             } else if (RB2 > 0) {//6 data, 5mask
                 if (rg1 < 0.7 && rb2 < 0.7) {
@@ -502,7 +494,6 @@ class ColorMIPMaskCompare {
                     RgGap = rg2 - RgRb;//RgRb=0.505882353;
                     RbGap = rb1 - RgRb;//RgRb=0.505882353;
                     pxGap = RgGap + RbGap;
-                    //	IJ.log(" pxGap RG;"+String.valueOf(pxGap));
                 }
             }
         }//2 color advance core
