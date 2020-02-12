@@ -146,7 +146,7 @@ public class ExtractColorMIPsMetadata {
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(isEmSkeleton.or(hasSample.and(hasConsensusLine))) // here we may have to filter if it has published name
                     .map(cdmip -> isEmSkeleton.test(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
-                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedLineOrSkeleton, Collectors.toList()))
+                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()))
                     ;
             // write the results to the output
             resultsByLineOrSkeleton
@@ -168,7 +168,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
         cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
         if (cdmip.sample != null) {
-            cdMetadata.publishedLineOrSkeleton = cdmip.sample.line; // This will have to change to the published line
+            cdMetadata.publishedName = cdmip.sample.line; // This will have to change to the published line
             cdMetadata.addAttr("Line", cdmip.sample.line);
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Published Name", cdmip.sample.publishingName);
@@ -197,7 +197,7 @@ public class ExtractColorMIPsMetadata {
         } else {
             lineID = line.substring(piSeparator + 1);
         }
-        cdMetadata.publishedLineOrSkeleton = StringUtils.defaultIfBlank(lineID, "Unknown");
+        cdMetadata.publishedName = StringUtils.defaultIfBlank(lineID, "Unknown");
         cdMetadata.addAttr("Line", line);
         String slideCode = mipNameComponents.size() > 1 ? mipNameComponents.get(1) : null;
         cdMetadata.addAttr("Slide Code", slideCode);
@@ -212,7 +212,7 @@ public class ExtractColorMIPsMetadata {
         TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
         cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
         cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
-        cdMetadata.publishedLineOrSkeleton = extractEMSkeletonIdFromName(cdmip.name);
+        cdMetadata.publishedName = extractEMSkeletonIdFromName(cdmip.name);
         cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         return cdMetadata;
@@ -344,7 +344,10 @@ public class ExtractColorMIPsMetadata {
                             try {
                                 gen.writeStartObject();
                                 gen.writeStringField("id", cdmip.id);
+                                gen.writeStringField("libraryName", cdmip.findLibrary());
                                 gen.writeStringField("filepath", cdmip.filepath);
+                                gen.writeStringField("imageURL", cdmip.publicImageUrl);
+                                gen.writeStringField("thumbnailURL", cdmip.publicThumbnailUrl);
                                 gen.writeEndObject();
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);

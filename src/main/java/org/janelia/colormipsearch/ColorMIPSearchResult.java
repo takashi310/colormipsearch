@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.io.Serializable;
 
+import com.google.common.base.Preconditions;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -13,48 +15,34 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class ColorMIPSearchResult implements Serializable {
 
-    private final String patternId;
-    private final String patternFilepath;
-    private final String libraryId;
-    private final String libraryFilepath;
-    private final int matchingSlices;
-    private final double matchingSlicesPct;
-    private final boolean isMatch;
-    private final boolean isError;
+    final MinimalColorDepthMIP maskMIP;
+    final MinimalColorDepthMIP libraryMIP;
+    final int matchingSlices;
+    final double matchingSlicesPct;
+    final boolean isMatch;
+    final boolean isError;
 
-    public ColorMIPSearchResult(String patternId, String patternFilepath, String libraryId, String libraryFilepath, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
-        this.patternId = patternId;
-        this.patternFilepath = patternFilepath;
-        this.libraryId = libraryId;
-        this.libraryFilepath = libraryFilepath;
+    public ColorMIPSearchResult(MinimalColorDepthMIP maskMIP, MinimalColorDepthMIP libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+        Preconditions.checkArgument(maskMIP != null);
+        Preconditions.checkArgument(libraryMIP != null);
+        this.maskMIP = maskMIP;
+        this.libraryMIP = libraryMIP;
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
         this.isError = isError;
     }
 
-    public String getPatternId() {
-        return patternId;
-    }
-
-    public String getPatternFilepath() {
-        return patternFilepath;
-    }
-
     public String getLibraryId() {
-        return libraryId;
+        return libraryMIP.id;
     }
 
-    public String getLibraryFilepath() {
-        return libraryFilepath;
+    public String getMaskId() {
+        return maskMIP.id;
     }
 
     public int getMatchingSlices() {
         return matchingSlices;
-    }
-
-    public double getMatchingSlicesPct() {
-        return matchingSlicesPct;
     }
 
     public boolean isMatch() {
@@ -75,20 +63,16 @@ public class ColorMIPSearchResult implements Serializable {
 
         return new EqualsBuilder()
                 .append(matchingSlices, that.matchingSlices)
-                .append(patternId, that.patternId)
-                .append(patternFilepath, that.patternFilepath)
-                .append(libraryId, that.libraryId)
-                .append(libraryFilepath, that.libraryFilepath)
+                .append(maskMIP, that.maskMIP)
+                .append(libraryMIP, that.libraryMIP)
                 .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-                .append(patternId)
-                .append(patternFilepath)
-                .append(libraryId)
-                .append(libraryFilepath)
+                .append(maskMIP)
+                .append(libraryMIP)
                 .append(matchingSlices)
                 .toHashCode();
     }
@@ -96,14 +80,13 @@ public class ColorMIPSearchResult implements Serializable {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("patternId", patternId)
-                .append("patternFilepath", patternFilepath)
-                .append("libraryId", libraryId)
-                .append("libraryFilepath", libraryFilepath)
+                .append("maskMIP", maskMIP)
+                .append("libraryMIP", libraryMIP)
                 .append("matchingSlices", matchingSlices)
                 .append("matchingSlicesPct", matchingSlicesPct)
                 .append("isMatch", isMatch)
                 .append("isError", isError)
                 .toString();
     }
+
 }

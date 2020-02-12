@@ -36,6 +36,6 @@ class MIPWithImage extends MinimalColorDepthMIP {
     }
 
     MinimalColorDepthMIP mipInfo() {
-        return new MinimalColorDepthMIP(id, filepath);
+        return new MinimalColorDepthMIP(this);
     }
 }

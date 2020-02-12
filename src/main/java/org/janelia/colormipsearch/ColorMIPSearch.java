@@ -40,8 +40,6 @@ abstract class ColorMIPSearch implements Serializable {
         UNKNOWN
     }
 
-    private static final int ERROR_THRESHOLD = 20;
-
     private String outputPath;
     private Integer dataThreshold;
     private Integer xyShift;
@@ -120,14 +118,14 @@ abstract class ColorMIPSearch implements Serializable {
 
     abstract void compareEveryMaskWithEveryLibrary(List<MinimalColorDepthMIP> maskMIPS, List<MinimalColorDepthMIP> libraryMIPS, Integer maskThreshold);
 
-    ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage patternMIP, Integer searchThreshold) {
+    ColorMIPSearchResult runImageComparison(MIPWithImage libraryMIP, MIPWithImage maskMIP, Integer searchThreshold) {
         long startTime = System.currentTimeMillis();
         try {
-            LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  patternMIP, searchThreshold);
+            LOG.debug("Compare library file {} with mask {} using threshold {}", libraryMIP,  maskMIP, searchThreshold);
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    patternMIP,
+                    maskMIP,
                     searchThreshold,
                     mirrorMask,
                     null,
@@ -142,12 +140,12 @@ abstract class ColorMIPSearch implements Serializable {
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
 
-            return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, output.matchingPixNum, output.matchingPct, isMatch, false);
+            return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, false);
         } catch (Throwable e) {
-            LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  patternMIP, e);
-            return new ColorMIPSearchResult(patternMIP.id, patternMIP.filepath, libraryMIP.id, libraryMIP.filepath, 0, 0, false, true);
+            LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  maskMIP, e);
+            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, true);
         } finally {
-            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  patternMIP, System.currentTimeMillis() - startTime);
+            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  maskMIP, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -155,7 +153,7 @@ abstract class ColorMIPSearch implements Serializable {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
     }
 
-    void writeSearchResults(String filename, List<ColorMIPSearchResult> searchResults) {
+    void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
         OutputStream outputStream;
         long startTime = System.currentTimeMillis();
         File outputFile = new File(outputPath, filename + ".json");
@@ -192,9 +190,7 @@ abstract class ColorMIPSearch implements Serializable {
                 // reset the position
                 rf.seek(endOfLastItemPos);
                 // and now start writing the actual elements
-                for (ColorMIPSearchResult sr : searchResults) {
-                    gen.writeObject(sr);
-                }
+                writeColorSearchResultsArray(gen, searchResults);
                 gen.writeEndArray();
                 gen.writeEndObject();
                 gen.flush();
@@ -222,9 +218,7 @@ abstract class ColorMIPSearch implements Serializable {
                 gen.useDefaultPrettyPrinter();
                 gen.writeStartObject();
                 gen.writeArrayFieldStart("results");
-                for (ColorMIPSearchResult sr : searchResults) {
-                    gen.writeObject(sr);
-                }
+                writeColorSearchResultsArray(gen, searchResults);
                 gen.writeEndArray();
                 gen.writeEndObject();
                 gen.flush();
@@ -238,6 +232,12 @@ abstract class ColorMIPSearch implements Serializable {
                 }
                 LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
             }
+        }
+    }
+
+    private void writeColorSearchResultsArray(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
+        for (ColorMIPSearchResultMetadata sr : searchResults) {
+            gen.writeObject(sr);
         }
     }
 

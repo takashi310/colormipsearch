@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterators;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -28,8 +29,32 @@ class SparkColorMIPSearch extends ColorMIPSearch {
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
     private enum ResultGroupingCriteria {
-        BY_LIBRARY,
-        BY_MASK;
+        BY_LIBRARY(sr -> {
+            ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
+            srMetadata.id = sr.getLibraryId();
+            srMetadata.imageUrl = sr.maskMIP.imageURL;
+            srMetadata.thumbnailUrl = sr.maskMIP.thumbnailURL;
+            srMetadata.addAttr("Library", sr.maskMIP.libraryName);
+            srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
+            srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
+            return srMetadata;
+        }),
+        BY_MASK(sr -> {
+            ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
+            srMetadata.id = sr.getMaskId();
+            srMetadata.imageUrl = sr.libraryMIP.imageURL;
+            srMetadata.thumbnailUrl = sr.libraryMIP.thumbnailURL;
+            srMetadata.addAttr("Library", sr.libraryMIP.libraryName);
+            srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
+            srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
+            return srMetadata;
+        });
+
+        private Function<ColorMIPSearchResult, ColorMIPSearchResultMetadata> transformation;
+
+        private ResultGroupingCriteria(Function<ColorMIPSearchResult, ColorMIPSearchResultMetadata> transformation) {
+            this.transformation = transformation;
+        }
     }
 
     private transient final JavaSparkContext sparkContext;
@@ -87,7 +112,11 @@ class SparkColorMIPSearch extends ColorMIPSearch {
                         .sorted(getColorMIPSearchComparator())
                         .collect(Collectors.toList())));
 
-        matchingSearchResultsByMask.foreach(srByMask -> writeSearchResults(srByMask._1.id, srByMask._2));
+        matchingSearchResultsByMask.foreach(srByMask -> writeSearchResults(
+                srByMask._1.id,
+                srByMask._2.stream()
+                        .map(ResultGroupingCriteria.BY_MASK.transformation)
+                        .collect(Collectors.toList())));
 
         // write results for each library now
         writeAllSearchResults(matchingSearchResultsByMask.flatMap(srByLibraryMIP -> srByLibraryMIP._2.iterator()), ResultGroupingCriteria.BY_LIBRARY);
@@ -105,7 +134,7 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         JavaPairRDD<String, Iterable<ColorMIPSearchResult>> groupedSearchResults = searchResults.groupBy(sr -> {
             switch (groupingCriteria) {
                 case BY_MASK:
-                    return sr.getPatternId();
+                    return sr.getMaskId();
                 case BY_LIBRARY:
                     return sr.getLibraryId();
                 default:
@@ -137,8 +166,11 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         LOG.info("Finished combining all results by key in {} partitions using {} criteria", combinedSearchResults.getNumPartitions(), groupingCriteria);
 
         combinedSearchResults
-                .foreach(keyWithSearchResults -> writeSearchResults(keyWithSearchResults._1, keyWithSearchResults._2))
-        ;
+                .foreach(keyWithSearchResults -> writeSearchResults(
+                        keyWithSearchResults._1,
+                        keyWithSearchResults._2.stream()
+                                .map(groupingCriteria.transformation)
+                                .collect(Collectors.toList())));
         LOG.info("Finished writing the search results by {}", groupingCriteria);
     }
 

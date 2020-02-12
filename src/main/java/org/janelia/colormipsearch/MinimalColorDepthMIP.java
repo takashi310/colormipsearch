@@ -12,14 +12,23 @@ class MinimalColorDepthMIP implements Serializable {
     @JsonProperty
     String id;
     @JsonProperty
+    String libraryName;
+    @JsonProperty
     String filepath;
+    @JsonProperty
+    String imageURL;
+    @JsonProperty
+    String thumbnailURL;
 
     MinimalColorDepthMIP() {
     }
 
-    MinimalColorDepthMIP(String id, String filepath) {
-        this.id = id;
-        this.filepath = filepath;
+    MinimalColorDepthMIP(MinimalColorDepthMIP that) {
+        this.id = that.id;
+        this.libraryName = that.libraryName;
+        this.filepath = that.filepath;
+        this.imageURL = that.imageURL;
+        this.thumbnailURL = that.thumbnailURL;
     }
 
     @Override
