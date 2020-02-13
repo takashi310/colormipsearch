@@ -3,7 +3,12 @@ package org.janelia.colormipsearch;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -18,11 +23,21 @@ import org.slf4j.LoggerFactory;
 class LocalColorMIPSearch extends ColorMIPSearch {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
+    private static final int DEFAULT_CDS_THREADS = 20;
+
+    private final Executor cdsExecutor;
 
     LocalColorMIPSearch(String outputPath,
                         Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
-                        boolean mirrorMask, Double pctPositivePixels) {
+                        boolean mirrorMask, Double pctPositivePixels,
+                        int numberOfCdsThreads) {
         super(outputPath, dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
+        cdsExecutor = Executors.newFixedThreadPool(
+                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
+                new ThreadFactoryBuilder()
+                        .setNameFormat("CDSRUNNER-%d")
+                        .setDaemon(true)
+                        .build());
     }
 
     void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold) {
@@ -46,30 +61,31 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .map(libraryMIP -> {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
-                    List<ColorMIPSearchResult> srForCurrentLibrary = masksMIPSWithImages.stream()
+                    List<CompletableFuture<ColorMIPSearchResult>> srForLibFutures = masksMIPSWithImages.stream()
                             .filter(mip -> new File(mip.filepath).exists())
-                            .map(maskMIP -> runImageComparison(libraryMIP, maskMIP, maskThreshold))
-                            .filter(ColorMIPSearchResult::isMatch)
-                            .sorted(getColorMIPSearchComparator())
-                            .collect(Collectors.toList());
-                    LOG.info("Done comparing {} with {} masks in {}ms", libraryMIP, nmasks, System.currentTimeMillis() - startLibraryComparison);
-
-                    LOG.info("Write {} search results for {}", srForCurrentLibrary.size(), libraryMIP);
-                    writeSearchResults(libraryMIP.id, srForCurrentLibrary.stream()
-                            .map(sr -> {
-                                ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-                                srMetadata.id = sr.getLibraryId();
-                                srMetadata.imageUrl = sr.maskMIP.imageURL;
-                                srMetadata.thumbnailUrl = sr.maskMIP.thumbnailURL;
-                                srMetadata.addAttr("Library", sr.maskMIP.libraryName);
-                                srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
-                                srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
-                                return srMetadata;
-                            })
+                            .map(maskMIP -> CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIP, maskMIP, maskThreshold), cdsExecutor))
                             .collect(Collectors.toList())
-                    );
-                    LOG.info("Written {} search results for {} (processing time {}ms)", srForCurrentLibrary.size(), libraryMIP, System.currentTimeMillis() - startLibraryComparison);
-                    return ImmutablePair.of(libraryMIP.id, srForCurrentLibrary);
+                            ;
+                    try {
+                        return CompletableFuture.allOf(srForLibFutures.toArray(new CompletableFuture<?>[0]))
+                                .thenApplyAsync(vr -> srForLibFutures.stream().map(CompletableFuture::join), cdsExecutor)
+                                .thenApplyAsync(srsStreamForCurrentLibrary -> srsStreamForCurrentLibrary
+                                        .filter(ColorMIPSearchResult::isMatch)
+                                        .sorted(getColorMIPSearchComparator())
+                                        .collect(Collectors.toList()), cdsExecutor)
+                                .thenApplyAsync(srsForCurrentLibrary -> {
+                                    LOG.info("Write {} search results for all masks against {} ", srsForCurrentLibrary.size(), libraryMIP);
+                                    writeSearchResults(libraryMIP.id, srsForCurrentLibrary.stream()
+                                            .map(ColorMIPSearchResult::perLibraryMetadata)
+                                            .collect(Collectors.toList())
+                                    );
+                                    return ImmutablePair.of(libraryMIP.id, srsForCurrentLibrary);
+                                }, cdsExecutor)
+                                .join()
+                                ;
+                    } finally {
+                        LOG.info("Completed comparing {} with {} masks in {}ms", libraryMIP, nmasks, System.currentTimeMillis() - startLibraryComparison);
+                    }
                 })
                 .collect(Collectors.toList())
                 ;
@@ -80,16 +96,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getMaskId, Collectors.collectingAndThen(Collectors.toList(),
                         srByMask -> srByMask.stream()
                                 .sorted(getColorMIPSearchComparator())
-                                .map(sr -> {
-                                    ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-                                    srMetadata.id = sr.getMaskId();
-                                    srMetadata.imageUrl = sr.libraryMIP.imageURL;
-                                    srMetadata.thumbnailUrl = sr.libraryMIP.thumbnailURL;
-                                    srMetadata.addAttr("Library", sr.libraryMIP.libraryName);
-                                    srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
-                                    srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
-                                    return srMetadata;
-                                })
+                                .map(ColorMIPSearchResult::perMaskMetadata)
                                 .collect(Collectors.toList())
                 )))
                 ;

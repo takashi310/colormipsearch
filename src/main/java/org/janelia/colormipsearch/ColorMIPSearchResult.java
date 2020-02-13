@@ -13,7 +13,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class ColorMIPSearchResult implements Serializable {
+class ColorMIPSearchResult implements Serializable {
 
     final MIPInfo maskMIP;
     final MIPInfo libraryMIP;
@@ -22,7 +22,7 @@ public class ColorMIPSearchResult implements Serializable {
     final boolean isMatch;
     final boolean isError;
 
-    public ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
@@ -33,23 +33,23 @@ public class ColorMIPSearchResult implements Serializable {
         this.isError = isError;
     }
 
-    public String getLibraryId() {
+    String getLibraryId() {
         return libraryMIP.id;
     }
 
-    public String getMaskId() {
+    String getMaskId() {
         return maskMIP.id;
     }
 
-    public int getMatchingSlices() {
+    int getMatchingSlices() {
         return matchingSlices;
     }
 
-    public boolean isMatch() {
+    boolean isMatch() {
         return isMatch;
     }
 
-    public boolean isError() {
+    boolean isError() {
         return isError;
     }
 
@@ -87,6 +87,30 @@ public class ColorMIPSearchResult implements Serializable {
                 .append("isMatch", isMatch)
                 .append("isError", isError)
                 .toString();
+    }
+
+    ColorMIPSearchResultMetadata perLibraryMetadata() {
+        ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
+        srMetadata.id = getLibraryId();
+        srMetadata.matchedId = getMaskId();
+        srMetadata.imageUrl = maskMIP.imageURL;
+        srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
+        srMetadata.addAttr("Library", maskMIP.libraryName);
+        srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
+        srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
+        return srMetadata;
+    }
+
+    ColorMIPSearchResultMetadata perMaskMetadata() {
+        ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
+        srMetadata.id = getMaskId();
+        srMetadata.matchedId = getLibraryId();
+        srMetadata.imageUrl = libraryMIP.imageURL;
+        srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
+        srMetadata.addAttr("Library", libraryMIP.libraryName);
+        srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
+        srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
+        return srMetadata;
     }
 
 }
