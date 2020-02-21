@@ -125,13 +125,8 @@ public class ExtractColorMIPsMetadata {
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
 
-        Predicate<String> isEmLibrary = aLibraryName -> StringUtils.equalsIgnoreCase(EM_LIBRARY, aLibraryName);
-        Predicate<ColorDepthMIP> isEmSkeleton = cdmip -> isEmLibrary.test(cdmip.findLibrary());
-        Predicate<ColorDepthMIP> hasSample = cdmip -> cdmip.sample != null;
-        Predicate<ColorDepthMIP> hasConsensusLine = cdmip -> !StringUtils.equalsIgnoreCase(NO_CONSENSUS_LINE, cdmip.sample.line);
-
         Path outputPath;
-        if (isEmLibrary.test(libraryArg.input)) {
+        if (isEmLibrary(libraryArg.input)) {
             outputPath = Paths.get(outputDir, "by_body");
         } else {
             outputPath = Paths.get(outputDir, "by_line");
@@ -147,8 +142,8 @@ public class ExtractColorMIPsMetadata {
             List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
-                    .filter(isEmSkeleton.or(hasSample.and(hasConsensusLine))) // here we may have to filter if it has published name
-                    .map(cdmip -> isEmSkeleton.test(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
+                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip)))
+                    .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
                     .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()))
                     ;
@@ -165,9 +160,9 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
-        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
-        cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
+        cdMetadata.filepath = cdmip.filepath;
+        cdMetadata.imageUrl = cdmip.publicImageUrl;
+        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         if (cdmip.sample != null) {
             cdMetadata.publishedName = cdmip.sample.publishingName;
             cdMetadata.line = cdmip.sample.line;
@@ -185,6 +180,22 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         cdMetadata.addAttr("Channel", cdmip.channelNumber);
         return cdMetadata;
+    }
+
+    private boolean isEmLibrary(String lname) {
+        return StringUtils.equalsIgnoreCase(EM_LIBRARY, lname);
+    }
+
+    private boolean isEmSkeleton(ColorDepthMIP cdmip) {
+        return isEmLibrary(cdmip.findLibrary());
+    }
+
+    private boolean hasSample(ColorDepthMIP cdmip) {
+        return cdmip.sample != null;
+    }
+
+    private boolean hasConsensusLine(ColorDepthMIP cdmip) {
+        return !StringUtils.equalsIgnoreCase(NO_CONSENSUS_LINE, cdmip.sample.line);
     }
 
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
@@ -210,9 +221,9 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
-        TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
-        cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
-        cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
+        cdMetadata.filepath = cdmip.filepath;
+        cdMetadata.imageUrl = cdmip.publicImageUrl;
+        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         cdMetadata.publishedName = extractEMSkeletonIdFromName(cdmip.name);
         cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
@@ -345,18 +356,20 @@ public class ExtractColorMIPsMetadata {
             gen.writeStartArray();
             for (int pageOffset = libraryArg.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
-                List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithoutSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
+                List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
-                cdmipsPage
+                cdmipsPage.stream()
+                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip)))
+                        .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                         .forEach(cdmip -> {
                             try {
                                 gen.writeStartObject();
                                 gen.writeStringField("id", cdmip.id);
-                                gen.writeStringField("libraryName", cdmip.findLibrary());
+                                gen.writeStringField("libraryName", cdmip.libraryName);
+                                gen.writeStringField("publishedName", cdmip.publishedName);
                                 gen.writeStringField("filepath", cdmip.filepath);
-                                TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
-                                gen.writeStringField("imageURL", StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL));
-                                gen.writeStringField("thumbnailURL", StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL));
+                                gen.writeStringField("imageURL", cdmip.imageUrl);
+                                gen.writeStringField("thumbnailURL", cdmip.thumbnailUrl);
                                 gen.writeEndObject();
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);

@@ -9,4 +9,5 @@ class ColorDepthMetadata extends MetadataAttrs {
     String line;
     @JsonProperty
     String sampleRef;
+    String filepath;
 }
