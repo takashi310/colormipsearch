@@ -14,6 +14,8 @@ class MIPInfo implements Serializable {
     @JsonProperty
     String libraryName;
     @JsonProperty
+    String publishedName;
+    @JsonProperty
     String filepath;
     @JsonProperty
     String imageURL;
@@ -26,6 +28,7 @@ class MIPInfo implements Serializable {
     MIPInfo(MIPInfo that) {
         this.id = that.id;
         this.libraryName = that.libraryName;
+        this.publishedName = that.publishedName;
         this.filepath = that.filepath;
         this.imageURL = that.imageURL;
         this.thumbnailURL = that.thumbnailURL;

@@ -93,10 +93,12 @@ class ColorMIPSearchResult implements Serializable {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
         srMetadata.id = getLibraryId();
         srMetadata.libraryName = libraryMIP.libraryName;
+        srMetadata.publishedName = libraryMIP.publishedName;
         srMetadata.matchedId = getMaskId();
         srMetadata.imageUrl = maskMIP.imageURL;
         srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
         srMetadata.addAttr("Library", maskMIP.libraryName);
+        srMetadata.addAttr("PublishedName", maskMIP.publishedName);
         srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
         srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
         return srMetadata;
@@ -106,10 +108,12 @@ class ColorMIPSearchResult implements Serializable {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
         srMetadata.id = getMaskId();
         srMetadata.libraryName = maskMIP.libraryName;
+        srMetadata.publishedName = maskMIP.publishedName;
         srMetadata.matchedId = getLibraryId();
         srMetadata.imageUrl = libraryMIP.imageURL;
         srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
         srMetadata.addAttr("Library", libraryMIP.libraryName);
+        srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
         srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
         srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
         return srMetadata;
