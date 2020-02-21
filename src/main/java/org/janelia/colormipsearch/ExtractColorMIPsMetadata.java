@@ -87,6 +87,9 @@ public class ExtractColorMIPsMetadata {
 
         @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
         private String outputDir;
+
+        @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
+        private boolean displayHelpMessage = false;
     }
 
     @Parameters(commandDescription = "Group color depth mips")
@@ -491,11 +494,13 @@ public class ExtractColorMIPsMetadata {
         try {
             cmdline.parse(argv);
         } catch (Exception e) {
-            cmdline.usage();
+            StringBuilder sb = new StringBuilder(e.getMessage()).append('\n');
+            cmdline.usage(sb);
+            JCommander.getConsole().println(sb.toString());
             System.exit(1);
         }
 
-        if (mainArgs.displayHelpMessage || StringUtils.isBlank(cmdline.getParsedCommand())) {
+        if (mainArgs.displayHelpMessage || args.displayHelpMessage || StringUtils.isBlank(cmdline.getParsedCommand())) {
             cmdline.usage();
             System.exit(0);
         }
