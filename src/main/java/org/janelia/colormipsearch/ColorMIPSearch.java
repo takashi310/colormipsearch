@@ -135,7 +135,7 @@ abstract class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIP, null);
+            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIP);
 
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;

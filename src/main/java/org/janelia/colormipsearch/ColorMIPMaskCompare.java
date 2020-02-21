@@ -104,14 +104,14 @@ class ColorMIPMaskCompare {
 
     }
 
-    Output runSearch(MIPWithPixels tarimg_in, MIPWithPixels coloc_out) {
+    Output runSearch(MIPWithPixels tarimg_in) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = m_mask.length;
         int negmasksize = m_negquery != null ? m_negmask.length : 0;
 
         for (int[] ints : m_tarmasklist) {
-            int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub, coloc_out);
+            int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub);
             if (tmpposi > posi) {
                 posi = tmpposi;
                 posipersent = (double) posi / (double) masksize;
@@ -121,7 +121,7 @@ class ColorMIPMaskCompare {
             int nega = 0;
             double negapersent = 0.0;
             for (int[] ints : m_tarnegmasklist) {
-                int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub, null);
+                int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub);
                 if (tmpnega > nega) {
                     nega = tmpnega;
                     negapersent = (double) nega / (double) negmasksize;
@@ -135,7 +135,7 @@ class ColorMIPMaskCompare {
             int mirror_posi = 0;
             double mirror_posipersent = 0.0;
             for (int[] ints : m_tarmasklist_mirror) {
-                int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub, coloc_out);
+                int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub);
                 if (tmpposi > mirror_posi) {
                     mirror_posi = tmpposi;
                     mirror_posipersent = (double) mirror_posi / (double) masksize;
@@ -145,7 +145,7 @@ class ColorMIPMaskCompare {
                 int nega = 0;
                 double negapersent = 0.0;
                 for (int[] ints : m_tarnegmasklist_mirror) {
-                    int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub, null);
+                    int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub);
                     if (tmpnega > nega) {
                         nega = tmpnega;
                         negapersent = (double) nega / (double) negmasksize;
@@ -226,7 +226,7 @@ class ColorMIPMaskCompare {
         return out;
     }
 
-    private static int calc_score(MIPWithPixels src, int[] srcmaskposi, MIPWithPixels tar, int[] tarmaskposi, int th, double pixfludub, MIPWithPixels coloc_out) {
+    private static int calc_score(MIPWithPixels src, int[] srcmaskposi, MIPWithPixels tar, int[] tarmaskposi, int th, double pixfludub) {
         int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
         int posi = 0;
         for (int masksig = 0; masksig < masksize; masksig++) {
@@ -244,15 +244,10 @@ class ColorMIPMaskCompare {
             int blue2 = pix2 & 0xff;
 
             if (red2 > th || green2 > th || blue2 > th) {
-
                 double pxGap = calc_score_px(red1, green1, blue1, red2, green2, blue2);
-
                 if (pxGap <= pixfludub) {
-                    if (coloc_out != null)
-                        coloc_out.set(tarmaskposi[masksig], pix2);
                     posi++;
                 }
-
             }
         }
         return posi;

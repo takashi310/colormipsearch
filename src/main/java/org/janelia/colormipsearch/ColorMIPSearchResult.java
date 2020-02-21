@@ -92,6 +92,7 @@ class ColorMIPSearchResult implements Serializable {
     ColorMIPSearchResultMetadata perLibraryMetadata() {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
         srMetadata.id = getLibraryId();
+        srMetadata.libraryName = libraryMIP.libraryName;
         srMetadata.matchedId = getMaskId();
         srMetadata.imageUrl = maskMIP.imageURL;
         srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
@@ -104,6 +105,7 @@ class ColorMIPSearchResult implements Serializable {
     ColorMIPSearchResultMetadata perMaskMetadata() {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
         srMetadata.id = getMaskId();
+        srMetadata.libraryName = maskMIP.libraryName;
         srMetadata.matchedId = getLibraryId();
         srMetadata.imageUrl = libraryMIP.imageURL;
         srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;

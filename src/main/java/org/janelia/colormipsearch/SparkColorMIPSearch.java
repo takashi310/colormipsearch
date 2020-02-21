@@ -29,26 +29,9 @@ class SparkColorMIPSearch extends ColorMIPSearch {
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
     private enum ResultGroupingCriteria {
-        BY_LIBRARY(sr -> {
-            ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-            srMetadata.id = sr.getLibraryId();
-            srMetadata.imageUrl = sr.maskMIP.imageURL;
-            srMetadata.thumbnailUrl = sr.maskMIP.thumbnailURL;
-            srMetadata.addAttr("Library", sr.maskMIP.libraryName);
-            srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
-            srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
-            return srMetadata;
-        }),
-        BY_MASK(sr -> {
-            ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-            srMetadata.id = sr.getMaskId();
-            srMetadata.imageUrl = sr.libraryMIP.imageURL;
-            srMetadata.thumbnailUrl = sr.libraryMIP.thumbnailURL;
-            srMetadata.addAttr("Library", sr.libraryMIP.libraryName);
-            srMetadata.addAttr("Matched slices", String.valueOf(sr.matchingSlices));
-            srMetadata.addAttr("Score", String.valueOf(sr.matchingSlicesPct));
-            return srMetadata;
-        });
+        BY_LIBRARY(ColorMIPSearchResult::perLibraryMetadata),
+        BY_MASK(ColorMIPSearchResult::perMaskMetadata)
+        ;
 
         private Function<ColorMIPSearchResult, ColorMIPSearchResultMetadata> transformation;
 

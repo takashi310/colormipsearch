@@ -6,5 +6,7 @@ class ColorDepthMetadata extends MetadataAttrs {
     @JsonProperty
     String internalName;
     @JsonProperty
+    String line;
+    @JsonProperty
     String sampleRef;
 }

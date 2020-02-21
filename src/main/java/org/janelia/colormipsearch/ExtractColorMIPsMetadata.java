@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Splitter;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
@@ -75,8 +76,14 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = {"--alignmentSpace", "-as"}, description = "Alignment space")
         private String alignmentSpace = "JRC2018_Unisex_20x_HR";
 
-        @Parameter(names = {"--libraries", "-l"}, description = "Which libraries to extract", required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
+        @Parameter(names = {"--libraries", "-l"},
+                description = "Which libraries to extract such as {flyem_hemibrain, flylight_gen1_gal4, flylight_gen1_lexa, flylight_gen1_mcfo_case_1, flylight_splitgal4_drivers}. " +
+                        "The format is <libraryName>[:<offset>[:<length>]]",
+                required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         private List<ListArg> libraries;
+
+        @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
+        private List<String> datasets;
 
         @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
         private String outputDir;
@@ -112,10 +119,10 @@ public class ExtractColorMIPsMetadata {
         this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
-    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, String outputDir) {
+    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, String outputDir) {
         // get color depth mips from JACS for the specified alignmentSpace and library
-        int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input);
-        LOG.info("Found {} entities in library {} with alignment space {}", cdmsCount, libraryArg.input, alignmentSpace);
+        int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
+        LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
 
         Predicate<String> isEmLibrary = aLibraryName -> StringUtils.equalsIgnoreCase(EM_LIBRARY, aLibraryName);
@@ -137,11 +144,12 @@ public class ExtractColorMIPsMetadata {
 
         for (int pageOffset = libraryArg.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
             int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
-            List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, pageOffset, pageSize);
+            List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(isEmSkeleton.or(hasSample.and(hasConsensusLine))) // here we may have to filter if it has published name
                     .map(cdmip -> isEmSkeleton.test(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
+                    .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
                     .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()))
                     ;
             // write the results to the output
@@ -161,8 +169,8 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.imageUrl = StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL);
         cdMetadata.thumbnailUrl = StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL);
         if (cdmip.sample != null) {
-            cdMetadata.publishedName = cdmip.sample.line; // This will have to change to the published line
-            cdMetadata.addAttr("Line", cdmip.sample.line);
+            cdMetadata.publishedName = cdmip.sample.publishingName;
+            cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Published Name", cdmip.sample.publishingName);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
@@ -181,7 +189,7 @@ public class ExtractColorMIPsMetadata {
 
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
         List<String> mipNameComponents = Splitter.on('-').splitToList(cdmip.name);
-        String line = mipNameComponents.size() > 0 ? mipNameComponents.get(0) : null;
+        String line = mipNameComponents.size() > 0 ? mipNameComponents.get(0) : cdmip.name;
         // attempt to remove the PI initials
         int piSeparator = StringUtils.indexOf(line, '_');
         String lineID;
@@ -306,9 +314,9 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, String outputDir) {
-        int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input);
-        LOG.info("Found {} entities in library {} with alignment space {}", cdmsCount, libraryArg.input, alignmentSpace);
+    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, String outputDir) {
+        int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
+        LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
 
         Path outputPath = Paths.get(outputDir);
@@ -337,7 +345,7 @@ public class ExtractColorMIPsMetadata {
             gen.writeStartArray();
             for (int pageOffset = libraryArg.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
-                List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithoutSamples(alignmentSpace, libraryArg, pageOffset, pageSize);
+                List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithoutSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage
                         .forEach(cdmip -> {
@@ -346,8 +354,9 @@ public class ExtractColorMIPsMetadata {
                                 gen.writeStringField("id", cdmip.id);
                                 gen.writeStringField("libraryName", cdmip.findLibrary());
                                 gen.writeStringField("filepath", cdmip.filepath);
-                                gen.writeStringField("imageURL", cdmip.publicImageUrl);
-                                gen.writeStringField("thumbnailURL", cdmip.publicThumbnailUrl);
+                                TestData.ImageWithThumnailURL testImageWithThumnailURL = TestData.aRandomURL();
+                                gen.writeStringField("imageURL", StringUtils.defaultIfBlank(cdmip.publicImageUrl, testImageWithThumnailURL.fullImageURL));
+                                gen.writeStringField("thumbnailURL", StringUtils.defaultIfBlank(cdmip.publicThumbnailUrl, testImageWithThumnailURL.thumbnailImageURL));
                                 gen.writeEndObject();
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);
@@ -366,10 +375,11 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private int countColorDepthMips(String alignmentSpace, String library) {
+    private int countColorDepthMips(String alignmentSpace, String library, List<String> datasets) {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 ;
         Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN)).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
@@ -379,19 +389,21 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMIP> retrieveColorDepthMipsWithSamples(String alignmentSpace, ListArg libraryArg, int offset, int pageLength) {
+    private List<ColorDepthMIP> retrieveColorDepthMipsWithSamples(String alignmentSpace, ListArg libraryArg, List<String> datasets, int offset, int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
                         .queryParam("libraryName", libraryArg.input)
                         .queryParam("alignmentSpace", alignmentSpace)
+                        .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                         .queryParam("offset", offset)
                         .queryParam("length", pageLength))
                 ;
     }
 
-    private List<ColorDepthMIP> retrieveColorDepthMipsWithoutSamples(String alignmentSpace, ListArg libraryArg, int offset, int pageLength) {
+    private List<ColorDepthMIP> retrieveColorDepthMipsWithoutSamples(String alignmentSpace, ListArg libraryArg, List<String> datasets, int offset, int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPs")
                 .queryParam("libraryName", libraryArg.input)
                 .queryParam("alignmentSpace", alignmentSpace)
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 .queryParam("offset", offset)
                 .queryParam("length", pageLength))
                 ;
@@ -479,10 +491,10 @@ public class ExtractColorMIPsMetadata {
         args.libraries.forEach(library -> {
             switch (cmdline.getParsedCommand()) {
                 case "groupMIPS":
-                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.outputDir);
+                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.datasets, args.outputDir);
                     break;
                 case "prepareCDSArgs":
-                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.outputDir);
+                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.outputDir);
             }
         });
     }

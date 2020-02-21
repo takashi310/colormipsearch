@@ -91,6 +91,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 ;
         LOG.info("Saved {} search results by library for {} libraries against {} masks in {}s", srByLibraries.size(), nlibraries, nmasks, (System.currentTimeMillis() - startTime) / 1000);
 
+        LOG.info("Group search results (currently grouped by {} libraries) by {} masks", srByLibraries.size(), nmasks);
         Map<String, List<ColorMIPSearchResultMetadata>> srByMasks = srByLibraries.stream().parallel()
                 .flatMap(srByLibrary -> srByLibrary.getRight().stream().parallel())
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getMaskId, Collectors.collectingAndThen(Collectors.toList(),
@@ -100,7 +101,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                 .collect(Collectors.toList())
                 )))
                 ;
-        srByMasks.entrySet()
+        srByMasks.entrySet().stream().parallel()
                 .forEach(srByMask -> writeSearchResults(srByMask.getKey(), srByMask.getValue()));
         LOG.info("Saved {} search results by mask for {} masks against {} libraries in {}s", srByMasks.size(), nmasks, nlibraries, (System.currentTimeMillis() - startTime) / 1000);
 
