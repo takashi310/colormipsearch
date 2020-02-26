@@ -4,14 +4,18 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
 
 import ij.ImagePlus;
 import ij.plugin.filter.RankFilters;
+import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
+import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 class MIPWithPixels extends MIPInfo {
 
@@ -64,9 +68,31 @@ class MIPWithPixels extends MIPInfo {
         pixels[y * width + x] = p;
     }
 
+    ImagePlus cloneAsImagePlus() {
+        switch (this.type) {
+            case ImagePlus.GRAY8:
+                byte[] byteImageBuffer = new byte[this.pixels.length];
+                for (int i = 0; i < pixels.length; i++) {
+                    byteImageBuffer[i] = (byte) (pixels[i] & 0xFF);
+                }
+                return new ImagePlus(null, new ByteProcessor(width, height, byteImageBuffer));
+            case ImagePlus.GRAY16:
+                short[] shortImageBuffer = new short[this.pixels.length];
+                for (int i = 0; i < pixels.length; i++) {
+                    shortImageBuffer[i] = (byte) (pixels[i] & 0xFFFF);
+                }
+                return new ImagePlus(null, new ShortProcessor(width, height, shortImageBuffer, null));
+            default:
+                return new ImagePlus(null, new ColorProcessor(width, height, Arrays.copyOf(pixels, pixels.length)));
+        }
+    }
+
     MIPWithPixels asGray8() {
-        int[] grayPixels = streamAsGrayPixels().toArray();
-        return new MIPWithPixels(this, this.width, this.height, ImagePlus.GRAY8, grayPixels);
+        return new MIPWithPixels(this, width, height, ImagePlus.GRAY8, streamAsGrayPixels().toArray());
+//        ImagePlus image = cloneAsImagePlus();
+//        ImageConverter ic = new ImageConverter(image);
+//        ic.convertToGray8();
+//        return new MIPWithPixels(this, image);
     }
 
     MIPWithPixels asBinary(int threshold) {
@@ -77,6 +103,7 @@ class MIPWithPixels extends MIPInfo {
     }
 
     private IntStream streamAsGrayPixels() {
+        double[] w = ColorProcessor.getWeightingFactors();
         return Arrays.stream(pixels)
                 .map(rgb -> {
                     int r = (rgb >> 16) & 0xFF;
@@ -89,10 +116,9 @@ class MIPWithPixels extends MIPInfo {
                     float bb = (float) Math.pow(b / 255.0, 2.2);
 
                     // Calculate luminance:
-                    float lum = 0.2126f * rr + 0.7152f * gg + 0.0722f * bb;
+                    double lum = w[0] * r + w[1] * g + w[2] * b + 0.5;
 
-                    // Gamma compand and rescale to byte range:
-                    return (int) (255.0 * Math.pow(lum, 1.0 / 2.2));
+                    return (byte) lum;
                 });
     }
 
