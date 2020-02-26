@@ -1,21 +1,29 @@
 package org.janelia.colormipsearch;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
 
 import ij.ImagePlus;
+import ij.plugin.filter.RankFilters;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 class MIPWithPixels extends MIPInfo {
+
     int width;
     int height;
     int type;
     int[] pixels;
 
-    private MIPWithPixels(MIPInfo mipInfo, int type, int[] pixels) {
+    private MIPWithPixels(MIPInfo mipInfo, int width, int height, int type, int[] pixels) {
         super(mipInfo);
+        this.width = width;
+        this.height = height;
         this.type = type;
         this.pixels = pixels;
     }
@@ -58,14 +66,14 @@ class MIPWithPixels extends MIPInfo {
 
     MIPWithPixels asGray8() {
         int[] grayPixels = streamAsGrayPixels().toArray();
-        return new MIPWithPixels(this, ImagePlus.GRAY8, grayPixels);
+        return new MIPWithPixels(this, this.width, this.height, ImagePlus.GRAY8, grayPixels);
     }
 
     MIPWithPixels asBinary(int threshold) {
         int[] binaryPixels = streamAsGrayPixels()
                 .map(p -> p > threshold ? 255 : 0)
                 .toArray();
-        return new MIPWithPixels(this, ImagePlus.GRAY8, binaryPixels);
+        return new MIPWithPixels(this, this.width, this.height, ImagePlus.GRAY8, binaryPixels);
     }
 
     private IntStream streamAsGrayPixels() {
@@ -101,7 +109,7 @@ class MIPWithPixels extends MIPInfo {
                         return rgb;
                 })
                 .toArray();
-        return new MIPWithPixels(this, this.type, maskPixels);
+        return new MIPWithPixels(this, this.width, this.height, this.type, maskPixels);
     }
 
     void applyMask(MIPWithPixels mask) {
@@ -122,4 +130,220 @@ class MIPWithPixels extends MIPInfo {
             }
         }
     }
+
+    MIPWithPixels max2DFilter(int radius) {
+        MIPWithPixels target = new MIPWithPixels(this, this.width, this.height, this.type, Arrays.copyOf(this.pixels, this.pixels.length));
+        ImageProcessor imageProcessor = new ColorProcessor(target.width, target.height, target.pixels);
+        RankFilters maxFilter = new RankFilters();
+        maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
+        return target;
+    }
+
+    MIPWithPixels rawMinMax2DFilter(int radius, Comparator<Integer> pixComparator) {
+        MIPWithPixels target = new MIPWithPixels(this, this.width, this.height, this.type, new int[this.pixels.length]);
+
+        int windowWidth = 2 * radius + 1;
+        Deque<Integer> wedge = new ArrayDeque<>();
+
+        for (int y = 0; y < height; y++) {
+            int xSource = 0;
+            int xTarget = 0;
+            int xStart = 0;
+
+            // Step 1 - start pushing the data into the wedge
+            for (; xSource < radius; ++xSource) {
+                int pix = getPixel(xSource, y);
+                while (!wedge.isEmpty() && pixComparator.compare(this.getPixel(wedge.getLast(), y), pix) <= 0) {
+                    wedge.removeLast();
+                }
+                wedge.addLast(xSource);
+            }
+
+            // Step 2 - keep on pushing data, start writing to the target
+            for (; xSource < width; ++xSource, ++xTarget) {
+                int pix = getPixel(xSource, y);
+                while (!wedge.isEmpty() && pixComparator.compare(this.getPixel(wedge.getLast(), y), pix) <= 0) {
+                    wedge.removeLast();
+                }
+                wedge.addLast(xSource);
+
+                target.setPixel(xTarget, y, getPixel(wedge.getFirst(), y));
+
+                if (xSource + 1 >= windowWidth) {
+                    if (wedge.getFirst() == xStart) {
+                        wedge.removeFirst();
+                    }
+                    ++xStart;
+                }
+            }
+
+            // Step 3 - Keep on removing values from the queue and keep on writing output
+            // pixels cannot be pushed anymore
+            for (; xTarget < width; ++xTarget) {
+                target.setPixel(xTarget, y, getPixel(wedge.getFirst(), y));
+                if (wedge.getFirst() == xStart) {
+                    wedge.removeFirst();
+                }
+                ++xStart;
+            }
+            // clear the wedge before going to the next row
+            wedge.clear();
+        }
+        return target;
+    }
+
+//    void maxFilter(int radius) {
+//        int finalpix = 1;
+//        int inivalue = 255;
+//
+//        for (int r = 0; r < radius; r++) {
+//            int x;
+//            int y;
+//            for (x = 1; x < width - 1; x++) {
+//                for (y = 1; y < height - 1; y++) {
+//                    double pix = getPixel(x, y);
+//                    /*
+//                      pix5  pix2  pix8
+//                      pix4  pix   pix7
+//                      pix6  pix3  pix9
+//                     */
+//                    if (pix == 0) {
+//                        double pix2 = getPixel(x, y - 1);
+//                        double pix3 = getPixel(x, y + 1);
+//
+//                        double pix4 = getPixel(x - 1, y);
+//                        double pix5 = getPixel(x - 1, y - 1);
+//                        double pix6 = getPixel(x - 1, y + 1);
+//
+//                        double pix7 = getPixel(x + 1, y);
+//                        double pix8 = getPixel(x + 1, y - 1);
+//                        double pix9 = getPixel(x + 1, y + 1);
+//
+//                        if (pix2 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix3 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix4 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix7 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix5 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix6 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix8 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                        else if (pix9 == inivalue)
+//                            setPixel(x, y, finalpix);
+//                    }
+//
+//                }
+//            }
+//
+//            // handle first col
+//            x = 0;
+//            for (y = 1; y < height - 1; y++) {
+//                double pix = getPixel(x, y);
+//
+//                if (pix == 0) {
+//                    double pix2 = getPixel(x, y - 1);
+//                    double pix3 = getPixel(x, y + 1);
+//
+//                    double pix7 = getPixel(x + 1, y);
+//                    double pix8 = getPixel(x + 1, y - 1);
+//                    double pix9 = getPixel(x + 1, y + 1);
+//
+//                    if (pix2 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix3 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix7 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix8 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix9 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                }
+//            }
+//
+//            // handle last col
+//            x = width -1;
+//            for (y = 1; y < height - 1; y++) {
+//                double pix = getPixel(x, y);
+//
+//                if (pix == 0) {
+//                    double pix2 = getPixel(x, y - 1);
+//                    double pix3 = getPixel(x, y + 1);
+//
+//                    double pix4 = getPixel(x - 1, y);
+//                    double pix5 = getPixel(x - 1, y - 1);
+//                    double pix6 = getPixel(x - 1, y + 1);
+//
+//                    if (pix2 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix3 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix4 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix5 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix6 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                }
+//            }
+//
+//            // first row
+//            y = 0;
+//            for (x = 1; x < width - 1; x++) {
+//
+//                double pix = getPixel(x, y);
+//
+//                if (pix == inivalue) {
+//                    double pix3 = getPixel(x, y + 1);
+//                    double pix4 = getPixel(x - 1, y);
+//                    double pix6 = getPixel(x - 1, y + 1);
+//                    double pix7 = getPixel(x + 1, y);
+//                    double pix9 = getPixel(x + 1, y + 1);
+//
+//                    if (pix3 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix4 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix7 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix6 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix9 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                }
+//            }
+//
+//            // last row
+//            y = height - 1;
+//            for (x = 1; x < width - 1; x++) {
+//
+//                double pix = getPixel(x, y);
+//
+//                if (pix == inivalue) {
+//                    double pix2 = getPixel(x, y - 1);
+//                    double pix4 = getPixel(x - 1, y);
+//                    double pix5 = getPixel(x - 1, y - 1);
+//                    double pix7 = getPixel(x + 1, y);
+//                    double pix8 = getPixel(x + 1, y - 1);
+//
+//                    if (pix2 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix4 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix5 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix7 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                    else if (pix8 == inivalue)
+//                        setPixel(x, y, finalpix);
+//                }
+//            }
+//
+//        }
+//    }
 }

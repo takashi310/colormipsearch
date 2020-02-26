@@ -6,3 +6,5 @@ hs_err_pid*
 testdata
 target
 local
+
+.DS_Store
