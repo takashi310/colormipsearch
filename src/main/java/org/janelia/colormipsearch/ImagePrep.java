@@ -35,26 +35,26 @@ public class ImagePrep {
         // original area measurement////////////////////
         String maskname = impmask.getTitle();
 
-        ImagePlus binarizedGray8MaskImage = impmask.duplicate();
+        ImagePlus gradientMaskImage = impmask.duplicate();
         ImagePlus max10pxRGBMaskImage = impmask.duplicate();
 
         // convert the mask to gray8
-        ImageConverter ic = new ImageConverter(binarizedGray8MaskImage);
+        ImageConverter ic = new ImageConverter(gradientMaskImage);
         ic.convertToGray8();
 
-        ImageProcessor binarizedGray8MaskProcessor = binarizedGray8MaskImage.getProcessor(); // this will be binarized mask with all mask pixels bellow the threshold turned off
+        ImageProcessor gradientMaskProcessor = gradientMaskImage.getProcessor(); // this will be binarized mask with all mask pixels bellow the threshold turned off
         ImageProcessor max10pxRGBMaskProcessor = max10pxRGBMaskImage.getProcessor(); // this image will have all pixels that have R, G, and B bellow the threshold turned off (black)
 
-        info = binarizedGray8MaskImage.getDimensions();
+        info = gradientMaskImage.getDimensions();
         int WW = info[0];
         int HH = info[1];
         final int sumpx = WW * HH;
         for (int ipix = 0; ipix < sumpx; ipix++) { // 255 binary mask creation
             // binarize the gray8 mask
-            if (binarizedGray8MaskProcessor.get(ipix) > thresmEf) {
-                binarizedGray8MaskProcessor.set(ipix, 255);
+            if (gradientMaskProcessor.get(ipix) > thresmEf) {
+                gradientMaskProcessor.set(ipix, 255);
             } else
-                binarizedGray8MaskProcessor.set(ipix, 0);
+                gradientMaskProcessor.set(ipix, 0);
 
             int rgbPix = max10pxRGBMaskProcessor.get(ipix);
 
@@ -67,7 +67,7 @@ public class ImagePrep {
 
         }
 
-        IJ.run(binarizedGray8MaskImage, "Max Filter2D", "expansion=10 cpu=1 xyscaling=1");
+        IJ.run(gradientMaskImage, "Max Filter2D", "expansion=10 cpu=1 xyscaling=1");
 
         IJ.run(max10pxRGBMaskImage, "Maximum...", "radius=10");
 
@@ -77,7 +77,7 @@ public class ImagePrep {
 
         File hemiMIPFName = new File(gradientDIR, "MAX_hemi_to_JRC2018U_fineTune.png");
         if (!hemiMIPFName.exists()) {
-            return binarizedGray8MaskImage;
+            return gradientMaskImage;
         } else {
             hemiMIPmask = IJ.openImage(hemiMIPFName.getAbsolutePath());
         }
@@ -85,59 +85,59 @@ public class ImagePrep {
         ImageProcessor iphemiMIP = hemiMIPmask.getProcessor();
 
         /// make flipped mask 10px dilated image ////////////////////////////
-        ImagePlus flippedBinarizedGray8MaskImage = binarizedGray8MaskImage.duplicate();
-        ImageProcessor flippedBinarizedGray8MaskProcessor = flippedBinarizedGray8MaskImage.getProcessor();
+        ImagePlus flippedGradientMaskImage = gradientMaskImage.duplicate();
+        ImageProcessor flippedGradientMaskProcessor = flippedGradientMaskImage.getProcessor();
         ImagePlus flippedMax10pxRGBMaskImage = max10pxRGBMaskImage.duplicate();
         ImageProcessor flippedMax10pxRGBMaskProcessor = flippedMax10pxRGBMaskImage.getProcessor();
 
         if (mirror_maskEF) {
-            flippedBinarizedGray8MaskProcessor.flipHorizontal();
+            flippedGradientMaskProcessor.flipHorizontal();
             flippedMax10pxRGBMaskProcessor.flipHorizontal();// flipped RGBmask
 
-            binarizedGray8MaskProcessor = deleteOutSideMask(binarizedGray8MaskProcessor, iphemiMIP); // delete out side of emptyhemibrain region
-            flippedBinarizedGray8MaskProcessor = deleteOutSideMask(flippedBinarizedGray8MaskProcessor, iphemiMIP); // Flipped mask; delete out side of emptyhemibrain region
+            gradientMaskProcessor = deleteOutSideMask(gradientMaskProcessor, iphemiMIP); // delete out side of emptyhemibrain region
+            flippedGradientMaskProcessor = deleteOutSideMask(flippedGradientMaskProcessor, iphemiMIP); // Flipped mask; delete out side of emptyhemibrain region
 
             max10pxRGBMaskProcessor = deleteOutSideMask(max10pxRGBMaskProcessor, iphemiMIP); // RGBmask; delete out side of EM mask
             flippedMax10pxRGBMaskProcessor = deleteOutSideMask(flippedMax10pxRGBMaskProcessor, iphemiMIP); // flipped RGBmask; delete out side of EM mask
 
-            ic = new ImageConverter(binarizedGray8MaskImage);
+            ic = new ImageConverter(gradientMaskImage);
             ic.convertToGray16();
-            binarizedGray8MaskProcessor = binarizedGray8MaskImage.getProcessor();
+            gradientMaskProcessor = gradientMaskImage.getProcessor();
 
-            ImageConverter ic2 = new ImageConverter(flippedBinarizedGray8MaskImage);
+            ImageConverter ic2 = new ImageConverter(flippedGradientMaskImage);
             ic2.convertToGray16();
-            flippedBinarizedGray8MaskProcessor = flippedBinarizedGray8MaskImage.getProcessor();
+            flippedGradientMaskProcessor = flippedGradientMaskImage.getProcessor();
 
 
             for (int ipix = 0; ipix < sumpx; ipix++) {// 255 binary mask creation, posi signal become 0 INV
-                if (binarizedGray8MaskProcessor.get(ipix) < 1)
-                    binarizedGray8MaskProcessor.set(ipix, 65535);
+                if (gradientMaskProcessor.get(ipix) < 1)
+                    gradientMaskProcessor.set(ipix, 65535);
                 else
-                    binarizedGray8MaskProcessor.set(ipix, 0);
+                    gradientMaskProcessor.set(ipix, 0);
 
-                if (flippedBinarizedGray8MaskProcessor.get(ipix) < 1)
-                    flippedBinarizedGray8MaskProcessor.set(ipix, 65535);
+                if (flippedGradientMaskProcessor.get(ipix) < 1)
+                    flippedGradientMaskProcessor.set(ipix, 65535);
                 else
-                    flippedBinarizedGray8MaskProcessor.set(ipix, 0);
+                    flippedGradientMaskProcessor.set(ipix, 0);
             }
 
-            flippedBinarizedGray8MaskProcessor = gradientslice(flippedBinarizedGray8MaskProcessor); // make Flip gradient mask, Flipped ver of
+            flippedGradientMaskProcessor = gradientslice(flippedGradientMaskProcessor); // make Flip gradient mask, Flipped ver of
 
         } else {//	if(mirror_maskEF){
             // invert the binarized mask
             for (int ipix = 0; ipix < sumpx; ipix++) {// 255 binary mask creation, posi signal become 0 INV
-                if (binarizedGray8MaskProcessor.get(ipix) < 1)
-                    binarizedGray8MaskProcessor.set(ipix, 65535);
+                if (gradientMaskProcessor.get(ipix) < 1)
+                    gradientMaskProcessor.set(ipix, 65535);
                 else
-                    binarizedGray8MaskProcessor.set(ipix, 0);
+                    gradientMaskProcessor.set(ipix, 0);
 
             }
         }
-        binarizedGray8MaskProcessor = gradientslice(binarizedGray8MaskProcessor); // make gradient mask, EightIMG is 0 center & gradient mask of original mask
+        gradientMaskProcessor = gradientslice(gradientMaskProcessor); // make gradient mask, EightIMG is 0 center & gradient mask of original mask
 
         final ImagePlus impRGBMaskFlipfinal = flippedMax10pxRGBMaskImage;
-        final ImageProcessor ipgradientFlipMaskFinal = flippedBinarizedGray8MaskProcessor;
-        binarizedGray8MaskImage.hide();
+        final ImageProcessor ipgradientFlipMaskFinal = flippedGradientMaskProcessor;
+        gradientMaskImage.hide();
 
         ImagePlus gray16MaskIMP = impmask.duplicate();
 
@@ -148,12 +148,12 @@ public class ImagePrep {
 
         final ImageProcessor gray16MaskProcessor = gray16MaskIMP.getProcessor();
 
-        ImagePlus impFlipValue1mask = gray16MaskIMP.duplicate();
-        ImageProcessor ipFlipValue1mask = impFlipValue1mask.getProcessor();
+        ImagePlus flippedGray16MaskImage = gray16MaskIMP.duplicate();
+        ImageProcessor flippedGray16MaskImageProcessor = flippedGray16MaskImage.getProcessor();
 
         if (mirror_maskEF) {
-            ipFlipValue1mask.flipHorizontal();
-            ipFlipValue1mask = deleteOutSideMask(ipFlipValue1mask, iphemiMIP); // delete out side of emptyhemibrain region
+            flippedGray16MaskImageProcessor.flipHorizontal();
+            flippedGray16MaskImageProcessor = deleteOutSideMask(flippedGray16MaskImageProcessor, iphemiMIP); // delete out side of emptyhemibrain region
         }
 
         hemiMIPmask.unlock();
@@ -254,10 +254,10 @@ public class ImagePrep {
         final AtomicInteger ai = new AtomicInteger(1);
         final Thread[] threads = new Thread[20];
 
-        final ImageProcessor ipFlipValue1maskFinal = ipFlipValue1mask;
-        final ImagePlus imp10pxRGBmaskfinal = max10pxRGBMaskImage;
+        final ImageProcessor flippedGray16MaskImageProcessorFinal = flippedGray16MaskImageProcessor;
+        final ImagePlus max10pxRGBMaskImageFinal = max10pxRGBMaskImage;
 
-        final ImagePlus impgradientMaskFinal = binarizedGray8MaskImage;
+        final ImagePlus gradientMaskImageFinal = gradientMaskImage;
 
         for (int ithread = 0; ithread < threads.length; ithread++) {
             // Concurrently run in as many threads as CPUs
@@ -281,7 +281,7 @@ public class ImagePrep {
                         SLICEtifimp = setsignal1(SLICEtifimp, sumpx);
 
                         ImageProcessor SLICEtifip = SLICEtifimp.getProcessor();
-                        ImageProcessor ipgradientMask = impgradientMaskFinal.getProcessor();
+                        ImageProcessor ipgradientMask = gradientMaskImageFinal.getProcessor();
 
                         for (int ivx = 0; ivx < sumpx; ivx++) {
 
@@ -292,10 +292,9 @@ public class ImagePrep {
 
                         }// multiply slice and gradient mask
 
-                        //	ImageProcessor IPOriStackResult = originalresultstack.getProcessor(isli);
                         ImagePlus impOriStackResult = new ImagePlus("impOriStackResult.tif", originalresultstack.getProcessor(isli));// original stack slice
 
-                        SLICEtifimp = deleteMatchZandCreateZnegativeScoreIMG(SLICEtifimp, impOriStackResult, imp10pxRGBmaskfinal, sumpx);
+                        SLICEtifimp = deleteMatchZandCreateZnegativeScoreIMG(SLICEtifimp, impOriStackResult, max10pxRGBMaskImageFinal, sumpx);
 
                         long MaskToSample = sumPXmeasure(SLICEtifimp);
 
@@ -367,7 +366,7 @@ public class ImagePrep {
                             ipforfunc2.set(ivx2, pix1 * pix2);
                         }// multiply slice and gradient mask
 
-                        impSLICE2 = deleteMatchZandCreateZnegativeScoreIMG(impSLICE2, impOriStackResult, imp10pxRGBmaskfinal, sumpx);
+                        impSLICE2 = deleteMatchZandCreateZnegativeScoreIMG(impSLICE2, impOriStackResult, max10pxRGBMaskImageFinal, sumpx);
 
                         long SampleToMask = sumPXmeasure(impSLICE2);
 
@@ -389,7 +388,7 @@ public class ImagePrep {
                             for (int ivx2 = 0; ivx2 < sumpx; ivx2++) {
 
                                 int pix1 = ipforfunc21.get(ivx2);
-                                int pix2 = ipFlipValue1maskFinal.get(ivx2);
+                                int pix2 = flippedGray16MaskImageProcessorFinal.get(ivx2);
 
                                 ipforfunc21.set(ivx2, pix1 * pix2);
                             }// multiply slice and gradient mask
@@ -399,8 +398,8 @@ public class ImagePrep {
                             impSLICE2F.unlock();
                             impSLICE2F.close();
 
-                            impFlipValue1mask.unlock();
-                            impFlipValue1mask.close();
+                            flippedGray16MaskImage.unlock();
+                            flippedGray16MaskImage.close();
 
                             long flipval = (SampleToMaskflip + MaskToSampleFlip) / 2;
                             if (flipval <= normalval) {
@@ -433,11 +432,11 @@ public class ImagePrep {
 
         IJ.log(gapT2 / 1000 + " sec for 2D distance score & RGB 3D score generation");
 
-        binarizedGray8MaskImage.unlock();
-        binarizedGray8MaskImage.close();
+        gradientMaskImage.unlock();
+        gradientMaskImage.close();
 
-        impgradientMaskFinal.unlock();
-        impgradientMaskFinal.close();
+        gradientMaskImageFinal.unlock();
+        gradientMaskImageFinal.close();
 
         max10pxRGBMaskImage.unlock();
         max10pxRGBMaskImage.close();
@@ -533,9 +532,9 @@ public class ImagePrep {
         gray16MaskIMP.unlock();
         gray16MaskIMP.hide();
         gray16MaskIMP.close();
-        flippedBinarizedGray8MaskImage.unlock();
-        flippedBinarizedGray8MaskImage.hide();
-        flippedBinarizedGray8MaskImage.close();
+        flippedGradientMaskImage.unlock();
+        flippedGradientMaskImage.hide();
+        flippedGradientMaskImage.close();
 
         newimp = new ImagePlus("Search_Result" + maskname, Stackfinal);
         newimp.show();
