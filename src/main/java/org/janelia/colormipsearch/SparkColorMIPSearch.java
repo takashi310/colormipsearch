@@ -43,14 +43,17 @@ class SparkColorMIPSearch extends ColorMIPSearch {
     private transient final JavaSparkContext sparkContext;
 
     SparkColorMIPSearch(String appName,
+                        String gradientMasksPath,
                         String outputPath,
-                        Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
-                        boolean mirrorMask, Double pctPositivePixels) {
-        super(outputPath, dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
+                        Integer dataThreshold, Integer maskThreshold, Double pixColorFluctuation, Integer xyShift,
+                        boolean mirrorMask, Double pctPositivePixels,
+                        String hemiMask) {
+        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels, hemiMask);
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold) {
+    @Override
+    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
         long nlibraries = libraryMIPS.size();
@@ -76,7 +79,7 @@ class SparkColorMIPSearch extends ColorMIPSearch {
                         .map(mls -> {
                             MIPWithPixels maskMIP = loadMIP(mls._1);
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(lmPair -> runImageComparison(lmPair._1, maskMIP, maskThreshold))
+                                    .map(lmPair -> runImageComparison(lmPair._1, maskMIP))
                                     .filter(srByMask ->srByMask.isMatch() || srByMask.isError())
                                     .sorted(getColorMIPSearchComparator())
                                     .collect(Collectors.toList())

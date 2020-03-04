@@ -2,7 +2,6 @@ package org.janelia.colormipsearch;
 
 import java.util.Arrays;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -116,7 +115,6 @@ public class MIPWithPixelsTest {
                 ;
 
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), horizontalMirrorTransformer.getImage().pixels);
-        IJ.save(cloneAsImagePlus(horizontalMirrorTransformer.getImage()), "tt.png");
     }
 
     private ImagePlus cloneAsImagePlus(MIPWithPixels mip) {

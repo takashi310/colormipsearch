@@ -21,8 +21,9 @@ class ColorMIPSearchResult implements Serializable {
     final double matchingSlicesPct;
     final boolean isMatch;
     final boolean isError;
+    final long gradientAdjustment;
 
-    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, long gradientAdjustment, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
@@ -30,6 +31,7 @@ class ColorMIPSearchResult implements Serializable {
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
+        this.gradientAdjustment = gradientAdjustment;
         this.isError = isError;
     }
 

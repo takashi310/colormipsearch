@@ -27,11 +27,16 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
     private final Executor cdsExecutor;
 
-    LocalColorMIPSearch(String outputPath,
-                        Integer dataThreshold, Double pixColorFluctuation, Integer xyShift,
+    LocalColorMIPSearch(String gradientMasksPath,
+                        String outputPath,
+                        Integer dataThreshold,
+                        Integer maskThreshold,
+                        Double pixColorFluctuation,
+                        Integer xyShift,
                         boolean mirrorMask, Double pctPositivePixels,
-                        int numberOfCdsThreads) {
-        super(outputPath, dataThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels);
+                        int numberOfCdsThreads,
+                        String hemiMask) {
+        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels, hemiMask);
         cdsExecutor = Executors.newFixedThreadPool(
                 numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
                 new ThreadFactoryBuilder()
@@ -40,7 +45,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         .build());
     }
 
-    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS, Integer maskThreshold) {
+    @Override
+    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -63,7 +69,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> srForLibFutures = masksMIPSWithImages.stream()
                             .filter(mip -> new File(mip.filepath).exists())
-                            .map(maskMIP -> CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIP, maskMIP, maskThreshold), cdsExecutor))
+                            .map(maskMIP -> CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor))
                             .collect(Collectors.toList())
                             ;
                     try {
