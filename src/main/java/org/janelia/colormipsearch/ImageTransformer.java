@@ -143,42 +143,48 @@ class ImageTransformer {
     }
 
     ImageTransformer maxFilter(int radius) {
-        return applyImageTransformation(im -> {
-            RankFilters maxFilter = new RankFilters();
-            ImageProcessor imageProcessor;
-            switch (im.type) {
-                case RGB:
-                    imageProcessor = new ColorProcessor(im.width, im.height, im.pixels);
-                    maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
-                    break;
-                case GRAY8:
-                    imageProcessor = new ByteProcessor(im.width, im.height);
-                    for (int pi = 0; pi < im.pixels.length; pi++) {
-                        imageProcessor.set(pi, im.get(pi));
-                    }
-                    maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
-                    for (int x = 0; x < im.width; x++) {
-                        for (int y = 0; y < im.height; y++) {
-                            im.setPixel(x, y, imageProcessor.getPixel(x, y));
+        Operations.ImageTransformation imageTransformation;
+        if (radius > 0) {
+            imageTransformation = im -> {
+                RankFilters maxFilter = new RankFilters();
+                ImageProcessor imageProcessor;
+                switch (im.type) {
+                    case RGB:
+                        imageProcessor = new ColorProcessor(im.width, im.height, im.pixels);
+                        maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
+                        break;
+                    case GRAY8:
+                        imageProcessor = new ByteProcessor(im.width, im.height);
+                        for (int pi = 0; pi < im.pixels.length; pi++) {
+                            imageProcessor.set(pi, im.get(pi));
                         }
-                    }
-                    break;
-                case GRAY16:
-                    imageProcessor = new ShortProcessor(im.width, im.height);
-                    for (int pi = 0; pi < im.pixels.length; pi++) {
-                        imageProcessor.set(pi, im.get(pi));
-                    }
-                    maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
-                    for (int x = 0; x < im.width; x++) {
-                        for (int y = 0; y < im.height; y++) {
-                            im.setPixel(x, y, imageProcessor.getPixel(x, y));
+                        maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
+                        for (int x = 0; x < im.width; x++) {
+                            for (int y = 0; y < im.height; y++) {
+                                im.setPixel(x, y, imageProcessor.getPixel(x, y));
+                            }
                         }
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("Image type not supported for max filter: " + im.type);
-            }
-        });
+                        break;
+                    case GRAY16:
+                        imageProcessor = new ShortProcessor(im.width, im.height);
+                        for (int pi = 0; pi < im.pixels.length; pi++) {
+                            imageProcessor.set(pi, im.get(pi));
+                        }
+                        maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
+                        for (int x = 0; x < im.width; x++) {
+                            for (int y = 0; y < im.height; y++) {
+                                im.setPixel(x, y, imageProcessor.getPixel(x, y));
+                            }
+                        }
+                        break;
+                    default:
+                        throw new IllegalStateException("Image type not supported for max filter: " + im.type);
+                }
+            };
+        } else {
+            imageTransformation = im -> {};
+        }
+        return applyImageTransformation(imageTransformation);
     }
 
     ImageTransformer gradientSlice() {

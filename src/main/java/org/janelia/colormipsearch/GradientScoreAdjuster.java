@@ -1,77 +1,63 @@
 package org.janelia.colormipsearch;
 
-class EMScoreAdjuster {
+class GradientScoreAdjuster {
 
     private static final int DEFAULT_COLOR_FLUX = 40;
 
-    private final MIPWithPixels hemiMask;
     private final int maskThreshold;
+    private final int negativeRadius;
+    private final boolean mirrorMask;
 
-    EMScoreAdjuster(MIPWithPixels hemiMask, int maskThreshold) {
-        this.hemiMask = hemiMask;
+    GradientScoreAdjuster(int maskThreshold, int negativeRadius, boolean mirrorMask) {
         this.maskThreshold = maskThreshold;
+        this.negativeRadius = negativeRadius;
+        this.mirrorMask = mirrorMask;
     }
 
     long calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels patternGradient) {
-        long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, image -> {});
-        long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
-        return Math.min(adjustmentForNormalImage, adjustmentForMirroredImage);
+        long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, im -> {});
+        System.out.println("!!!!!SAMPLE TO MASK " + adjustmentForNormalImage);
+        if (mirrorMask) {
+            long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
+            System.out.println("!!!!!SAMPLE TO MASK MIRROR " + adjustmentForMirroredImage);
+            return Math.min(adjustmentForNormalImage, adjustmentForMirroredImage);
+        } else {
+            return adjustmentForNormalImage;
+        }
     }
 
-    private long calculateScoreAdjustment(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels patternGradient, Operations.ImageTransformation patternTransformation) {
-        ImageTransformer patternRGBMaxTransformer = ImageTransformer.createForDuplicate(pattern)
+    private long calculateScoreAdjustment(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels libraryGradient, Operations.ImageTransformation mipTransformation) {
+        ImageTransformer dilatedLibraryTransformer = ImageTransformer.createForDuplicate(libraryMIP)
                 .mask(maskThreshold)
-                .maxFilter(10)
-                .applyImageTransformation(patternTransformation)
-                .maskWith(hemiMask)
+                .maxFilter(negativeRadius)
                 ;
-
-        ImageTransformer patternGradientTransformer = ImageTransformer.createForDuplicate(pattern)
-                .toBinary16(maskThreshold)
-                .maxFilter(10)
-                .applyImageTransformation(patternTransformation)
-                .maskWith(hemiMask)
-                .toNegative()
-                .gradientSlice()
-                ;
-
-        ImageTransformer libraryMipSignalTransformer = ImageTransformer.createForDuplicate(libraryMIP)
-                .toGray16()
-                .toSignal();
 
         ImageTransformer patternSignalTransformer = ImageTransformer.createForDuplicate(pattern)
                 .toGray16()
                 .toSignal()
                 ;
 
-        ImageTransformer scoreAdjustmentTransformer = libraryMipSignalTransformer
-                .duplicate()
-                .mulWith(patternGradientTransformer.getImage())
-                .applyPixelOp(scoreAdjustment(libraryMIP, patternRGBMaxTransformer.getImage()))
+        ImageTransformer scoreAdjustmentTransformer = ImageTransformer.createForDuplicate(libraryGradient)
+                .mulWith(patternSignalTransformer.applyImageTransformation(mipTransformation).getImage())
+                .applyPixelOp(scoreAdjustment(
+                        ImageTransformer.createForDuplicate(pattern).applyImageTransformation(mipTransformation).getImage(),
+                        dilatedLibraryTransformer.applyImageTransformation(mipTransformation).getImage()))
                 ;
-
-        ImageTransformer gradientScoreAdjustmentTransformer = ImageTransformer.createFor(patternGradient)
-                .duplicate()
-                .mulWith(patternSignalTransformer.getImage())
-                .applyPixelOp(scoreAdjustment(libraryMIP, patternRGBMaxTransformer.getImage()))
-                ;
-
-        long maskToSample = scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p2 + p2);
-        long sampleToMask = gradientScoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p2 + p2);
-
-        return (maskToSample + sampleToMask) / 2;
+        return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p2 + p2);
     }
 
 
-    private Operations.PixelTransformation scoreAdjustment( MIPWithPixels libraryMIP, MIPWithPixels pattern) {
+    private Operations.PixelTransformation scoreAdjustment(MIPWithPixels pattern, MIPWithPixels dilatedLibray) {
         return (x, y, c) -> {
-            int libraryMIPColor =  libraryMIP.getPixel(x, y);
-            int patternColor = pattern.getPixel(x, y);
-            if (patternColor != -16777216 && libraryMIPColor != -16777216) {
-                int pxGapSlice = calculateSliceGap(libraryMIPColor, patternColor);
-                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                    // negative score value
-                    return pxGapSlice - DEFAULT_COLOR_FLUX;
+            int dilatedPix =  dilatedLibray.getPixel(x, y);
+            if (dilatedPix != -16777216) {
+                int patternPix = pattern.getPixel(x, y);
+                if (patternPix != -16777216) {
+                    int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
+                    if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+                        // negative score value
+                        return pxGapSlice - DEFAULT_COLOR_FLUX;
+                    }
                 }
             }
             return c;

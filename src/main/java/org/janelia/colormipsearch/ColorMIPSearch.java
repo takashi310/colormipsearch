@@ -51,7 +51,7 @@ abstract class ColorMIPSearch implements Serializable {
     private final boolean mirrorMask;
     private final Double pixColorFluctuation;
     private final Double pctPositivePixels;
-    private final EMScoreAdjuster gradientBasedScoreAdjuster;
+    private final GradientScoreAdjuster gradientBasedScoreAdjuster;
 
     ColorMIPSearch(String gradientMasksPath,
                    String outputPath,
@@ -59,9 +59,9 @@ abstract class ColorMIPSearch implements Serializable {
                    Integer maskThreshold,
                    Double pixColorFluctuation,
                    Integer xyShift,
+                   int negativeRadius,
                    boolean mirrorMask,
-                   Double pctPositivePixels,
-                   String hemiMask) {
+                   Double pctPositivePixels) {
         this.gradientMasksPath = gradientMasksPath;
         this.outputPath =  outputPath;
         this.dataThreshold = dataThreshold;
@@ -70,7 +70,7 @@ abstract class ColorMIPSearch implements Serializable {
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
-        this.gradientBasedScoreAdjuster = new EMScoreAdjuster(loadMIPFromPath(Paths.get(gradientMasksPath, hemiMask)), maskThreshold);
+        this.gradientBasedScoreAdjuster = new GradientScoreAdjuster(maskThreshold, negativeRadius, mirrorMask);
     }
 
     private MIPWithPixels loadMIPFromPath(Path mipPath) {

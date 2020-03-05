@@ -33,10 +33,11 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Integer maskThreshold,
                         Double pixColorFluctuation,
                         Integer xyShift,
-                        boolean mirrorMask, Double pctPositivePixels,
-                        int numberOfCdsThreads,
-                        String hemiMask) {
-        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels, hemiMask);
+                        int negativeRadius,
+                        boolean mirrorMask,
+                        Double pctPositivePixels,
+                        int numberOfCdsThreads) {
+        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
         cdsExecutor = Executors.newFixedThreadPool(
                 numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
                 new ThreadFactoryBuilder()

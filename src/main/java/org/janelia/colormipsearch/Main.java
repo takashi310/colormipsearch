@@ -50,6 +50,9 @@ public class Main {
         @Parameter(names = {"--xyShift"}, description = "Number of pixels to try shifting in XY plane")
         Integer xyShift = 0;
 
+        @Parameter(names = {"--negativeRadius"}, description = "Radius for gradient based score adjustment (negative radius)")
+        int negativeRadius = 10;
+
         @Parameter(names = {"--mirrorMask"}, description = "Should the mask be mirrored across the Y axis?")
         boolean mirrorMask = false;
 
@@ -150,10 +153,10 @@ public class Main {
     private static void runBatchSearch(BatchSearchArgs args) {
         ColorMIPSearch colorMIPSearch;
         if (args.useLocalProcessing) {
-            colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency, args.hemiMask);
+            colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         } else {
             colorMIPSearch = new SparkColorMIPSearch(
-                    args.appName, args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels, args.hemiMask
+                    args.appName, args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
             );
         }
 
@@ -173,7 +176,7 @@ public class Main {
     }
 
     private static void runSingleSearch(SingleSearchArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency, args.hemiMask);
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         try {
             MIPInfo libraryMIP = new MIPInfo();
             libraryMIP.filepath = args.libraryPath;
@@ -182,6 +185,7 @@ public class Main {
             maskMIP.filepath = args.maskPath;
 
             ColorMIPSearchResult searchResult = colorMIPSearch.runImageComparison(colorMIPSearch.loadMIP(libraryMIP), colorMIPSearch.loadMIP(maskMIP));
+            LOG.info("Search result: {}", searchResult);
             colorMIPSearch.writeSearchResults(args.resultName, Arrays.asList(searchResult.perLibraryMetadata()));
         } finally {
             colorMIPSearch.terminate();

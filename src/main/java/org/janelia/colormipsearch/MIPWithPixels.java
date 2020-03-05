@@ -89,4 +89,24 @@ class MIPWithPixels extends MIPInfo {
     void setPixel(int x, int y, int p) {
         pixels[y * width + x] = p;
     }
+
+    ImageProcessor getImageProcessor() {
+        switch (type) {
+            case GRAY8:
+                byte[] byteImageBuffer = new byte[pixels.length];
+                for (int i = 0; i < pixels.length; i++) {
+                    byteImageBuffer[i] = (byte) (pixels[i] & 0xFF);
+                }
+                return new ByteProcessor(width, height, byteImageBuffer);
+            case GRAY16:
+                short[] shortImageBuffer = new short[pixels.length];
+                for (int i = 0; i < pixels.length; i++) {
+                    shortImageBuffer[i] = (short) (pixels[i] & 0xFFFF);
+                }
+                return new ShortProcessor(width, height, shortImageBuffer, null /* default color model */);
+            default:
+                return new ColorProcessor(width, height, Arrays.copyOf(pixels, pixels.length));
+        }
+    }
+
 }

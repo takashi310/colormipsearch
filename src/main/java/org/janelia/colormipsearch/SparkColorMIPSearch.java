@@ -45,10 +45,14 @@ class SparkColorMIPSearch extends ColorMIPSearch {
     SparkColorMIPSearch(String appName,
                         String gradientMasksPath,
                         String outputPath,
-                        Integer dataThreshold, Integer maskThreshold, Double pixColorFluctuation, Integer xyShift,
-                        boolean mirrorMask, Double pctPositivePixels,
-                        String hemiMask) {
-        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, mirrorMask, pctPositivePixels, hemiMask);
+                        Integer dataThreshold,
+                        Integer maskThreshold,
+                        Double pixColorFluctuation,
+                        Integer xyShift,
+                        int negativeRadius,
+                        boolean mirrorMask,
+                        Double pctPositivePixels) {
+        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 

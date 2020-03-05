@@ -25,6 +25,8 @@ public class MIPWithPixelsTest {
                 .maxFilter(10)
                 ;
 
+        Assert.assertSame(testMIP, maxFilterTransformer.getImage());
+
         // test that now the image is different from the original
         boolean differ = false;
         for (int i = 0; i < testMIP.pixels.length; i++) {
@@ -118,22 +120,7 @@ public class MIPWithPixelsTest {
     }
 
     private ImagePlus cloneAsImagePlus(MIPWithPixels mip) {
-        switch (mip.type) {
-            case GRAY8:
-                byte[] byteImageBuffer = new byte[mip.pixels.length];
-                for (int i = 0; i < mip.pixels.length; i++) {
-                    byteImageBuffer[i] = (byte) (mip.pixels[i] & 0xFF);
-                }
-                return new ImagePlus(null, new ByteProcessor(mip.width, mip.height, byteImageBuffer));
-            case GRAY16:
-                short[] shortImageBuffer = new short[mip.pixels.length];
-                for (int i = 0; i < mip.pixels.length; i++) {
-                    shortImageBuffer[i] = (short) (mip.pixels[i] & 0xFFFF);
-                }
-                return new ImagePlus(null, new ShortProcessor(mip.width, mip.height, shortImageBuffer, null));
-            default:
-                return new ImagePlus(null, new ColorProcessor(mip.width, mip.height, Arrays.copyOf(mip.pixels, mip.pixels.length)));
-        }
+        return new ImagePlus(null, mip.getImageProcessor());
     }
 
 }

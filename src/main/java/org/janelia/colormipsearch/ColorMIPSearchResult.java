@@ -86,6 +86,7 @@ class ColorMIPSearchResult implements Serializable {
                 .append("libraryMIP", libraryMIP)
                 .append("matchingSlices", matchingSlices)
                 .append("matchingSlicesPct", matchingSlicesPct)
+                .append("gradientAdjustment", gradientAdjustment)
                 .append("isMatch", isMatch)
                 .append("isError", isError)
                 .toString();
