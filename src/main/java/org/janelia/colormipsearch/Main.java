@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -178,15 +179,9 @@ public class Main {
     private static void runSingleSearch(SingleSearchArgs args) {
         LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         try {
-            MIPInfo libraryMIP = new MIPInfo();
-            libraryMIP.filepath = args.libraryPath;
-
-            MIPInfo maskMIP = new MIPInfo();
-            maskMIP.filepath = args.maskPath;
-
-            ColorMIPSearchResult searchResult = colorMIPSearch.runImageComparison(colorMIPSearch.loadMIP(libraryMIP), colorMIPSearch.loadMIP(maskMIP));
+            ColorMIPSearchResult searchResult = colorMIPSearch.runImageComparison(colorMIPSearch.loadMIPFromPath(Paths.get(args.libraryPath)), colorMIPSearch.loadMIPFromPath(Paths.get(args.maskPath)));
             LOG.info("Search result: {}", searchResult);
-            colorMIPSearch.writeSearchResults(args.resultName, Arrays.asList(searchResult.perLibraryMetadata()));
+            colorMIPSearch.writeSearchResults(args.resultName, Collections.singletonList(searchResult.perLibraryMetadata()));
         } finally {
             colorMIPSearch.terminate();
         }

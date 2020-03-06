@@ -11,6 +11,7 @@ import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 abstract class ColorMIPSearch implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearch.class);
+    private static final int MAX_GRAD_DEPTH = 5;
 
     private enum ImageFormat {
         PNG,
@@ -73,9 +75,9 @@ abstract class ColorMIPSearch implements Serializable {
         this.gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(maskThreshold, negativeRadius, mirrorMask);
     }
 
-    private MIPWithPixels loadMIPFromPath(Path mipPath) {
+    MIPWithPixels loadMIPFromPath(Path mipPath) {
         MIPInfo mip = new MIPInfo();
-        mip.filepath = mipPath.toString();
+        mip.cdmFilepath = mip.imageFilepath = mipPath.toString();
         return loadMIP(mip);
     }
 
@@ -84,13 +86,13 @@ abstract class ColorMIPSearch implements Serializable {
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
         try {
-            inputStream = new FileInputStream(mip.filepath);
+            inputStream = new FileInputStream(mip.imageFilepath);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
         ImagePlus ij = null;
         try {
-            ij = readImagePlus(mip.id, getImageFormat(mip.filepath), inputStream);
+            ij = readImagePlus(mip.id, getImageFormat(mip.imageFilepath), inputStream);
             return new MIPWithPixels(mip, ij);
         } catch (Exception e) {
             throw new IllegalStateException(e);
@@ -137,12 +139,18 @@ abstract class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
-        MIPInfo gradientMIP = new MIPInfo();
-        Path mipPath = Paths.get(mipInfo.filepath);
-
-        gradientMIP.filepath = Paths.get(gradientMasksPath, StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png")).toString();
-        return loadMIP(gradientMIP);
+    private MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
+        Path gradientBasePath = Paths.get(gradientMasksPath);
+        Path mipPath = Paths.get(mipInfo.imageFilepath);
+        String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+        try {
+            return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> p.getFileName().toString().equals(gradientFilename)).findFirst()
+                    .map(gp -> loadMIPFromPath(gp))
+                    .orElse(null);
+        } catch (IOException e) {
+            LOG.error("Error reading {}", gradientBasePath, e);
+            return null;
+        }
     }
 
     abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
@@ -169,12 +177,17 @@ abstract class ColorMIPSearch implements Serializable {
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
 
-            ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, loadGradientMIP(libraryMIP));
+            ColorMIPSearchResult.AreaGap areaGap;
+            if (maskMIP.isEmSkelotonMIP()) {
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, loadGradientMIP(libraryMIP));
+            } else {
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIP, libraryMIP, loadGradientMIP(maskMIP));
+            }
 
             return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, areaGap, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  maskMIP, e);
-            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, new ColorMIPSearchResult.AreaGap(-1, false), true);
+            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, null, true);
         } finally {
             LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  maskMIP, System.currentTimeMillis() - startTime);
         }

@@ -56,7 +56,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Load {} masks", nmasks);
         List<MIPWithPixels> masksMIPSWithImages = maskMIPS.stream().parallel()
-                .filter(mip -> new File(mip.filepath).exists())
+                .filter(mip -> new File(mip.imageFilepath).exists())
                 .map(this::loadMIP)
                 .collect(Collectors.toList());
         LOG.info("Loaded {} masks in memory", nmasks);
@@ -69,7 +69,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> srForLibFutures = masksMIPSWithImages.stream()
-                            .filter(mip -> new File(mip.filepath).exists())
+                            .filter(mip -> new File(mip.imageFilepath).exists())
                             .map(maskMIP -> CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor))
                             .collect(Collectors.toList())
                             ;

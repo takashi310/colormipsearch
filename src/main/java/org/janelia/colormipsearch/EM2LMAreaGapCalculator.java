@@ -1,10 +1,14 @@
 package org.janelia.colormipsearch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This can be used to adjust the score for an EM mask against an LM (segmented) library
  */
 class EM2LMAreaGapCalculator {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EM2LMAreaGapCalculator.class);
     private static final int DEFAULT_COLOR_FLUX = 40;
 
     private final int maskThreshold;
@@ -17,17 +21,22 @@ class EM2LMAreaGapCalculator {
         this.mirrorMask = mirrorMask;
     }
 
-    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels patternGradient) {
-        long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, im -> {});
-        if (mirrorMask) {
-            long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
-            if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
-                return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
-            } else {
-                return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
-            }
+    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels libraryGradient) {
+        if (libraryGradient == null) {
+            LOG.warn("No gradient image found for {}", libraryMIP);
+            return null;
         } else {
-            return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+            long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, libraryGradient, Operations.ImageTransformation.identity());
+            if (mirrorMask) {
+                long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
+                if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
+                    return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+                } else {
+                    return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
+                }
+            } else {
+                return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+            }
         }
     }
 

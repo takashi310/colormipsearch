@@ -30,6 +30,10 @@ class Operations {
     interface ImageTransformation {
         void apply(MIPWithPixels image);
 
+        static ImageTransformation identity() {
+            return image -> {};
+        }
+
         static ImageTransformation fromColorOp(MIPWithPixels.ImageType imageType, ColorTransformation colorTransformation) {
             return image -> {
                 IntStream.range(0, image.pixels.length)

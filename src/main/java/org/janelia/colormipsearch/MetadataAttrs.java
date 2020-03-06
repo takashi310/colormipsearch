@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 
-class MetadataAttrs {
+abstract class MetadataAttrs {
     @JsonProperty
     String id;
     @JsonProperty
@@ -26,4 +26,18 @@ class MetadataAttrs {
             attrs.put(attribute, value);
         }
     }
+
+    String getAttr(String attribute) {
+        return attrs.get(attribute);
+    }
+
+    void copyTo(MetadataAttrs that) {
+        that.id = this.id;
+        that.publishedName = this.publishedName;
+        that.imageUrl = this.imageUrl;
+        that.thumbnailUrl = this.thumbnailUrl;
+        that.libraryName = this.libraryName;
+        this.attrs.forEach((k, v) -> that.attrs.put(k, v));
+    }
+
 }

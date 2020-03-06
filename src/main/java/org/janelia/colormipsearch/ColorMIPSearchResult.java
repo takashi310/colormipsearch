@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.io.Serializable;
 
+import javax.annotation.Nullable;
+
 import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -34,7 +36,7 @@ class ColorMIPSearchResult implements Serializable {
     final long areaGap;
     final boolean mirrorHasBetterMatch;
 
-    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, AreaGap areaGap, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, @Nullable AreaGap areaGap, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
@@ -42,8 +44,8 @@ class ColorMIPSearchResult implements Serializable {
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
-        this.areaGap = areaGap.value;
-        this.mirrorHasBetterMatch = areaGap.mirrorHasBetterMatch;
+        this.areaGap = areaGap != null ? areaGap.value : -1;
+        this.mirrorHasBetterMatch = areaGap != null && areaGap.mirrorHasBetterMatch;
         this.isError = isError;
     }
 
@@ -117,6 +119,7 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.addAttr("PublishedName", maskMIP.publishedName);
         srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
         srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
+        srMetadata.addAttr("AreaGap", String.valueOf(areaGap));
         return srMetadata;
     }
 
@@ -132,6 +135,7 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
         srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
         srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
+        srMetadata.addAttr("AreaGap", String.valueOf(areaGap));
         return srMetadata;
     }
 

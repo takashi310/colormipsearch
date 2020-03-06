@@ -64,13 +64,13 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         long nmasks = maskMIPS.size();
 
         JavaRDD<MIPWithPixels> librariesRDD = sparkContext.parallelize(libraryMIPS)
-                .filter(mip -> new File(mip.filepath).exists())
+                .filter(mip -> new File(mip.imageFilepath).exists())
                 .map(this::loadMIP)
                 ;
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
         JavaRDD<MIPInfo> masksRDD = sparkContext.parallelize(maskMIPS)
-                .filter(mip -> new File(mip.filepath).exists())
+                .filter(mip -> new File(mip.imageFilepath).exists())
                 ;
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
