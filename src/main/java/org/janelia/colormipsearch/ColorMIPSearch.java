@@ -51,7 +51,7 @@ abstract class ColorMIPSearch implements Serializable {
     private final boolean mirrorMask;
     private final Double pixColorFluctuation;
     private final Double pctPositivePixels;
-    private final GradientScoreAdjuster gradientBasedScoreAdjuster;
+    private final EM2LMAreaGapCalculator gradientBasedScoreAdjuster;
 
     ColorMIPSearch(String gradientMasksPath,
                    String outputPath,
@@ -70,7 +70,7 @@ abstract class ColorMIPSearch implements Serializable {
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
-        this.gradientBasedScoreAdjuster = new GradientScoreAdjuster(maskThreshold, negativeRadius, mirrorMask);
+        this.gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(maskThreshold, negativeRadius, mirrorMask);
     }
 
     private MIPWithPixels loadMIPFromPath(Path mipPath) {
@@ -169,12 +169,12 @@ abstract class ColorMIPSearch implements Serializable {
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
 
-            long gradientAdjustment = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, loadGradientMIP(libraryMIP));
+            ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, loadGradientMIP(libraryMIP));
 
-            return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, gradientAdjustment, false);
+            return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, areaGap, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  maskMIP, e);
-            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, 0L, true);
+            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, new ColorMIPSearchResult.AreaGap(-1, false), true);
         } finally {
             LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  maskMIP, System.currentTimeMillis() - startTime);
         }

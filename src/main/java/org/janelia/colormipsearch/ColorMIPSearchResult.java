@@ -15,15 +15,26 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 class ColorMIPSearchResult implements Serializable {
 
+    static class AreaGap {
+        final long value;
+        final boolean mirrorHasBetterMatch;
+
+        AreaGap(long value, boolean mirrorHasBetterMatch) {
+            this.value = value;
+            this.mirrorHasBetterMatch = mirrorHasBetterMatch;
+        }
+    }
+
     final MIPInfo maskMIP;
     final MIPInfo libraryMIP;
     final int matchingSlices;
     final double matchingSlicesPct;
     final boolean isMatch;
     final boolean isError;
-    final long gradientAdjustment;
+    final long areaGap;
+    final boolean mirrorHasBetterMatch;
 
-    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, long gradientAdjustment, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, AreaGap areaGap, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
@@ -31,7 +42,8 @@ class ColorMIPSearchResult implements Serializable {
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
-        this.gradientAdjustment = gradientAdjustment;
+        this.areaGap = areaGap.value;
+        this.mirrorHasBetterMatch = areaGap.mirrorHasBetterMatch;
         this.isError = isError;
     }
 
@@ -86,7 +98,8 @@ class ColorMIPSearchResult implements Serializable {
                 .append("libraryMIP", libraryMIP)
                 .append("matchingSlices", matchingSlices)
                 .append("matchingSlicesPct", matchingSlicesPct)
-                .append("gradientAdjustment", gradientAdjustment)
+                .append("areaGap", areaGap)
+                .append("mirrorHasBetterMatch", mirrorHasBetterMatch)
                 .append("isMatch", isMatch)
                 .append("isError", isError)
                 .toString();

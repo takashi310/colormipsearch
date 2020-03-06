@@ -42,9 +42,9 @@ class Operations {
 
         static ImageTransformation fromPixelTransformation(PixelTransformation pixelTransformation) {
             return image -> {
-                IntStream.range(0, image.width)
-                        .forEach(x -> IntStream.range(0, image.height)
-                                .forEach(y -> image.setPixel(x, y, pixelTransformation.apply(x, y, image.getPixel(x, y)))))
+                IntStream.range(0, image.height)
+                        .forEach(y -> IntStream.range(0, image.width)
+                                .forEach(x -> image.setPixel(x, y, pixelTransformation.apply(x, y, image.getPixel(x, y)))))
                 ;
             };
         }

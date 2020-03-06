@@ -1,6 +1,9 @@
 package org.janelia.colormipsearch;
 
-class GradientScoreAdjuster {
+/**
+ * This can be used to adjust the score for an EM mask against an LM (segmented) library
+ */
+class EM2LMAreaGapCalculator {
 
     private static final int DEFAULT_COLOR_FLUX = 40;
 
@@ -8,21 +11,23 @@ class GradientScoreAdjuster {
     private final int negativeRadius;
     private final boolean mirrorMask;
 
-    GradientScoreAdjuster(int maskThreshold, int negativeRadius, boolean mirrorMask) {
+    EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
         this.maskThreshold = maskThreshold;
         this.negativeRadius = negativeRadius;
         this.mirrorMask = mirrorMask;
     }
 
-    long calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels patternGradient) {
+    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels patternGradient) {
         long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, im -> {});
-        System.out.println("!!!!!SAMPLE TO MASK " + adjustmentForNormalImage);
         if (mirrorMask) {
             long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, patternGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
-            System.out.println("!!!!!SAMPLE TO MASK MIRROR " + adjustmentForMirroredImage);
-            return Math.min(adjustmentForNormalImage, adjustmentForMirroredImage);
+            if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
+                return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+            } else {
+                return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
+            }
         } else {
-            return adjustmentForNormalImage;
+            return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
         }
     }
 
@@ -35,15 +40,23 @@ class GradientScoreAdjuster {
         ImageTransformer patternSignalTransformer = ImageTransformer.createForDuplicate(pattern)
                 .toGray16()
                 .toSignal()
+                .applyImageTransformation(mipTransformation)
                 ;
 
+        System.out.println("!!!!! GRAD AREA " + ImageTransformer.createFor(libraryGradient).stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
+        System.out.println("!!!!! PATTERN SIGNAL AREA " + patternSignalTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
         ImageTransformer scoreAdjustmentTransformer = ImageTransformer.createForDuplicate(libraryGradient)
-                .mulWith(patternSignalTransformer.applyImageTransformation(mipTransformation).getImage())
-                .applyPixelOp(scoreAdjustment(
-                        ImageTransformer.createForDuplicate(pattern).applyImageTransformation(mipTransformation).getImage(),
-                        dilatedLibraryTransformer.applyImageTransformation(mipTransformation).getImage()))
+                .mulWith(patternSignalTransformer.getImage());
+        System.out.println("!!!!! PATTERN SIGNAL * GRAD AREA " + scoreAdjustmentTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
+        System.out.println("!!!!! THRESHOLDED " + dilatedLibraryTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
+
+        scoreAdjustmentTransformer.applyPixelOp(scoreAdjustment(
+                        pattern,
+                        dilatedLibraryTransformer.getImage()))
                 ;
-        return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p2 + p2);
+        System.out.println("!!!!! SCORE GT 0 " + scoreAdjustmentTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
+        System.out.println("!!!!! SCORE GT 3 " + scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
+        return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2);
     }
 
 
