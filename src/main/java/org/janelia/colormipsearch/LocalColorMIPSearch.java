@@ -47,7 +47,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     }
 
     @Override
-    void  compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
+    void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -64,6 +64,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Compute and save search results by library");
 
         List<Pair<String, List<ColorMIPSearchResult>>> srByLibraries = libraryMIPS.stream().parallel()
+                .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(this::loadMIP)
                 .map(libraryMIP -> {
                     long startLibraryComparison = System.currentTimeMillis();

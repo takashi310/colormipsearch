@@ -53,19 +53,13 @@ class EM2LMAreaGapCalculator {
                 .applyImageTransformation(mipTransformation)
                 ;
 
-        System.out.println("!!!!! GRAD AREA " + ImageTransformer.createFor(libraryGradient).stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
-        System.out.println("!!!!! PATTERN SIGNAL AREA " + patternSignalTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
         ImageTransformer scoreAdjustmentTransformer = ImageTransformer.createForDuplicate(libraryGradient)
                 .mulWith(patternSignalTransformer.getImage());
-        System.out.println("!!!!! PATTERN SIGNAL * GRAD AREA " + scoreAdjustmentTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
-        System.out.println("!!!!! THRESHOLDED " + dilatedLibraryTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
 
         scoreAdjustmentTransformer.applyPixelOp(scoreAdjustment(
                         pattern,
                         dilatedLibraryTransformer.getImage()))
                 ;
-        System.out.println("!!!!! SCORE GT 0 " + scoreAdjustmentTransformer.stream().filter(p -> p > 0).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
-        System.out.println("!!!!! SCORE GT 3 " + scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2));
         return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2);
     }
 

@@ -1,17 +1,8 @@
 package org.janelia.colormipsearch;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.stream.IntStream;
-
-import com.google.common.base.Preconditions;
 
 import ij.ImagePlus;
-import ij.plugin.filter.RankFilters;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
