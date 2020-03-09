@@ -21,14 +21,15 @@ class EM2LMAreaGapCalculator {
         this.mirrorMask = mirrorMask;
     }
 
-    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels libraryGradient) {
+    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels patternMIP, MIPWithPixels libraryGradient) {
         if (libraryGradient == null) {
             LOG.warn("No gradient image found for {}", libraryMIP);
             return null;
         } else {
-            long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, pattern, libraryGradient, Operations.ImageTransformation.identity());
+            LOG.debug("Calculate area gap between {} - {} using {}", libraryMIP, patternMIP, libraryGradient);
+            long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.identity());
             if (mirrorMask) {
-                long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, pattern, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
+                long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
                 if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
                     return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
                 } else {
