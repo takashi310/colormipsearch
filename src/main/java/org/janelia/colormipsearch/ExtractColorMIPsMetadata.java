@@ -405,22 +405,25 @@ public class ExtractColorMIPsMetadata {
             return Collections.singletonList(cdmipMetadata);
         } else {
             try {
-                List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH, (p, fa) -> {
-                    if (fa.isRegularFile()) {
-                        String fn = p.getFileName().toString();
-                        String line = cdmipMetadata.getAttr("Published Name");
-                        String slideCode = cdmipMetadata.getAttr("Slide Code");
-                        return StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode);
-                    } else {
-                        return false;
-                    }
-                }).map(p -> {
-                    ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
-                    cdmipMetadata.copyTo(segmentMIPMetadata);
-                    segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
-                    segmentMIPMetadata.segmentFilepath = p.toString();
-                    return segmentMIPMetadata;
-                }).collect(Collectors.toList());
+                List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH,
+                        (p, fa) -> {
+                            if (fa.isRegularFile()) {
+                                String fn = p.getFileName().toString();
+                                String line = cdmipMetadata.getAttr("Published Name");
+                                String slideCode = cdmipMetadata.getAttr("Slide Code");
+                                return StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode);
+                            } else {
+                                return true;
+                            }
+                        })
+                        .filter(p -> Files.isRegularFile(p))
+                        .map(p -> {
+                            ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
+                            cdmipMetadata.copyTo(segmentMIPMetadata);
+                            segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
+                            segmentMIPMetadata.segmentFilepath = p.toString();
+                            return segmentMIPMetadata;
+                        }).collect(Collectors.toList());
                 return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
             } catch (IOException e) {
                 LOG.warn("Error finding the segmented mips for {}", cdmipMetadata, e);
@@ -551,6 +554,7 @@ public class ExtractColorMIPsMetadata {
                     break;
                 case "prepareCDSArgs":
                     cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.segmentedMIPsBaseDir, args.outputDir);
+                    break;
             }
         });
     }
