@@ -155,12 +155,11 @@ public class ExtractColorMIPsMetadata {
                     .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip)))
                     .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
-                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()))
-                    ;
+                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()));
             // write the results to the output
             resultsByLineOrSkeleton
                     .forEach((lineOrSkeletonName, results) -> writeColorDepthMetadata(outputPath.resolve(lineOrSkeletonName + ".json"), results))
-                    ;
+            ;
         }
     }
 
@@ -278,7 +277,7 @@ public class ExtractColorMIPsMetadata {
                 gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
                 gen.writeArrayFieldStart("results");
                 gen.writeObject(results.get(0)); // write the first element - it can be any element or dummy object
-                                                 // just to fool the generator that there is already an element in the array
+                // just to fool the generator that there is already an element in the array
                 gen.flush();
                 // reset the position
                 rf.seek(endOfLastItemPos);
@@ -402,27 +401,31 @@ public class ExtractColorMIPsMetadata {
     }
 
     private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedMIPsBaseDir) {
-        try {
-            List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH, (p, fa) -> {
-                if (fa.isRegularFile()) {
-                    String fn = p.getFileName().toString();
-                    String line = cdmipMetadata.getAttr("Published Name");
-                    String slideCode = cdmipMetadata.getAttr("Slide Code");
-                    return StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode);
-                } else {
-                    return false;
-                }
-            }).map(p -> {
-                ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
-                cdmipMetadata.copyTo(segmentMIPMetadata);
-                segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
-                segmentMIPMetadata.segmentFilepath = p.toString();
-                return segmentMIPMetadata;
-            }).collect(Collectors.toList());
-            return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
-        } catch (IOException e) {
-            LOG.warn("Error finding the segmented mips for {}", cdmipMetadata, e);
+        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
             return Collections.singletonList(cdmipMetadata);
+        } else {
+            try {
+                List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH, (p, fa) -> {
+                    if (fa.isRegularFile()) {
+                        String fn = p.getFileName().toString();
+                        String line = cdmipMetadata.getAttr("Published Name");
+                        String slideCode = cdmipMetadata.getAttr("Slide Code");
+                        return StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode);
+                    } else {
+                        return false;
+                    }
+                }).map(p -> {
+                    ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
+                    cdmipMetadata.copyTo(segmentMIPMetadata);
+                    segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
+                    segmentMIPMetadata.segmentFilepath = p.toString();
+                    return segmentMIPMetadata;
+                }).collect(Collectors.toList());
+                return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
+            } catch (IOException e) {
+                LOG.warn("Error finding the segmented mips for {}", cdmipMetadata, e);
+                return Collections.singletonList(cdmipMetadata);
+            }
         }
     }
 
@@ -430,8 +433,7 @@ public class ExtractColorMIPsMetadata {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
-                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                ;
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
         Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN)).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + target + " -> " + response);
@@ -442,11 +444,11 @@ public class ExtractColorMIPsMetadata {
 
     private List<ColorDepthMIP> retrieveColorDepthMipsWithSamples(String alignmentSpace, ListArg libraryArg, List<String> datasets, int offset, int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
-                        .queryParam("libraryName", libraryArg.input)
-                        .queryParam("alignmentSpace", alignmentSpace)
-                        .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                        .queryParam("offset", offset)
-                        .queryParam("length", pageLength))
+                .queryParam("libraryName", libraryArg.input)
+                .queryParam("alignmentSpace", alignmentSpace)
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                .queryParam("offset", offset)
+                .queryParam("length", pageLength))
                 ;
     }
 
@@ -465,7 +467,8 @@ public class ExtractColorMIPsMetadata {
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>(){}.getType()));
+            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {
+            }.getType()));
         }
     }
 
