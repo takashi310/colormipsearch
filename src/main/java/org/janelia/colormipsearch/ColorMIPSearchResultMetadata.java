@@ -8,6 +8,10 @@ import org.apache.commons.lang.StringUtils;
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonProperty
     String matchedId;
+    @JsonProperty
+    String imageName;
+    @JsonProperty
+    String matchedImageName;
 
     @JsonIgnore
     public int getMatchingSlices() {

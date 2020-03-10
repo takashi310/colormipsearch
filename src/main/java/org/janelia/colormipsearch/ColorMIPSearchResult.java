@@ -115,6 +115,8 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedId = getMaskId();
         srMetadata.imageUrl = maskMIP.imageURL;
         srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
+        srMetadata.imageName = libraryMIP.imageFilepath;
+        srMetadata.matchedImageName = maskMIP.imageFilepath;
         srMetadata.addAttr("Library", maskMIP.libraryName);
         srMetadata.addAttr("PublishedName", maskMIP.publishedName);
         srMetadata.setMatchingSlices(matchingSlices);
@@ -131,6 +133,8 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedId = getLibraryId();
         srMetadata.imageUrl = libraryMIP.imageURL;
         srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
+        srMetadata.imageName = maskMIP.imageFilepath;
+        srMetadata.matchedImageName = libraryMIP.imageFilepath;
         srMetadata.addAttr("Library", libraryMIP.libraryName);
         srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
         srMetadata.setMatchingSlices(matchingSlices);
