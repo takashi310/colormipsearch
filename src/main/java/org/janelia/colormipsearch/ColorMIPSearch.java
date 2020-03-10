@@ -244,10 +244,9 @@ abstract class ColorMIPSearch implements Serializable {
                 LOG.error("Error opening the outputfile {}", outputFile, e);
                 throw new UncheckedIOException(e);
             }
-            LOG.info("Write {} results to {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
             if (initialOutputFileSize > 0) {
-                LOG.debug("Append to {}", outputFile);
                 try {
+                    LOG.info("Append {} results to {}", searchResults.size(), outputFile);
                     // FP is positioned at the end of the last element
                     // position FP after the end of the last item
                     // this may not work on Windows because of the new line separator
@@ -282,11 +281,11 @@ abstract class ColorMIPSearch implements Serializable {
                         outputStream.close();
                     } catch (IOException ignore) {
                     }
-                    LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             } else {
-                LOG.debug("Create {}", outputFile);
                 try {
+                    LOG.info("Create {} with {} results", outputFile, searchResults.size());
                     writeColorSearchResults(gen, searchResults);
                 } catch (IOException e) {
                     LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
@@ -300,7 +299,7 @@ abstract class ColorMIPSearch implements Serializable {
                         outputStream.close();
                     } catch (IOException ignore) {
                     }
-                    LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             }
         }
