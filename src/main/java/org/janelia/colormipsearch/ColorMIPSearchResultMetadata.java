@@ -23,13 +23,13 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
 
     @JsonIgnore
     public double getMatchingSlicesPct() {
-        String matchingSlicesPct = getAttr("Matched slices");
+        String matchingSlicesPct = getAttr("Score");
         return StringUtils.isBlank(matchingSlicesPct) ? 0. : Double.parseDouble(matchingSlicesPct);
     }
 
     public void setMatchingSlicesPct(double matchingSlicesPct) {
         if (matchingSlicesPct > 0.) {
-            addAttr("Matched slices", String.valueOf(matchingSlicesPct));
+            addAttr("Score", String.valueOf(matchingSlicesPct));
         }
     }
 

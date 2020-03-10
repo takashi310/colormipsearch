@@ -57,9 +57,9 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
 
         LOG.info("Load {} masks", nmasks);
-        List<MIPWithPixels> masksMIPSWithImages = maskMIPS.stream().parallel()
+        List<Pair<MIPWithPixels, MIPWithPixels>> masksMIPSWithImages = maskMIPS.stream().parallel()
                 .filter(mip -> new File(mip.imageFilepath).exists())
-                .map(this::loadMIP)
+                .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
         LOG.info("Loaded {} masks in memory", nmasks);
 
@@ -67,30 +67,30 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         List<CompletableFuture<ColorMIPSearchResult>> cdSearches = libraryMIPS.stream().parallel()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
-                .map(this::loadMIP)
-                .flatMap(libraryMIP -> {
+                .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
+                .flatMap(libraryMIPWithGradient -> {
                     long startLibraryComparison = System.currentTimeMillis();
-                    LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
+                    LOG.info("Compare {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks);
                     return masksMIPSWithImages.stream()
-                            .map(maskMIP -> CompletableFuture
-                                    .supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor)
+                            .map(maskMIPWithGradient -> CompletableFuture
+                                    .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
                                     .thenApply(sr -> {
                                         if (sr.isMatch()) {
                                             // write the results directly - no sorting yet
-                                            writeSearchResults(libraryMIP.id, Collections.singletonList(sr.perLibraryMetadata()));
-                                            writeSearchResults(maskMIP.id, Collections.singletonList(sr.perMaskMetadata()));
+                                            writeSearchResults(libraryMIPWithGradient.getLeft().id, Collections.singletonList(sr.perLibraryMetadata()));
+                                            writeSearchResults(maskMIPWithGradient.getLeft().id, Collections.singletonList(sr.perMaskMetadata()));
                                         }
                                         return sr;
                                     })
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {
-                                                LOG.error("Errors encountered comparing {} with {}", maskMIP, libraryMIP, e);
+                                                LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft(), e);
                                             } else {
-                                                LOG.warn("Errors encountered comparing {} with {}", maskMIP, libraryMIP);
+                                                LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft());
                                             }
                                         }
-                                        LOG.debug("Completed comparing {} with {} mask after {}ms", libraryMIP, maskMIP, System.currentTimeMillis() - startLibraryComparison);
+                                        LOG.debug("Completed comparing {} with {} after {}ms", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft(), System.currentTimeMillis() - startLibraryComparison);
                                     }))
                             ;
                 })

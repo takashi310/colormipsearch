@@ -141,14 +141,14 @@ abstract class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    private MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
+    MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
         Path gradientBasePath = Paths.get(gradientMasksPath);
         Path mipPath = Paths.get(mipInfo.imageFilepath);
         String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
         try {
             return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> p.getFileName().toString().equals(gradientFilename)).findFirst()
                     .map(gp -> {
-                        LOG.info("Read gradient for {} from {}", mipInfo, gp);
+                        LOG.debug("Read gradient for {} from {}", mipInfo, gp);
                         return loadMIPFromPath(gp);
                     })
                     .orElse(null);
@@ -160,7 +160,7 @@ abstract class ColorMIPSearch implements Serializable {
 
     abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
 
-    ColorMIPSearchResult runImageComparison(MIPWithPixels libraryMIP, MIPWithPixels maskMIP) {
+    ColorMIPSearchResult runImageComparison(MIPWithPixels libraryMIP, MIPWithPixels libraryGradient, MIPWithPixels maskMIP, MIPWithPixels maskGradient) {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare library file {} with mask {}", libraryMIP,  maskMIP);
@@ -184,9 +184,9 @@ abstract class ColorMIPSearch implements Serializable {
 
             ColorMIPSearchResult.AreaGap areaGap;
             if (maskMIP.isEmSkelotonMIP()) {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, loadGradientMIP(libraryMIP));
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, libraryGradient);
             } else {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIP, libraryMIP, loadGradientMIP(maskMIP));
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIP, libraryMIP, maskGradient);
             }
 
             return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, areaGap, false);

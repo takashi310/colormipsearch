@@ -23,7 +23,7 @@ class EM2LMAreaGapCalculator {
 
     ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels patternMIP, MIPWithPixels libraryGradient) {
         if (libraryGradient == null) {
-            LOG.warn("No gradient image found for {}", libraryMIP);
+            LOG.warn("No gradient image provided for {}", libraryMIP);
             return null;
         } else {
             LOG.debug("Calculate area gap between {} - {} using {}", libraryMIP, patternMIP, libraryGradient);

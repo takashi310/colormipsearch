@@ -179,7 +179,11 @@ public class Main {
     private static void runSingleSearch(SingleSearchArgs args) {
         LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.outputDir, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         try {
-            ColorMIPSearchResult searchResult = colorMIPSearch.runImageComparison(colorMIPSearch.loadMIPFromPath(Paths.get(args.libraryPath)), colorMIPSearch.loadMIPFromPath(Paths.get(args.maskPath)));
+            MIPWithPixels libraryMIP = colorMIPSearch.loadMIPFromPath(Paths.get(args.libraryPath));
+            MIPWithPixels libraryGradient = colorMIPSearch.loadGradientMIP(libraryMIP);
+            MIPWithPixels patternMIP = colorMIPSearch.loadMIPFromPath(Paths.get(args.maskPath));
+            MIPWithPixels patternGradient = colorMIPSearch.loadGradientMIP(patternMIP);
+            ColorMIPSearchResult searchResult = colorMIPSearch.runImageComparison(libraryMIP, libraryGradient, patternMIP, patternGradient);
             LOG.info("Search result: {}", searchResult);
             colorMIPSearch.writeSearchResults(args.resultName, Collections.singletonList(searchResult.perLibraryMetadata()));
         } finally {
