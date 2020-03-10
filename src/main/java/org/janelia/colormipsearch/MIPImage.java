@@ -7,6 +7,7 @@ import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 class MIPImage {
 
@@ -56,6 +57,15 @@ class MIPImage {
         for (int pi = 0; pi < width * height; pi++) {
             pixels[pi] = ip.get(pi);
         }
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("mipInfo", mipInfo)
+                .append("width", width)
+                .append("height", height)
+                .toString();
     }
 
     int getPixelCount() {
