@@ -73,14 +73,14 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .map(maskMIPWithGradient -> CompletableFuture
                                     .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
                                     .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
-                                    .thenApplyAsync(sr -> {
+                                    .thenApply(sr -> {
                                         if (sr.isMatch()) {
                                             // write the results directly - no sorting yet
                                             writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
                                             writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
                                         }
                                         return sr;
-                                    }, cdsExecutor)
+                                    })
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {
