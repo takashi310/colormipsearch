@@ -220,7 +220,7 @@ abstract class ColorMIPSearch implements Serializable {
             FileLock rfl;
             OutputStream outputStream;
             File outputFile = StringUtils.isBlank(outputPath) ? new File(filename + ".json") : new File(outputPath, filename + ".json");
-            LOG.info("Write {} results {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
+            LOG.info("Write {} results to {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
             if (outputFile.exists()) {
                 LOG.debug("Append to {}", outputFile);
                 try {
