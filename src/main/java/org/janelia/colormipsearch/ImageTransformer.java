@@ -14,21 +14,21 @@ import ij.process.ShortProcessor;
 
 class ImageTransformer {
 
-    static ImageTransformer createFor(MIPWithPixels image) {
+    static ImageTransformer createFor(MIPImage image) {
         return new ImageTransformer(image);
     }
 
-    static ImageTransformer createForDuplicate(MIPWithPixels image) {
-        return ImageTransformer.createFor(new MIPWithPixels(image, image.width, image.height, image.type, Arrays.copyOf(image.pixels, image.pixels.length)));
+    static ImageTransformer createForDuplicate(MIPImage image) {
+        return ImageTransformer.createFor(new MIPImage(image.mipInfo, image.width, image.height, image.type, Arrays.copyOf(image.pixels, image.pixels.length)));
     }
 
-    private final MIPWithPixels image;
+    private final MIPImage image;
 
-    private ImageTransformer(MIPWithPixels image) {
+    private ImageTransformer(MIPImage image) {
         this.image = image;
     }
 
-    MIPWithPixels getImage() {
+    MIPImage getImage() {
         return image;
     }
 
@@ -37,7 +37,7 @@ class ImageTransformer {
         return this;
     }
 
-    ImageTransformer applyColorOp(MIPWithPixels.ImageType imageType, Operations.ColorTransformation colorTransformation) {
+    ImageTransformer applyColorOp(MIPImage.ImageType imageType, Operations.ColorTransformation colorTransformation) {
         return applyImageTransformation(Operations.ImageTransformation.fromColorOp(imageType, colorTransformation));
     }
 
@@ -53,11 +53,11 @@ class ImageTransformer {
     ImageTransformer toGray8() {
         switch (image.type) {
             case RGB:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY8, Operations.rgbToGray8());
+                return applyColorOp(MIPImage.ImageType.GRAY8, Operations.rgbToGray8());
             case GRAY8:
                 return this;
             case GRAY16:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY8, Operations.scaleGray(65535, 255));
+                return applyColorOp(MIPImage.ImageType.GRAY8, Operations.scaleGray(65535, 255));
         }
         throw new IllegalStateException("Cannot convert " + image.type + " to gray8");
     }
@@ -65,9 +65,9 @@ class ImageTransformer {
     ImageTransformer toGray16() {
         switch (image.type) {
             case RGB:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY16, Operations.rgbToGray16());
+                return applyColorOp(MIPImage.ImageType.GRAY16, Operations.rgbToGray16());
             case GRAY8:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY16, Operations.scaleGray(255, 65535));
+                return applyColorOp(MIPImage.ImageType.GRAY16, Operations.scaleGray(255, 65535));
             case GRAY16:
                 return this;
         }
@@ -88,11 +88,11 @@ class ImageTransformer {
     ImageTransformer toBinary8(int threshold) {
         switch (image.type) {
             case RGB:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY8, Operations.rgbToGray8().andThen(Operations.grayToBinary8(threshold)));
+                return applyColorOp(MIPImage.ImageType.GRAY8, Operations.rgbToGray8().andThen(Operations.grayToBinary8(threshold)));
             case GRAY8:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY8, Operations.grayToBinary8(threshold));
+                return applyColorOp(MIPImage.ImageType.GRAY8, Operations.grayToBinary8(threshold));
             case GRAY16:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY8, Operations.scaleGray(65535, 255).andThen(Operations.grayToBinary8(threshold)));
+                return applyColorOp(MIPImage.ImageType.GRAY8, Operations.scaleGray(65535, 255).andThen(Operations.grayToBinary8(threshold)));
         }
         throw new IllegalStateException("Cannot convert image type " + image.type + " to binary8");
     }
@@ -100,11 +100,11 @@ class ImageTransformer {
     ImageTransformer toBinary16(int threshold) {
         switch (image.type) {
             case RGB:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY16, Operations.rgbToGray16().andThen(Operations.grayToBinary16(threshold)));
+                return applyColorOp(MIPImage.ImageType.GRAY16, Operations.rgbToGray16().andThen(Operations.grayToBinary16(threshold)));
             case GRAY8:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY16, Operations.scaleGray(255, 65535).andThen(Operations.grayToBinary16(threshold)));
+                return applyColorOp(MIPImage.ImageType.GRAY16, Operations.scaleGray(255, 65535).andThen(Operations.grayToBinary16(threshold)));
             case GRAY16:
-                return applyColorOp(MIPWithPixels.ImageType.GRAY16, Operations.grayToBinary16(threshold));
+                return applyColorOp(MIPImage.ImageType.GRAY16, Operations.grayToBinary16(threshold));
         }
         throw new IllegalStateException("Cannot convert image type " + image.type + " to binary16");
     }
@@ -248,17 +248,17 @@ class ImageTransformer {
         });
     }
 
-    ImageTransformer maskWith(MIPWithPixels otherImage) {
+    ImageTransformer maskWith(MIPImage otherImage) {
         return combineWith((p1, p2) -> {
             int black;
-            if (image.type == MIPWithPixels.ImageType.RGB) {
+            if (image.type == MIPImage.ImageType.RGB) {
                 black = -16777216;
             } else {
                 black = 0;
             }
             if (p1 == black) {
                 return black;
-            } else if (otherImage.type == MIPWithPixels.ImageType.RGB) {
+            } else if (otherImage.type == MIPImage.ImageType.RGB) {
                 if (p2 == -16777216) {
                     return black;
                 } else {
@@ -274,7 +274,7 @@ class ImageTransformer {
         }, otherImage::getPixel);
     }
 
-    ImageTransformer mulWith(MIPWithPixels otherImage) {
+    ImageTransformer mulWith(MIPImage otherImage) {
         Preconditions.checkArgument(image.pixels.length == otherImage.pixels.length && image.width == otherImage.width && image.height == otherImage.height);
         return combineWith((p1, p2) -> p1 * p2, otherImage::getPixel);
     }

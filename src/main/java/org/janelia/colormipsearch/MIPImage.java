@@ -8,7 +8,7 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
-class MIPWithPixels extends MIPInfo {
+class MIPImage {
 
     enum ImageType {
         UNKNOWN(-1),
@@ -32,21 +32,22 @@ class MIPWithPixels extends MIPInfo {
         }
     }
 
+    MIPInfo mipInfo;
     int width;
     int height;
     ImageType type;
     int[] pixels;
 
-    MIPWithPixels(MIPInfo mipInfo, int width, int height, ImageType type, int[] pixels) {
-        super(mipInfo);
+    MIPImage(MIPInfo mipInfo, int width, int height, ImageType type, int[] pixels) {
+        this.mipInfo = mipInfo;
         this.width = width;
         this.height = height;
         this.type = type;
         this.pixels = pixels;
     }
 
-    MIPWithPixels(MIPInfo mipInfo, ImagePlus image) {
-        super(mipInfo);
+    MIPImage(MIPInfo mipInfo, ImagePlus image) {
+        this.mipInfo = mipInfo;
         ImageProcessor ip = image.getProcessor();
         this.width = ip.getWidth();
         this.height = ip.getHeight();

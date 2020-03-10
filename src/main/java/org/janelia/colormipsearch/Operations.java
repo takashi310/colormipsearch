@@ -1,10 +1,6 @@
 package org.janelia.colormipsearch;
 
-import java.util.function.BinaryOperator;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
-
-import com.google.common.base.Preconditions;
 
 class Operations {
 
@@ -28,13 +24,13 @@ class Operations {
 
     @FunctionalInterface
     interface ImageTransformation {
-        void apply(MIPWithPixels image);
+        void apply(MIPImage image);
 
         static ImageTransformation identity() {
             return image -> {};
         }
 
-        static ImageTransformation fromColorOp(MIPWithPixels.ImageType imageType, ColorTransformation colorTransformation) {
+        static ImageTransformation fromColorOp(MIPImage.ImageType imageType, ColorTransformation colorTransformation) {
             return image -> {
                 IntStream.range(0, image.pixels.length)
                         .forEach(pi -> {

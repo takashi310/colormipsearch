@@ -2,8 +2,6 @@ package org.janelia.colormipsearch;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -77,13 +75,13 @@ abstract class ColorMIPSearch implements Serializable {
         this.gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(maskThreshold, negativeRadius, mirrorMask);
     }
 
-    MIPWithPixels loadMIPFromPath(Path mipPath) {
+    MIPImage loadMIPFromPath(Path mipPath) {
         MIPInfo mip = new MIPInfo();
         mip.cdmFilepath = mip.imageFilepath = mipPath.toString();
         return loadMIP(mip);
     }
 
-    MIPWithPixels loadMIP(MIPInfo mip) {
+    MIPImage loadMIP(MIPInfo mip) {
         long startTime = System.currentTimeMillis();
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
@@ -95,7 +93,7 @@ abstract class ColorMIPSearch implements Serializable {
         ImagePlus ij = null;
         try {
             ij = readImagePlus(mip.id, getImageFormat(mip.imageFilepath), inputStream);
-            return new MIPWithPixels(mip, ij);
+            return new MIPImage(mip, ij);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         } finally {
@@ -141,7 +139,7 @@ abstract class ColorMIPSearch implements Serializable {
         return new Opener().openTiff(stream, title);
     }
 
-    MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
+    MIPImage loadGradientMIP(MIPInfo mipInfo) {
         if (StringUtils.isBlank(gradientMasksPath)) {
             return null;
         } else {
@@ -164,14 +162,14 @@ abstract class ColorMIPSearch implements Serializable {
 
     abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
 
-    ColorMIPSearchResult runImageComparison(MIPWithPixels libraryMIP, MIPWithPixels libraryGradient, MIPWithPixels maskMIP, MIPWithPixels maskGradient) {
+    ColorMIPSearchResult runImageComparison(MIPImage libraryMIPImage, MIPImage maskMIPImage) {
         long startTime = System.currentTimeMillis();
         try {
-            LOG.debug("Compare library file {} with mask {}", libraryMIP,  maskMIP);
+            LOG.debug("Compare library file {} with mask {}", libraryMIPImage,  maskMIPImage);
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    maskMIP,
+                    maskMIPImage,
                     maskThreshold,
                     mirrorMask,
                     null,
@@ -181,24 +179,31 @@ abstract class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIP);
+            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage);
 
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
 
-            ColorMIPSearchResult.AreaGap areaGap;
-            if (maskMIP.isEmSkelotonMIP()) {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIP, maskMIP, libraryGradient);
-            } else {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIP, libraryMIP, maskGradient);
-            }
-
-            return new ColorMIPSearchResult(maskMIP, libraryMIP, output.matchingPixNum, output.matchingPct, isMatch, areaGap, false);
+            return new ColorMIPSearchResult(maskMIPImage.mipInfo, libraryMIPImage.mipInfo, output.matchingPixNum, output.matchingPct, isMatch, false);
         } catch (Throwable e) {
-            LOG.warn("Error comparing library file {} with mask {}", libraryMIP,  maskMIP, e);
-            return new ColorMIPSearchResult(maskMIP, libraryMIP, 0, 0, false, null, true);
+            LOG.warn("Error comparing library file {} with mask {}", libraryMIPImage,  maskMIPImage, e);
+            return new ColorMIPSearchResult(maskMIPImage.mipInfo, libraryMIPImage.mipInfo, 0, 0, false, true);
         } finally {
-            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIP,  maskMIP, System.currentTimeMillis() - startTime);
+            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);
+        }
+    }
+
+    ColorMIPSearchResult applyGradientAreaAdjustment(ColorMIPSearchResult sr, MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage maskMIPImage, MIPImage maskGradientImage) {
+        ColorMIPSearchResult.AreaGap areaGap;
+        if (sr.isMatch) {
+            if (maskMIPImage.mipInfo.isEmSkelotonMIP()) {
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, maskMIPImage, libraryGradientImage);
+            } else {
+                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIPImage, libraryMIPImage, maskGradientImage);
+            }
+            return sr.applyGradientAreaGap(areaGap);
+        } else {
+            return sr;
         }
     }
 

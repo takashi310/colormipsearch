@@ -1,24 +1,19 @@
 package org.janelia.colormipsearch;
 
-import java.util.Arrays;
-
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class MIPWithPixelsTest {
+public class MIPImageTest {
 
     @Test
     public void maxFilterForRGBImage() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
         Assert.assertArrayEquals(testMIP.pixels, (int[]) testImage.getProcessor().getPixels());
 
         ImageTransformer maxFilterTransformer = ImageTransformer.createFor(testMIP)
@@ -47,7 +42,7 @@ public class MIPWithPixelsTest {
     public void maxFilterForBinary8Image() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         ImageTransformer binaryMaxFilterTransformer = ImageTransformer.createFor(testMIP)
                 .toBinary8(100)
@@ -68,7 +63,7 @@ public class MIPWithPixelsTest {
     public void maxFilterForBinary16Image() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         ImageTransformer binaryMaxFilterTransformer = ImageTransformer.createFor(testMIP)
                 .toBinary16(100)
@@ -80,7 +75,7 @@ public class MIPWithPixelsTest {
     public void convertToGray8() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         ImageTransformer toGray8Transformer = ImageTransformer.createFor(testMIP)
                 .toGray8()
@@ -94,7 +89,7 @@ public class MIPWithPixelsTest {
     public void convertToGray16() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         ImageTransformer toGray8Transformer = ImageTransformer.createFor(testMIP)
                 .toGray16()
@@ -108,7 +103,7 @@ public class MIPWithPixelsTest {
     public void mirrorHorizontally() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPWithPixels testMIP = new MIPWithPixels(new MIPInfo(), testImage);
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         testImage.getProcessor().flipHorizontal();
 
@@ -119,7 +114,7 @@ public class MIPWithPixelsTest {
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), horizontalMirrorTransformer.getImage().pixels);
     }
 
-    private ImagePlus cloneAsImagePlus(MIPWithPixels mip) {
+    private ImagePlus cloneAsImagePlus(MIPImage mip) {
         return new ImagePlus(null, mip.getImageProcessor());
     }
 

@@ -63,7 +63,7 @@ class SparkColorMIPSearch extends ColorMIPSearch {
         long nlibraries = libraryMIPS.size();
         long nmasks = maskMIPS.size();
 
-        JavaRDD<Tuple2<MIPWithPixels, MIPWithPixels>> librariesRDD = sparkContext.parallelize(libraryMIPS)
+        JavaRDD<Tuple2<MIPImage, MIPImage>> librariesRDD = sparkContext.parallelize(libraryMIPS)
                 .filter(mip -> new File(mip.imageFilepath).exists())
                 .map(mip -> new Tuple2<>(loadMIP(mip), loadGradientMIP(mip)))
                 ;
@@ -74,17 +74,20 @@ class SparkColorMIPSearch extends ColorMIPSearch {
                 ;
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<Tuple2<MIPWithPixels, MIPWithPixels>, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<Tuple2<MIPImage, MIPImage>, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
         JavaPairRDD<MIPInfo, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
                 .groupBy(lms -> lms._2) // group by mask
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
-                            MIPWithPixels maskMIP = loadMIP(mls._1);
-                            MIPWithPixels gradientMask = loadGradientMIP(mls._1);
+                            MIPImage maskMIP = loadMIP(mls._1);
+                            MIPImage gradientMask = loadGradientMIP(mls._1);
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(lmPair -> runImageComparison(lmPair._1._1, lmPair._1._2, maskMIP, gradientMask))
+                                    .map(lmPair -> {
+                                        ColorMIPSearchResult sr = runImageComparison(lmPair._1._1, maskMIP);
+                                        return applyGradientAreaAdjustment(sr, lmPair._1._1, lmPair._1._2, maskMIP, gradientMask);
+                                    })
                                     .filter(srByMask ->srByMask.isMatch() || srByMask.isError())
                                     .sorted(getColorMIPSearchComparator())
                                     .collect(Collectors.toList())

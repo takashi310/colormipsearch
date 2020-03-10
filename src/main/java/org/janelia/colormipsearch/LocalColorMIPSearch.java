@@ -3,11 +3,9 @@ package org.janelia.colormipsearch;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -57,7 +55,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
 
         LOG.info("Load {} masks", nmasks);
-        List<Pair<MIPWithPixels, MIPWithPixels>> masksMIPSWithImages = maskMIPS.stream().parallel()
+        List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
                 .filter(mip -> new File(mip.imageFilepath).exists())
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
@@ -73,15 +71,16 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     LOG.info("Compare {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks);
                     return masksMIPSWithImages.stream()
                             .map(maskMIPWithGradient -> CompletableFuture
-                                    .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
-                                    .thenApply(sr -> {
+                                    .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
+                                    .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
+                                    .thenApplyAsync(sr -> {
                                         if (sr.isMatch()) {
                                             // write the results directly - no sorting yet
-                                            writeSearchResults(libraryMIPWithGradient.getLeft().id, Collections.singletonList(sr.perLibraryMetadata()));
-                                            writeSearchResults(maskMIPWithGradient.getLeft().id, Collections.singletonList(sr.perMaskMetadata()));
+                                            writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
+                                            writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
                                         }
                                         return sr;
-                                    })
+                                    }, cdsExecutor)
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {

@@ -21,7 +21,7 @@ class EM2LMAreaGapCalculator {
         this.mirrorMask = mirrorMask;
     }
 
-    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPWithPixels libraryMIP, MIPWithPixels patternMIP, MIPWithPixels libraryGradient) {
+    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
         if (libraryGradient == null) {
             LOG.warn("No gradient image provided for {}", libraryMIP);
             return null;
@@ -41,7 +41,7 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private long calculateScoreAdjustment(MIPWithPixels libraryMIP, MIPWithPixels pattern, MIPWithPixels libraryGradient, Operations.ImageTransformation mipTransformation) {
+    private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Operations.ImageTransformation mipTransformation) {
         ImageTransformer dilatedLibraryTransformer = ImageTransformer.createForDuplicate(libraryMIP)
                 .mask(maskThreshold)
                 .maxFilter(negativeRadius)
@@ -64,7 +64,7 @@ class EM2LMAreaGapCalculator {
     }
 
 
-    private Operations.PixelTransformation scoreAdjustment(MIPWithPixels pattern, MIPWithPixels dilatedLibray) {
+    private Operations.PixelTransformation scoreAdjustment(MIPImage pattern, MIPImage dilatedLibray) {
         return (x, y, c) -> {
             int dilatedPix =  dilatedLibray.getPixel(x, y);
             if (dilatedPix != -16777216) {
