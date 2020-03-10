@@ -231,29 +231,31 @@ abstract class ColorMIPSearch implements Serializable {
         } else {
             FileLock rfl;
             OutputStream outputStream;
+            JsonGenerator gen;
             File outputFile = StringUtils.isBlank(outputPath) ? new File(filename + ".json") : new File(outputPath, filename + ".json");
+            long initialOutputFileSize;
+            try {
+                rfl = openFile(outputFile);
+                initialOutputFileSize = rfl.channel().size();
+                outputStream = Channels.newOutputStream(rfl.channel());
+                gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+                gen.useDefaultPrettyPrinter();
+            } catch (IOException e) {
+                LOG.error("Error opening the outputfile {}", outputFile, e);
+                throw new UncheckedIOException(e);
+            }
             LOG.info("Write {} results to {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
-            if (outputFile.exists()) {
+            if (initialOutputFileSize > 0) {
                 LOG.debug("Append to {}", outputFile);
                 try {
-                    rfl = openFile(outputFile);
-                    long rfLength = rfl.channel().size();
+                    // FP is positioned at the end of the last element
                     // position FP after the end of the last item
                     // this may not work on Windows because of the new line separator
                     // - so on windows it may need to rollback more than 4 chars
-                    rfl.channel().position(rfLength - 4);
-                    outputStream = Channels.newOutputStream(rfl.channel());
-                } catch (IOException e) {
-                    LOG.error("Error opening the outputfile {}", outputFile, e);
-                    throw new UncheckedIOException(e);
-                }
-                try {
-                    // FP is positioned at the end of the last element
-                    long endOfLastItemPos = rfl.channel().position();
+                    long endOfLastItemPos = initialOutputFileSize - 4;
+                    rfl.channel().position(endOfLastItemPos);
                     outputStream.write(", ".getBytes()); // write the separator for the next array element
                     // append the new elements to the existing results
-                    JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
-                    gen.useDefaultPrettyPrinter();
                     gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
                     gen.writeArrayFieldStart("results");
                     gen.writeObject(searchResults.get(0)); // write the first element - it can be any element or dummy object
@@ -285,14 +287,6 @@ abstract class ColorMIPSearch implements Serializable {
             } else {
                 LOG.debug("Create {}", outputFile);
                 try {
-                    rfl = openFile(outputFile);
-                    outputStream = Channels.newOutputStream(rfl.channel());
-                } catch (IOException e) {
-                    LOG.error("Error opening the outputfile {}", outputFile, e);
-                    throw new UncheckedIOException(e);
-                }
-                try {
-                    JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
                     writeColorSearchResults(gen, searchResults);
                 } catch (IOException e) {
                     LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
