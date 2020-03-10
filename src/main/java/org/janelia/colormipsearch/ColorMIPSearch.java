@@ -281,7 +281,7 @@ abstract class ColorMIPSearch implements Serializable {
                         outputStream.close();
                     } catch (IOException ignore) {
                     }
-                    LOG.info("Written {} results existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results to existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             } else {
                 try {
@@ -299,7 +299,7 @@ abstract class ColorMIPSearch implements Serializable {
                         outputStream.close();
                     } catch (IOException ignore) {
                     }
-                    LOG.info("Written {} results new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results to new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             }
         }
