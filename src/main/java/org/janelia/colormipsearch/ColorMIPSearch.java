@@ -142,19 +142,23 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     MIPWithPixels loadGradientMIP(MIPInfo mipInfo) {
-        Path gradientBasePath = Paths.get(gradientMasksPath);
-        Path mipPath = Paths.get(mipInfo.imageFilepath);
-        String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
-        try {
-            return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> p.getFileName().toString().equals(gradientFilename)).findFirst()
-                    .map(gp -> {
-                        LOG.debug("Read gradient for {} from {}", mipInfo, gp);
-                        return loadMIPFromPath(gp);
-                    })
-                    .orElse(null);
-        } catch (IOException e) {
-            LOG.error("Error reading {}", gradientBasePath, e);
+        if (StringUtils.isBlank(gradientMasksPath)) {
             return null;
+        } else {
+            Path gradientBasePath = Paths.get(gradientMasksPath);
+            Path mipPath = Paths.get(mipInfo.imageFilepath);
+            String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+            try {
+                return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> p.getFileName().toString().equals(gradientFilename)).findFirst()
+                        .map(gp -> {
+                            LOG.debug("Read gradient for {} from {}", mipInfo, gp);
+                            return loadMIPFromPath(gp);
+                        })
+                        .orElse(null);
+            } catch (IOException e) {
+                LOG.error("Error reading {}", gradientBasePath, e);
+                return null;
+            }
         }
     }
 
