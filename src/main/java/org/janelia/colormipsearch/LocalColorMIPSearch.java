@@ -70,7 +70,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> srForLibFutures = masksMIPSWithImages.stream()
-                            .filter(mip -> new File(mip.imageFilepath).exists())
                             .map(maskMIP -> CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor))
                             .collect(Collectors.toList())
                             ;
