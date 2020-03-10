@@ -194,16 +194,21 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     ColorMIPSearchResult applyGradientAreaAdjustment(ColorMIPSearchResult sr, MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage maskMIPImage, MIPImage maskGradientImage) {
-        ColorMIPSearchResult.AreaGap areaGap;
-        if (sr.isMatch) {
-            if (maskMIPImage.mipInfo.isEmSkelotonMIP()) {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, maskMIPImage, libraryGradientImage);
+        long startTime = System.currentTimeMillis();
+        try {
+            ColorMIPSearchResult.AreaGap areaGap;
+            if (sr.isMatch) {
+                if (maskMIPImage.mipInfo.isEmSkelotonMIP()) {
+                    areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, maskMIPImage, libraryGradientImage);
+                } else {
+                    areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIPImage, libraryMIPImage, maskGradientImage);
+                }
+                return sr.applyGradientAreaGap(areaGap);
             } else {
-                areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIPImage, libraryMIPImage, maskGradientImage);
+                return sr;
             }
-            return sr.applyGradientAreaGap(areaGap);
-        } else {
-            return sr;
+        } finally {
+            LOG.info("Completed calculating area gap between {} and {} in {}ms", libraryMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);
         }
     }
 
