@@ -199,10 +199,10 @@ abstract class ColorMIPSearch implements Serializable {
             long startTime = System.currentTimeMillis();
             if (maskMIPImage.mipInfo.isEmSkelotonMIP()) {
                 areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, maskMIPImage, libraryGradientImage);
-                LOG.info("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, maskMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
+                LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, maskMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
             } else {
                 areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(maskMIPImage, libraryMIPImage, maskGradientImage);
-                LOG.info("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, maskMIPImage, maskGradientImage, System.currentTimeMillis() - startTime);
+                LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, maskMIPImage, maskGradientImage, System.currentTimeMillis() - startTime);
             }
             return sr.applyGradientAreaGap(areaGap);
         } else {
