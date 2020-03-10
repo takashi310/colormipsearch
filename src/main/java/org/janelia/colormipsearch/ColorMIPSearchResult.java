@@ -33,10 +33,10 @@ class ColorMIPSearchResult implements Serializable {
     final double matchingSlicesPct;
     final boolean isMatch;
     final boolean isError;
-    final long areaGap;
+    final long gradientAreaGap;
     final boolean mirrorHasBetterMatch;
 
-    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, @Nullable AreaGap areaGap, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, @Nullable AreaGap gradientAreaGap, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
@@ -44,8 +44,8 @@ class ColorMIPSearchResult implements Serializable {
         this.matchingSlices = matchingSlices;
         this.matchingSlicesPct = matchingSlicesPct;
         this.isMatch = isMatch;
-        this.areaGap = areaGap != null ? areaGap.value : -1;
-        this.mirrorHasBetterMatch = areaGap != null && areaGap.mirrorHasBetterMatch;
+        this.gradientAreaGap = gradientAreaGap != null ? gradientAreaGap.value : -1;
+        this.mirrorHasBetterMatch = gradientAreaGap != null && gradientAreaGap.mirrorHasBetterMatch;
         this.isError = isError;
     }
 
@@ -100,7 +100,7 @@ class ColorMIPSearchResult implements Serializable {
                 .append("libraryMIP", libraryMIP)
                 .append("matchingSlices", matchingSlices)
                 .append("matchingSlicesPct", matchingSlicesPct)
-                .append("areaGap", areaGap)
+                .append("areaGap", gradientAreaGap)
                 .append("mirrorHasBetterMatch", mirrorHasBetterMatch)
                 .append("isMatch", isMatch)
                 .append("isError", isError)
@@ -117,9 +117,9 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
         srMetadata.addAttr("Library", maskMIP.libraryName);
         srMetadata.addAttr("PublishedName", maskMIP.publishedName);
-        srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
-        srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
-        srMetadata.addAttr("AreaGap", String.valueOf(areaGap));
+        srMetadata.setMatchingSlices(matchingSlices);
+        srMetadata.setMatchingSlicesPct(matchingSlicesPct);
+        srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
     }
 
@@ -133,9 +133,9 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
         srMetadata.addAttr("Library", libraryMIP.libraryName);
         srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
-        srMetadata.addAttr("Matched slices", String.valueOf(matchingSlices));
-        srMetadata.addAttr("Score", String.valueOf(matchingSlicesPct));
-        srMetadata.addAttr("AreaGap", String.valueOf(areaGap));
+        srMetadata.setMatchingSlices(matchingSlices);
+        srMetadata.setMatchingSlicesPct(matchingSlicesPct);
+        srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
     }
 

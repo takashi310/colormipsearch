@@ -11,6 +11,8 @@ import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -200,7 +202,7 @@ abstract class ColorMIPSearch implements Serializable {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
     }
 
-    void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
+    synchronized void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
         long startTime = System.currentTimeMillis();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -215,27 +217,27 @@ abstract class ColorMIPSearch implements Serializable {
                 LOG.info("Written {} results in {}ms", searchResults.size(), System.currentTimeMillis() - startTime);
             }
         } else {
+            FileLock rfl;
             OutputStream outputStream;
             File outputFile = StringUtils.isBlank(outputPath) ? new File(filename + ".json") : new File(outputPath, filename + ".json");
             LOG.info("Write {} results {} file -> {}", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile);
             if (outputFile.exists()) {
                 LOG.debug("Append to {}", outputFile);
-                RandomAccessFile rf;
                 try {
-                    rf = new RandomAccessFile(outputFile, "rw");
-                    long rfLength = rf.length();
+                    rfl = openFile(outputFile);
+                    long rfLength = rfl.channel().size();
                     // position FP after the end of the last item
                     // this may not work on Windows because of the new line separator
                     // - so on windows it may need to rollback more than 4 chars
-                    rf.seek(rfLength - 4);
-                    outputStream = Channels.newOutputStream(rf.getChannel());
+                    rfl.channel().position(rfLength - 4);
+                    outputStream = Channels.newOutputStream(rfl.channel());
                 } catch (IOException e) {
                     LOG.error("Error opening the outputfile {}", outputFile, e);
                     throw new UncheckedIOException(e);
                 }
                 try {
                     // FP is positioned at the end of the last element
-                    long endOfLastItemPos = rf.getFilePointer();
+                    long endOfLastItemPos = rfl.channel().position();
                     outputStream.write(", ".getBytes()); // write the separator for the next array element
                     // append the new elements to the existing results
                     JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
@@ -246,18 +248,22 @@ abstract class ColorMIPSearch implements Serializable {
                     // just to fool the generator that there is already an element in the array
                     gen.flush();
                     // reset the position
-                    rf.seek(endOfLastItemPos);
+                    rfl.channel().position(endOfLastItemPos);
                     // and now start writing the actual elements
                     writeColorSearchResultsArray(gen, searchResults);
                     gen.writeEndArray();
                     gen.writeEndObject();
                     gen.flush();
-                    long currentPos = rf.getFilePointer();
-                    rf.setLength(currentPos); // truncate
+                    long currentPos = rfl.channel().position();
+                    rfl.channel().truncate(currentPos); // truncate
                 } catch (IOException e) {
                     LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
+                    try {
+                        rfl.release();
+                    } catch (IOException ignore) {
+                    }
                     try {
                         outputStream.close();
                     } catch (IOException ignore) {
@@ -265,9 +271,11 @@ abstract class ColorMIPSearch implements Serializable {
                     LOG.info("Written {} results {} file -> {} in {}ms", searchResults.size(), outputFile.exists() ? "existing" : "new", outputFile, System.currentTimeMillis() - startTime);
                 }
             } else {
+                LOG.debug("Create {}", outputFile);
                 try {
-                    outputStream = new FileOutputStream(outputFile);
-                } catch (FileNotFoundException e) {
+                    rfl = openFile(outputFile);
+                    outputStream = Channels.newOutputStream(rfl.channel());
+                } catch (IOException e) {
                     LOG.error("Error opening the outputfile {}", outputFile, e);
                     throw new UncheckedIOException(e);
                 }
@@ -279,6 +287,10 @@ abstract class ColorMIPSearch implements Serializable {
                     throw new UncheckedIOException(e);
                 } finally {
                     try {
+                        rfl.release();
+                    } catch (IOException ignore) {
+                    }
+                    try {
                         outputStream.close();
                     } catch (IOException ignore) {
                     }
@@ -286,6 +298,12 @@ abstract class ColorMIPSearch implements Serializable {
                 }
             }
         }
+    }
+
+    private synchronized FileLock openFile(File f) throws IOException {
+        RandomAccessFile rf = new RandomAccessFile(f, "rw");
+        FileChannel fc = rf.getChannel();
+        return fc.lock();
     }
 
     private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
