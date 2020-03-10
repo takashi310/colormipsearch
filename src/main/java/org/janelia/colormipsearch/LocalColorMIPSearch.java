@@ -65,40 +65,50 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Compute and save search results by library");
 
-        libraryMIPS.stream().parallel()
+        List<CompletableFuture<ColorMIPSearchResult>> cdSearches = libraryMIPS.stream().parallel()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(this::loadMIP)
-                .forEach(libraryMIP -> {
+                .flatMap(libraryMIP -> {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
-                    masksMIPSWithImages
-                            .forEach(maskMIP -> {
-                                CompletableFuture
-                                        .supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor)
-                                        .thenApply(sr -> {
-                                            if (sr.isMatch()) {
-                                                // write the results directly - no sorting yet
-                                                writeSearchResults(libraryMIP.id, Collections.singletonList(sr.perLibraryMetadata()));
-                                                writeSearchResults(maskMIP.id, Collections.singletonList(sr.perMaskMetadata()));
+                    return masksMIPSWithImages.stream()
+                            .map(maskMIP -> CompletableFuture
+                                    .supplyAsync(() -> runImageComparison(libraryMIP, maskMIP), cdsExecutor)
+                                    .thenApply(sr -> {
+                                        if (sr.isMatch()) {
+                                            // write the results directly - no sorting yet
+                                            writeSearchResults(libraryMIP.id, Collections.singletonList(sr.perLibraryMetadata()));
+                                            writeSearchResults(maskMIP.id, Collections.singletonList(sr.perMaskMetadata()));
+                                        }
+                                        return sr;
+                                    })
+                                    .whenComplete((sr, e) -> {
+                                        if (e != null || sr.isError) {
+                                            if (e != null) {
+                                                LOG.error("Errors encountered comparing {} with {}", maskMIP, libraryMIP, e);
+                                            } else {
+                                                LOG.warn("Errors encountered comparing {} with {}", maskMIP, libraryMIP);
                                             }
-                                            return sr;
-                                        })
-                                        .whenComplete((sr, e) -> {
-                                            if (e != null || sr.isError) {
-                                                if (e != null) {
-                                                    LOG.error("Errors encountered comparing {} with {}", maskMIP, libraryMIP, e);
-                                                } else {
-                                                    LOG.warn("Errors encountered comparing {} with {}", maskMIP, libraryMIP);
-                                                }
-                                            }
-                                            LOG.debug("Completed comparing {} with {} mask after {}ms", libraryMIP, maskMIP, System.currentTimeMillis() - startLibraryComparison);
-                                        })
-                                        ;
-                            })
+                                        }
+                                        LOG.debug("Completed comparing {} with {} mask after {}ms", libraryMIP, maskMIP, System.currentTimeMillis() - startLibraryComparison);
+                                    }))
                             ;
                 })
+                .collect(Collectors.toList())
                 ;
-        LOG.info("Submitted all color depth searches for {} masks against {} libraries in {}s", nlibraries, nmasks, (System.currentTimeMillis() - startTime) / 1000);
+
+        LOG.info("Submitted all color depth searches for comparing {} masks with {} libraries in {}s", nmasks, nlibraries, (System.currentTimeMillis() - startTime) / 1000);
+
+        CompletableFuture.allOf(cdSearches.toArray(new CompletableFuture<?>[0]))
+                .thenApplyAsync(vr -> cdSearches.stream().map(CompletableFuture::join).collect(Collectors.toList()), cdsExecutor)
+                .thenApplyAsync(searchResults -> {
+                    LOG.info("Found {} search results after comparing {} masks with {} libraries in {}s", searchResults.size(), nmasks, nlibraries, (System.currentTimeMillis() - startTime) / 1000);
+                    return searchResults.size();
+                }, cdsExecutor)
+                .join()
+                ;
+
+        LOG.info("Finished searching {} masks against {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
     }
 
 }
