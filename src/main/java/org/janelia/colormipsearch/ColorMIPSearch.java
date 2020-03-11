@@ -64,9 +64,17 @@ abstract class ColorMIPSearch implements Serializable {
                 } catch (IOException ignore) {
                 }
             }
-            try {
-                fs.close();
-            } catch (IOException ignore) {
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException ignore) {
+                }
+            }
+            if (rf != null) {
+                try {
+                    rf.close();
+                } catch (IOException ignore) {
+                }
             }
         }
     }
@@ -261,12 +269,19 @@ abstract class ColorMIPSearch implements Serializable {
             long initialOutputFileSize;
             try {
                 rfHandler = openFile(outputFile);
+            } catch (IOException e) {
+                LOG.error("Error opening the outputfile {}", outputFile, e);
+                throw new UncheckedIOException(e);
+            }
+            try {
                 initialOutputFileSize = rfHandler.rf.length();
                 gen = mapper.getFactory().createGenerator(rfHandler.fs, JsonEncoding.UTF8);
                 gen.useDefaultPrettyPrinter();
-            } catch (Exception e) {
-                LOG.error("Error opening the outputfile {}", outputFile, e);
-                throw new IllegalStateException(e);
+            } catch (IOException e) {
+                LOG.error("Error creating the JSON writer for writing {} results", searchResults.size(), e);
+                throw new UncheckedIOException(e);
+            } finally {
+                rfHandler.close();
             }
             if (initialOutputFileSize > 0) {
                 try {
@@ -315,26 +330,24 @@ abstract class ColorMIPSearch implements Serializable {
         }
     }
 
-    private synchronized ResultsFileHandler openFile(File f) throws IOException, InterruptedException {
+    private ResultsFileHandler openFile(File f) throws IOException {
         long startTime = System.currentTimeMillis();
         RandomAccessFile rf = new RandomAccessFile(f, "rw");
         FileChannel fc = rf.getChannel();
-        for (;;) {
-            try {
-                FileLock fl = fc.tryLock();
-                if (fl == null) {
-                    wait();
-                } else {
-                    LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
-                    return new ResultsFileHandler(rf, fl, Channels.newOutputStream(fc));
-                }
-            } catch (OverlappingFileLockException ignore) {
-                wait();
+        try {
+            FileLock fl = fc.tryLock();
+            if (fl == null) {
+                throw new IllegalStateException("Could not acquire lock for " + f);
+            } else {
+                LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
+                return new ResultsFileHandler(rf, fl, Channels.newOutputStream(fc));
             }
+        } catch (OverlappingFileLockException e) {
+            throw new IllegalStateException("Could not acquire lock for " + f, e);
         }
     }
 
-    private synchronized void closeFile(ResultsFileHandler rfh) {
+    private void closeFile(ResultsFileHandler rfh) {
         try {
             rfh.close();
         } finally {

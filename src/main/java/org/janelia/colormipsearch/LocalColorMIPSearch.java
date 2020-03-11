@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -10,6 +11,8 @@ import java.util.stream.Collectors;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -38,13 +41,12 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Double pctPositivePixels,
                         int numberOfCdsThreads) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
-//        cdsExecutor = Executors.newFixedThreadPool(
-//                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
-//                new ThreadFactoryBuilder()
-//                        .setNameFormat("CDSRUNNER-%d")
-//                        .setDaemon(true)
-//                        .build());
-        cdsExecutor = Executors.newWorkStealingPool();
+        cdsExecutor = Executors.newFixedThreadPool(
+                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
+                new ThreadFactoryBuilder()
+                        .setNameFormat("CDSRUNNER-%d")
+                        .setDaemon(true)
+                        .build());
     }
 
     @Override
@@ -73,14 +75,34 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     return masksMIPSWithImages.stream()
                             .map(maskMIPWithGradient -> CompletableFuture
                                     .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
-                                    .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
-                                    .thenApply(sr -> {
+                                    .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
+                                    .thenComposeAsync(sr -> {
                                         if (sr.isMatch()) {
-                                            // write the results directly - no sorting yet
-                                            writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
-                                            writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
+                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
+                                                    .handle(IllegalStateException.class)
+                                                    .withDelay(Duration.ofMillis(500))
+                                                    .withMaxRetries(20);
+                                            return Failsafe.with(retryPolicy).getAsync(() -> {
+                                                writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
+                                                return sr;
+                                            });
+                                        } else {
+                                            return CompletableFuture.completedFuture(sr);
                                         }
-                                        return sr;
+                                    })
+                                    .thenComposeAsync(sr -> {
+                                        if (sr.isMatch()) {
+                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
+                                                    .handle(IllegalStateException.class)
+                                                    .withDelay(Duration.ofMillis(500))
+                                                    .withMaxRetries(20);
+                                            return Failsafe.with(retryPolicy).getAsync(() -> {
+                                                writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
+                                                return sr;
+                                            });
+                                        } else {
+                                            return CompletableFuture.completedFuture(sr);
+                                        }
                                     })
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
