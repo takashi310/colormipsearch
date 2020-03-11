@@ -89,7 +89,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                         } else {
                                             return CompletableFuture.completedFuture(sr);
                                         }
-                                    })
+                                    }, cdsExecutor)
                                     .thenComposeAsync(sr -> {
                                         if (sr.isMatch()) {
                                             RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
@@ -103,7 +103,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                         } else {
                                             return CompletableFuture.completedFuture(sr);
                                         }
-                                    })
+                                    }, cdsExecutor)
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {

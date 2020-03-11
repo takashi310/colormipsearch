@@ -347,11 +347,7 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     private void closeFile(ResultsFileHandler rfh) {
-        try {
-            rfh.close();
-        } finally {
-            notify();
-        }
+        rfh.close();
     }
 
     private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
