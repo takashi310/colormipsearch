@@ -91,10 +91,12 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             ;
                     List<ColorMIPSearchResult> librarySearchResults = CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApplyAsync(vr -> librarySearches.stream().map(CompletableFuture::join).collect(Collectors.toList()), cdsExecutor)
-                            .thenApply(srs -> {
-                                List<ColorMIPSearchResult> matchingResults = srs.stream().filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList());
+                            .thenApply(srs -> srs.stream().filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList()))
+                            .thenApply(matchingResults -> {
                                 LOG.info("Found {} search results after comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
-                                writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
+                                if (!matchingResults.isEmpty()) {
+                                    writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
+                                }
                                 return matchingResults;
                             })
                             .join()
