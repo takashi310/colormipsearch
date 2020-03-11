@@ -38,13 +38,12 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Double pctPositivePixels,
                         int numberOfCdsThreads) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
-        cdsExecutor = Executors.newWorkStealingPool();
-//        cdsExecutor = Executors.newFixedThreadPool(
-//                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
-//                new ThreadFactoryBuilder()
-//                        .setNameFormat("CDSRUNNER-%d")
-//                        .setDaemon(true)
-//                        .build());
+        cdsExecutor = Executors.newFixedThreadPool(
+                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
+                new ThreadFactoryBuilder()
+                        .setNameFormat("CDSRUNNER-%d")
+                        .setDaemon(true)
+                        .build());
     }
 
     @Override
