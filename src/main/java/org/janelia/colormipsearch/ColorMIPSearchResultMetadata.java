@@ -3,7 +3,7 @@ package org.janelia.colormipsearch;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonProperty
