@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ij.ImagePlus;
 import ij.io.Opener;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,7 +251,10 @@ abstract class ColorMIPSearch implements Serializable {
 
     void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
         long startTime = System.currentTimeMillis();
-
+        if (CollectionUtils.isEmpty(searchResults)) {
+            // nothing to do
+            return;
+        }
         ObjectMapper mapper = new ObjectMapper();
         if (StringUtils.isBlank(filename)) {
             try {
