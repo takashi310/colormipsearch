@@ -46,6 +46,31 @@ abstract class ColorMIPSearch implements Serializable {
         UNKNOWN
     }
 
+    private static class ResultsFileHandler {
+        private final RandomAccessFile rf;
+        private final FileLock fl;
+        private final OutputStream fs;
+
+        ResultsFileHandler(RandomAccessFile rf, FileLock fl, OutputStream fs) {
+            this.rf = rf;
+            this.fl = fl;
+            this.fs = fs;
+        }
+
+        void close() {
+            if (fl != null) {
+                try {
+                    fl.release();
+                } catch (IOException ignore) {
+                }
+            }
+            try {
+                fs.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
     private final String gradientMasksPath;
     private final String outputPath;
     private final Integer dataThreshold;
@@ -230,16 +255,14 @@ abstract class ColorMIPSearch implements Serializable {
                 LOG.info("Written {} results in {}ms", searchResults.size(), System.currentTimeMillis() - startTime);
             }
         } else {
-            FileLock rfl;
-            OutputStream outputStream;
+            ResultsFileHandler rfHandler;
             JsonGenerator gen;
             File outputFile = StringUtils.isBlank(outputPath) ? new File(filename + ".json") : new File(outputPath, filename + ".json");
             long initialOutputFileSize;
             try {
-                rfl = openFile(outputFile);
-                initialOutputFileSize = rfl.channel().size();
-                outputStream = Channels.newOutputStream(rfl.channel());
-                gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+                rfHandler = openFile(outputFile);
+                initialOutputFileSize = rfHandler.rf.length();
+                gen = mapper.getFactory().createGenerator(rfHandler.fs, JsonEncoding.UTF8);
                 gen.useDefaultPrettyPrinter();
             } catch (Exception e) {
                 LOG.error("Error opening the outputfile {}", outputFile, e);
@@ -253,8 +276,8 @@ abstract class ColorMIPSearch implements Serializable {
                     // this may not work on Windows because of the new line separator
                     // - so on windows it may need to rollback more than 4 chars
                     long endOfLastItemPos = initialOutputFileSize - 4;
-                    rfl.channel().position(endOfLastItemPos);
-                    outputStream.write(", ".getBytes()); // write the separator for the next array element
+                    rfHandler.rf.seek(endOfLastItemPos);
+                    rfHandler.fs.write(", ".getBytes()); // write the separator for the next array element
                     // append the new elements to the existing results
                     gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
                     gen.writeArrayFieldStart("results");
@@ -262,23 +285,19 @@ abstract class ColorMIPSearch implements Serializable {
                     // just to fool the generator that there is already an element in the array
                     gen.flush();
                     // reset the position
-                    rfl.channel().position(endOfLastItemPos);
+                    rfHandler.rf.seek(endOfLastItemPos);
                     // and now start writing the actual elements
                     writeColorSearchResultsArray(gen, searchResults);
                     gen.writeEndArray();
                     gen.writeEndObject();
                     gen.flush();
-                    long currentPos = rfl.channel().position();
-                    rfl.channel().truncate(currentPos); // truncate
+                    long currentPos = rfHandler.rf.getFilePointer();
+                    rfHandler.rf.setLength(currentPos); // truncate
                 } catch (IOException e) {
                     LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
-                    releaseLock(rfl);
-                    try {
-                        outputStream.close();
-                    } catch (IOException ignore) {
-                    }
+                    closeFile(rfHandler);
                     LOG.info("Written {} results to existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             } else {
@@ -289,39 +308,35 @@ abstract class ColorMIPSearch implements Serializable {
                     LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
-                    releaseLock(rfl);
-                    try {
-                        outputStream.close();
-                    } catch (IOException ignore) {
-                    }
+                    closeFile(rfHandler);
                     LOG.info("Written {} results to new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             }
         }
     }
 
-    private synchronized FileLock openFile(File f) throws IOException, InterruptedException {
+    private synchronized ResultsFileHandler openFile(File f) throws IOException, InterruptedException {
         long startTime = System.currentTimeMillis();
-        FileChannel fc = new RandomAccessFile(f, "rw").getChannel();
+        RandomAccessFile rf = new RandomAccessFile(f, "rw");
+        FileChannel fc = rf.getChannel();
         for (;;) {
-            FileLock fl = null;
             try {
-                fl = fc.tryLock();
+                FileLock fl = fc.tryLock();
+                if (fl == null) {
+                    wait();
+                } else {
+                    LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
+                    return new ResultsFileHandler(rf, fl, Channels.newOutputStream(fc));
+                }
             } catch (OverlappingFileLockException ignore) {
-            }
-            if (fl == null) {
                 wait();
-            } else {
-                LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
-                return fl;
             }
         }
     }
 
-    private synchronized void releaseLock(FileLock fl) {
+    private synchronized void closeFile(ResultsFileHandler rfh) {
         try {
-            fl.release();
-        } catch (IOException ignore) {
+            rfh.close();
         } finally {
             notify();
         }
