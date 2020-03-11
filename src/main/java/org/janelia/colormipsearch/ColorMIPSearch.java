@@ -278,10 +278,9 @@ abstract class ColorMIPSearch implements Serializable {
                 gen = mapper.getFactory().createGenerator(rfHandler.fs, JsonEncoding.UTF8);
                 gen.useDefaultPrettyPrinter();
             } catch (IOException e) {
+                rfHandler.close();
                 LOG.error("Error creating the JSON writer for writing {} results", searchResults.size(), e);
                 throw new UncheckedIOException(e);
-            } finally {
-                rfHandler.close();
             }
             if (initialOutputFileSize > 0) {
                 try {
