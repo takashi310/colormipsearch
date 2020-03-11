@@ -76,7 +76,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = masksMIPSWithImages.stream()
                             .map(maskMIPWithGradient -> CompletableFuture
                                     .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
-                                    .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
+                                    .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {
@@ -90,13 +90,13 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .collect(Collectors.toList())
                             ;
                     List<ColorMIPSearchResult> librarySearchResults = CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApplyAsync(vr -> librarySearches.stream().map(CompletableFuture::join).collect(Collectors.toList()), cdsExecutor)
+                            .thenApply(vr -> librarySearches.stream().map(CompletableFuture::join).collect(Collectors.toList()))
                             .thenApply(srs -> srs.stream().filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList()))
-                            .thenApply(matchingResults -> {
+                            .thenApplyAsync(matchingResults -> {
                                 LOG.info("Found {} search results after comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
                                 writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
                                 return matchingResults;
-                            })
+                            }, cdsExecutor)
                             .join()
                             ;
                     return librarySearchResults.stream();
