@@ -67,7 +67,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Compute and save search results by library");
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream().parallel()
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
                 .flatMap(libraryMIPWithGradient -> {
