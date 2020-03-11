@@ -11,6 +11,7 @@ import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -302,7 +303,11 @@ abstract class ColorMIPSearch implements Serializable {
     private synchronized FileLock openFile(File f) throws IOException, InterruptedException {
         FileChannel fc = new RandomAccessFile(f, "rw").getChannel();
         for (;;) {
-            FileLock fl = fc.tryLock();
+            FileLock fl = null;
+            try {
+                fl = fc.tryLock();
+            } catch (OverlappingFileLockException ignore) {
+            }
             if (fl == null) {
                 wait();
             } else {
