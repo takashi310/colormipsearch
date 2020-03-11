@@ -214,7 +214,7 @@ abstract class ColorMIPSearch implements Serializable {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
     }
 
-    synchronized void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
+    void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
         long startTime = System.currentTimeMillis();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -240,9 +240,9 @@ abstract class ColorMIPSearch implements Serializable {
                 outputStream = Channels.newOutputStream(rfl.channel());
                 gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
                 gen.useDefaultPrettyPrinter();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOG.error("Error opening the outputfile {}", outputFile, e);
-                throw new UncheckedIOException(e);
+                throw new IllegalStateException(e);
             }
             if (initialOutputFileSize > 0) {
                 try {
@@ -273,10 +273,7 @@ abstract class ColorMIPSearch implements Serializable {
                     LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
-                    try {
-                        rfl.release();
-                    } catch (IOException ignore) {
-                    }
+                    releaseLock(rfl);
                     try {
                         outputStream.close();
                     } catch (IOException ignore) {
@@ -291,10 +288,7 @@ abstract class ColorMIPSearch implements Serializable {
                     LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
-                    try {
-                        rfl.release();
-                    } catch (IOException ignore) {
-                    }
+                    releaseLock(rfl);
                     try {
                         outputStream.close();
                     } catch (IOException ignore) {
@@ -305,10 +299,25 @@ abstract class ColorMIPSearch implements Serializable {
         }
     }
 
-    private synchronized FileLock openFile(File f) throws IOException {
-        RandomAccessFile rf = new RandomAccessFile(f, "rw");
-        FileChannel fc = rf.getChannel();
-        return fc.lock();
+    private synchronized FileLock openFile(File f) throws IOException, InterruptedException {
+        FileChannel fc = new RandomAccessFile(f, "rw").getChannel();
+        for (;;) {
+            FileLock fl = fc.tryLock();
+            if (fl == null) {
+                wait();
+            } else {
+                return fl;
+            }
+        }
+    }
+
+    private synchronized void releaseLock(FileLock fl) {
+        try {
+            fl.release();
+        } catch (IOException ignore) {
+        } finally {
+            notify();
+        }
     }
 
     private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
