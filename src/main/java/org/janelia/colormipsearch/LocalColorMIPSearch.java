@@ -4,6 +4,7 @@ import java.io.File;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -66,7 +67,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Compute and save search results by library");
 
-        List<CompletableFuture<ColorMIPSearchResult>> cdSearches = libraryMIPS.stream().parallel()
+        List<CompletableFuture<ColorMIPSearchResult>> cdSearches = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
                 .flatMap(libraryMIPWithGradient -> {
@@ -76,34 +77,34 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .map(maskMIPWithGradient -> CompletableFuture
                                     .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
                                     .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
-                                    .thenComposeAsync(sr -> {
-                                        if (sr.isMatch()) {
-                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
-                                                    .handle(IllegalStateException.class)
-                                                    .withDelay(Duration.ofMillis(500))
-                                                    .withMaxRetries(20);
-                                            return Failsafe.with(retryPolicy).getAsync(() -> {
-                                                writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
-                                                return sr;
-                                            });
-                                        } else {
-                                            return CompletableFuture.completedFuture(sr);
-                                        }
-                                    }, cdsExecutor)
-                                    .thenComposeAsync(sr -> {
-                                        if (sr.isMatch()) {
-                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
-                                                    .handle(IllegalStateException.class)
-                                                    .withDelay(Duration.ofMillis(500))
-                                                    .withMaxRetries(20);
-                                            return Failsafe.with(retryPolicy).getAsync(() -> {
-                                                writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
-                                                return sr;
-                                            });
-                                        } else {
-                                            return CompletableFuture.completedFuture(sr);
-                                        }
-                                    }, cdsExecutor)
+//                                    .thenComposeAsync(sr -> {
+//                                        if (sr.isMatch()) {
+//                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
+//                                                    .handle(IllegalStateException.class)
+//                                                    .withDelay(Duration.ofMillis(500))
+//                                                    .withMaxRetries(20);
+//                                            return Failsafe.with(retryPolicy).getAsync(() -> {
+//                                                writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perLibraryMetadata()));
+//                                                return sr;
+//                                            });
+//                                        } else {
+//                                            return CompletableFuture.completedFuture(sr);
+//                                        }
+//                                    }, cdsExecutor)
+//                                    .thenComposeAsync(sr -> {
+//                                        if (sr.isMatch()) {
+//                                            RetryPolicy<ColorMIPSearchResult> retryPolicy = new RetryPolicy<ColorMIPSearchResult>()
+//                                                    .handle(IllegalStateException.class)
+//                                                    .withDelay(Duration.ofMillis(500))
+//                                                    .withMaxRetries(20);
+//                                            return Failsafe.with(retryPolicy).getAsync(() -> {
+//                                                writeSearchResults(maskMIPWithGradient.getLeft().mipInfo.id, Collections.singletonList(sr.perMaskMetadata()));
+//                                                return sr;
+//                                            });
+//                                        } else {
+//                                            return CompletableFuture.completedFuture(sr);
+//                                        }
+//                                    }, cdsExecutor)
                                     .whenComplete((sr, e) -> {
                                         if (e != null || sr.isError) {
                                             if (e != null) {
@@ -125,6 +126,12 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .thenApplyAsync(vr -> cdSearches.stream().map(CompletableFuture::join).collect(Collectors.toList()), cdsExecutor)
                 .thenApplyAsync(searchResults -> {
                     LOG.info("Found {} search results after comparing {} masks with {} libraries in {}s", searchResults.size(), nmasks, nlibraries, (System.currentTimeMillis() - startTime) / 1000);
+                    Map<String, List<ColorMIPSearchResult>> srsByLibrary = searchResults.stream()
+                            .collect(Collectors.groupingBy(ColorMIPSearchResult::getLibraryId, Collectors.toList()))
+                            ;
+                    srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> {
+                        writeSearchResults(libraryId, srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
+                    });
                     return searchResults.size();
                 }, cdsExecutor)
                 .join()
