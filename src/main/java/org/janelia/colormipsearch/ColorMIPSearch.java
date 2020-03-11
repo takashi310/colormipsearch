@@ -301,6 +301,7 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     private synchronized FileLock openFile(File f) throws IOException, InterruptedException {
+        long startTime = System.currentTimeMillis();
         FileChannel fc = new RandomAccessFile(f, "rw").getChannel();
         for (;;) {
             FileLock fl = null;
@@ -311,6 +312,7 @@ abstract class ColorMIPSearch implements Serializable {
             if (fl == null) {
                 wait();
             } else {
+                LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
                 return fl;
             }
         }
