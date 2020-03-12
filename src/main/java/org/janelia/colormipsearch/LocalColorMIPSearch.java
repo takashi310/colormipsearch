@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 class LocalColorMIPSearch extends ColorMIPSearch {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
-    private static final int DEFAULT_CDS_THREADS = 20;
+    private static final int DEFAULT_CDS_THREADS = 100;
 
     private final Executor cdsExecutor;
 
@@ -98,7 +98,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .thenApply(vr -> librarySearches.stream().map(CompletableFuture::join).collect(Collectors.toList()))
                             .thenApply(srs -> srs.stream().filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList()))
                             .thenComposeAsync(matchingResults -> {
-                                LOG.info("Found {} search results after comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
+                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
                                     writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
                                     return matchingResults;
