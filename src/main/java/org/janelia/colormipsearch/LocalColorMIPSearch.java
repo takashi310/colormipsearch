@@ -31,7 +31,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private static final int DEFAULT_CDS_THREADS = 100;
 
     private final Executor cdsExecutor;
-    private final boolean parallelizeLibraryMIPs;
 
     LocalColorMIPSearch(String gradientMasksPath,
                         String outputPath,
@@ -42,8 +41,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         int negativeRadius,
                         boolean mirrorMask,
                         Double pctPositivePixels,
-                        int numberOfCdsThreads,
-                        boolean parallelizeLibraryMIPs) {
+                        int numberOfCdsThreads) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
         cdsExecutor = Executors.newFixedThreadPool(
                 numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
@@ -51,7 +49,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         .setNameFormat("CDSRUNNER-%d")
                         .setDaemon(true)
                         .build());
-        this.parallelizeLibraryMIPs = parallelizeLibraryMIPs;
     }
 
     @Override
@@ -76,16 +73,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withDelay(Duration.ofMillis(500))
                 .withMaxRetries(20);
 
-        Stream<MIPInfo> libraryMIPsStream;
-        if (parallelizeLibraryMIPs) {
-            libraryMIPsStream = libraryMIPS.parallelStream();
-        } else {
-            libraryMIPsStream = libraryMIPS.stream();
-        }
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPsStream
+        List<CompletableFuture<List<ColorMIPSearchResult>>> allSearchResultsComputations = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
-                .flatMap(libraryMIPWithGradient -> {
+                .map(libraryMIPWithGradient -> {
                     long startLibraryComparison = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = masksMIPSWithImages.stream()
@@ -104,9 +95,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                     }))
                             .collect(Collectors.toList())
                             ;
-                    List<ColorMIPSearchResult> librarySearchResults = CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApply(vr -> librarySearches.stream().map(CompletableFuture::join).collect(Collectors.toList()))
-                            .thenApply(srs -> srs.stream().filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList()))
+                    return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
+                            .thenApplyAsync(ignoredVoidResult -> librarySearches.stream().map(CompletableFuture::join).filter(ColorMIPSearchResult::isMatch).collect(Collectors.toList()), cdsExecutor)
                             .thenComposeAsync(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
@@ -114,14 +104,19 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                     return matchingResults;
                                 });
                             }, cdsExecutor)
-                            .join()
                             ;
-                    return librarySearchResults.stream();
                 })
                 .collect(Collectors.toList())
                 ;
+        LOG.info("Submitted computations to compare {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
 
+        // collect all search results
+        List<ColorMIPSearchResult> allSearchResults = allSearchResultsComputations.stream()
+                .flatMap(srsByLibraryComputation -> srsByLibraryComputation.join().stream())
+                .collect(Collectors.toList())
+                ;
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+
         Map<String, List<ColorMIPSearchResult>> srsByMasks = allSearchResults.stream()
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getMaskId, Collectors.toList()));
 

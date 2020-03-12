@@ -30,7 +30,7 @@ java -cp target/colormipsearch-1.1-jar-with-dependencies.jar org.janelia.colormi
 ```
 java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     batch \
-    -locally 2 \
+    -locally \
     -m /groups/jacs/jacsDev/devstore/goinac/cdtest/input/flyem_hemibrain.json \
     -i "/groups/jacs/jacsDev/devstore/goinac/cdtest/input/flylight_splitgal4_drivers.json:4:1" \
     --maskThreshold 100 \
