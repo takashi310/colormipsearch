@@ -182,7 +182,8 @@ abstract class ColorMIPSearch implements Serializable {
             Path mipPath = Paths.get(mipInfo.imageFilepath);
             String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
             try {
-                return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> p.getFileName().toString().equals(gradientFilename)).findFirst()
+                return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> fa.isRegularFile() && p.getFileName().toString().equals(gradientFilename))
+                        .findFirst()
                         .map(gp -> {
                             LOG.debug("Read gradient for {} from {}", mipInfo, gp);
                             return loadMIPFromPath(gp);
