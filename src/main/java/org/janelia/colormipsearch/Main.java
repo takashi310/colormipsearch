@@ -115,7 +115,7 @@ public class Main {
         private List<ListArg> masksInputs;
 
         @Parameter(names = "-locally", description = "Perform the search in the current process: 0 - use spark, 1 - locally without parallelizing the library mips, >1 - locally with library mips parallelization")
-        private int useLocalProcessing = 0;
+        private int useLocalProcessing = 1;
 
         BatchSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
