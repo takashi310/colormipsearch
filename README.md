@@ -30,7 +30,7 @@ java -cp target/colormipsearch-1.1-jar-with-dependencies.jar org.janelia.colormi
 ```
 java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     batch \
-    -locally \
+    -locally 2 \
     -m /groups/jacs/jacsDev/devstore/goinac/cdtest/input/flyem_hemibrain.json \
     -i "/groups/jacs/jacsDev/devstore/goinac/cdtest/input/flylight_splitgal4_drivers.json:4:1" \
     --maskThreshold 100 \
@@ -40,5 +40,5 @@ java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar
 
 ### Perform color depth search for one mask and one image only
 ```
-java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar batch -locally -i /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_MB242A-20121208_31_H4-20x-Brain-JRC2018_Unisex_20x_HR-1846510864534863970-CH1_CDM.png -m /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/5901194966_RT_18U.tif --maskThreshold 100 -od /groups/jacs/jacsDev/devstore/goinac/cdtest/test3
+java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar batch -i /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_MB242A-20121208_31_H4-20x-Brain-JRC2018_Unisex_20x_HR-1846510864534863970-CH1_CDM.png -m /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/5901194966_RT_18U.tif --maskThreshold 100 -od /groups/jacs/jacsDev/devstore/goinac/cdtest/test3
 ```

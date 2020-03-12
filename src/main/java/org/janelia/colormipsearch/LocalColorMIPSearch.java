@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -30,6 +31,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private static final int DEFAULT_CDS_THREADS = 100;
 
     private final Executor cdsExecutor;
+    private final boolean parallelizeLibraryMIPs;
 
     LocalColorMIPSearch(String gradientMasksPath,
                         String outputPath,
@@ -40,7 +42,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         int negativeRadius,
                         boolean mirrorMask,
                         Double pctPositivePixels,
-                        int numberOfCdsThreads) {
+                        int numberOfCdsThreads,
+                        boolean parallelizeLibraryMIPs) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
         cdsExecutor = Executors.newFixedThreadPool(
                 numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
@@ -48,6 +51,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         .setNameFormat("CDSRUNNER-%d")
                         .setDaemon(true)
                         .build());
+        this.parallelizeLibraryMIPs = parallelizeLibraryMIPs;
     }
 
     @Override
@@ -72,7 +76,13 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withDelay(Duration.ofMillis(500))
                 .withMaxRetries(20);
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
+        Stream<MIPInfo> libraryMIPsStream;
+        if (parallelizeLibraryMIPs) {
+            libraryMIPsStream = libraryMIPS.parallelStream();
+        } else {
+            libraryMIPsStream = libraryMIPS.stream();
+        }
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPsStream
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
                 .flatMap(libraryMIPWithGradient -> {
