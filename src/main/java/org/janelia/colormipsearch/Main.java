@@ -171,6 +171,12 @@ public class Main {
             System.exit(0);
         }
 
+        if (StringUtils.isBlank(cmdline.getParsedCommand())) {
+            StringBuilder sb = new StringBuilder("Missing command");
+            cmdline.usage(sb);
+            JCommander.getConsole().println(sb.toString());
+            System.exit(1);
+        }
         switch (cmdline.getParsedCommand()) {
             case "batch":
                 createOutputDir(batchSearchArgs.getOutputDir());
@@ -188,6 +194,12 @@ public class Main {
                 }
                 createOutputDir(sortResultsArgs.getOutputDir());
                 sortResults(sortResultsArgs);
+                break;
+            default:
+                StringBuilder sb = new StringBuilder("Invalid command");
+                cmdline.usage(sb);
+                JCommander.getConsole().println(sb.toString());
+                System.exit(1);
         }
     }
 
