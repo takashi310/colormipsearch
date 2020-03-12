@@ -172,7 +172,7 @@ public class Main {
         }
 
         if (StringUtils.isBlank(cmdline.getParsedCommand())) {
-            StringBuilder sb = new StringBuilder("Missing command");
+            StringBuilder sb = new StringBuilder("Missing command\n");
             cmdline.usage(sb);
             JCommander.getConsole().println(sb.toString());
             System.exit(1);
@@ -196,7 +196,7 @@ public class Main {
                 sortResults(sortResultsArgs);
                 break;
             default:
-                StringBuilder sb = new StringBuilder("Invalid command");
+                StringBuilder sb = new StringBuilder("Invalid command\n");
                 cmdline.usage(sb);
                 JCommander.getConsole().println(sb.toString());
                 System.exit(1);
