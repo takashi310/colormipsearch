@@ -74,35 +74,18 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
-                .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
-                .map(libraryMIPWithGradient -> {
-                    long startLibraryComparison = System.currentTimeMillis();
-                    LOG.info("Compare {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks);
-                    List<CompletableFuture<ColorMIPSearchResult>> librarySearches = masksMIPSWithImages.stream()
-                            .map(maskMIPWithGradient -> CompletableFuture
-                                    .supplyAsync(() -> runImageComparison(libraryMIPWithGradient.getLeft(), maskMIPWithGradient.getLeft()), cdsExecutor)
-                                    .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPWithGradient.getLeft(), libraryMIPWithGradient.getRight(), maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
-                                    .whenComplete((sr, e) -> {
-                                        if (e != null || sr.isError) {
-                                            if (e != null) {
-                                                LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft(), e);
-                                            } else {
-                                                LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft());
-                                            }
-                                        }
-                                        LOG.debug("Completed comparing {} with {} after {}ms", maskMIPWithGradient.getLeft(), libraryMIPWithGradient.getLeft(), System.currentTimeMillis() - startLibraryComparison);
-                                    }))
-                            .collect(Collectors.toList())
-                            ;
+                .map(libraryMIP -> {
+                    LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
+                    List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
                                     .map(searchComputation -> searchComputation.join())
                                     .filter(ColorMIPSearchResult::isMatch)
                                     .collect(Collectors.toList()), cdsExecutor)
                             .thenCompose(matchingResults -> {
-                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
+                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - startTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
-                                    writeSearchResults(libraryMIPWithGradient.getLeft().mipInfo.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
+                                    writeSearchResults(libraryMIP.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
                                     return matchingResults;
                                 });
                             })
@@ -123,4 +106,23 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Finished writing results after comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
     }
 
+    private List<CompletableFuture<ColorMIPSearchResult>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
+        MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
+        MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
+        return masksMIPSWithImages.stream()
+                .map(maskMIPWithGradient -> CompletableFuture
+                        .supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
+                        .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
+                        .whenComplete((sr, e) -> {
+                            if (e != null || sr.isError) {
+                                if (e != null) {
+                                    LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage, e);
+                                } else {
+                                    LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
+                                }
+                            }
+                        }))
+                .collect(Collectors.toList())
+                ;
+    }
 }
