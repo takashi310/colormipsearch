@@ -23,12 +23,12 @@ class EM2LMAreaGapCalculator {
 
     ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
         if (libraryGradient == null) {
-            LOG.debug("No gradient image provided for {}", libraryMIP);
+            LOG.trace("No gradient image provided for {}", libraryMIP);
             return null;
         } else {
             long startTimestamp = System.currentTimeMillis();
             try {
-                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
+                LOG.trace("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
                 long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.identity());
                 if (mirrorMask) {
                     long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
@@ -41,7 +41,7 @@ class EM2LMAreaGapCalculator {
                     return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
                 }
             } finally {
-                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {} in {}ms", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient, System.currentTimeMillis() - startTimestamp);
+                LOG.debug("Finished calculating area gap {} mirror mask between {} - {} using {} in {}ms", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient, System.currentTimeMillis() - startTimestamp);
             }
         }
     }
