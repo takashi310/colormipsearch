@@ -334,7 +334,7 @@ abstract class ColorMIPSearch implements Serializable {
         }
     }
 
-    private ResultsFileHandler openFile(File f) throws IOException {
+    private synchronized ResultsFileHandler openFile(File f) throws IOException {
         long startTime = System.currentTimeMillis();
         RandomAccessFile rf = new RandomAccessFile(f, "rw");
         FileChannel fc = rf.getChannel();
