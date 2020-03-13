@@ -73,7 +73,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withDelay(Duration.ofMillis(500))
                 .withMaxRetries(20);
 
-        List<CompletableFuture<List<ColorMIPSearchResult>>> allSearchResultsComputations = libraryMIPS.stream()
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
                 .map(libraryMIPWithGradient -> {
@@ -104,15 +104,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                     return matchingResults;
                                 });
                             }, cdsExecutor)
+                            .join()
                             ;
                 })
-                .collect(Collectors.toList())
-                ;
-        LOG.info("Submitted computations to compare {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
-
-        // collect all search results
-        List<ColorMIPSearchResult> allSearchResults = allSearchResultsComputations.stream()
-                .flatMap(srsByLibraryComputation -> srsByLibraryComputation.join().stream())
+                .flatMap(searchResultsByLibrary -> searchResultsByLibrary.stream())
                 .collect(Collectors.toList())
                 ;
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
