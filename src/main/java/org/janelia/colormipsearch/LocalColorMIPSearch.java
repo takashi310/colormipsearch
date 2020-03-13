@@ -2,14 +2,12 @@ package org.janelia.colormipsearch;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -28,7 +26,7 @@ import org.slf4j.LoggerFactory;
 class LocalColorMIPSearch extends ColorMIPSearch {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
-    private static final int DEFAULT_CDS_THREADS = 100;
+    private static final int DEFAULT_CDS_THREADS = 20;
 
     private final Executor cdsExecutor;
 
