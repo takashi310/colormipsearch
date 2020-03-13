@@ -26,17 +26,22 @@ class EM2LMAreaGapCalculator {
             LOG.debug("No gradient image provided for {}", libraryMIP);
             return null;
         } else {
-            LOG.debug("Calculate area gap between {} - {} using {}", libraryMIP, patternMIP, libraryGradient);
-            long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.identity());
-            if (mirrorMask) {
-                long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
-                if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
-                    return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+            long startTimestamp = System.currentTimeMillis();
+            try {
+                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
+                long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.identity());
+                if (mirrorMask) {
+                    long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
+                    if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
+                        return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+                    } else {
+                        return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
+                    }
                 } else {
-                    return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
+                    return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
                 }
-            } else {
-                return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+            } finally {
+                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {} in {}ms", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient, System.currentTimeMillis() - startTimestamp);
             }
         }
     }
@@ -44,29 +49,27 @@ class EM2LMAreaGapCalculator {
     private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Operations.ImageTransformation mipTransformation) {
         ImageTransformer dilatedLibraryTransformer = ImageTransformer.createForDuplicate(libraryMIP)
                 .mask(maskThreshold)
-                .maxFilter(negativeRadius)
-                ;
+                .maxFilter(negativeRadius);
 
         ImageTransformer patternSignalTransformer = ImageTransformer.createForDuplicate(pattern)
                 .toGray16()
                 .toSignal()
-                .applyImageTransformation(mipTransformation)
-                ;
+                .applyImageTransformation(mipTransformation);
 
         ImageTransformer scoreAdjustmentTransformer = ImageTransformer.createForDuplicate(libraryGradient)
                 .mulWith(patternSignalTransformer.getImage());
 
         scoreAdjustmentTransformer.applyPixelOp(scoreAdjustment(
-                        pattern,
-                        dilatedLibraryTransformer.getImage()))
-                ;
+                pattern,
+                dilatedLibraryTransformer.getImage()))
+        ;
         return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2);
     }
 
 
     private Operations.PixelTransformation scoreAdjustment(MIPImage pattern, MIPImage dilatedLibray) {
         return (x, y, c) -> {
-            int dilatedPix =  dilatedLibray.getPixel(x, y);
+            int dilatedPix = dilatedLibray.getPixel(x, y);
             if (dilatedPix != -16777216) {
                 int patternPix = pattern.getPixel(x, y);
                 if (patternPix != -16777216) {
