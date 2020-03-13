@@ -98,7 +98,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
                                     .map(searchComputation -> searchComputation.join())
                                     .filter(ColorMIPSearchResult::isMatch)
-                                    .onClose(() -> LOG.info("Finished comparing {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks))
                                     .collect(Collectors.toList()), cdsExecutor)
                             .thenCompose(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
