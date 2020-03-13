@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import javax.imageio.ImageIO;
 
@@ -179,19 +180,25 @@ abstract class ColorMIPSearch implements Serializable {
             return null;
         } else {
             Path gradientBasePath = Paths.get(gradientMasksPath);
+            Path parentGradientBasePath = gradientBasePath.getParent();
             Path mipPath = Paths.get(mipInfo.imageFilepath);
-            String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
-            try {
-                return Files.find(gradientBasePath, MAX_GRAD_DEPTH, (p, fa) -> fa.isRegularFile() && p.getFileName().toString().equals(gradientFilename))
-                        .findFirst()
-                        .map(gp -> {
-                            LOG.debug("Read gradient for {} from {}", mipInfo, gp);
-                            return loadMIPFromPath(gp);
-                        })
-                        .orElse(null);
-            } catch (IOException e) {
-                LOG.error("Error reading {}", gradientBasePath, e);
+            if (parentGradientBasePath == null || !mipPath.startsWith(parentGradientBasePath)) {
+                // don't know where to look for the gradient - I could try searching all subdirectories but is too expensive
                 return null;
+            }
+            Path mipBasePath = parentGradientBasePath.relativize(mipPath);
+            String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+            int nComponents = mipBasePath.getNameCount();
+            Path gradientImagePath = IntStream.range(1, nComponents - 1)
+                    .mapToObj(i -> mipBasePath.getName(i).toString())
+                    .map(pc -> pc + "_gradient")
+                    .reduce(gradientBasePath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
+                    .resolve(gradientFilename)
+                    ;
+            if (Files.notExists(gradientImagePath)) {
+                return null;
+            } else {
+                return loadMIPFromPath(gradientImagePath);
             }
         }
     }

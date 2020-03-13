@@ -144,7 +144,26 @@ public class Main {
         String getOutputDir() {
             return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir);
         }
+    }
 
+    @Parameters(commandDescription = "Apply gradient correction")
+    private static class GradientCorrectionArgs {
+        @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be sorted")
+        private String resultsDir;
+
+        @Parameter(names = {"--resultsFile", "-rf"}, description = "File containing results to be sorted")
+        private String resultsFile;
+
+        @ParametersDelegate
+        final CommonArgs commonArgs;
+
+        GradientCorrectionArgs(CommonArgs commonArgs) {
+            this.commonArgs = commonArgs;
+        }
+
+        String getOutputDir() {
+            return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir);
+        }
     }
 
     public static void main(String[] argv) {
@@ -311,6 +330,15 @@ public class Main {
         } catch (IOException e) {
             LOG.error("Error reading {}", inputResultsFilename, e);
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void applyGradientCorrection(GradientCorrectionArgs args) {
+        String outputDir = args.getOutputDir();
+        if (StringUtils.isNotBlank(args.resultsFile)) {
+            // apply gradient correction for a single result file
+        } else if (StringUtils.isNotBlank(args.resultsDir)) {
+            // apply gradient correction to all result files from the directory
         }
     }
 
