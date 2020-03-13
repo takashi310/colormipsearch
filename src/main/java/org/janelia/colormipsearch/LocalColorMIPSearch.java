@@ -2,6 +2,7 @@ package org.janelia.colormipsearch;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -71,7 +72,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withDelay(Duration.ofMillis(500))
                 .withMaxRetries(20);
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream().parallel()
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> ImmutablePair.of(loadMIP(libraryMIP), loadGradientMIP(libraryMIP)))
                 .map(libraryMIPWithGradient -> {
@@ -94,14 +95,14 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .collect(Collectors.toList())
                             ;
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApply(ignoredVoidResult -> librarySearches.stream()
+                            .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
                                     .map(searchComputation -> {
                                         ColorMIPSearchResult sr = searchComputation.join();
                                         LOG.info("Finished comparing {} with {} masks", libraryMIPWithGradient.getLeft(), nmasks);
                                         return sr;
                                     })
                                     .filter(ColorMIPSearchResult::isMatch)
-                                    .collect(Collectors.toList()))
+                                    .collect(Collectors.toList()), cdsExecutor)
                             .thenCompose(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIPWithGradient.getLeft(), (System.currentTimeMillis() - startTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
@@ -112,7 +113,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             .join()
                             ;
                 })
-                .flatMap(searchResultsByLibrary -> searchResultsByLibrary.stream())
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList())
                 ;
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
@@ -121,9 +122,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getMaskId, Collectors.toList()));
 
         LOG.info("Write {} results by mask", srsByMasks.size());
-        srsByMasks.forEach((maskId, srsForCurrentMask) -> {
-            Failsafe.with(retryPolicy).run(() -> writeSearchResults(maskId, srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList())));
-        });
+        srsByMasks.forEach((maskId, srsForCurrentMask) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(maskId, srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
 
         LOG.info("Finished writing results after comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
     }
