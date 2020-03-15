@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -36,6 +37,20 @@ public class MIPImageTest {
         RankFilters maxFilter = new RankFilters();
         maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), testMIP.pixels);
+    }
+
+    @Test
+    public void maxFilterWithLazyImage() {
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
+
+        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+
+        MIPImage maxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
+                .maxFilter(10)
+                .toBinary8(50)
+                .asImage()
+                ;
+        IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
     }
 
     @Test
