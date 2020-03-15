@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +31,9 @@ class EM2LMAreaGapCalculator {
             long startTimestamp = System.currentTimeMillis();
             try {
                 LOG.trace("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
-                long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.identity());
+                long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.identity());
                 if (mirrorMask) {
-                    long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, Operations.ImageTransformation.horizontalMirrorTransformation());
+                    long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.toMirror());
                     if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
                         return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
                     } else {
@@ -46,26 +48,41 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Operations.ImageTransformation mipTransformation) {
-        ImageTransformer dilatedLibraryTransformer = ImageTransformer.createForDuplicate(libraryMIP)
+    private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Function<ImageOperations.LImage, ImageOperations.PixelTransformation> mipTransformation) {
+        ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.createFor(libraryMIP)
                 .mask(maskThreshold)
                 .maxFilter(negativeRadius);
 
-        ImageTransformer patternSignalTransformer = ImageTransformer.createForDuplicate(pattern)
+        ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
+
+        ImageOperations.ImageProcessing patternSignalProcessing = patternProcessing
                 .toGray16()
                 .toSignal()
-                .applyImageTransformation(mipTransformation);
+                .compose(mipTransformation)
+                ;
 
-        ImageTransformer scoreAdjustmentTransformer = ImageTransformer.createForDuplicate(libraryGradient)
-                .mulWith(patternSignalTransformer.getImage());
+        ImageOperations.ImageProcessing scoreAdjustmentTransformer = ImageOperations.ImageProcessing.createFor(libraryGradient)
+                .combineWith(patternSignalProcessing, (p1, p2) -> p1 * p2)
+                ;
 
-        scoreAdjustmentTransformer.applyPixelOp(scoreAdjustment(
-                pattern,
-                dilatedLibraryTransformer.getImage()))
-        ;
-        return scoreAdjustmentTransformer.stream().filter(p -> p > 3).mapToLong(p -> p).reduce(0L, (p1, p2) -> p1 + p2);
+        return scoreAdjustmentTransformer
+                .combineWith(patternProcessing, dilatedLibraryProcessing, (p, patternPix, dilatedPix) -> {
+                    if (dilatedPix != -16777216) {
+                        if (patternPix != -16777216) {
+                            int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
+                            if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+                                // negative score value
+                                return pxGapSlice - DEFAULT_COLOR_FLUX;
+                            }
+                        }
+                    }
+                    return p;
+                })
+                .stream()
+                .filter(p -> p > 3).mapToLong(p -> p)
+                .reduce(0L, (p1, p2) -> p1 + p2)
+                ;
     }
-
 
     private Operations.PixelTransformation scoreAdjustment(MIPImage pattern, MIPImage dilatedLibray) {
         return (x, y, c) -> {

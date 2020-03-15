@@ -1,10 +1,22 @@
 package org.janelia.colormipsearch;
 
+import java.awt.Image;
+import java.util.Arrays;
 import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
 class ImageOperations {
+
+    @FunctionalInterface
+    interface TriFunction<S, T, U, R> {
+        R apply(S s, T t, U u);
+
+        default <V> TriFunction<S, T, U, V> andThen(Function<? super R, ? extends V> after) {
+            return (S s, T t, U u) -> after.apply(apply(s, t, u));
+        }
+    }
 
     @FunctionalInterface
     interface QuadFunction<P, S, T, U, R> {
@@ -47,20 +59,23 @@ class ImageOperations {
         }
 
         private static int rgbToGray(int rgb, float maxGrayValue) {
-            int r = (rgb >> 16) & 0xFF;
-            int g = (rgb >> 8) & 0xFF;
-            int b = (rgb & 0xFF);
+            if (rgb == -16777216) {
+                return 0;
+            } else {
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = (rgb & 0xFF);
 
-            // Normalize and gamma correct:
-            float rr = (float) Math.pow(r / 255., 2.2);
-            float gg = (float) Math.pow(g / 255., 2.2);
-            float bb = (float) Math.pow(b / 255., 2.2);
+                // Normalize and gamma correct:
+                float rr = (float) Math.pow(r / 255., 2.2);
+                float gg = (float) Math.pow(g / 255., 2.2);
+                float bb = (float) Math.pow(b / 255., 2.2);
 
-            // Calculate luminance:
-            float lum = 0.2126f * rr + 0.7152f * gg + 0.0722f * bb;
-
-            // Gamma compand and rescale to byte range:
-            return (int) (maxGrayValue * Math.pow(lum, 1.0 / 2.2));
+                // Calculate luminance:
+                float lum = 0.2126f * rr + 0.7152f * gg + 0.0722f * bb;
+                // Gamma compand and rescale to byte range:
+                return (int) (maxGrayValue * Math.pow(lum, 1.0 / 2.2));
+            }
         }
 
         private static int scaleGray(int gray, float oldMax, float newMax) {
@@ -168,9 +183,23 @@ class ImageOperations {
     abstract static class PixelTransformation implements QuadFunction<Integer, Integer, MIPImage.ImageType, Integer, Integer> {
         final Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange;
 
+        static Function<LImage, PixelTransformation> identity() {
+            return lImage -> new PixelTransformation(pt -> pt) {
+                @Override
+                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    return pv;
+                }
+            };
+        }
+
+        static Function<LImage, PixelTransformation> toMirror() {
+            return lImage -> lImage.mirror().pf;
+        }
+
         PixelTransformation(Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange) {
             this.pixelTypeChange = pixelTypeChange;
         }
+
     }
 
     static class LImage {
@@ -216,23 +245,62 @@ class ImageOperations {
             }, image);
         }
 
+        LImage combineWith(LImage lImage, BinaryOperator<Integer> op) {
+            return mapi(new PixelTransformation(pt -> pt) {
+                @Override
+                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    return op.apply(pv, lImage.get(x, y));
+                }
+            });
+        }
+
+        LImage combineWith(LImage lImage1, LImage lImage2, TriFunction<Integer, Integer, Integer, Integer> op) {
+            return mapi(new PixelTransformation(pt -> pt) {
+                @Override
+                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    return op.apply(pv, lImage1.get(x, y), lImage2.get(x, y));
+                }
+            });
+        }
+
         LImage mirror() {
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pf.apply(image.width - x - 1, y, pt, pv);
+                    return pf.apply(x, y, pt, get(width() - x - 1, y));
                 }
             }, image);
         }
 
         LImage max(int r) {
-            int[] rs = makeLineRadii(r);
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int m = IntStream.range(Math.max(y - r, 0), Math.min(y + r, height()))
-                            .flatMap(j -> IntStream.range(Math.max(x - r, 0), Math.min(x + r, width())).map(i -> get(i, j)))
-                            .max()
+                    int[] rs = makeLineRadii(r);
+                    int kRadius = rs[rs.length-1];
+                    int m = IntStream.rangeClosed(0, 2 * kRadius)
+                            .filter(dy -> y - kRadius + dy >= 0 && y - kRadius + dy < height())
+                            .flatMap(h -> IntStream
+                                    .rangeClosed(Math.max(x + rs[2*h], 0), Math.min(x + rs[2*h + 1], width()))
+                                    .map(i -> get(i, y - kRadius + h)))
+                            .reduce((p1, p2) -> {
+                                switch (pt) {
+                                    case RGB:
+                                        int a = Math.max((((p1 & 0xFF000000) >> 24) & 0xFF), (((p2 & 0xFF000000) >> 24) & 0xFF));
+                                        int r = Math.max((((p1 & 0xFF0000) >> 16) & 0xFF), (((p2 & 0xFF0000) >> 16) & 0xFF));
+                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
+                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
+                                        if (r == 0 && g == 0 && b == 0) {
+                                            return -16777216;
+                                        } else {
+                                            return (a << 24) | (r << 16) | (g << 8) | b;
+                                        }
+                                    case GRAY8:
+                                    case GRAY16:
+                                    default:
+                                        return Math.max(p1, p2);
+                                }
+                            })
                             .orElse(pv)
                             ;
                     return pf.apply(x, y, pt, m);
@@ -248,21 +316,17 @@ class ImageOperations {
             int r2 = (int) (radius*radius) + 1;
             int kRadius = (int)(Math.sqrt(r2+1e-10));
             int kHeight = 2*kRadius + 1;
-            int[] kernel = new int[2*kHeight + 2];
+            int[] kernel = new int[2*kHeight+1];
             kernel[2*kRadius]	= -kRadius;
             kernel[2*kRadius+1] =  kRadius;
-            int nPoints = 2*kRadius+1;
             for (int y=1; y<=kRadius; y++) {		//lines above and below center together
                 int dx = (int)(Math.sqrt(r2-y*y+1e-10));
                 kernel[2*(kRadius-y)]	= -dx;
                 kernel[2*(kRadius-y)+1] =  dx;
                 kernel[2*(kRadius+y)]	= -dx;
                 kernel[2*(kRadius+y)+1] =  dx;
-                nPoints += 4*dx+2;	//2*dx+1 for each line, above&below
             }
-            kernel[kernel.length-2] = nPoints;
             kernel[kernel.length-1] = kRadius;
-            //for (int i=0; i<kHeight;i++)IJ.log(i+": "+kernel[2*i]+"-"+kernel[2*i+1]);
             return kernel;
         }
 
@@ -294,8 +358,12 @@ class ImageOperations {
             this.lImage = lImage;
         }
 
-        ImageProcessing toGray8() {
-            return new ImageProcessing(lImage.map(ColorTransformation.toGray8()));
+        ImageProcessing mask(int threshold) {
+            return new ImageProcessing(lImage.map(ColorTransformation.mask(threshold)));
+        }
+
+        ImageProcessing toGray16() {
+            return new ImageProcessing(lImage.map(ColorTransformation.toGray16()));
         }
 
         ImageProcessing toBinary8(int threshold) {
@@ -308,6 +376,34 @@ class ImageOperations {
 
         ImageProcessing maxFilter(int radius) {
             return new ImageProcessing(lImage.max(radius));
+        }
+
+        ImageProcessing mirror() {
+            return new ImageProcessing(lImage.mirror());
+        }
+
+        ImageProcessing toSignal() {
+            return new ImageProcessing(lImage.map(ColorTransformation.toSignal()));
+        }
+
+        ImageProcessing combineWith(ImageProcessing processing, BinaryOperator<Integer> op) {
+            return new ImageProcessing(lImage.combineWith(processing.lImage, op));
+        }
+
+        ImageProcessing combineWith(ImageProcessing p1, ImageProcessing p2, TriFunction<Integer, Integer, Integer, Integer> op) {
+            return new ImageProcessing(lImage.combineWith(p1.lImage, p2.lImage, op));
+        }
+
+        ImageProcessing apply(ImageProcessing processing) {
+            return new ImageProcessing(lImage.mapi(processing.lImage.pf));
+        }
+
+        ImageProcessing compose(Function<LImage, PixelTransformation> processing) {
+            return new ImageProcessing(lImage.mapi(processing.apply(lImage)));
+        }
+
+        IntStream stream() {
+            return lImage.stream();
         }
 
         MIPImage asImage() {
