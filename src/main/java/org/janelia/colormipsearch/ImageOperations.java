@@ -2,10 +2,15 @@ package org.janelia.colormipsearch;
 
 import java.awt.Image;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 class ImageOperations {
 
@@ -273,15 +278,22 @@ class ImageOperations {
         }
 
         LImage max(int r) {
+            int[] rs = makeLineRadii(r);
+            int kRadius = rs[rs.length-1];
+            List<Pair<Integer, Integer>> maskPos = IntStream.rangeClosed(0, 2 * kRadius)
+                    .boxed()
+                    .flatMap(h -> IntStream
+                            .rangeClosed(rs[2*h], rs[2*h + 1])
+                            .mapToObj(i -> ImmutablePair.of(i, h - kRadius)))
+                    .collect(Collectors.toList())
+                    ;
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int[] rs = makeLineRadii(r);
-                    int kRadius = rs[rs.length-1];
                     int m = IntStream.rangeClosed(0, 2 * kRadius)
                             .filter(dy -> y - kRadius + dy >= 0 && y - kRadius + dy < height())
                             .flatMap(h -> IntStream
-                                    .rangeClosed(Math.max(x + rs[2*h], 0), Math.min(x + rs[2*h + 1], width()))
+                                    .rangeClosed(Math.max(x + rs[2*h], 0), Math.min(x + rs[2*h + 1], width())).parallel()
                                     .map(i -> get(i, y - kRadius + h)))
                             .reduce((p1, p2) -> {
                                 switch (pt) {

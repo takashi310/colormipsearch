@@ -30,7 +30,7 @@ class EM2LMAreaGapCalculator {
         } else {
             long startTimestamp = System.currentTimeMillis();
             try {
-                LOG.trace("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
+                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
                 long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.identity());
                 if (mirrorMask) {
                     long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.toMirror());
@@ -49,39 +49,54 @@ class EM2LMAreaGapCalculator {
     }
 
     private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Function<ImageOperations.LImage, ImageOperations.PixelTransformation> mipTransformation) {
+        long startTimestamp = System.currentTimeMillis();
         ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.createFor(libraryMIP)
                 .mask(maskThreshold)
-                .maxFilter(negativeRadius);
+                .maxFilter(negativeRadius)
+                ;
 
+        System.out.println("!!!!!! DILATED " + (System.currentTimeMillis() - startTimestamp));
         ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
+        System.out.println("!!!!!! PATTERN DUP " + (System.currentTimeMillis() - startTimestamp));
 
         ImageOperations.ImageProcessing patternSignalProcessing = patternProcessing
                 .toGray16()
                 .toSignal()
                 .compose(mipTransformation)
                 ;
+        System.out.println("!!!!!! PATTERN SIGNAL " + (System.currentTimeMillis() - startTimestamp));
 
         ImageOperations.ImageProcessing scoreAdjustmentTransformer = ImageOperations.ImageProcessing.createFor(libraryGradient)
-                .combineWith(patternSignalProcessing, (p1, p2) -> p1 * p2)
+                .combineWith(dilatedLibraryProcessing, (p1, p2) -> p1 * p2)
                 ;
+        System.out.println("!!!!!! ADJUSTMENT TX " + (System.currentTimeMillis() - startTimestamp));
 
-        return scoreAdjustmentTransformer
-                .combineWith(patternProcessing, dilatedLibraryProcessing, (p, patternPix, dilatedPix) -> {
-                    if (dilatedPix != -16777216) {
-                        if (patternPix != -16777216) {
-                            int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
-                            if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                                // negative score value
-                                return pxGapSlice - DEFAULT_COLOR_FLUX;
-                            }
-                        }
-                    }
-                    return p;
-                })
+        long score = scoreAdjustmentTransformer
+                .combineWith(patternProcessing, (p1, p2) -> p1 | p2)
                 .stream()
-                .filter(p -> p > 3).mapToLong(p -> p)
-                .reduce(0L, (p1, p2) -> p1 + p2)
-                ;
+                .filter(p -> p > 3)
+                .mapToLong(p -> p)
+                .reduce(0L, (p1, p2) -> p1 + p2);
+        System.out.println("!!!!!! AS IMAGE " + score + " -> " + (System.currentTimeMillis() - startTimestamp));
+        return score;
+
+//        return scoreAdjustmentTransformer
+//                .combineWith(patternProcessing, dilatedLibraryProcessing, (p, patternPix, dilatedPix) -> {
+//                    if (dilatedPix != -16777216) {
+//                        if (patternPix != -16777216) {
+//                            int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
+//                            if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+//                                // negative score value
+//                                return pxGapSlice - DEFAULT_COLOR_FLUX;
+//                            }
+//                        }
+//                    }
+//                    return p;
+//                })
+//                .stream()
+//                .filter(p -> p > 3).mapToLong(p -> p)
+//                .reduce(0L, (p1, p2) -> p1 + p2)
+//                ;
     }
 
     private Operations.PixelTransformation scoreAdjustment(MIPImage pattern, MIPImage dilatedLibray) {
