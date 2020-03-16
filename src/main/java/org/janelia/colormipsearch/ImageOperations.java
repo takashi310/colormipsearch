@@ -1,14 +1,29 @@
 package org.janelia.colormipsearch;
 
 import java.awt.Image;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.google.common.collect.Sets;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -29,6 +44,116 @@ class ImageOperations {
 
         default <V> QuadFunction<P, S, T, U, V> andThen(Function<? super R, ? extends V> after) {
             return (P p, S s, T t, U u) -> after.apply(apply(p, s, t, u));
+        }
+    }
+
+    private static class PixelCoord {
+        final int x;
+        final int y;
+
+        PixelCoord(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PixelCoord pixelCoord = (PixelCoord) o;
+
+            return new EqualsBuilder()
+                    .append(x, pixelCoord.x)
+                    .append(y, pixelCoord.y)
+                    .isEquals();
+        }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 37)
+                    .append(x)
+                    .append(y)
+                    .toHashCode();
+        }
+
+    }
+
+    private static final class SlidingWindow {
+
+        private BiFunction<Integer, Integer, Pair<Integer, Integer>> comparator;
+        private Deque<Integer> deque;
+
+        SlidingWindow(BiFunction<Integer, Integer, Pair<Integer, Integer>> comparator) {
+            this.comparator = comparator;
+            deque = new ArrayDeque<>();
+        }
+
+        boolean isEmpty() {
+            return deque.isEmpty();
+        }
+
+        int getExtremum() {
+            return deque.getFirst();
+        }
+
+        void addTail(int val) {
+            int maxVal = val;
+            while (!deque.isEmpty()) {
+                Pair<Integer, Integer> comparisonRes = comparator.apply(val, deque.getLast());
+                if (comparisonRes.getRight() == -1) {
+                    deque.removeLast();
+                } else {
+                    deque.addLast(comparisonRes.getLeft());
+                    return;
+                }
+            }
+            deque.addLast(maxVal);
+        }
+
+        void removeHead(int val) {
+            if (!deque.isEmpty()) {
+                Pair<Integer, Integer> comparisonResult = comparator.apply(val, deque.getFirst());
+                if (comparisonResult.getRight() == 0) {
+                    deque.removeFirst();
+                }
+            }
+        }
+
+    }
+
+    private static class Pixel {
+        final PixelCoord coord;
+        int c;
+
+        Pixel(PixelCoord coord) {
+            this.coord = coord;
+        }
+
+        Pixel(PixelCoord coord, int c) {
+            this.coord = coord;
+            this.c = c;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Pixel pixel = (Pixel) o;
+
+            return new EqualsBuilder()
+                    .append(coord, pixel.coord)
+                    .isEquals();
+        }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 37)
+                    .append(coord)
+                    .toHashCode();
         }
     }
 
@@ -277,44 +402,179 @@ class ImageOperations {
             }, image);
         }
 
-        LImage max(int r) {
-            int[] rs = makeLineRadii(r);
-            int kRadius = rs[rs.length-1];
-            List<Pair<Integer, Integer>> maskPos = IntStream.rangeClosed(0, 2 * kRadius)
-                    .boxed()
-                    .flatMap(h -> IntStream
-                            .rangeClosed(rs[2*h], rs[2*h + 1])
-                            .mapToObj(i -> ImmutablePair.of(i, h - kRadius)))
-                    .collect(Collectors.toList())
-                    ;
+        LImage max(double radius) {
+//            int[] halfFilterLens = new int[(int)radius + 1];
+//            for (int i = 0; i < halfFilterLens.length; i++)
+//                halfFilterLens[i] = (int)Math.sqrt(radius * radius - i * i);
+//
+            int[] halfFilterLens = makeLineRadii(radius);
+//            int kRadius = rs[rs.length-1];
+//            List<PixelCoord> maxAreaCoord = IntStream.rangeClosed(0, 2 * kRadius)
+//                    .boxed()
+//                    .flatMap(h -> IntStream
+//                            .rangeClosed(rs[2*h], rs[2*h + 1])
+//                            .mapToObj(i -> new PixelCoord(i, h - kRadius)))
+//                    .collect(Collectors.toList())
+//                    ;
+            SlidingWindow[] slidingWindows = new SlidingWindow[halfFilterLens.length * 2 - 1];
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
+                int lastY = -1;
+                BiFunction<Integer, Integer, Pair<Integer, Integer>> pixelComparator;
+
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int m = IntStream.rangeClosed(0, 2 * kRadius)
-                            .filter(dy -> y - kRadius + dy >= 0 && y - kRadius + dy < height())
-                            .flatMap(h -> IntStream
-                                    .rangeClosed(Math.max(x + rs[2*h], 0), Math.min(x + rs[2*h + 1], width())).parallel()
-                                    .map(i -> get(i, y - kRadius + h)))
-                            .reduce((p1, p2) -> {
-                                switch (pt) {
-                                    case RGB:
-                                        int a = Math.max((((p1 & 0xFF000000) >> 24) & 0xFF), (((p2 & 0xFF000000) >> 24) & 0xFF));
-                                        int r = Math.max((((p1 & 0xFF0000) >> 16) & 0xFF), (((p2 & 0xFF0000) >> 16) & 0xFF));
-                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
-                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
-                                        if (r == 0 && g == 0 && b == 0) {
-                                            return -16777216;
-                                        } else {
-                                            return (a << 24) | (r << 16) | (g << 8) | b;
-                                        }
-                                    case GRAY8:
-                                    case GRAY16:
-                                    default:
-                                        return Math.max(p1, p2);
-                                }
-                            })
-                            .orElse(pv)
-                            ;
+                    if (pixelComparator == null) {
+                        switch (pt) {
+                            case RGB:
+                                pixelComparator = (p1, p2) -> {
+                                    int a = Math.max((((p1 & 0xFF000000) >> 24) & 0xFF), (((p2 & 0xFF000000) >> 24) & 0xFF));
+                                    int res;
+                                    int r, g, b;
+                                    if ((p1 & 0xFF0000) > (p2 & 0xFF0000)) {
+                                        r = (p1 & 0xFF0000) >> 16;
+                                        res = 1;
+                                    } else if ((p1 & 0xFF0000) < (p2 & 0xFF0000)) {
+                                        r = (p2 & 0xFF0000) >> 16;
+                                        res = -1;
+                                    } else {
+                                        r = (p1 & 0xFF0000) >> 16;
+                                        res = 0;
+                                    }
+                                    if ((p1 & 0xFF00) > (p2 & 0xFF00)) {
+                                        g = (p1 & 0xFF00) >> 8;
+                                        res = res == 0 ? 1 : res;
+                                    } else if ((p1 & 0xFF0000) < (p2 & 0xFF0000)) {
+                                        g = (p2 & 0xFF00) >> 8;
+                                        res = res == 0 ? -1 : res;
+                                    } else {
+                                        g = (p1 & 0xFF00) >> 8;
+                                    }
+                                    if ((p1 & 0xFF) > (p2 & 0xFF)) {
+                                        b = (p1 & 0xFF);
+                                        res = res == 0 ? 1 : res;
+                                    } else if ((p1 & 0xFF) < (p2 & 0xFF)) {
+                                        b = (p2 & 0xFF);
+                                        res = res == 0 ? -1 : res;
+                                    } else {
+                                        b = (p1 & 0xFF);
+                                    }
+                                    if (r == 0 && g == 0 && b == 0) {
+                                        return ImmutablePair.of(-16777216, res);
+                                    } else {
+                                        return ImmutablePair.of((a << 24) | (r << 16) | (g << 8) | b, res);
+                                    }
+                                };
+                            case GRAY8:
+                            case GRAY16:
+                            default:
+                                pixelComparator = (p1, p2) -> {
+                                    if (p1 > p2) {
+                                        return ImmutablePair.of(p1, 1);
+                                    } else if (p1 < p2) {
+                                        return ImmutablePair.of(p2, -1);
+                                    } else {
+                                        return ImmutablePair.of(p1, 0);
+                                    }
+                                };
+                        }
+                    }
+                    if (y != lastY) {
+                        for (int i = 0; i < slidingWindows.length; i++) {
+                            slidingWindows[i] = new SlidingWindow(pixelComparator);
+                        }
+                    }
+                    if (x == 0) {
+                        for (x = -(int)radius; x <= 0 && x < width(); x++) {
+                            for (int dy = -halfFilterLens.length + 1; dy < halfFilterLens.length; dy++) {
+                                int ay = y + dy;
+                                if (ay < 0 || ay >= height())
+                                    continue;
+                                int ax = x + halfFilterLens[Math.abs(dy)];
+                                if (ax < 0 || ax >= width())
+                                    continue;
+                                slidingWindows[dy + halfFilterLens.length - 1].addTail(get(ax, ay));
+                            }
+                        }
+                    } else {
+                        for (int dy = -halfFilterLens.length + 1; dy < halfFilterLens.length; dy++) {
+                            int ay = y + dy;
+                            if (ay < 0 || ay >= height())
+                                continue;
+                            int ax = x + halfFilterLens[Math.abs(dy)];
+                            if (ax < 0 || ax >= width())
+                                continue;
+                            slidingWindows[dy + halfFilterLens.length - 1].addTail(get(ax, ay));
+                        }
+                    }
+                    int m = pv;
+                    for (SlidingWindow sw : slidingWindows) {
+                        if (sw.isEmpty())
+                            continue;
+                        int val = sw.getExtremum();
+                        if (m == -1)
+                            m = val;
+                        else
+                            m = pixelComparator.apply(val, m).getLeft();
+                    }
+                    for (int dy = -halfFilterLens.length + 1; dy < halfFilterLens.length; dy++) {
+                        int ay = y + dy;
+                        if (ay < 0 || ay >= height())
+                            continue;
+                        int ax = x - halfFilterLens[Math.abs(dy)];
+                        if (ax < 0)
+                            continue;
+                        if (ax >= width())
+                            throw new AssertionError();
+                        slidingWindows[dy + halfFilterLens.length - 1].removeHead(get(ax, ay));
+                    }
+
+//                    Set<Pixel> neighborPixels = maxAreaCoord.stream()
+//                            .map(pos -> new PixelCoord(x + pos.x, y + pos.y))
+//                            .filter(pos -> pos.x > 0 && pos.x < width() && pos.y >= 0 && pos.y < height())
+//                            .map(pos -> new Pixel(pos))
+//                            .collect(Collectors.toSet())
+//                            ;
+//
+//                    Set<Pixel> toRemoveFromCache = Sets.difference(neighborhoodCache, neighborPixels).immutableCopy();
+//                    Set<Pixel> newPixels = Sets.difference(neighborPixels, neighborhoodCache).immutableCopy()
+//                            .stream()
+//                            .peek(p -> p.c = get(p.coord.x, p.coord.y))
+//                            .collect(Collectors.toSet());
+//                    neighborhoodCache.removeAll(toRemoveFromCache);
+//                    neighborhoodCache.addAll(newPixels);
+//                    maxCache.removeAll(toRemoveFromCache);
+//                    maxCache.addAll(newPixels);
+//
+//                    int m = maxCache.stream().findFirst().map(p -> p.c).orElse(pv);
+
+//                    int m = IntStream.rangeClosed(-r, r)
+//                            .map(dj -> y + dj)
+//                            .filter(j -> j >= 0 && j < height())
+//                            .flatMap(j -> IntStream.rangeClosed(-r, r)
+//                                    .map(di -> x + di)
+//                                    .filter(i -> i >= 0 && i < width())
+//                                    .map(i -> get(i, j))
+//                            )
+//                            .reduce((p1, p2) -> {
+//                                switch (pt) {
+//                                    case RGB:
+//                                        int a = Math.max((((p1 & 0xFF000000) >> 24) & 0xFF), (((p2 & 0xFF000000) >> 24) & 0xFF));
+//                                        int r = Math.max((((p1 & 0xFF0000) >> 16) & 0xFF), (((p2 & 0xFF0000) >> 16) & 0xFF));
+//                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
+//                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
+//                                        if (r == 0 && g == 0 && b == 0) {
+//                                            return -16777216;
+//                                        } else {
+//                                            return (a << 24) | (r << 16) | (g << 8) | b;
+//                                        }
+//                                    case GRAY8:
+//                                    case GRAY16:
+//                                    default:
+//                                        return Math.max(p1, p2);
+//                                }
+//                            })
+//                            .orElse(pv)
+//                            ;
                     return pf.apply(x, y, pt, m);
                 }
             }, image);
@@ -327,18 +587,19 @@ class ImageOperations {
                 radius = 2.85;
             int r2 = (int) (radius*radius) + 1;
             int kRadius = (int)(Math.sqrt(r2+1e-10));
-            int kHeight = 2*kRadius + 1;
-            int[] kernel = new int[2*kHeight+1];
-            kernel[2*kRadius]	= -kRadius;
-            kernel[2*kRadius+1] =  kRadius;
-            for (int y=1; y<=kRadius; y++) {		//lines above and below center together
+//            int kHeight = 2*kRadius + 1;
+            int[] kernel = new int[kRadius + 1]; // !!!! int[] kernel = new int[2*kHeight+1];
+//            kernel[2*kRadius]	= -kRadius;
+//            kernel[2*kRadius+1] =  kRadius;
+            for (int y=kRadius; y >= 1; y--) {		//lines above and below center together
                 int dx = (int)(Math.sqrt(r2-y*y+1e-10));
-                kernel[2*(kRadius-y)]	= -dx;
-                kernel[2*(kRadius-y)+1] =  dx;
-                kernel[2*(kRadius+y)]	= -dx;
-                kernel[2*(kRadius+y)+1] =  dx;
+                kernel[y - 1] = dx;
+//                kernel[2*(kRadius-y)]	= -dx;
+//                kernel[2*(kRadius-y)+1] =  dx;
+//                kernel[2*(kRadius+y)]	= -dx;
+//                kernel[2*(kRadius+y)+1] =  dx;
             }
-            kernel[kernel.length-1] = kRadius;
+//            kernel[kernel.length-1] = kRadius;
             return kernel;
         }
 
@@ -386,7 +647,7 @@ class ImageOperations {
             return new ImageProcessing(lImage.map(ColorTransformation.toBinary16(threshold)));
         }
 
-        ImageProcessing maxFilter(int radius) {
+        ImageProcessing maxFilter(double radius) {
             return new ImageProcessing(lImage.max(radius));
         }
 

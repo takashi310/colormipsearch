@@ -23,6 +23,7 @@ public class ImageOperationsTest {
         RankFilters maxFilter = new RankFilters();
         maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
 
+        IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
     }
 
