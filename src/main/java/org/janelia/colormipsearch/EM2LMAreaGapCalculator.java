@@ -89,23 +89,6 @@ class EM2LMAreaGapCalculator {
         return score;
     }
 
-    private Operations.PixelTransformation scoreAdjustment(MIPImage pattern, MIPImage dilatedLibray) {
-        return (x, y, c) -> {
-            int dilatedPix = dilatedLibray.getPixel(x, y);
-            if (dilatedPix != -16777216) {
-                int patternPix = pattern.getPixel(x, y);
-                if (patternPix != -16777216) {
-                    int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
-                    if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                        // negative score value
-                        return pxGapSlice - DEFAULT_COLOR_FLUX;
-                    }
-                }
-            }
-            return c;
-        };
-    }
-
     private int calculateSliceGap(int rgb1, int rgb2) {
 
         int max1stvalMASK = 0, max2ndvalMASK = 0, max1stvalDATA = 0, max2ndvalDATA = 0, maskslinumber = 0, dataslinumber = 0;
