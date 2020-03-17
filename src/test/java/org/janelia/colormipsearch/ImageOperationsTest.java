@@ -17,7 +17,7 @@ public class ImageOperationsTest {
         MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         MIPImage maxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
-                .maxFilter(10)
+                .maxFilter(11)
                 .asImage()
                 ;
         RankFilters maxFilter = new RankFilters();

@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.util.function.Function;
 
+import ij.IJ;
+import ij.ImagePlus;
 import ij.plugin.filter.RankFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,23 +54,13 @@ class EM2LMAreaGapCalculator {
     private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Function<ImageOperations.LImage, ImageOperations.PixelTransformation> mipTransformation) {
         long startTimestamp = System.currentTimeMillis();
 
-        RankFilters maxFilter = new RankFilters();
-        maxFilter.rank(libraryMIP.getImageProcessor(), 10, RankFilters.MAX);
-
-        System.out.println("!!!!!! DILATED WITH IJ " + (System.currentTimeMillis() - startTimestamp));
-
-//        MIPImage dilatedLibrary = ImageOperations.ImageProcessing.createFor(libraryMIP)
-//                .mask(maskThreshold)
-//                .maxFilter(negativeRadius)
-//                .asImage()
-//                ;
-
         ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.createFor(libraryMIP)
                 .mask(maskThreshold)
                 .maxFilter(negativeRadius)
                 ;
 
         System.out.println("!!!!!! DILATED " + (System.currentTimeMillis() - startTimestamp));
+        IJ.save(new ImagePlus(null, dilatedLibraryProcessing.asImage().getImageProcessor()), "qq.png");
         ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
         System.out.println("!!!!!! PATTERN DUP " + (System.currentTimeMillis() - startTimestamp));
 
@@ -80,7 +72,7 @@ class EM2LMAreaGapCalculator {
         System.out.println("!!!!!! PATTERN SIGNAL " + (System.currentTimeMillis() - startTimestamp));
 
         ImageOperations.ImageProcessing scoreAdjustmentTransformer = ImageOperations.ImageProcessing.createFor(libraryGradient)
-                .combineWith(dilatedLibraryProcessing, (p1, p2) -> p1 * p2)
+                .combineWith(patternSignalProcessing, (p1, p2) -> p1 * p2)
                 ;
         System.out.println("!!!!!! ADJUSTMENT TX " + (System.currentTimeMillis() - startTimestamp));
 
