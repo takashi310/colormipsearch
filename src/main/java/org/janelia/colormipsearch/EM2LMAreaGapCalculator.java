@@ -54,7 +54,7 @@ class EM2LMAreaGapCalculator {
     private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Function<ImageOperations.LImage, ImageOperations.PixelTransformation> mipTransformation) {
         ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.createFor(libraryMIP)
                 .mask(maskThreshold)
-                .ijMaxFilter(negativeRadius)
+                .maxWithDiscPattern(negativeRadius)
                 ;
 
         ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
