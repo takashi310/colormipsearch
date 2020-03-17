@@ -60,7 +60,6 @@ class EM2LMAreaGapCalculator {
                 ;
 
         System.out.println("!!!!!! DILATED " + (System.currentTimeMillis() - startTimestamp));
-        IJ.save(new ImagePlus(null, dilatedLibraryProcessing.asImage().getImageProcessor()), "qq.png");
         ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
         System.out.println("!!!!!! PATTERN DUP " + (System.currentTimeMillis() - startTimestamp));
 
@@ -93,7 +92,7 @@ class EM2LMAreaGapCalculator {
                 .filter(p -> p > 3)
                 .mapToLong(p -> p)
                 .reduce(0L, (p1, p2) -> p1 + p2);
-        System.out.println("!!!!!! AS IMAGE " + score + " -> " + (System.currentTimeMillis() - startTimestamp));
+        System.out.println("!!!!!! FINAL SCORE " + score + " -> " + (System.currentTimeMillis() - startTimestamp));
         return score;
     }
 

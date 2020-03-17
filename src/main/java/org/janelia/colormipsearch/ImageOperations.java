@@ -1,18 +1,15 @@
 package org.janelia.colormipsearch;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import ij.plugin.filter.RankFilters;
 import ij.process.ImageProcessor;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 class ImageOperations {
 
@@ -209,13 +206,71 @@ class ImageOperations {
 
     }
 
+    private interface ChannelHandler {
+        int numChannels();
+        int[] decompose(int pixel);
+        int compose(int[] pixelComponents);
+    }
+
+    private static class RGBChannelHandler implements ChannelHandler {
+
+        @Override
+        public int numChannels() {
+            return 4;
+        }
+
+        @Override
+        public int[] decompose(int pixel) {
+            if (pixel == 0) {
+                return new int[] {0xFF, 0, 0, 0};
+            } else {
+                return new int[]{
+                        (pixel >> 24) & 0xFF,
+                        (pixel >> 16) & 0xFF,
+                        (pixel >> 8) & 0xFF,
+                        pixel & 0xFF
+                };
+            }
+        }
+
+        @Override
+        public int compose(int[] pixelComponents) {
+            return (pixelComponents[0] << 24) | (pixelComponents[1] << 16) | (pixelComponents[2] << 8) | pixelComponents[3];
+        }
+    }
+
+    private static class GrayChannelHandler implements ChannelHandler {
+
+        @Override
+        public int numChannels() {
+            return 1;
+        }
+
+        @Override
+        public int[] decompose(int pixel) {
+            return new int[] {
+                    pixel
+            };
+        }
+
+        @Override
+        public int compose(int[] pixelComponents) {
+            return pixelComponents[0];
+        }
+    }
+
     private static final class MaxQueue {
 
-        private Deque<Integer> deque;
-        private int count;
+        private Deque<Integer>[] deques;
+        private final ChannelHandler channelHandler;
+        int count = 0;
 
-        MaxQueue() {
-            deque = new ArrayDeque<>();
+        @SuppressWarnings("unchecked")
+        MaxQueue(ChannelHandler channelHandler) {
+            this.channelHandler = channelHandler;
+            deques = new Deque[channelHandler.numChannels()];
+            for (int i = 0; i < deques.length; i++)
+                deques[i] = new ArrayDeque<>();
             count = 0;
         }
 
@@ -224,26 +279,35 @@ class ImageOperations {
         }
 
         int getExtremum() {
-            return deque.getFirst();
+            return channelHandler.compose(Arrays.stream(deques).map(Deque::getFirst).mapToInt(i -> i).toArray());
         }
 
-        void pushBack(int val) {
-            while (!deque.isEmpty() && val > deque.getLast())
-                deque.removeLast();
-            deque.addLast(val);
+        void pushBack(int pixelVal) {
+            int[] channelVals = channelHandler.decompose(pixelVal);
+            for (int i = 0; i < channelVals.length; i++) {
+                while (!deques[i].isEmpty() && channelVals[i] > deques[i].getLast()) {
+                    deques[i].removeLast();
+                }
+                deques[i].addLast(channelVals[i]);
+            }
             count++;
         }
 
-        void popFront(int val) {
+        void popFront(int pixelVal) {
             if (count <= 0)
                 throw new IllegalStateException();
-            if (val == deque.getFirst())
-                deque.removeFirst();
-            count--;
+            int[] channelVals = channelHandler.decompose(pixelVal);
+            for (int i = 0; i < channelVals.length; i++) {
+                if (channelVals[i] == deques[i].getFirst()) {
+                    deques[i].removeFirst();
+                }
+            }
+            --count;
         }
 
         void clear() {
-            deque.clear();
+            for (Deque<Integer> deque : deques)
+                deque.clear();
             count = 0;
         }
     }
@@ -318,35 +382,25 @@ class ImageOperations {
             }, image);
         }
 
-        LImage max(double r) {
-            int[] rs = makeLineRadii(r);
-            int kRadius = rs[rs.length - 1];
-            int kHeight = (rs.length - 1) / 2;
-            MaxQueue[] maxQueues = new MaxQueue[kHeight];
-            for (int h = 0; h < kHeight; h++) {
-                maxQueues[h] = new MaxQueue();
-            }
+        LImage max(double radius) {
+            int[] radii = makeLineRadii(radius);
+            int kRadius = radii[radii.length - 1];
+            int kHeight = (radii.length - 1) / 2;
+
+//            MaxQueue[] maxQueues = new MaxQueue[kHeight];
+//            MIPImage.ImageType pixelType = getPixelType();
+//            for (int h = 0; h < kHeight; h++) {
+//                maxQueues[h] = new MaxQueue(pixelType == MIPImage.ImageType.RGB ? new RGBChannelHandler() : new GrayChannelHandler());
+//            }
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    if (x == 0) {
-                        IntStream.range(0, kHeight)
-                                .peek(h -> maxQueues[h].clear())
-                                .filter(h -> {
-                                    int ay = y - kRadius + h;
-                                    return ay >= 0 && ay < height();
-                                })
-                                .forEach(h -> IntStream.range(0, rs[2*h+1])
-                                        .map(dx -> x + dx)
-                                        .filter(ax -> ax < width())
-                                        .map(ax -> get(ax, y - kRadius + h))
-                                        .forEach(p -> maxQueues[h].pushBack(p)));
-                                ;
+//                    if (x == 0) {
 //                        for (int h = 0; h < kHeight; h++) {
 //                            maxQueues[h].clear();
 //                            int ay = y - kRadius + h;
 //                            if (ay >= 0 && ay < height()) {
-//                                for (int dx = 0; dx < rs[2 * h + 1]; dx++) {
+//                                for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
 //                                    int ax = x + dx;
 //                                    if (ax < width()) {
 //                                        maxQueues[h].pushBack(get(ax, ay));
@@ -356,73 +410,65 @@ class ImageOperations {
 //                                }
 //                            }
 //                        }
-                    } else {
-                        IntStream.range(0, kHeight)
-                                .filter(h -> {
-                                    int ay = y - kRadius + h;
-                                    int ax = x + rs[2 * h + 1];
-                                    return ay >= 0 && ay < height() && ax < width();
-                                })
-                                .forEach(h -> {
-                                    int ay = y - kRadius + h;
-                                    int ax = x + rs[2 * h + 1];
-                                    maxQueues[h].pushBack(get(ax, ay));
-                                })
-                        ;
-//
+//                    } else {
 //                        for (int h = 0; h < kHeight; h++) {
 //                            int ay = y - kRadius + h;
-//                            int ax = x + rs[2 * h + 1];
+//                            int ax = x + radii[2 * h + 1];
 //                            if (ay >= 0 && ay < height()) {
 //                                if (ax < width()) {
 //                                    maxQueues[h].pushBack(get(ax, ay));
 //                                }
 //                            }
 //                        }
-                    }
-                    int m = -1;
-                    for (int h = 0; h < kHeight; h++) {
-                        if (maxQueues[h].isEmpty())
-                            continue;
-                        int val = maxQueues[h].getExtremum();
-                        if (m == -1 || val > m)
-                            m = val;
-                    }
-                    for (int h = 0; h < kHeight; h++) {
-                        int ay = y - kRadius + h;
-                        if (ay >= 0 && ay < height()) {
-                            int ax = x + rs[2 * h];
-                            if (ax >= 0) {
-                                maxQueues[h].popFront(get(ax, ay));
-                            }
-                        }
-                    }
-
-//                    int m = IntStream.rangeClosed(0, 2 * kRadius)
-//                            .filter(dy -> y - kRadius + dy >= 0 && y - kRadius + dy < height())
-//                            .flatMap(h -> IntStream
-//                                    .rangeClosed(Math.max(x + rs[2 * h], 0), Math.min(x + rs[2 * h + 1], width()))
-//                                    .map(i -> get(i, y - kRadius + h)))
-//                            .reduce((p1, p2) -> {
-//                                switch (pt) {
-//                                    case RGB:
-//                                        int a = Math.max((((p1 & 0xFF000000) >> 24) & 0xFF), (((p2 & 0xFF000000) >> 24) & 0xFF));
-//                                        int r = Math.max((((p1 & 0xFF0000) >> 16) & 0xFF), (((p2 & 0xFF0000) >> 16) & 0xFF));
-//                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
-//                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
-//                                        if (r == 0 && g == 0 && b == 0) {
-//                                            return -16777216;
-//                                        } else {
-//                                            return (a << 24) | (r << 16) | (g << 8) | b;
-//                                        }
-//                                    case GRAY8:
-//                                    case GRAY16:
-//                                    default:
-//                                        return Math.max(p1, p2);
+//                    }
+//                    int m = -1;
+//                    for (int h = 0; h < kHeight; h++) {
+//                        if (!maxQueues[h].isEmpty()) {
+//                            int val = maxQueues[h].getExtremum();
+//                            if (m == -1 || val > m)
+//                                m = val;
+//                        }
+//                    }
+//                    if (x > 0) {
+//                        for (int h = 0; h < kHeight; h++) {
+//                            int ay = y - kRadius + h;
+//                            if (ay >= 0 && ay < height()) {
+//                                int ax = x + radii[2 * h];
+//                                if (ax >= 0) {
+//                                    maxQueues[h].popFront(get(ax, ay));
 //                                }
-//                            })
-//                            .orElse(pv)
-//                            ;
+//                            }
+//                        }
+//                    }
+
+                    int m = IntStream.range(0, kHeight)
+                            .filter(h -> {
+                                int ay = y + h - kRadius;
+                                return ay >= 0 & ay < image.height;
+                            })
+                            .flatMap(h -> IntStream
+                                    .rangeClosed(x + radii[2*h], x + radii[2*h+1])
+                                    .filter(ax -> ax >= 0 && ax < image.width)
+                                    .map(ax -> {
+                                        int ay = y + h - kRadius;
+                                        return get(ax, ay);
+                                    }))
+                            .reduce((p1, p2) -> {
+                                switch (pt) {
+                                    case RGB:
+                                        int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
+                                        int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
+                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
+                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
+                                        return (a << 24) | (r << 16) | (g << 8) | b;
+                                    case GRAY8:
+                                    case GRAY16:
+                                    default:
+                                        return Math.max(p1, p2);
+                                }
+                            })
+                            .orElse(pv)
+                            ;
                     return pf.apply(x, y, pt, m);
                 }
             }, image);

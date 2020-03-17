@@ -17,13 +17,21 @@ public class ImageOperationsTest {
         MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         MIPImage maxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
-                .maxFilter(11)
+                .maxFilter(10)
                 .asImage()
                 ;
         RankFilters maxFilter = new RankFilters();
         maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
 
         IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
+        IJ.save(new ImagePlus(null, testImage.getProcessor()), "ttt.png");
+
+        for (int i = 0; i < testImage.getProcessor().getPixelCount(); i++) {
+            if (testImage.getProcessor().get(i) != maxFilteredImage.get(i)) {
+                System.out.println("!!!!! " + i + ": " + testImage.getProcessor().get(i) + " vs " + maxFilteredImage.get(i));
+            }
+        }
+
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
     }
 
