@@ -52,28 +52,22 @@ class EM2LMAreaGapCalculator {
     }
 
     private long calculateScoreAdjustment(MIPImage libraryMIP, MIPImage pattern, MIPImage libraryGradient, Function<ImageOperations.LImage, ImageOperations.PixelTransformation> mipTransformation) {
-        long startTimestamp = System.currentTimeMillis();
-
         ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.createFor(libraryMIP)
                 .mask(maskThreshold)
-                .maxFilter(negativeRadius)
+                .ijMaxFilter(negativeRadius)
                 ;
 
-        System.out.println("!!!!!! DILATED " + (System.currentTimeMillis() - startTimestamp));
         ImageOperations.ImageProcessing patternProcessing = ImageOperations.ImageProcessing.createFor(pattern);
-        System.out.println("!!!!!! PATTERN DUP " + (System.currentTimeMillis() - startTimestamp));
 
         ImageOperations.ImageProcessing patternSignalProcessing = patternProcessing
                 .toGray16()
                 .toSignal()
                 .compose(mipTransformation)
                 ;
-        System.out.println("!!!!!! PATTERN SIGNAL " + (System.currentTimeMillis() - startTimestamp));
 
         ImageOperations.ImageProcessing scoreAdjustmentTransformer = ImageOperations.ImageProcessing.createFor(libraryGradient)
                 .combineWith(patternSignalProcessing, (p1, p2) -> p1 * p2)
                 ;
-        System.out.println("!!!!!! ADJUSTMENT TX " + (System.currentTimeMillis() - startTimestamp));
 
         long score = scoreAdjustmentTransformer
                 .combineWith(patternProcessing, dilatedLibraryProcessing, (p, patternPix, dilatedPix) -> {
@@ -88,11 +82,10 @@ class EM2LMAreaGapCalculator {
                     }
                     return p;
                 })
-                .stream()
+                .pixelsStream()
                 .filter(p -> p > 3)
                 .mapToLong(p -> p)
-                .reduce(0L, (p1, p2) -> p1 + p2);
-        System.out.println("!!!!!! FINAL SCORE " + score + " -> " + (System.currentTimeMillis() - startTimestamp));
+                .sum();
         return score;
     }
 

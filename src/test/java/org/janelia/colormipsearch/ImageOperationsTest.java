@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -17,20 +16,11 @@ public class ImageOperationsTest {
         MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         MIPImage maxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
-                .maxFilter(10)
+                .maxWithDiscPattern(10)
                 .asImage()
                 ;
         RankFilters maxFilter = new RankFilters();
         maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
-
-        IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
-        IJ.save(new ImagePlus(null, testImage.getProcessor()), "ttt.png");
-
-        for (int i = 0; i < testImage.getProcessor().getPixelCount(); i++) {
-            if (testImage.getProcessor().get(i) != maxFilteredImage.get(i)) {
-                System.out.println("!!!!! " + i + ": " + testImage.getProcessor().get(i) + " vs " + maxFilteredImage.get(i));
-            }
-        }
 
         Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
     }
@@ -43,7 +33,7 @@ public class ImageOperationsTest {
 
         MIPImage binaryMaxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
                 .toBinary8(50)
-                .maxFilter(10)
+                .maxWithDiscPattern(10)
                 .asImage()
                 ;
 
@@ -100,12 +90,12 @@ public class ImageOperationsTest {
         MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
 
         MIPImage maskedImage = ImageOperations.ImageProcessing.createFor(testMIP)
-                .maxFilter(10)
+                .maxWithDiscPattern(10)
                 .mask(200)
                 .asImage()
                 ;
 
-        IJ.save(new ImagePlus(null, maskedImage.getImageProcessor()), "tt.png");
+        Assert.assertNotNull(maskedImage);
     }
 
 }

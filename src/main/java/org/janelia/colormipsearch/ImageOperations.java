@@ -206,71 +206,13 @@ class ImageOperations {
 
     }
 
-    private interface ChannelHandler {
-        int numChannels();
-        int[] decompose(int pixel);
-        int compose(int[] pixelComponents);
-    }
-
-    private static class RGBChannelHandler implements ChannelHandler {
-
-        @Override
-        public int numChannels() {
-            return 4;
-        }
-
-        @Override
-        public int[] decompose(int pixel) {
-            if (pixel == 0) {
-                return new int[] {0xFF, 0, 0, 0};
-            } else {
-                return new int[]{
-                        (pixel >> 24) & 0xFF,
-                        (pixel >> 16) & 0xFF,
-                        (pixel >> 8) & 0xFF,
-                        pixel & 0xFF
-                };
-            }
-        }
-
-        @Override
-        public int compose(int[] pixelComponents) {
-            return (pixelComponents[0] << 24) | (pixelComponents[1] << 16) | (pixelComponents[2] << 8) | pixelComponents[3];
-        }
-    }
-
-    private static class GrayChannelHandler implements ChannelHandler {
-
-        @Override
-        public int numChannels() {
-            return 1;
-        }
-
-        @Override
-        public int[] decompose(int pixel) {
-            return new int[] {
-                    pixel
-            };
-        }
-
-        @Override
-        public int compose(int[] pixelComponents) {
-            return pixelComponents[0];
-        }
-    }
-
     private static final class MaxQueue {
 
-        private Deque<Integer>[] deques;
-        private final ChannelHandler channelHandler;
+        private Deque<Integer> deque;
         int count = 0;
 
-        @SuppressWarnings("unchecked")
-        MaxQueue(ChannelHandler channelHandler) {
-            this.channelHandler = channelHandler;
-            deques = new Deque[channelHandler.numChannels()];
-            for (int i = 0; i < deques.length; i++)
-                deques[i] = new ArrayDeque<>();
+        MaxQueue() {
+            deque = new ArrayDeque<>();
             count = 0;
         }
 
@@ -279,35 +221,28 @@ class ImageOperations {
         }
 
         int getExtremum() {
-            return channelHandler.compose(Arrays.stream(deques).map(Deque::getFirst).mapToInt(i -> i).toArray());
+            return deque.getFirst();
         }
 
         void pushBack(int pixelVal) {
-            int[] channelVals = channelHandler.decompose(pixelVal);
-            for (int i = 0; i < channelVals.length; i++) {
-                while (!deques[i].isEmpty() && channelVals[i] > deques[i].getLast()) {
-                    deques[i].removeLast();
-                }
-                deques[i].addLast(channelVals[i]);
+            while (!deque.isEmpty() && pixelVal > deque.getLast()) {
+                deque.removeLast();
             }
+            deque.addLast(pixelVal);
             count++;
         }
 
         void popFront(int pixelVal) {
             if (count <= 0)
                 throw new IllegalStateException();
-            int[] channelVals = channelHandler.decompose(pixelVal);
-            for (int i = 0; i < channelVals.length; i++) {
-                if (channelVals[i] == deques[i].getFirst()) {
-                    deques[i].removeFirst();
-                }
+            if (pixelVal == deque.getFirst()) {
+                deque.removeFirst();
             }
             --count;
         }
 
         void clear() {
-            for (Deque<Integer> deque : deques)
-                deque.clear();
+            deque.clear();
             count = 0;
         }
     }
@@ -382,16 +317,98 @@ class ImageOperations {
             }, image);
         }
 
-        LImage max(double radius) {
+        LImage maxWithBoxPattern(double radius) {
+            int kRadius = (int)Math.abs(radius);
+            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
+                @Override
+                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    int m = IntStream.rangeClosed(-kRadius, kRadius)
+                            .map(dy -> y + dy)
+                            .filter(ay -> ay >= 0 & ay < image.height)
+                            .flatMap(ay -> IntStream.rangeClosed(-kRadius, kRadius)
+                                    .map(dx -> x + dx)
+                                    .filter(ax -> ax >= 0 && ax < image.width)
+                                    .map(ax -> get(ax, ay)))
+                            .reduce(Math::max)
+                            .orElse(pv)
+                            ;
+                    return pf.apply(x, y, pt, m);
+                }
+            }, image);
+        }
+
+        LImage maxWithDiscPatternAndSlidingWindow(double radius) {
             int[] radii = makeLineRadii(radius);
             int kRadius = radii[radii.length - 1];
             int kHeight = (radii.length - 1) / 2;
 
-//            MaxQueue[] maxQueues = new MaxQueue[kHeight];
-//            MIPImage.ImageType pixelType = getPixelType();
-//            for (int h = 0; h < kHeight; h++) {
-//                maxQueues[h] = new MaxQueue(pixelType == MIPImage.ImageType.RGB ? new RGBChannelHandler() : new GrayChannelHandler());
-//            }
+            MaxQueue[] maxQueues = new MaxQueue[kHeight];
+            for (int h = 0; h < kHeight; h++) {
+                maxQueues[h] = new MaxQueue();
+            }
+            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
+                @Override
+                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    if (x == 0) {
+                        for (int h = 0; h < kHeight; h++) {
+                            maxQueues[h].clear();
+                            int ay = y - kRadius + h;
+                            if (ay >= 0 && ay < height()) {
+                                for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                                    int ax = x + dx;
+                                    if (ax < width()) {
+                                        maxQueues[h].pushBack(get(ax, ay));
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        for (int h = 0; h < kHeight; h++) {
+                            int ay = y - kRadius + h;
+                            int ax = x + radii[2 * h + 1];
+                            if (ay >= 0 && ay < height()) {
+                                if (ax < width()) {
+                                    maxQueues[h].pushBack(get(ax, ay));
+                                }
+                            }
+                        }
+                    }
+                    int m = pv;
+                    for (int h = 0; h < kHeight; h++) {
+                        if (!maxQueues[h].isEmpty()) {
+                            int val = maxQueues[h].getExtremum();
+                            if (val > m) m = val;
+                        }
+                    }
+                    if (x > 0) {
+                        for (int h = 0; h < kHeight; h++) {
+                            int ay = y - kRadius + h;
+                            if (ay >= 0 && ay < height()) {
+                                int ax = x + radii[2 * h];
+                                if (ax >= 0) {
+                                    maxQueues[h].popFront(get(ax, ay));
+                                }
+                            }
+                        }
+                    }
+
+                    return pf.apply(x, y, pt, m);
+                }
+            }, image);
+        }
+
+        LImage maxWithDiscPattern(double radius) {
+            int[] radii = makeLineRadii(radius);
+            int kRadius = radii[radii.length - 1];
+            int kHeight = (radii.length - 1) / 2;
+
+            MaxQueue[] maxQueues = new MaxQueue[kHeight];
+            MIPImage.ImageType pixelType = getPixelType();
+            for (int h = 0; h < kHeight; h++) {
+                maxQueues[h] = new MaxQueue();
+            }
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
@@ -499,14 +516,14 @@ class ImageOperations {
             return kernel;
         }
 
-        IntStream stream() {
+        IntStream pixelsStream() {
             return IntStream.range(0, height())
                     .flatMap(y -> IntStream.range(0, width()).map(x -> get(x, y)))
                     ;
         }
 
         MIPImage asImage() {
-            return new MIPImage(image.mipInfo, width(), height(), getPixelType(), stream().toArray());
+            return new MIPImage(image.mipInfo, width(), height(), getPixelType(), pixelsStream().toArray());
         }
     }
 
@@ -543,8 +560,12 @@ class ImageOperations {
             return new ImageProcessing(lImage.map(ColorTransformation.toBinary16(threshold)));
         }
 
-        ImageProcessing maxFilter(double radius) {
-            return new ImageProcessing(lImage.max(radius));
+        ImageProcessing maxWithDiscPattern(double radius) {
+            return new ImageProcessing(lImage.maxWithDiscPattern(radius));
+        }
+
+        ImageProcessing maxWithBoxPattern(double radius) {
+            return new ImageProcessing(lImage.maxWithBoxPattern(radius));
         }
 
         ImageProcessing ijMaxFilter(double radius) {
@@ -580,8 +601,8 @@ class ImageOperations {
             return new ImageProcessing(lImage.mapi(processing.apply(lImage)));
         }
 
-        IntStream stream() {
-            return lImage.stream();
+        IntStream pixelsStream() {
+            return lImage.pixelsStream();
         }
 
         MIPImage asImage() {
