@@ -393,7 +393,6 @@ class ImageOperations {
                             }
                         }
                     }
-
                     return pf.apply(x, y, pt, m);
                 }
             }, image);
@@ -404,88 +403,35 @@ class ImageOperations {
             int kRadius = radii[radii.length - 1];
             int kHeight = (radii.length - 1) / 2;
 
-            MaxQueue[] maxQueues = new MaxQueue[kHeight];
-            MIPImage.ImageType pixelType = getPixelType();
-            for (int h = 0; h < kHeight; h++) {
-                maxQueues[h] = new MaxQueue();
-            }
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-//                    if (x == 0) {
-//                        for (int h = 0; h < kHeight; h++) {
-//                            maxQueues[h].clear();
-//                            int ay = y - kRadius + h;
-//                            if (ay >= 0 && ay < height()) {
-//                                for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
-//                                    int ax = x + dx;
-//                                    if (ax < width()) {
-//                                        maxQueues[h].pushBack(get(ax, ay));
-//                                    } else {
-//                                        break;
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    } else {
-//                        for (int h = 0; h < kHeight; h++) {
-//                            int ay = y - kRadius + h;
-//                            int ax = x + radii[2 * h + 1];
-//                            if (ay >= 0 && ay < height()) {
-//                                if (ax < width()) {
-//                                    maxQueues[h].pushBack(get(ax, ay));
-//                                }
-//                            }
-//                        }
-//                    }
-//                    int m = -1;
-//                    for (int h = 0; h < kHeight; h++) {
-//                        if (!maxQueues[h].isEmpty()) {
-//                            int val = maxQueues[h].getExtremum();
-//                            if (m == -1 || val > m)
-//                                m = val;
-//                        }
-//                    }
-//                    if (x > 0) {
-//                        for (int h = 0; h < kHeight; h++) {
-//                            int ay = y - kRadius + h;
-//                            if (ay >= 0 && ay < height()) {
-//                                int ax = x + radii[2 * h];
-//                                if (ax >= 0) {
-//                                    maxQueues[h].popFront(get(ax, ay));
-//                                }
-//                            }
-//                        }
-//                    }
-
-                    int m = IntStream.range(0, kHeight)
-                            .filter(h -> {
-                                int ay = y + h - kRadius;
-                                return ay >= 0 & ay < image.height;
-                            })
-                            .flatMap(h -> IntStream
-                                    .rangeClosed(x + radii[2*h], x + radii[2*h+1])
-                                    .filter(ax -> ax >= 0 && ax < image.width)
-                                    .map(ax -> {
-                                        int ay = y + h - kRadius;
-                                        return get(ax, ay);
-                                    }))
-                            .reduce((p1, p2) -> {
-                                switch (pt) {
-                                    case RGB:
-                                        int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
-                                        int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
-                                        int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
-                                        int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
-                                        return (a << 24) | (r << 16) | (g << 8) | b;
-                                    case GRAY8:
-                                    case GRAY16:
-                                    default:
-                                        return Math.max(p1, p2);
-                                }
-                            })
-                            .orElse(pv)
-                            ;
+                    int m = pv;
+                    BinaryOperator<Integer> maxOp = (p1, p2) -> {
+                        switch (pt) {
+                            case RGB:
+                                int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
+                                int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
+                                int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
+                                int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
+                                return (a << 24) | (r << 16) | (g << 8) | b;
+                            case GRAY8:
+                            case GRAY16:
+                            default:
+                                return Math.max(p1, p2);
+                        }
+                    };
+                    for (int h = 0; h < kHeight; h++) {
+                        int ay = y + h - kRadius;
+                        if (ay < 0 || ay >= height()) {
+                            continue;
+                        }
+                        for (int ax = x + radii[2*h]; ax <= x + radii[2*h+1]; ax++) {
+                            if (ax >= 0 && ax < width()) {
+                                m = maxOp.apply(m, get(ax, ay));
+                            }
+                        }
+                    }
                     return pf.apply(x, y, pt, m);
                 }
             }, image);
@@ -516,14 +462,33 @@ class ImageOperations {
             return kernel;
         }
 
-        IntStream pixelsStream() {
-            return IntStream.range(0, height())
-                    .flatMap(y -> IntStream.range(0, width()).map(x -> get(x, y)))
-                    ;
+        <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
+            R res = initialValue;
+            int imageHeight = height();
+            int imageWidth = width();
+            for (int y = 0; y < imageHeight; y++) {
+                for (int x = 0; x < imageWidth; x++) {
+                    res = acumulator.apply(get(x, y), res);
+                }
+            }
+            return res;
+        }
+
+        <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
+            R res = initialValue;
+            int imageHeight = height();
+            int imageWidth = width();
+            for (int y = 0; y < imageHeight; y++) {
+                for (int x = 0; x < imageWidth; x++) {
+                    res = acumulator.apply(x, y, get(x, y), res);
+                }
+            }
+            return res;
         }
 
         MIPImage asImage() {
-            return new MIPImage(image.mipInfo, width(), height(), getPixelType(), pixelsStream().toArray());
+            int[] pixels = new int[width() * height()];
+            return new MIPImage(image.mipInfo, width(), height(), getPixelType(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width() + x] = pv; return pa;}));
         }
     }
 
@@ -601,8 +566,12 @@ class ImageOperations {
             return new ImageProcessing(lImage.mapi(processing.apply(lImage)));
         }
 
-        IntStream pixelsStream() {
-            return lImage.pixelsStream();
+        <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
+            return lImage.fold(initialValue, acumulator);
+        }
+
+        <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
+            return lImage.foldi(initialValue, acumulator);
         }
 
         MIPImage asImage() {

@@ -82,10 +82,8 @@ class EM2LMAreaGapCalculator {
                     }
                     return p;
                 })
-                .pixelsStream()
-                .filter(p -> p > 3)
-                .mapToLong(p -> p)
-                .sum();
+                .fold(0L, (p, s) -> p > 3 ? s + p : s)
+                ;
         return score;
     }
 
