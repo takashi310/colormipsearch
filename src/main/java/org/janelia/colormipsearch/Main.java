@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +18,9 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,18 +148,37 @@ public class Main {
         }
     }
 
+    @Parameters(commandDescription = "Calculate gradient area score for the results")
+    private static class GradientScoreResultsArgs extends AbstractArgs {
+        @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be sorted")
+        private String resultsDir;
+
+        @Parameter(names = {"--resultsFile", "-rf"}, description = "File containing results to be sorted")
+        private String resultsFile;
+
+        GradientScoreResultsArgs(CommonArgs commonArgs) {
+            super(commonArgs);
+        }
+
+        String getOutputDir() {
+            return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir);
+        }
+    }
+
     public static void main(String[] argv) {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
         BatchSearchArgs batchSearchArgs = new BatchSearchArgs(commonArgs);
         SingleSearchArgs singleSearchArgs = new SingleSearchArgs(commonArgs);
         SortResultsArgs sortResultsArgs = new SortResultsArgs(commonArgs);
+        GradientScoreResultsArgs gradientScoreResultsArgs = new GradientScoreResultsArgs(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
                 .addCommand("batch", batchSearchArgs)
                 .addCommand("singleSearch", singleSearchArgs)
                 .addCommand("sortResults", sortResultsArgs)
+                .addCommand("gradientScore", gradientScoreResultsArgs)
                 .build();
 
         try {
@@ -196,6 +218,15 @@ public class Main {
                 }
                 createOutputDir(sortResultsArgs.getOutputDir());
                 sortResults(sortResultsArgs);
+                break;
+            case "gradientScore":
+                if (StringUtils.isBlank(gradientScoreResultsArgs.resultsDir) && StringUtils.isBlank(gradientScoreResultsArgs.resultsFile)) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.usage(sb);
+                    System.exit(1);
+                }
+                createOutputDir(gradientScoreResultsArgs.getOutputDir());
+                calculateGradientAreaScore(gradientScoreResultsArgs);
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");
@@ -279,7 +310,8 @@ public class Main {
         try {
             LOG.info("Reading {}", inputResultsFilename);
             File inputResultsFile = new File(inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {});
+            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
+            });
             Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
                     .sorted(Comparator.comparing(
                             ColorMIPSearchResultMetadata::getGradientAreaGap, (a1, a2) -> {
@@ -310,6 +342,58 @@ public class Main {
             LOG.error("Error reading {}", inputResultsFilename, e);
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+        String outputDir = args.getOutputDir();
+        if (StringUtils.isNotBlank(args.resultsFile)) {
+            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
+        } else if (StringUtils.isNotBlank(args.resultsDir)) {
+            try {
+                Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                        .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p.toString(), outputDir));
+            } catch (IOException e) {
+                LOG.error("Error listing {}", args.resultsDir, e);
+            }
+        }
+    }
+
+    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, String outputDir) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            LOG.info("Reading {}", inputResultsFilename);
+            File inputResultsFile = new File(inputResultsFilename);
+            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
+            });
+            if (CollectionUtils.isEmpty(resultsFileContent.results)) {
+                LOG.error("No color depth search results found in {}", inputResultsFile);
+                return;
+            }
+            MIPImage inputMIP = colorMIPSearch.loadMIPFromPath(Paths.get(resultsFileContent.results.get(0).imageName));
+            MIPImage inputGradientMIP = colorMIPSearch.loadGradientMIP(inputMIP.mipInfo);
+            Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream()
+                    .peek(csr -> {
+                        MIPImage matchedMIP = colorMIPSearch.loadMIPFromPath(Paths.get(csr.matchedImageName));
+                        MIPImage matchedGradientMIP = colorMIPSearch.loadGradientMIP(matchedMIP.mipInfo);
+                        ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputMIP, inputGradientMIP, matchedMIP, matchedGradientMIP);
+                        if (areaGap != null)
+                            csr.setGradientAreaGap(areaGap.value);
+                    })
+                    .collect(Collectors.toList()));
+            if (StringUtils.isBlank(outputDir)) {
+                mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithAreaGradientAdjustment);
+            } else {
+                File outputResultsFile = new File(outputDir, inputResultsFile.getName());
+                LOG.info("Writing {}", outputResultsFile);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsWithAreaGradientAdjustment);
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading {}", inputResultsFilename, e);
+            throw new UncheckedIOException(e);
+        }
+
     }
 
     private static List<MIPInfo> readMIPs(ListArg mipsArg) {
