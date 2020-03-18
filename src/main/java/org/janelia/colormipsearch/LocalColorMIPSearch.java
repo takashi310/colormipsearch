@@ -59,7 +59,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
 
         LOG.info("Load {} masks", nmasks);
-        List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream()
+        List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
                 .filter(mip -> new File(mip.imageFilepath).exists())
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
