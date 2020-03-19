@@ -75,6 +75,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
                 .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
                 .map(libraryMIP -> {
+                    long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
@@ -83,7 +84,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                     .filter(ColorMIPSearchResult::isMatch)
                                     .collect(Collectors.toList()), cdsExecutor)
                             .thenCompose(matchingResults -> {
-                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - startTime) / 1000);
+                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
                                     writeSearchResults(libraryMIP.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
                                     return matchingResults;
