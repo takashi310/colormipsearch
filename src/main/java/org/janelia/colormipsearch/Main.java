@@ -310,24 +310,26 @@ public class Main {
             File inputResultsFile = new File(inputResultsFilename);
             Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
             });
+            long maxAreaGap = resultsFileContent.results.stream()
+                    .mapToLong(ColorMIPSearchResultMetadata::getGradientAreaGap)
+                    .filter(a -> a != -1)
+                    .max()
+                    .orElse(-1);
             Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
-                    .sorted(Comparator.comparing(
-                            ColorMIPSearchResultMetadata::getGradientAreaGap, (a1, a2) -> {
-                                if (a1 == -1 || a2 == -1) {
-                                    return 0; // ignore the area gap in comparison
-                                } else if (a1 == 0 && a2 == 0) {
-                                    // if both have a perfect match
-                                    return 0;
-                                } else if (a1 == 0) {
-                                    return -1;
-                                } else if (a2 == 0) {
-                                    return 1;
-                                } else {
-                                    // if none has perfect match for now ignore the area gap for further comparison
-                                    return 0;
-                                }
-                            })
-                            .thenComparing(Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices).reversed()))
+                    .sorted((sr1, sr2) -> {
+                        // this is completely empirical because I don't know
+                        // how to compare the results that have no area gap with the ones that have
+                        if (maxAreaGap == -1) {
+                            return Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices).reversed().compare(sr1, sr2);
+                        } else {
+                            long a1 = sr1.getGradientAreaGap() ;
+                            long a2 = sr2.getGradientAreaGap();
+                            double normalizedA1 = normalizedArea(a1, maxAreaGap);
+                            double normalizedA2 = normalizedArea(a2, maxAreaGap);
+                            // reverse comparison by the score to normalized area ratio
+                            return Double.compare(sr2.getMatchingSlicesPct() / normalizedA2, sr1.getMatchingSlicesPct() / normalizedA1);
+                        }
+                    })
                     .collect(Collectors.toList()));
             if (StringUtils.isBlank(outputDir)) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithSortedContent);
@@ -339,6 +341,20 @@ public class Main {
         } catch (IOException e) {
             LOG.error("Error reading {}", inputResultsFilename, e);
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static double normalizedArea(long a, long maxArea) {
+        if (a == -1) {
+            return 0.004;
+        } else {
+            double r;
+            if ((double) a / maxArea < 0.002) {
+                r = 0.002;
+            } else {
+                r = (double) a / maxArea;
+            }
+            return r;
         }
     }
 

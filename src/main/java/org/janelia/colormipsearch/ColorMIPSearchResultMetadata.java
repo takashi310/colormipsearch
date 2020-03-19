@@ -40,7 +40,7 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonIgnore
     public long getGradientAreaGap() {
         String gradientAreaGap = getAttr("Gradient Area Gap");
-        return StringUtils.isBlank(gradientAreaGap) ? -1 : Long.parseLong(gradientAreaGap);
+        return StringUtils.isBlank(gradientAreaGap) ? -1L : Long.parseLong(gradientAreaGap);
     }
 
     public void setGradientAreaGap(long gradientAreaGap) {
