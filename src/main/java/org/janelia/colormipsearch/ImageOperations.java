@@ -1,12 +1,12 @@
 package org.janelia.colormipsearch;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+
+import com.google.common.base.Preconditions;
 
 import ij.plugin.filter.RankFilters;
 import ij.process.ImageProcessor;
@@ -206,44 +206,149 @@ class ImageOperations {
 
     }
 
-    private static final class MaxQueue {
+    private interface ColorHistogram {
+        boolean isEmpty();
+        int getMax();
 
-        private Deque<Integer> deque;
-        int count = 0;
+        /**
+         * Add a value and return the new max
+         * @param val
+         * @return the new max value
+         */
+        int add(int val);
+        /**
+         * Remove the value and return the new max
+         * @param val
+         * @return the new max value
+         */
+        int remove(int val);
+        int count();
+        void clear();
+    }
 
-        MaxQueue() {
-            deque = new ArrayDeque<>();
+    private static final class RGBHistogram implements ColorHistogram {
+        private final Gray8Histogram rHistogram;
+        private final Gray8Histogram gHistogram;
+        private final Gray8Histogram bHistogram;
+
+        public RGBHistogram() {
+            this.rHistogram = new Gray8Histogram();
+            this.gHistogram = new Gray8Histogram();
+            this.bHistogram = new Gray8Histogram();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return rHistogram.isEmpty() && gHistogram.isEmpty() && bHistogram.isEmpty();
+        }
+
+        @Override
+        public int getMax() {
+            return getColor(rHistogram.getMax(), gHistogram.getMax(), bHistogram.getMax());
+        }
+
+        private int getColor(int r, int g, int b) {
+            return 0xFF000000 |
+                    r << 16 |
+                    g << 8 |
+                    b;
+        }
+
+        @Override
+        public int add(int val) {
+            int maxR = rHistogram.add(val >> 16);
+            int maxG = gHistogram.add(val >> 8);
+            int maxB = bHistogram.add(val);
+            return getColor(maxR, maxG, maxB);
+        }
+
+        @Override
+        public int remove(int val) {
+            int maxR = rHistogram.remove(val >> 16);
+            int maxG = gHistogram.remove(val >> 8);
+            int maxB = bHistogram.remove(val);
+            return getColor(maxR, maxG, maxB);
+        }
+
+        @Override
+        public int count() {
+            return rHistogram.count();
+        }
+
+        @Override
+        public void clear() {
+            rHistogram.clear();
+            gHistogram.clear();
+            bHistogram.clear();
+        }
+    }
+
+    private static final class Gray8Histogram implements ColorHistogram {
+
+        private final int[] histogram;
+        private int max;
+        private int count;
+
+        Gray8Histogram() {
+            histogram = new int[256];
+            max = -1;
             count = 0;
         }
 
-        boolean isEmpty() {
+        @Override
+        public boolean isEmpty() {
             return count == 0;
         }
 
-        int getExtremum() {
-            return deque.getFirst();
+        @Override
+        public int getMax() {
+            return max;
         }
 
-        void pushBack(int pixelVal) {
-            while (!deque.isEmpty() && pixelVal > deque.getLast()) {
-                deque.removeLast();
-            }
-            deque.addLast(pixelVal);
+        @Override
+        public int add(int val) {
+            int ci = val & 0xFF;
+            histogram[ci] = histogram[ci] + 1;
             count++;
-        }
-
-        void popFront(int pixelVal) {
-            if (count <= 0)
-                throw new IllegalStateException();
-            if (pixelVal == deque.getFirst()) {
-                deque.removeFirst();
+            if (ci > max) {
+                max = ci;
             }
-            --count;
+            return max;
         }
 
-        void clear() {
-            deque.clear();
+        @Override
+        public int remove(int val) {
+            int ci = val & 0xFF;
+            count--;
+            histogram[ci] = histogram[ci] - 1;
+            Preconditions.checkArgument(histogram[ci] >= 0);
+            Preconditions.checkArgument(count >= 0);
+            if (ci == max) {
+                if (count == 0) {
+                    max = -1;
+                } else if (histogram[max] == 0) {
+                    max = -1;
+                    for (int pv = ci - 1; pv >= 0; pv--) {
+                        if (histogram[pv] > 0) {
+                            max = pv;
+                            break;
+                        }
+                    }
+                }
+            }
+            return max;
+        }
+
+        @Override
+        public int count() {
+            return count;
+        }
+
+        @Override
+        public void clear() {
+            Arrays.fill(histogram, 0);
             count = 0;
+            max = -1;
         }
     }
 
@@ -342,57 +447,48 @@ class ImageOperations {
             int kRadius = radii[radii.length - 1];
             int kHeight = (radii.length - 1) / 2;
 
-            MaxQueue[] maxQueues = new MaxQueue[kHeight];
-            for (int h = 0; h < kHeight; h++) {
-                maxQueues[h] = new MaxQueue();
-            }
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
+                int[] imageCache = new int[kHeight*width()];
+                MIPImage.ImageType pixelType = getPixelType();
+                ColorHistogram histogram = pixelType == MIPImage.ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
+                    int m = -1;
                     if (x == 0) {
+                        histogram.clear();
+                        Arrays.fill(imageCache, 0);
                         for (int h = 0; h < kHeight; h++) {
-                            maxQueues[h].clear();
                             int ay = y - kRadius + h;
                             if (ay >= 0 && ay < height()) {
                                 for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
                                     int ax = x + dx;
                                     if (ax < width()) {
-                                        maxQueues[h].pushBack(get(ax, ay));
+                                        int p = get(ax, ay);
+                                        imageCache[h * width() + ax] = p;
+                                        m = histogram.add(p);
                                     } else {
                                         break;
                                     }
                                 }
                             }
                         }
-                    } else {
-                        for (int h = 0; h < kHeight; h++) {
-                            int ay = y - kRadius + h;
-                            int ax = x + radii[2 * h + 1];
-                            if (ay >= 0 && ay < height()) {
-                                if (ax < width()) {
-                                    maxQueues[h].pushBack(get(ax, ay));
-                                }
-                            }
-                        }
                     }
-                    int m = pv;
                     for (int h = 0; h < kHeight; h++) {
-                        if (!maxQueues[h].isEmpty()) {
-                            int val = maxQueues[h].getExtremum();
-                            if (val > m) m = val;
-                        }
-                    }
-                    if (x > 0) {
-                        for (int h = 0; h < kHeight; h++) {
-                            int ay = y - kRadius + h;
-                            if (ay >= 0 && ay < height()) {
-                                int ax = x + radii[2 * h];
-                                if (ax >= 0) {
-                                    maxQueues[h].popFront(get(ax, ay));
-                                }
+                        int ay = y - kRadius + h;
+                        int nextx = x + radii[2 * h + 1];
+                        int prevx = x + radii[2 * h];
+                        if (ay >= 0 && ay < height()) {
+                            if (nextx < width()) {
+                                int p = get(nextx, ay);
+                                imageCache[h * width() + nextx] = p;
+                                m = histogram.add(p);
+                            }
+                            if (prevx > 0) {
+                                m = histogram.remove(imageCache[h * width() + prevx - 1]);
                             }
                         }
                     }
+
                     return pf.apply(x, y, pt, m);
                 }
             }, image);
@@ -526,7 +622,7 @@ class ImageOperations {
         }
 
         ImageProcessing maxWithDiscPattern(double radius) {
-            return new ImageProcessing(lImage.maxWithDiscPattern(radius));
+            return new ImageProcessing(lImage.maxWithDiscPatternAndSlidingWindow(radius));
         }
 
         ImageProcessing maxWithBoxPattern(double radius) {
