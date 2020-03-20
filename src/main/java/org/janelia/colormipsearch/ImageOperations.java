@@ -163,19 +163,9 @@ class ImageOperations {
             };
         }
 
-        ColorTransformation thenApplyColorTransformation(ColorTransformation colorTransformation) {
-            ColorTransformation currentTransformation = this;
-            return new ColorTransformation(this.pixelTypeChange.andThen(colorTransformation.pixelTypeChange)) {
-                @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
-                    return colorTransformation.apply(currentTransformation.pixelTypeChange.apply(pt), currentTransformation.apply(pt, pv));
-                }
-            };
-        }
-
         ColorTransformation thenApplyColorTransformation(Function<Integer, Integer> colorTransformation) {
             ColorTransformation currentTransformation = this;
-            return new ColorTransformation(this.pixelTypeChange.andThen(pixelTypeChange)) {
+            return new ColorTransformation(pixelTypeChange) {
                 @Override
                 public Integer apply(MIPImage.ImageType pt, Integer pv) {
                     return colorTransformation.apply(currentTransformation.apply(pt, pv));
@@ -187,7 +177,7 @@ class ImageOperations {
     abstract static class PixelTransformation implements QuadFunction<Integer, Integer, MIPImage.ImageType, Integer, Integer> {
         final Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange;
 
-        static Function<LImage, PixelTransformation> identity() {
+        static Function<LImage, PixelTransformation> toIdentity() {
             return lImage -> new PixelTransformation(pt -> pt) {
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
@@ -207,9 +197,6 @@ class ImageOperations {
     }
 
     private interface ColorHistogram {
-        boolean isEmpty();
-        int getMax();
-
         /**
          * Add a value and return the new max
          * @param val
@@ -222,7 +209,6 @@ class ImageOperations {
          * @return the new max value
          */
         int remove(int val);
-        int count();
         void clear();
     }
 
@@ -238,13 +224,11 @@ class ImageOperations {
         }
 
         @Override
-        public boolean isEmpty() {
-            return rHistogram.isEmpty() && gHistogram.isEmpty() && bHistogram.isEmpty();
-        }
-
-        @Override
-        public int getMax() {
-            return getColor(rHistogram.getMax(), gHistogram.getMax(), bHistogram.getMax());
+        public int add(int val) {
+            int maxR = rHistogram.add(val >> 16);
+            int maxG = gHistogram.add(val >> 8);
+            int maxB = bHistogram.add(val);
+            return getColor(maxR, maxG, maxB);
         }
 
         private int getColor(int r, int g, int b) {
@@ -255,24 +239,11 @@ class ImageOperations {
         }
 
         @Override
-        public int add(int val) {
-            int maxR = rHistogram.add(val >> 16);
-            int maxG = gHistogram.add(val >> 8);
-            int maxB = bHistogram.add(val);
-            return getColor(maxR, maxG, maxB);
-        }
-
-        @Override
         public int remove(int val) {
             int maxR = rHistogram.remove(val >> 16);
             int maxG = gHistogram.remove(val >> 8);
             int maxB = bHistogram.remove(val);
             return getColor(maxR, maxG, maxB);
-        }
-
-        @Override
-        public int count() {
-            return rHistogram.count();
         }
 
         @Override
@@ -293,16 +264,6 @@ class ImageOperations {
             histogram = new int[256];
             max = -1;
             count = 0;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return count == 0;
-        }
-
-        @Override
-        public int getMax() {
-            return max;
         }
 
         @Override
@@ -337,11 +298,6 @@ class ImageOperations {
                 }
             }
             return max;
-        }
-
-        @Override
-        public int count() {
-            return count;
         }
 
         @Override
@@ -443,14 +399,13 @@ class ImageOperations {
         }
 
         LImage maxWithDiscPatternAndSlidingWindow(double radius) {
-            int[] radii = makeLineRadii(radius);
-            int kRadius = radii[radii.length - 1];
-            int kHeight = (radii.length - 1) / 2;
-
             return new LImage(new PixelTransformation(pf.pixelTypeChange) {
-                int[] imageCache = new int[kHeight*width()];
-                MIPImage.ImageType pixelType = getPixelType();
-                ColorHistogram histogram = pixelType == MIPImage.ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
+                final int[] radii = makeLineRadii(radius);
+                final int kRadius = radii[radii.length - 1];
+                final int kHeight = (radii.length - 1) / 2;
+                final int[] imageCache = new int[kHeight*width()];
+                final ColorHistogram histogram = getPixelType() == MIPImage.ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
+
                 @Override
                 public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
                     int m = -1;
@@ -654,20 +609,12 @@ class ImageOperations {
             return new ImageProcessing(lImage.combineWith(p1.lImage, p2.lImage, op));
         }
 
-        ImageProcessing apply(ImageProcessing processing) {
-            return new ImageProcessing(lImage.mapi(processing.lImage.pf));
-        }
-
         ImageProcessing compose(Function<LImage, PixelTransformation> processing) {
             return new ImageProcessing(lImage.mapi(processing.apply(lImage)));
         }
 
         <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
             return lImage.fold(initialValue, acumulator);
-        }
-
-        <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
-            return lImage.foldi(initialValue, acumulator);
         }
 
         MIPImage asImage() {

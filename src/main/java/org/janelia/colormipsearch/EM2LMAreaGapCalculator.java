@@ -2,9 +2,6 @@ package org.janelia.colormipsearch;
 
 import java.util.function.Function;
 
-import ij.IJ;
-import ij.ImagePlus;
-import ij.plugin.filter.RankFilters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +31,7 @@ class EM2LMAreaGapCalculator {
             long startTimestamp = System.currentTimeMillis();
             try {
                 LOG.debug("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
-                long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.identity());
+                long adjustmentForNormalImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.toIdentity());
                 if (mirrorMask) {
                     long adjustmentForMirroredImage = calculateScoreAdjustment(libraryMIP, patternMIP, libraryGradient, ImageOperations.PixelTransformation.toMirror());
                     if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
