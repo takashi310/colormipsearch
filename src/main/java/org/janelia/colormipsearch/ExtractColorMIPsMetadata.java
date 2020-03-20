@@ -453,7 +453,7 @@ public class ExtractColorMIPsMetadata {
                                 if (StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode)) {
                                     int channelFromMip = getChannel(cdmipMetadata);
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn);
-                                    LOG.info("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
+                                    LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                                     return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
                                 } else {
                                     return false;
