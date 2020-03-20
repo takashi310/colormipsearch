@@ -15,9 +15,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -62,7 +62,7 @@ public class ExtractColorMIPsMetadata {
 
     // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
     private static final String EM_LIBRARY = "flyem_hemibrain";
-    private static final String NO_CONSENSUS_LINE = "No Consensus";
+    private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     private static class MainArgs {
@@ -152,7 +152,7 @@ public class ExtractColorMIPsMetadata {
             List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
-                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip)))
+                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                     .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
                     .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()));
@@ -191,6 +191,40 @@ public class ExtractColorMIPsMetadata {
         return cdMetadata;
     }
 
+    private int getChannel(ColorDepthMetadata cdMetadata) {
+        String channel = cdMetadata.getAttr("Channel");
+        if (StringUtils.isNotBlank(channel)) {
+            return Integer.parseInt(channel) - 1; // mip channels are 1 based so make it 0 based
+        } else {
+            return -1;
+        }
+    }
+
+    private int extractChannelFromSegmentedImageName(String imageName) {
+        Pattern regExPattern = Pattern.compile("_c(\\d+)_", Pattern.CASE_INSENSITIVE);
+        Matcher chMatcher = regExPattern.matcher(imageName);
+        if (chMatcher.find()) {
+            String channel = chMatcher.group(1);
+            return Integer.parseInt(channel);
+        } else {
+            return -1;
+        }
+    }
+
+    private boolean matchMIPChannelWithSegmentedImageChannel(int mipChannel, int segmentImageChannel) {
+        if (mipChannel == -1 && segmentImageChannel == -1) {
+            return true;
+        } else if (mipChannel == -1)  {
+            LOG.warn("No channel info found in the mip");
+            return true;
+        } else if (segmentImageChannel == -1) {
+            LOG.warn("No channel info found in the segmented image");
+            return true;
+        } else {
+            return mipChannel == segmentImageChannel;
+        }
+    }
+
     private boolean isEmLibrary(String lname) {
         return StringUtils.equalsIgnoreCase(EM_LIBRARY, lname);
     }
@@ -204,7 +238,12 @@ public class ExtractColorMIPsMetadata {
     }
 
     private boolean hasConsensusLine(ColorDepthMIP cdmip) {
-        return !StringUtils.equalsIgnoreCase(NO_CONSENSUS_LINE, cdmip.sample.line);
+        return !StringUtils.equalsIgnoreCase(NO_CONSENSUS, cdmip.sample.line);
+    }
+
+    private boolean hasPublishedName(ColorDepthMIP cdmip) {
+        String publishingName = cdmip.sample.publishingName;
+        return StringUtils.isNotBlank(publishingName) && !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName);
     }
 
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
@@ -368,7 +407,7 @@ public class ExtractColorMIPsMetadata {
                 List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage.stream()
-                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip)))
+                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir).stream())
                         .forEach(cdmip -> {
@@ -411,7 +450,14 @@ public class ExtractColorMIPsMetadata {
                                 String fn = p.getFileName().toString();
                                 String line = cdmipMetadata.getAttr("Published Name");
                                 String slideCode = cdmipMetadata.getAttr("Slide Code");
-                                return StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode);
+                                if (StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode)) {
+                                    int channelFromMip = getChannel(cdmipMetadata);
+                                    int channelFromFN = extractChannelFromSegmentedImageName(fn);
+                                    LOG.info("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
+                                    return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
+                                } else {
+                                    return false;
+                                }
                             } else {
                                 return true;
                             }
