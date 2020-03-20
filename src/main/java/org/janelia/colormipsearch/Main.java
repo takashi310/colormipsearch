@@ -126,6 +126,11 @@ public class Main {
         }
     }
 
+    enum SortingType {
+        USE_MATCHING_SLICES_ONLY,
+        WITH_GRADIENT_AREA_GAP
+    }
+
     @Parameters(commandDescription = "Sort color depth search results")
     private static class SortResultsArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be sorted")
@@ -133,6 +138,9 @@ public class Main {
 
         @Parameter(names = {"--resultsFile", "-rf"}, description = "File containing results to be sorted")
         private String resultsFile;
+
+        @Parameter(names = {"--sortingType", "-st"}, description = "Sorting type")
+        private SortingType sortingType = SortingType.WITH_GRADIENT_AREA_GAP;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -291,18 +299,18 @@ public class Main {
     private static void sortResults(SortResultsArgs args) {
         String outputDir = args.getOutputDir();
         if (StringUtils.isNotBlank(args.resultsFile)) {
-            sortResultsFile(args.resultsFile, outputDir);
+            sortResultsFile(args.resultsFile, args.sortingType, outputDir);
         } else if (StringUtils.isNotBlank(args.resultsDir)) {
             try {
                 Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
-                        .forEach(p -> sortResultsFile(p.toString(), outputDir));
+                        .forEach(p -> sortResultsFile(p.toString(), args.sortingType, outputDir));
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
         }
     }
 
-    private static void sortResultsFile(String inputResultsFilename, String outputDir) {
+    private static void sortResultsFile(String inputResultsFilename, SortingType sortingType, String outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -315,21 +323,32 @@ public class Main {
                     .filter(a -> a != -1)
                     .max()
                     .orElse(-1);
-            Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
-                    .sorted((sr1, sr2) -> {
-                        // this is completely empirical because I don't know
-                        // how to compare the results that have no area gap with the ones that have
-                        if (maxAreaGap == -1) {
-                            return Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices).reversed().compare(sr1, sr2);
-                        } else {
+            Comparator<ColorMIPSearchResultMetadata> srComparator;
+            switch (sortingType) {
+                case WITH_GRADIENT_AREA_GAP:
+                    if (maxAreaGap == -1) {
+                        srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices);
+                    } else {
+                        srComparator = (sr1, sr2) -> {
+                            // this is completely empirical because I don't know
+                            // how to compare the results that have no area gap with the ones that have
                             long a1 = sr1.getGradientAreaGap() ;
                             long a2 = sr2.getGradientAreaGap();
                             double normalizedA1 = normalizedArea(a1, maxAreaGap);
                             double normalizedA2 = normalizedArea(a2, maxAreaGap);
                             // reverse comparison by the score to normalized area ratio
-                            return Double.compare(sr2.getMatchingSlicesPct() / normalizedA2, sr1.getMatchingSlicesPct() / normalizedA1);
-                        }
-                    })
+                            return Double.compare(sr1.getMatchingSlicesPct() / normalizedA1, sr2.getMatchingSlicesPct() / normalizedA2);
+                        };
+                    }
+                    break;
+                case USE_MATCHING_SLICES_ONLY:
+                default:
+                    srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices);
+                    break;
+            }
+
+            Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
+                    .sorted(srComparator.reversed())
                     .collect(Collectors.toList()));
             if (StringUtils.isBlank(outputDir)) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithSortedContent);
