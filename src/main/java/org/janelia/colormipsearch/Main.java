@@ -216,15 +216,6 @@ public class Main {
                 createOutputDir(singleSearchArgs.getOutputDir());
                 runSingleSearch(singleSearchArgs);
                 break;
-            case "sortResults":
-                if (StringUtils.isBlank(sortResultsArgs.resultsDir) && StringUtils.isBlank(sortResultsArgs.resultsFile)) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(sb);
-                    System.exit(1);
-                }
-                createOutputDir(sortResultsArgs.getOutputDir());
-                sortResults(sortResultsArgs);
-                break;
             case "gradientScore":
                 if (StringUtils.isBlank(gradientScoreResultsArgs.resultsDir) && StringUtils.isBlank(gradientScoreResultsArgs.resultsFile)) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
@@ -233,6 +224,15 @@ public class Main {
                 }
                 createOutputDir(gradientScoreResultsArgs.getOutputDir());
                 calculateGradientAreaScore(gradientScoreResultsArgs);
+                break;
+            case "sortResults":
+                if (StringUtils.isBlank(sortResultsArgs.resultsDir) && StringUtils.isBlank(sortResultsArgs.resultsFile)) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.usage(sb);
+                    System.exit(1);
+                }
+                createOutputDir(sortResultsArgs.getOutputDir());
+                sortResults(sortResultsArgs);
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");
