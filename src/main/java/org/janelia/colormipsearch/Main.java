@@ -191,7 +191,11 @@ public class Main {
             cmdline.parse(argv);
         } catch (Exception e) {
             StringBuilder sb = new StringBuilder(e.getMessage()).append('\n');
-            cmdline.usage(sb);
+            if (StringUtils.isNotBlank(cmdline.getParsedCommand())) {
+                cmdline.usage(cmdline.getParsedCommand(), sb);
+            } else {
+                cmdline.usage(sb);
+            }
             JCommander.getConsole().println(sb.toString());
             System.exit(1);
         }
