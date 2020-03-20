@@ -196,17 +196,19 @@ public class Main {
             System.exit(1);
         }
 
-        if (mainArgs.displayHelpMessage || commonArgs.displayHelpMessage) {
+        if (mainArgs.displayHelpMessage) {
             cmdline.usage();
             System.exit(0);
-        }
-
-        if (StringUtils.isBlank(cmdline.getParsedCommand())) {
+        } else if (commonArgs.displayHelpMessage && StringUtils.isNotBlank(cmdline.getParsedCommand())) {
+            cmdline.usage(cmdline.getParsedCommand());
+            System.exit(0);
+        } else if (StringUtils.isBlank(cmdline.getParsedCommand())) {
             StringBuilder sb = new StringBuilder("Missing command\n");
             cmdline.usage(sb);
             JCommander.getConsole().println(sb.toString());
             System.exit(1);
         }
+
         switch (cmdline.getParsedCommand()) {
             case "batch":
                 createOutputDir(batchSearchArgs.getOutputDir());
