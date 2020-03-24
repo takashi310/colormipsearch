@@ -5,14 +5,22 @@ This is a distributed version of the [ColorMIP_Mask_Search](https://github.com/J
 ## Build
 
 ```./mvnw install```
+or just
+```./mvnw package```
 
-This will produce a jar called `target/colormipsearch-<VERSION>-jar-with-dependencies.jar` which can be run with Spark.
+This will produce a jar called `target/colormipsearch-<VERSION>-jar-with-dependencies.jar` which can be run 
+either with Spark or on the local host or on the cluster by using bsub.
 
 ## Run
 
 ### Group mips by line name or by skeleton id
 ```
-java -cp target/colormipsearch-1.1-jar-with-dependencies.jar org.janelia.colormipsearch.ExtractColorMIPsMetadata groupMIPS --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 --authorization "Bearer PutTheTokenHere" -l flyem_hemibrain flylight_splitgal4_drivers -od local/testData
+java -cp target/colormipsearch-1.1-jar-with-dependencies.jar org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    groupMIPS \
+    --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
+    --authorization "Bearer PutTheTokenHere" \
+    -l flyem_hemibrain flylight_splitgal4_drivers \
+    -od local/testData
 ```
 
 ### Create input for color depth search
@@ -29,8 +37,7 @@ java -cp target/colormipsearch-1.1-jar-with-dependencies.jar org.janelia.colormi
 ### Run color depth search locally
 ```
 java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
-    batch \
-    -locally \
+    searchFromJSON \
     -m /groups/jacs/jacsDev/devstore/goinac/cdtest/input/flyem_hemibrain.json \
     -i "/groups/jacs/jacsDev/devstore/goinac/cdtest/input/flylight_splitgal4_drivers.json:4:1" \
     --maskThreshold 100 \
@@ -40,5 +47,10 @@ java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar
 
 ### Perform color depth search for one mask and one image only
 ```
-java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar batch -i /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_MB242A-20121208_31_H4-20x-Brain-JRC2018_Unisex_20x_HR-1846510864534863970-CH1_CDM.png -m /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/5901194966_RT_18U.tif --maskThreshold 100 -od /groups/jacs/jacsDev/devstore/goinac/cdtest/test3
+java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    searchLocalFiles \
+    -i /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_MB242A-20121208_31_H4-20x-Brain-JRC2018_Unisex_20x_HR-1846510864534863970-CH1_CDM.png \
+    -m /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/5901194966_RT_18U.tif \
+    --maskThreshold 100 \
+    -od /groups/jacs/jacsDev/devstore/goinac/cdtest/test3
 ```

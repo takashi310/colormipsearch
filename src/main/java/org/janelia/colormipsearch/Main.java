@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.ZipFile;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -70,8 +72,8 @@ public class Main {
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         Double pctPositivePixels = 0.0;
 
-        @Parameter(names = {"--gradientDir", "-gd"}, description = "Gradient masks directory")
-        String gradientDir;
+        @Parameter(names = {"--gradientPath", "-gpath"}, description = "Gradient masks location")
+        String gradientPath;
 
         @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
         int cdsConcurrency = 100;
@@ -88,24 +90,24 @@ public class Main {
         }
     }
 
-    @Parameters(commandDescription = "Single color depth search")
-    private static class SingleSearchArgs extends AbstractArgs {
-        @Parameter(names = "-i", required = true, description = "Library MIP path")
-        private String libraryPath;
+    @Parameters(commandDescription = "Color depth search for MIP files")
+    private static class LocalMIPFilesSearchArgs extends AbstractArgs {
+        @Parameter(names = "-i", required = true, converter = ListArg.ListArgConverter.class, description = "Library MIPs location")
+        ListArg libraryMIPsLocation;
 
-        @Parameter(names = "-m", required = true, description = "Mask path")
-        private String maskPath;
+        @Parameter(names = "-m", required = true, converter = ListArg.ListArgConverter.class, description = "Mask MIPs location")
+        ListArg maskMIPsLocation;
 
         @Parameter(names = "-result", description = "Result file name")
-        private String resultName;
+        String resultName;
 
-        SingleSearchArgs(CommonArgs commonArgs) {
+        LocalMIPFilesSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
     }
 
-    @Parameters(commandDescription = "Batch color depth search")
-    private static class BatchSearchArgs extends AbstractArgs {
+    @Parameters(commandDescription = "Color depth search for a batch of MIPs")
+    private static class JsonMIPsSearchArgs extends AbstractArgs {
         @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of directories containing images to search")
         private List<ListArg> librariesInputs;
@@ -114,15 +116,15 @@ public class Main {
                 description = "Image file(s) to use as the search masks")
         private List<ListArg> masksInputs;
 
-        @Parameter(names = "-locally", description = "Perform the search in the current process", arity = 0)
-        private boolean useLocalProcessing = false;
+        @Parameter(names = "-useSpark", description = "Perform the search in the current process", arity = 0)
+        private boolean useSpark = false;
 
-        BatchSearchArgs(CommonArgs commonArgs) {
+        JsonMIPsSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 
         boolean useSpark() {
-            return !useLocalProcessing;
+            return useSpark;
         }
     }
 
@@ -174,15 +176,15 @@ public class Main {
     public static void main(String[] argv) {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
-        BatchSearchArgs batchSearchArgs = new BatchSearchArgs(commonArgs);
-        SingleSearchArgs singleSearchArgs = new SingleSearchArgs(commonArgs);
+        JsonMIPsSearchArgs jsonMIPsSearchArgs = new JsonMIPsSearchArgs(commonArgs);
+        LocalMIPFilesSearchArgs localMIPFilesSearchArgs = new LocalMIPFilesSearchArgs(commonArgs);
         SortResultsArgs sortResultsArgs = new SortResultsArgs(commonArgs);
         GradientScoreResultsArgs gradientScoreResultsArgs = new GradientScoreResultsArgs(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
-                .addCommand("batch", batchSearchArgs)
-                .addCommand("singleSearch", singleSearchArgs)
+                .addCommand("searchFromJSON", jsonMIPsSearchArgs)
+                .addCommand("searchLocalFiles", localMIPFilesSearchArgs)
                 .addCommand("sortResults", sortResultsArgs)
                 .addCommand("gradientScore", gradientScoreResultsArgs)
                 .build();
@@ -214,13 +216,13 @@ public class Main {
         }
 
         switch (cmdline.getParsedCommand()) {
-            case "batch":
-                createOutputDir(batchSearchArgs.getOutputDir());
-                runBatchSearch(batchSearchArgs);
+            case "searchFromJSON":
+                createOutputDir(jsonMIPsSearchArgs.getOutputDir());
+                runSearchFromJSONInput(jsonMIPsSearchArgs);
                 break;
-            case "singleSearch":
-                createOutputDir(singleSearchArgs.getOutputDir());
-                runSingleSearch(singleSearchArgs);
+            case "searchLocalFiles":
+                createOutputDir(localMIPFilesSearchArgs.getOutputDir());
+                runSearchForLocalMIPFiles(localMIPFilesSearchArgs);
                 break;
             case "gradientScore":
                 if (StringUtils.isBlank(gradientScoreResultsArgs.resultsDir) && StringUtils.isBlank(gradientScoreResultsArgs.resultsFile)) {
@@ -260,25 +262,25 @@ public class Main {
         }
     }
 
-    private static void runBatchSearch(BatchSearchArgs args) {
+    private static void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
         ColorMIPSearch colorMIPSearch;
         if (args.useSpark()) {
             colorMIPSearch = new SparkColorMIPSearch(
-                    args.appName, args.gradientDir, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
+                    args.appName, args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
             );
         } else {
             colorMIPSearch = new LocalColorMIPSearch(
-                    args.gradientDir,
+                    args.gradientPath,
                     args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         }
 
         try {
             List<MIPInfo> libraryMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> readMIPs(libraryInput).stream())
+                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput).stream())
                     .collect(Collectors.toList());
 
             List<MIPInfo> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> readMIPs(masksInput).stream())
+                    .flatMap(masksInput -> readMIPsFromJSON(masksInput).stream())
                     .collect(Collectors.toList());
 
             colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips);
@@ -287,18 +289,133 @@ public class Main {
         }
     }
 
-    private static void runSingleSearch(SingleSearchArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+    private static List<MIPInfo> readMIPsFromJSON(ListArg mipsArg) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-            MIPImage libraryMIP = colorMIPSearch.loadMIPFromPath(Paths.get(args.libraryPath));
-            MIPImage libraryGradient = colorMIPSearch.loadGradientMIP(libraryMIP.mipInfo);
-            MIPImage patternMIP = colorMIPSearch.loadMIPFromPath(Paths.get(args.maskPath));
-            MIPImage patternGradient = colorMIPSearch.loadGradientMIP(patternMIP.mipInfo);
-            ColorMIPSearchResult searchResult = colorMIPSearch.applyGradientAreaAdjustment(colorMIPSearch.runImageComparison(libraryMIP, patternMIP), libraryMIP, libraryGradient, patternMIP, patternGradient);
-            LOG.info("Search result: {}", searchResult);
-            colorMIPSearch.writeSearchResults(args.resultName, Collections.singletonList(searchResult.perLibraryMetadata()));
+            LOG.info("Reading {}", mipsArg);
+            List<MIPInfo> content = mapper.readValue(new File(mipsArg.input), new TypeReference<List<MIPInfo>>() {
+            });
+            int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
+            int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
+            LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
+            return content.subList(from, to);
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsArg, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+        try {
+            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation);
+            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation);
+            List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(patternMIPs, libraryMIPs);
+            colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
         } finally {
             colorMIPSearch.terminate();
+        }
+    }
+
+    private static List<MIPInfo> readMIPsFromLocalFiles(ListArg mipsArg) {
+        Path mipsInputPath = Paths.get(mipsArg.input);
+        if (Files.isDirectory(mipsInputPath)) {
+            // read mips from the specified folder
+            int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
+            try {
+                List<MIPInfo> mips = Files.find(mipsInputPath, 1, (p, fa) -> fa.isRegularFile())
+                        .filter(p -> isImageFile(p))
+                        .skip(from)
+                        .map(p -> {
+                            MIPInfo mipInfo = new MIPInfo();
+                            mipInfo.imagePath = mipsInputPath.toString();
+                            return mipInfo;
+                        })
+                        .collect(Collectors.toList());
+                if (mipsArg.length > 0 && mipsArg.length < mips.size()) {
+                    return mips.subList(0, mipsArg.length);
+                } else {
+                    return mips;
+                }
+            } catch (IOException e) {
+                LOG.error("Error reading content of {}", mipsArg, e);
+                return Collections.emptyList();
+            }
+        } else if (Files.isRegularFile(mipsInputPath)) {
+            // check if the input is an archive (right now only zip is supported)
+            if (StringUtils.endsWithIgnoreCase(mipsArg.input, ".zip")) {
+                // read mips from zip
+                return readMIPsFromZipArchive(mipsArg.input, mipsArg.offset, mipsArg.length);
+            } else if (isImageFile(mipsInputPath)) {
+                // treat the file as a single image file
+                MIPInfo mipInfo = new MIPInfo();
+                mipInfo.imagePath = mipsInputPath.toString();
+                return Collections.singletonList(mipInfo);
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            LOG.warn("Cannot traverse links for {}", mipsArg);
+            return Collections.emptyList();
+        }
+    }
+
+    private static List<MIPInfo> readMIPsFromZipArchive(String mipsArchive, int offset, int length) {
+        ZipFile archiveFile;
+        try {
+            archiveFile = new ZipFile(mipsArchive);
+        } catch (IOException e) {
+            LOG.error("Error opening the archive stream for {}", mipsArchive, e);
+            return Collections.emptyList();
+        }
+        try {
+            int from = offset > 0 ? offset : 0;
+            List<MIPInfo> mips = archiveFile.stream()
+                    .filter(ze -> isImageFile(ze.getName()))
+                    .skip(from)
+                    .map(ze -> {
+                        MIPInfo mipInfo = new MIPInfo();
+                        mipInfo.type = "zip";
+                        mipInfo.archivePath = mipsArchive;
+                        mipInfo.cdmPath = ze.getName();
+                        mipInfo.imagePath = ze.getName();
+                        return mipInfo;
+                    })
+                    .collect(Collectors.toList());
+            if (length > 0 && length < mips.size()) {
+                return mips.subList(0, length);
+            } else {
+                return mips;
+            }
+        } finally {
+            try {
+                archiveFile.close();
+            } catch (IOException ignore) {
+            }
+        }
+
+    }
+
+    private static boolean isImageFile(Path p) {
+        return isImageFile(p.getFileName().toString());
+    }
+
+    private static boolean isImageFile(String fname) {
+        int extseparator = fname.lastIndexOf('.');
+        if (extseparator == -1) {
+            return false;
+        }
+        String fext = fname.substring(extseparator + 1);
+        switch (fext.toLowerCase()) {
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "tif":
+            case "tiff":
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -338,7 +455,7 @@ public class Main {
                         srComparator = (sr1, sr2) -> {
                             // this is completely empirical because I don't know
                             // how to compare the results that have no area gap with the ones that have
-                            long a1 = sr1.getGradientAreaGap() ;
+                            long a1 = sr1.getGradientAreaGap();
                             long a2 = sr2.getGradientAreaGap();
                             double normalizedA1 = normalizedArea(a1, maxAreaGap);
                             double normalizedA2 = normalizedArea(a2, maxAreaGap);
@@ -384,7 +501,7 @@ public class Main {
     }
 
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientDir, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
         String outputDir = args.getOutputDir();
         if (StringUtils.isNotBlank(args.resultsFile)) {
             calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
@@ -433,23 +550,6 @@ public class Main {
             throw new UncheckedIOException(e);
         }
 
-    }
-
-    private static List<MIPInfo> readMIPs(ListArg mipsArg) {
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            LOG.info("Reading {}", mipsArg);
-            List<MIPInfo> content = mapper.readValue(new File(mipsArg.input), new TypeReference<List<MIPInfo>>() {
-            });
-            int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
-            int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
-            LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
-            return content.subList(from, to);
-        } catch (IOException e) {
-            LOG.error("Error reading {}", mipsArg, e);
-            throw new UncheckedIOException(e);
-        }
     }
 
 }

@@ -1,6 +1,14 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -12,14 +20,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 class MIPInfo implements Serializable {
     @JsonProperty
     String id;
+    String type = "file"; // this can be file or zip
     @JsonProperty
     String libraryName;
     @JsonProperty
     String publishedName;
     @JsonProperty
-    String imageFilepath;
+    String imagePath;
     @JsonProperty
-    String cdmFilepath;
+    String cdmPath;
+    String archivePath;
     @JsonProperty
     String imageURL;
     @JsonProperty
@@ -32,8 +42,8 @@ class MIPInfo implements Serializable {
         this.id = that.id;
         this.libraryName = that.libraryName;
         this.publishedName = that.publishedName;
-        this.imageFilepath = that.imageFilepath;
-        this.cdmFilepath = that.cdmFilepath;
+        this.imagePath = that.imagePath;
+        this.cdmPath = that.cdmPath;
         this.imageURL = that.imageURL;
         this.thumbnailURL = that.thumbnailURL;
     }
@@ -48,8 +58,8 @@ class MIPInfo implements Serializable {
 
         return new EqualsBuilder()
                 .append(id, mipImage.id)
-                .append(cdmFilepath, mipImage.cdmFilepath)
-                .append(imageFilepath, mipImage.imageFilepath)
+                .append(cdmPath, mipImage.cdmPath)
+                .append(imagePath, mipImage.imagePath)
                 .isEquals();
     }
 
@@ -57,8 +67,8 @@ class MIPInfo implements Serializable {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
                 .append(id)
-                .append(cdmFilepath)
-                .append(imageFilepath)
+                .append(cdmPath)
+                .append(imagePath)
                 .toHashCode();
     }
 
@@ -66,13 +76,55 @@ class MIPInfo implements Serializable {
     public String toString() {
         return new ToStringBuilder(this)
                 .append("id", id)
-                .append("cdmFilepath", cdmFilepath)
-                .append("imageFilepath", imageFilepath)
+                .append("cdmPath", cdmPath)
+                .append("imagePath", imagePath)
                 .toString();
     }
 
     boolean isEmSkelotonMIP() {
         return libraryName != null && StringUtils.equalsIgnoreCase(libraryName, "flyem_hemibrain") ||
-                cdmFilepath != null && (StringUtils.containsIgnoreCase(cdmFilepath, "flyem") || StringUtils.containsIgnoreCase(cdmFilepath, "hemi"));
+                cdmPath != null && (StringUtils.containsIgnoreCase(cdmPath, "flyem") || StringUtils.containsIgnoreCase(cdmPath, "hemi"));
+    }
+
+    boolean exists() {
+        if (StringUtils.equalsIgnoreCase("zip", type)) {
+            ZipFile archiveFile;
+            try {
+                archiveFile = new ZipFile(archivePath);
+            } catch (IOException e) {
+                return false;
+            }
+            try {
+                return archiveFile.getEntry(imagePath) != null;
+            } finally {
+                try {
+                    archiveFile.close();
+                } catch (IOException ignore) {
+                }
+            }
+        } else {
+            return new File(imagePath).exists();
+        }
+    }
+
+    InputStream openInputStream() throws IOException {
+        if (StringUtils.equalsIgnoreCase("zip", type)) {
+            ZipFile archiveFile = new ZipFile(archivePath);
+            try {
+                ZipEntry ze = archiveFile.getEntry(imagePath);
+                if (ze != null) {
+                    return archiveFile.getInputStream(ze);
+                } else {
+                    try {
+                        archiveFile.close();
+                    } catch (IOException ignore) {
+                    }
+                    return null;
+                }
+            } finally {
+            }
+        } else {
+            return new FileInputStream(imagePath);
+        }
     }
 }

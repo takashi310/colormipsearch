@@ -18,12 +18,15 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Streams;
 
 import ij.ImagePlus;
 import ij.io.Opener;
@@ -113,7 +116,7 @@ abstract class ColorMIPSearch implements Serializable {
 
     MIPImage loadMIPFromPath(Path mipPath) {
         MIPInfo mip = new MIPInfo();
-        mip.cdmFilepath = mip.imageFilepath = mipPath.toString();
+        mip.cdmPath = mip.imagePath = mipPath.toString();
         return loadMIP(mip);
     }
 
@@ -122,13 +125,16 @@ abstract class ColorMIPSearch implements Serializable {
         LOG.debug("Load MIP {}", mip);
         InputStream inputStream;
         try {
-            inputStream = new FileInputStream(mip.imageFilepath);
+            inputStream = mip.openInputStream();
+            if (inputStream == null) {
+                return null;
+            }
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
         ImagePlus ij = null;
         try {
-            ij = readImagePlus(mip.id, getImageFormat(mip.imageFilepath), inputStream);
+            ij = readImagePlus(mip.id, getImageFormat(mip.imagePath), inputStream);
             return new MIPImage(mip, ij);
         } catch (Exception e) {
             throw new IllegalStateException(e);
@@ -180,27 +186,51 @@ abstract class ColorMIPSearch implements Serializable {
             return null;
         } else {
             Path gradientBasePath = Paths.get(gradientMasksPath);
-            Path parentGradientBasePath = gradientBasePath.getParent();
-            Path mipPath = Paths.get(mipInfo.imageFilepath);
-            if (parentGradientBasePath == null || !mipPath.startsWith(parentGradientBasePath)) {
-                // don't know where to look for the gradient - I could try searching all subdirectories but is too expensive
-                return null;
-            }
-            Path mipBasePath = parentGradientBasePath.relativize(mipPath);
-            String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
-            int nComponents = mipBasePath.getNameCount();
-            Path gradientImagePath = IntStream.range(1, nComponents - 1)
-                    .mapToObj(i -> mipBasePath.getName(i).toString())
-                    .map(pc -> pc + "_gradient")
-                    .reduce(gradientBasePath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
-                    .resolve(gradientFilename)
-                    ;
-            if (Files.notExists(gradientImagePath)) {
-                return null;
+            if (Files.isDirectory(gradientBasePath)) {
+                return loadGradientMIPFromFilePath(gradientBasePath, Paths.get(mipInfo.imagePath));
+            } else if (Files.isRegularFile(gradientBasePath) && StringUtils.endsWithIgnoreCase(gradientMasksPath, ".zip")) {
+                return loadGradientMIPFromZipEntry(mipInfo.imagePath);
             } else {
-                return loadMIPFromPath(gradientImagePath);
+                return null;
             }
         }
+    }
+
+    private MIPImage loadGradientMIPFromFilePath(Path gradientBasePath, Path mipPath) {
+        Path parentGradientBasePath = gradientBasePath.getParent();
+        if (parentGradientBasePath == null || !mipPath.startsWith(parentGradientBasePath)) {
+            // don't know where to look for the gradient - I could try searching all subdirectories but is too expensive
+            return null;
+        }
+        Path mipBasePath = parentGradientBasePath.relativize(mipPath);
+        String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+        int nComponents = mipBasePath.getNameCount();
+        Path gradientImagePath = IntStream.range(1, nComponents - 1)
+                .mapToObj(i -> mipBasePath.getName(i).toString())
+                .map(pc -> pc + "_gradient")
+                .reduce(gradientBasePath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
+                .resolve(gradientFilename)
+                ;
+        if (Files.notExists(gradientImagePath)) {
+            return null;
+        } else {
+            return loadMIPFromPath(gradientImagePath);
+        }
+    }
+
+    private MIPImage loadGradientMIPFromZipEntry(String mipEntryName) {
+        String gradientFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
+        Path gradientEntryPath = Paths.get(gradientFilename);
+        int nComponents = gradientEntryPath.getNameCount();
+        String gradientEntryName = IntStream.range(0, nComponents)
+                .mapToObj(i -> i < nComponents-1 ? gradientEntryPath.getName(i).toString() + "_gradient" : gradientEntryPath.getName(i).toString())
+                .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
+        MIPInfo gradientMIP = new MIPInfo();
+        gradientMIP.type = "zip";
+        gradientMIP.archivePath = gradientMasksPath;
+        gradientMIP.cdmPath = gradientEntryName;
+        gradientMIP.imagePath = gradientEntryName;
+        return loadMIP(gradientMIP);
     }
 
     abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
@@ -247,12 +277,14 @@ abstract class ColorMIPSearch implements Serializable {
     ColorMIPSearchResult.AreaGap calculateGradientAreaAdjustment(MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
         ColorMIPSearchResult.AreaGap areaGap;
         long startTime = System.currentTimeMillis();
-        if (patternMIPImage.mipInfo.isEmSkelotonMIP()) {
+        if (patternMIPImage.mipInfo.isEmSkelotonMIP() || libraryGradientImage != null) {
             areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, patternMIPImage, libraryGradientImage);
             LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, patternMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
-        } else {
+        } else if (patternGradientImage != null) {
             areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(patternMIPImage, libraryMIPImage, patternGradientImage);
             LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, patternMIPImage, patternGradientImage, System.currentTimeMillis() - startTime);
+        } else {
+            areaGap = null;
         }
         return areaGap;
     }

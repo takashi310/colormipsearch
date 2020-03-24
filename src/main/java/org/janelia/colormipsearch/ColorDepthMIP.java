@@ -16,10 +16,6 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     String filepath;
     @JsonProperty
-    String cdmFilepath;
-    @JsonProperty
-    String gradientFilepath;
-    @JsonProperty
     String objective;
     @JsonProperty
     String alignmentSpace;

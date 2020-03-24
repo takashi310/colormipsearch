@@ -28,11 +28,8 @@ class ListArg {
         }
     }
 
-    @SubParameter(order = 0)
     String input;
-    @SubParameter(order = 1)
     int offset = 0;
-    @SubParameter(order = 2)
     int length = -1;
 
     private void setOffset(int offset) {

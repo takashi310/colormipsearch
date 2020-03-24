@@ -60,7 +60,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Load {} masks", nmasks);
         List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
-                .filter(mip -> new File(mip.imageFilepath).exists())
+                .filter(mip -> new File(mip.imagePath).exists())
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
         LOG.info("Loaded {} masks in memory", nmasks);
@@ -73,7 +73,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withMaxRetries(20);
 
         List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
-                .filter(libraryMIP -> new File(libraryMIP.imageFilepath).exists())
+                .filter(libraryMIP -> new File(libraryMIP.imagePath).exists())
                 .map(libraryMIP -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
@@ -105,6 +105,47 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         srsByMasks.forEach((maskId, srsForCurrentMask) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(maskId, srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
 
         LOG.info("Finished writing results after comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+    }
+
+    List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
+        long startTime = System.currentTimeMillis();
+        int nmasks = maskMIPS.size();
+        int nlibraries = libraryMIPS.size();
+
+        LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
+
+        LOG.info("Load {} masks", nmasks);
+        List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
+                .filter(mip -> mip.exists())
+                .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
+                .collect(Collectors.toList());
+        LOG.info("Loaded {} masks in memory", nmasks);
+
+        LOG.info("Compute search results by library");
+
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
+                .filter(libraryMIP -> libraryMIP.exists())
+                .map(libraryMIP -> {
+                    long libraryStartTime = System.currentTimeMillis();
+                    LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
+                    List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
+                    return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
+                            .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
+                                    .map(searchComputation -> searchComputation.join())
+                                    .filter(ColorMIPSearchResult::isMatch)
+                                    .collect(Collectors.toList()), cdsExecutor)
+                            .thenApply(matchingResults -> {
+                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
+                                return matchingResults;
+                            })
+                            .join()
+                            ;
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList())
+                ;
+        LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+        return allSearchResults;
     }
 
     private List<CompletableFuture<ColorMIPSearchResult>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
