@@ -124,7 +124,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
-                    LOG.info("Wait for the search between {} with {} masks to complete", libraryMIP, nmasks);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApply(ignoredVoidResult -> librarySearches.stream().parallel()
                                     .map(searchComputation -> searchComputation.join())
@@ -147,7 +146,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private List<CompletableFuture<ColorMIPSearchResult>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
         MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
-        return masksMIPSWithImages.stream()
+        List<CompletableFuture<ColorMIPSearchResult>> cdsComputations = masksMIPSWithImages.stream()
                 .map(maskMIPWithGradient -> {
                     Supplier<ColorMIPSearchResult> searchResultSupplier = () -> {
                         ColorMIPSearchResult sr = runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft());
@@ -166,5 +165,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 })
                 .collect(Collectors.toList())
                 ;
+        LOG.info("Submitted {} color depth searches for {} with {} masks", cdsComputations.size(), libraryMIP, masksMIPSWithImages.size());
+        return cdsComputations;
     }
 }
