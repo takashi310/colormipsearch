@@ -146,18 +146,28 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
         return masksMIPSWithImages.stream()
-                .map(maskMIPWithGradient -> CompletableFuture
-                        .supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
-                        .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
-                        .whenComplete((sr, e) -> {
-                            if (e != null || sr.isError) {
-                                if (e != null) {
-                                    LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage, e);
-                                } else {
-                                    LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
+                .map(maskMIPWithGradient -> {
+                    CompletableFuture<ColorMIPSearchResult> imageComparisonComputation;
+                    if (cdsExecutor == null) {
+                        imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()))
+                                .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
+                                ;
+                    } else {
+                        imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
+                                .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
+                                ;
+                    }
+                    return imageComparisonComputation
+                            .whenComplete((sr, e) -> {
+                                if (e != null || sr.isError) {
+                                    if (e != null) {
+                                        LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage, e);
+                                    } else {
+                                        LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
+                                    }
                                 }
-                            }
-                        }))
+                            });
+                })
                 .collect(Collectors.toList())
                 ;
     }
