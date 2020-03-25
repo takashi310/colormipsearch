@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 class LocalColorMIPSearch extends ColorMIPSearch {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
-    private static final int DEFAULT_CDS_THREADS = 20;
 
     private final Executor cdsExecutor;
 
@@ -40,14 +39,9 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         int negativeRadius,
                         boolean mirrorMask,
                         Double pctPositivePixels,
-                        int numberOfCdsThreads) {
+                        Executor cdsExecutor) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
-        cdsExecutor = Executors.newFixedThreadPool(
-                numberOfCdsThreads > 0 ? numberOfCdsThreads : DEFAULT_CDS_THREADS,
-                new ThreadFactoryBuilder()
-                        .setNameFormat("CDSRUNNER-%d")
-                        .setDaemon(true)
-                        .build());
+        this.cdsExecutor = cdsExecutor;
     }
 
     @Override
@@ -130,10 +124,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
+                            .thenApply(ignoredVoidResult -> librarySearches.stream()
                                     .map(searchComputation -> searchComputation.join())
                                     .filter(ColorMIPSearchResult::isMatch)
-                                    .collect(Collectors.toList()), cdsExecutor)
+                                    .collect(Collectors.toList()))
                             .thenApply(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
                                 return matchingResults;

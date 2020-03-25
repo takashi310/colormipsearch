@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -19,6 +21,7 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private static final int DEFAULT_CDS_THREADS = 20;
 
     private static class MainArgs {
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
@@ -76,7 +80,7 @@ public class Main {
         String gradientPath;
 
         @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
-        int cdsConcurrency = 100;
+        int cdsConcurrency = DEFAULT_CDS_THREADS;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -262,6 +266,15 @@ public class Main {
         }
     }
 
+    private static Executor createCDSExecutor(AbstractArgs args) {
+        return Executors.newFixedThreadPool(
+                args.cdsConcurrency > 0 ? args.cdsConcurrency : DEFAULT_CDS_THREADS,
+                new ThreadFactoryBuilder()
+                        .setNameFormat("CDSRUNNER-%d")
+                        .setDaemon(true)
+                        .build());
+    }
+
     private static void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
         ColorMIPSearch colorMIPSearch;
         if (args.useSpark()) {
@@ -271,7 +284,15 @@ public class Main {
         } else {
             colorMIPSearch = new LocalColorMIPSearch(
                     args.gradientPath,
-                    args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+                    args.getOutputDir(),
+                    args.dataThreshold,
+                    args.maskThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift,
+                    args.negativeRadius,
+                    args.mirrorMask,
+                    args.pctPositivePixels,
+                    createCDSExecutor(args));
         }
 
         try {
@@ -307,7 +328,17 @@ public class Main {
     }
 
     private static void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
+                args.gradientPath,
+                args.getOutputDir(),
+                args.dataThreshold,
+                args.maskThreshold,
+                args.pixColorFluctuation,
+                args.xyShift,
+                args.negativeRadius,
+                args.mirrorMask,
+                args.pctPositivePixels,
+                createCDSExecutor(args));
         try {
             List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation);
             List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation);
@@ -501,7 +532,17 @@ public class Main {
     }
 
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.cdsConcurrency);
+        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
+                args.gradientPath,
+                args.getOutputDir(),
+                args.dataThreshold,
+                args.maskThreshold,
+                args.pixColorFluctuation,
+                args.xyShift,
+                args.negativeRadius,
+                args.mirrorMask,
+                args.pctPositivePixels,
+                null);
         String outputDir = args.getOutputDir();
         if (StringUtils.isNotBlank(args.resultsFile)) {
             calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
