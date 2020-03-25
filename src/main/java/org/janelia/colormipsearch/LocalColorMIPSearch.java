@@ -73,10 +73,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApplyAsync(ignoredVoidResult -> librarySearches.stream()
+                            .thenApply(ignoredVoidResult -> librarySearches.stream()
                                     .map(searchComputation -> searchComputation.join())
                                     .filter(ColorMIPSearchResult::isMatch)
-                                    .collect(Collectors.toList()), cdsExecutor)
+                                    .collect(Collectors.toList()))
                             .thenCompose(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
@@ -150,14 +150,13 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     CompletableFuture<ColorMIPSearchResult> imageComparisonComputation;
                     if (cdsExecutor == null) {
                         imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()))
-                                .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
                                 ;
                     } else {
                         imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
-                                .thenApplyAsync(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()), cdsExecutor)
                                 ;
                     }
                     return imageComparisonComputation
+                            .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
                             .whenComplete((sr, e) -> {
                                 if (e != null || sr.isError) {
                                     if (e != null) {
