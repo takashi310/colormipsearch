@@ -29,6 +29,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
 
     private final Executor cdsExecutor;
+    private final int partitionSize = 200;
 
     LocalColorMIPSearch(String gradientMasksPath,
                         String outputPath,
@@ -141,7 +142,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private List<CompletableFuture<List<ColorMIPSearchResult>>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
         MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
-        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(masksMIPSWithImages, 100).stream()
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(masksMIPSWithImages).stream()
                 .map(maskMIPWithGradientPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> maskMIPWithGradientPartition.stream()
                             .map(maskMIPWithGradient -> {
@@ -166,7 +167,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         return cdsComputations;
     }
 
-    private <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
+    private <T> List<List<T>> partitionList(List<T> l) {
         BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
             List<T> currentPartition;
             if (partitionResult.getRight().size() == partitionSize) {
