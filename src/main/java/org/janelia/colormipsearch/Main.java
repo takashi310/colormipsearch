@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-    private static final int DEFAULT_CDS_THREADS = 20;
 
     private static class MainArgs {
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
@@ -80,7 +79,7 @@ public class Main {
         String gradientPath;
 
         @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
-        int cdsConcurrency = DEFAULT_CDS_THREADS;
+        int cdsConcurrency;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -267,12 +266,16 @@ public class Main {
     }
 
     private static Executor createCDSExecutor(AbstractArgs args) {
-        return Executors.newFixedThreadPool(
-                args.cdsConcurrency > 0 ? args.cdsConcurrency : DEFAULT_CDS_THREADS,
-                new ThreadFactoryBuilder()
-                        .setNameFormat("CDSRUNNER-%d")
-                        .setDaemon(true)
-                        .build());
+        if (args.cdsConcurrency > 0) {
+            return Executors.newFixedThreadPool(
+                    args.cdsConcurrency,
+                    new ThreadFactoryBuilder()
+                            .setNameFormat("CDSRUNNER-%d")
+                            .setDaemon(true)
+                            .build());
+        } else {
+            return null;
+        }
     }
 
     private static void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
