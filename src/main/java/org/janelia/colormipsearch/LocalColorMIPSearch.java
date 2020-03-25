@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -147,25 +148,20 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
         return masksMIPSWithImages.stream()
                 .map(maskMIPWithGradient -> {
-                    CompletableFuture<ColorMIPSearchResult> imageComparisonComputation;
+                    Supplier<ColorMIPSearchResult> searchResultSupplier = () -> {
+                        ColorMIPSearchResult sr = runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft());
+                        if (sr.isError()) {
+                            LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
+                        } else {
+                            applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight());
+                        }
+                        return sr;
+                    };
                     if (cdsExecutor == null) {
-                        imageComparisonComputation = CompletableFuture.completedFuture(runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()))
-                                ;
+                        return CompletableFuture.supplyAsync(searchResultSupplier);
                     } else {
-                        imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
-                                ;
+                        return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                     }
-                    return imageComparisonComputation
-                            .thenApply(sr -> applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight()))
-                            .whenComplete((sr, e) -> {
-                                if (e != null || sr.isError) {
-                                    if (e != null) {
-                                        LOG.error("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage, e);
-                                    } else {
-                                        LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
-                                    }
-                                }
-                            });
                 })
                 .collect(Collectors.toList())
                 ;
