@@ -267,12 +267,15 @@ public class Main {
     }
 
     private static Executor createCDSExecutor(AbstractArgs args) {
+	return null;
+	/*
         return Executors.newFixedThreadPool(
                 args.cdsConcurrency > 0 ? args.cdsConcurrency : DEFAULT_CDS_THREADS,
                 new ThreadFactoryBuilder()
                         .setNameFormat("CDSRUNNER-%d")
                         .setDaemon(true)
                         .build());
+	*/
     }
 
     private static void runSearchFromJSONInput(JsonMIPsSearchArgs args) {

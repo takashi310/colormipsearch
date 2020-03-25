@@ -145,7 +145,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private List<CompletableFuture<ColorMIPSearchResult>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
         MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
-        return masksMIPSWithImages.stream()
+        return masksMIPSWithImages.stream().parallel()
                 .map(maskMIPWithGradient -> {
                     CompletableFuture<ColorMIPSearchResult> imageComparisonComputation;
                     if (cdsExecutor == null) {
