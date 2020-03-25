@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 abstract class ColorMIPSearch implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearch.class);
-    private static final int MAX_GRAD_DEPTH = 5;
 
     private enum ImageFormat {
         PNG,

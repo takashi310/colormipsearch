@@ -2,16 +2,15 @@ package org.janelia.colormipsearch;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -72,11 +71,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .map(libraryMIP -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
-                    List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
+                    List<CompletableFuture<List<ColorMIPSearchResult>>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApply(ignoredVoidResult -> librarySearches.stream()
-                                    .map(searchComputation -> searchComputation.join())
-                                    .filter(ColorMIPSearchResult::isMatch)
+                                    .flatMap(searchComputation -> searchComputation.join().stream())
                                     .collect(Collectors.toList()))
                             .thenCompose(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
@@ -89,8 +87,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             ;
                 })
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList())
-                ;
+                .collect(Collectors.toList());
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
 
         Map<String, List<ColorMIPSearchResult>> srsByMasks = allSearchResults.stream()
@@ -123,11 +120,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .map(libraryMIP -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
-                    List<CompletableFuture<ColorMIPSearchResult>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
+                    List<CompletableFuture<List<ColorMIPSearchResult>>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApply(ignoredVoidResult -> librarySearches.stream().parallel()
-                                    .map(searchComputation -> searchComputation.join())
-                                    .filter(ColorMIPSearchResult::isMatch)
+                                    .flatMap(searchComputation -> searchComputation.join().stream())
                                     .collect(Collectors.toList()))
                             .thenApply(matchingResults -> {
                                 LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
@@ -137,35 +133,61 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             ;
                 })
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList())
-                ;
+                .collect(Collectors.toList());
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
         return allSearchResults;
     }
 
-    private List<CompletableFuture<ColorMIPSearchResult>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitLibrarySearches(MIPInfo libraryMIP, List<Pair<MIPImage, MIPImage>> masksMIPSWithImages) {
         MIPImage libraryMIPImage = loadMIP(libraryMIP); // load image
         MIPImage libraryMIPGradient = loadGradientMIP(libraryMIP); // load gradient
-        List<CompletableFuture<ColorMIPSearchResult>> cdsComputations = masksMIPSWithImages.stream()
-                .map(maskMIPWithGradient -> {
-                    Supplier<ColorMIPSearchResult> searchResultSupplier = () -> {
-                        ColorMIPSearchResult sr = runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft());
-                        if (sr.isError()) {
-                            LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
-                        } else {
-                            applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight());
-                        }
-                        return sr;
-                    };
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(masksMIPSWithImages, 100).stream()
+                .map(maskMIPWithGradientPartition -> {
+                    Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> maskMIPWithGradientPartition.stream()
+                            .map(maskMIPWithGradient -> {
+                                ColorMIPSearchResult sr = runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft());
+                                if (sr.isError()) {
+                                    LOG.warn("Errors encountered comparing {} with {}", maskMIPWithGradient.getLeft(), libraryMIPImage);
+                                } else {
+                                    applyGradientAreaAdjustment(sr, libraryMIPImage, libraryMIPGradient, maskMIPWithGradient.getLeft(), maskMIPWithGradient.getRight());
+                                }
+                                return sr;
+                            })
+                            .filter(sr -> sr.isMatch())
+                            .collect(Collectors.toList());
                     if (cdsExecutor == null) {
                         return CompletableFuture.supplyAsync(searchResultSupplier);
                     } else {
                         return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                     }
                 })
-                .collect(Collectors.toList())
-                ;
+                .collect(Collectors.toList());
         LOG.info("Submitted {} color depth searches for {} with {} masks", cdsComputations.size(), libraryMIP, masksMIPSWithImages.size());
         return cdsComputations;
     }
+
+    private <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
+        BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
+            List<T> currentPartition;
+            if (partitionResult.getRight().size() == partitionSize) {
+                currentPartition = new ArrayList<>();
+            } else {
+                currentPartition = partitionResult.getRight();
+            }
+            currentPartition.add(s);
+            if (currentPartition.size() == 1) {
+                partitionResult.getLeft().add(currentPartition);
+            }
+            return ImmutablePair.of(partitionResult.getLeft(), currentPartition);
+        };
+        return l.stream().reduce(
+                ImmutablePair.of(new ArrayList<>(), new ArrayList<>()),
+                partitionAcumulator,
+                (r1, r2) -> r2.getLeft().stream().flatMap(p -> p.stream())
+                        .map(s -> partitionAcumulator.apply(r1, s))
+                        .reduce((first, second) -> second)
+                        .orElse(r1)).getLeft()
+                ;
+    }
+
 }
