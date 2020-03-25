@@ -149,7 +149,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .map(maskMIPWithGradient -> {
                     CompletableFuture<ColorMIPSearchResult> imageComparisonComputation;
                     if (cdsExecutor == null) {
-                        imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()))
+                        imageComparisonComputation = CompletableFuture.completedFuture(runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()))
                                 ;
                     } else {
                         imageComparisonComputation = CompletableFuture.supplyAsync(() -> runImageComparison(libraryMIPImage, maskMIPWithGradient.getLeft()), cdsExecutor)
