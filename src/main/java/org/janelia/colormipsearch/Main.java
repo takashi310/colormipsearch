@@ -334,7 +334,7 @@ public class Main {
                 return content.subList(from, to);
             } else {
                 LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream().filter(mip -> filter.contains(mip.publishedName)).collect(Collectors.toList());
+                return content.stream().filter(mip -> filter.contains(mip.publishedName.toLowerCase())).collect(Collectors.toList());
             }
         } catch (IOException e) {
             LOG.error("Error reading {}", mipsArg, e);
@@ -355,8 +355,8 @@ public class Main {
                 args.pctPositivePixels,
                 createCDSExecutor(args));
         try {
-            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation);
-            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation);
+            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.libraryMIPsFilter);
+            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation, args.maskMIPsFilter);
             List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(patternMIPs, libraryMIPs);
             colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
         } finally {
@@ -364,7 +364,7 @@ public class Main {
         }
     }
 
-    private static List<MIPInfo> readMIPsFromLocalFiles(ListArg mipsArg) {
+    private static List<MIPInfo> readMIPsFromLocalFiles(ListArg mipsArg, Set<String> mipsFilter) {
         Path mipsInputPath = Paths.get(mipsArg.input);
         if (Files.isDirectory(mipsInputPath)) {
             // read mips from the specified folder
@@ -372,6 +372,15 @@ public class Main {
             try {
                 List<MIPInfo> mips = Files.find(mipsInputPath, 1, (p, fa) -> fa.isRegularFile())
                         .filter(p -> isImageFile(p))
+                        .filter(p -> {
+                            String fname = p.getFileName().toString();
+                            int separatorIndex = StringUtils.indexOf(fname, '_');
+                            if (separatorIndex == -1) {
+                                return true;
+                            } else {
+                                return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                            }
+                        })
                         .skip(from)
                         .map(p -> {
                             MIPInfo mipInfo = new MIPInfo();
@@ -392,7 +401,7 @@ public class Main {
             // check if the input is an archive (right now only zip is supported)
             if (StringUtils.endsWithIgnoreCase(mipsArg.input, ".zip")) {
                 // read mips from zip
-                return readMIPsFromZipArchive(mipsArg.input, mipsArg.offset, mipsArg.length);
+                return readMIPsFromZipArchive(mipsArg.input, mipsFilter, mipsArg.offset, mipsArg.length);
             } else if (isImageFile(mipsInputPath)) {
                 // treat the file as a single image file
                 MIPInfo mipInfo = new MIPInfo();
@@ -407,7 +416,7 @@ public class Main {
         }
     }
 
-    private static List<MIPInfo> readMIPsFromZipArchive(String mipsArchive, int offset, int length) {
+    private static List<MIPInfo> readMIPsFromZipArchive(String mipsArchive, Set<String> mipsFilter, int offset, int length) {
         ZipFile archiveFile;
         try {
             archiveFile = new ZipFile(mipsArchive);
@@ -419,6 +428,15 @@ public class Main {
             int from = offset > 0 ? offset : 0;
             List<MIPInfo> mips = archiveFile.stream()
                     .filter(ze -> isImageFile(ze.getName()))
+                    .filter(ze -> {
+                        String fname = Paths.get(ze.getName()).getFileName().toString();
+                        int separatorIndex = StringUtils.indexOf(fname, '_');
+                        if (separatorIndex == -1) {
+                            return true;
+                        } else {
+                            return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                        }
+                    })
                     .skip(from)
                     .map(ze -> {
                         MIPInfo mipInfo = new MIPInfo();
