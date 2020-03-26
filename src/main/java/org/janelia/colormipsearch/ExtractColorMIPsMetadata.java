@@ -407,14 +407,16 @@ public class ExtractColorMIPsMetadata {
                 List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(alignmentSpace, libraryArg, datasets, pageOffset, pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage.stream()
+                        .peek(cdmip -> {
+                            if (Files.notExists(Paths.get(cdmip.filepath))) {
+                                LOG.warn("No filepath found for {}", cdmip);
+                            }
+                        })
                         .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir).stream())
                         .forEach(cdmip -> {
                             try {
-                                if (Files.notExists(Paths.get(cdmip.filepath))) {
-                                    LOG.warn("No filepath found for {}", cdmip);
-                                }
                                 Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
                                 gen.writeStartObject();
                                 gen.writeStringField("id", cdmip.id);
