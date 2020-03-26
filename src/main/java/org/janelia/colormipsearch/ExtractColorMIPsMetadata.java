@@ -409,7 +409,7 @@ public class ExtractColorMIPsMetadata {
                 cdmipsPage.stream()
                         .peek(cdmip -> {
                             if (Files.notExists(Paths.get(cdmip.filepath))) {
-                                LOG.warn("No filepath found for {}", cdmip);
+                                LOG.warn("No filepath {} found for {} (sample: {})", cdmip.filepath, cdmip, cdmip.sampleRef);
                             }
                         })
                         .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
