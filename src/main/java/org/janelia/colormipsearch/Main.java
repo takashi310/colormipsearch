@@ -274,12 +274,7 @@ public class Main {
 
     private static Executor createCDSExecutor(AbstractArgs args) {
         if (args.cdsConcurrency > 0) {
-            return Executors.newFixedThreadPool(
-                    args.cdsConcurrency,
-                    new ThreadFactoryBuilder()
-                            .setNameFormat("CDSRUNNER-%d")
-                            .setDaemon(true)
-                            .build());
+            return Executors.newWorkStealingPool(args.cdsConcurrency);
         } else {
             return Executors.newWorkStealingPool();
         }
