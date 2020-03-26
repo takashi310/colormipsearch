@@ -55,7 +55,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Load {} masks", nmasks);
         List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
-                .filter(mip -> new File(mip.imagePath).exists())
+                .filter(MIPInfo::exists)
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
         LOG.info("Loaded {} masks in memory", nmasks);
@@ -68,7 +68,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withMaxRetries(20);
 
         List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
-                .filter(libraryMIP -> new File(libraryMIP.imagePath).exists())
+                .filter(MIPInfo::exists)
                 .map(libraryMIP -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
@@ -109,15 +109,15 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Load {} masks", nmasks);
         List<Pair<MIPImage, MIPImage>> masksMIPSWithImages = maskMIPS.stream().parallel()
-                .filter(mip -> mip.exists())
+                .filter(MIPInfo::exists)
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
         LOG.info("Loaded {} masks in memory", nmasks);
 
         LOG.info("Compute search results by library");
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
-                .filter(libraryMIP -> libraryMIP.exists())
+        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream().parallel()
+                .filter(MIPInfo::exists)
                 .map(libraryMIP -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
