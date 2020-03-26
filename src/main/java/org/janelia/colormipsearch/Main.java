@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -83,6 +84,12 @@ public class Main {
 
         @ParametersDelegate
         final CommonArgs commonArgs;
+
+        @Parameter(names = {"--libraryFilter", "-lf"}, variableArity = true, description = "Filter for library mips")
+        Set<String> libraryMIPsFilter;
+
+        @Parameter(names = {"--masksFilter", "-mf"}, variableArity = true, description = "Filter for mask mips")
+        Set<String> maskMIPsFilter;
 
         AbstractArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
@@ -300,11 +307,11 @@ public class Main {
 
         try {
             List<MIPInfo> libraryMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput).stream())
+                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput, args.libraryMIPsFilter).stream())
                     .collect(Collectors.toList());
 
             List<MIPInfo> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> readMIPsFromJSON(masksInput).stream())
+                    .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.maskMIPsFilter).stream())
                     .collect(Collectors.toList());
 
             colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips);
@@ -313,17 +320,22 @@ public class Main {
         }
     }
 
-    private static List<MIPInfo> readMIPsFromJSON(ListArg mipsArg) {
+    private static List<MIPInfo> readMIPsFromJSON(ListArg mipsArg, Set<String> filter) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
             LOG.info("Reading {}", mipsArg);
             List<MIPInfo> content = mapper.readValue(new File(mipsArg.input), new TypeReference<List<MIPInfo>>() {
             });
-            int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
-            int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
-            LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
-            return content.subList(from, to);
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
+                int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream().filter(mip -> filter.contains(mip.publishedName)).collect(Collectors.toList());
+            }
         } catch (IOException e) {
             LOG.error("Error reading {}", mipsArg, e);
             throw new UncheckedIOException(e);
