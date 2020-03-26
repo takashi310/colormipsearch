@@ -412,6 +412,9 @@ public class ExtractColorMIPsMetadata {
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir).stream())
                         .forEach(cdmip -> {
                             try {
+                                if (Files.notExists(Paths.get(cdmip.filepath))) {
+                                    LOG.warn("No filepath found for {}", cdmip);
+                                }
                                 Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
                                 gen.writeStartObject();
                                 gen.writeStringField("id", cdmip.id);
