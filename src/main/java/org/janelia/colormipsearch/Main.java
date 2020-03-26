@@ -281,7 +281,7 @@ public class Main {
                             .setDaemon(true)
                             .build());
         } else {
-            return null;
+            return Executors.newWorkStealingPool();
         }
     }
 

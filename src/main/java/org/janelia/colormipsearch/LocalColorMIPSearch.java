@@ -123,7 +123,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
                     List<CompletableFuture<List<ColorMIPSearchResult>>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
-                            .thenApply(ignoredVoidResult -> librarySearches.stream().parallel()
+                            .thenApply(ignoredVoidResult -> librarySearches.stream()
                                     .flatMap(searchComputation -> searchComputation.join().stream())
                                     .collect(Collectors.toList()))
                             .thenApply(matchingResults -> {
@@ -156,11 +156,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             })
                             .filter(sr -> sr.isMatch())
                             .collect(Collectors.toList());
-                    if (cdsExecutor == null) {
-                        return CompletableFuture.supplyAsync(searchResultSupplier);
-                    } else {
-                        return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
-                    }
+                    return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                 })
                 .collect(Collectors.toList());
         LOG.info("Submitted {} color depth searches for {} with {} masks", cdsComputations.size(), libraryMIP, masksMIPSWithImages.size());
