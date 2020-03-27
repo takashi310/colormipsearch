@@ -82,7 +82,7 @@ public class Main {
         @Parameter(names = {"--libraryPartitionSize", "-lps"}, description = "Library partition size")
         int libraryPartitionSize = 100;
 
-        @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
+        @Parameter(names = {"--cdsConcurrency", "-cdc"}, description = "CDS concurrency - number of CDS tasks run concurrently")
         int cdsConcurrency;
 
         @ParametersDelegate
