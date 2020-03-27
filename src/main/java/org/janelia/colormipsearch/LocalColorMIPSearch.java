@@ -71,8 +71,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withMaxRetries(20);
 
         List<ColorMIPSearchResult> allSearchResults = Streams.zip(
-                IntStream.range(0, libraryMIPS.size()).boxed(),
-                libraryMIPS.stream().filter(MIPInfo::exists),
+                IntStream.range(0, libraryMIPS.size()).boxed().parallel(),
+                libraryMIPS.stream().filter(MIPInfo::exists).parallel(),
                 (lIndex, libraryMIP) -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("{}. Compare {} with {} masks", lIndex+1, libraryMIP, nmasks);
@@ -119,8 +119,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Compute search results by library");
 
         List<ColorMIPSearchResult> allSearchResults = Streams.zip(
-                IntStream.range(0, libraryMIPS.size()).boxed(),
-                libraryMIPS.stream().filter(MIPInfo::exists),
+                IntStream.range(0, libraryMIPS.size()).boxed().parallel(),
+                libraryMIPS.stream().filter(MIPInfo::exists).parallel(),
                 (lIndex, libraryMIP) -> {
                     long libraryStartTime = System.currentTimeMillis();
                     LOG.info("{}. Compare {} with {} masks", lIndex+1, libraryMIP, nmasks);
