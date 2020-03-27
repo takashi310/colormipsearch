@@ -116,28 +116,26 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         MIPImage maskGradientImage = loadGradientMIP(maskMIP); // load gradient
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(libraryImages).stream()
                 .map(librariesPartition -> {
-                    Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> librariesPartition.stream()
-                            .map(libraryWithGradient -> {
-                                MIPImage libraryImage = libraryWithGradient.getLeft();
-                                MIPImage libraryGradientImage = libraryWithGradient.getRight();
-                                ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
-                                if (sr.isError()) {
-                                    LOG.warn("Errors encountered comparing {} with {}", libraryImage, maskImage);
-                                } else {
-                                    applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
-                                }
-                                return sr;
-                            })
-                            .filter(ColorMIPSearchResult::isMatch)
-                            .collect(Collectors.toList());
-                    return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor)
-                            .whenComplete((srs, e) -> {
-                                if (e != null) {
-                                    LOG.error("Errors encountered while comparing {} with {} libraries", maskMIP, librariesPartition.size(), e);
-                                } else {
-                                    LOG.info("Found {} results with matches comparing {} with {} libraries", srs.size(), maskMIP, librariesPartition.size());
-                                }
-                            });
+                    Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
+                        long startTime = System.currentTimeMillis();
+                        List<ColorMIPSearchResult> srs = librariesPartition.stream()
+                                .map(libraryWithGradient -> {
+                                    MIPImage libraryImage = libraryWithGradient.getLeft();
+                                    MIPImage libraryGradientImage = libraryWithGradient.getRight();
+                                    ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
+                                    if (sr.isError()) {
+                                        LOG.warn("Errors encountered comparing {} with {}", libraryImage, maskImage);
+                                    } else {
+                                        applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
+                                    }
+                                    return sr;
+                                })
+                                .filter(ColorMIPSearchResult::isMatch)
+                                .collect(Collectors.toList());
+                        LOG.info("Found {} results with matches comparing {} with {} libraries in {}ms", srs.size(), maskMIP, librariesPartition.size(), System.currentTimeMillis() - startTime);
+                        return srs;
+                    };
+                    return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                 })
                 .collect(Collectors.toList());
         LOG.info("Submitted {} color depth searches for {} with {} libraries", cdsComputations.size(), maskMIP, libraryImages.size());
