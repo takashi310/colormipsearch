@@ -98,7 +98,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        LOG.info("Submitted all color depth searches for {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+        LOG.info("Submitted {} color depth searches for {} masks with {} libraries in {}s",
+                allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
 
         List<ColorMIPSearchResult> allSearchResults = CompletableFuture.allOf(allColorDepthSearches.toArray(new CompletableFuture<?>[0]))
                 .thenApply(ignoredVoidResult -> allColorDepthSearches.stream()
@@ -129,7 +130,14 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                             })
                             .filter(ColorMIPSearchResult::isMatch)
                             .collect(Collectors.toList());
-                    return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
+                    return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor)
+                            .whenComplete((srs, e) -> {
+                                if (e != null) {
+                                    LOG.error("Errors encountered while comparing {} with {} libraries", maskMIP, librariesPartition.size(), e);
+                                } else {
+                                    LOG.info("Found {} results with matches comparing {} with {} libraries", srs.size(), maskMIP, librariesPartition.size());
+                                }
+                            });
                 })
                 .collect(Collectors.toList());
         LOG.info("Submitted {} color depth searches for {} with {} libraries", cdsComputations.size(), maskMIP, libraryImages.size());
