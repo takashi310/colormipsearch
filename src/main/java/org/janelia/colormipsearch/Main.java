@@ -373,12 +373,16 @@ public class Main {
                 List<MIPInfo> mips = Files.find(mipsInputPath, 1, (p, fa) -> fa.isRegularFile())
                         .filter(p -> isImageFile(p))
                         .filter(p -> {
-                            String fname = p.getFileName().toString();
-                            int separatorIndex = StringUtils.indexOf(fname, '_');
-                            if (separatorIndex == -1) {
+                            if (CollectionUtils.isEmpty(mipsFilter)) {
                                 return true;
                             } else {
-                                return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                                String fname = p.getFileName().toString();
+                                int separatorIndex = StringUtils.indexOf(fname, '_');
+                                if (separatorIndex == -1) {
+                                    return true;
+                                } else {
+                                    return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                                }
                             }
                         })
                         .skip(from)
@@ -432,12 +436,16 @@ public class Main {
             List<MIPInfo> mips = archiveFile.stream()
                     .filter(ze -> isImageFile(ze.getName()))
                     .filter(ze -> {
-                        String fname = Paths.get(ze.getName()).getFileName().toString();
-                        int separatorIndex = StringUtils.indexOf(fname, '_');
-                        if (separatorIndex == -1) {
+                        if (CollectionUtils.isEmpty(mipsFilter)) {
                             return true;
                         } else {
-                            return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                            String fname = Paths.get(ze.getName()).getFileName().toString();
+                            int separatorIndex = StringUtils.indexOf(fname, '_');
+                            if (separatorIndex == -1) {
+                                return true;
+                            } else {
+                                return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                            }
                         }
                     })
                     .skip(from)
