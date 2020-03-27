@@ -93,7 +93,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 maskMIPS.stream().filter(MIPInfo::exists),
                 (mIndex, maskMIP) -> {
                     LOG.info("{}. Compare {} with {} libraries", mIndex+1, maskMIP, nlibraries);
-                    return submitMaskSearches(maskMIP, libraryImagesWithGradients);
+                    return submitMaskSearches(mIndex, maskMIP, libraryImagesWithGradients);
                 })
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -111,7 +111,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         return allSearchResults;
     }
 
-    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(int mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
         MIPImage maskImage = loadMIP(maskMIP); // load image
         MIPImage maskGradientImage = loadGradientMIP(maskMIP); // load gradient
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(libraryImages).stream()
@@ -132,7 +132,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing {} with {} libraries in {}ms", srs.size(), maskMIP, librariesPartition.size(), System.currentTimeMillis() - startTime);
+                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, librariesPartition.size(), System.currentTimeMillis() - startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
