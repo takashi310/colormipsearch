@@ -11,6 +11,9 @@ import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import com.google.common.collect.Streams;
 
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -67,27 +70,26 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .withDelay(Duration.ofMillis(500))
                 .withMaxRetries(20);
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream()
-                .filter(MIPInfo::exists)
-                .map(libraryMIP -> {
+        List<ColorMIPSearchResult> allSearchResults = Streams.zip(
+                IntStream.range(0, libraryMIPS.size()).boxed(),
+                libraryMIPS.stream().filter(MIPInfo::exists),
+                (lIndex, libraryMIP) -> {
                     long libraryStartTime = System.currentTimeMillis();
-                    LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
+                    LOG.info("{}. Compare {} with {} masks", lIndex+1, libraryMIP, nmasks);
                     List<CompletableFuture<List<ColorMIPSearchResult>>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApply(ignoredVoidResult -> librarySearches.stream()
                                     .flatMap(searchComputation -> searchComputation.join().stream())
                                     .collect(Collectors.toList()))
                             .thenCompose(matchingResults -> {
-                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
+                                LOG.info("{}. Found {} search results comparing {} masks with {} in {}s", lIndex+1, matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
                                 return Failsafe.with(retryPolicy).getAsync(() -> {
                                     writeSearchResults(libraryMIP.id, matchingResults.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()));
                                     return matchingResults;
                                 });
-                            })
-                            .join()
-                            ;
+                            });
                 })
-                .flatMap(Collection::stream)
+                .flatMap(librarySearches -> librarySearches.join().stream())
                 .collect(Collectors.toList());
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
 
@@ -116,24 +118,23 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Compute search results by library");
 
-        List<ColorMIPSearchResult> allSearchResults = libraryMIPS.stream().parallel()
-                .filter(MIPInfo::exists)
-                .map(libraryMIP -> {
+        List<ColorMIPSearchResult> allSearchResults = Streams.zip(
+                IntStream.range(0, libraryMIPS.size()).boxed(),
+                libraryMIPS.stream().filter(MIPInfo::exists),
+                (lIndex, libraryMIP) -> {
                     long libraryStartTime = System.currentTimeMillis();
-                    LOG.info("Compare {} with {} masks", libraryMIP, nmasks);
+                    LOG.info("{}. Compare {} with {} masks", lIndex+1, libraryMIP, nmasks);
                     List<CompletableFuture<List<ColorMIPSearchResult>>> librarySearches = submitLibrarySearches(libraryMIP, masksMIPSWithImages);
                     return CompletableFuture.allOf(librarySearches.toArray(new CompletableFuture<?>[0]))
                             .thenApply(ignoredVoidResult -> librarySearches.stream()
                                     .flatMap(searchComputation -> searchComputation.join().stream())
                                     .collect(Collectors.toList()))
                             .thenApply(matchingResults -> {
-                                LOG.info("Found {} search results comparing {} masks with {} in {}s", matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
+                                LOG.info("{}. Found {} search results comparing {} masks with {} in {}s", lIndex+1, matchingResults.size(), nmasks, libraryMIP, (System.currentTimeMillis() - libraryStartTime) / 1000);
                                 return matchingResults;
-                            })
-                            .join()
-                            ;
+                            });
                 })
-                .flatMap(Collection::stream)
+                .flatMap(librarySearches -> librarySearches.join().stream())
                 .collect(Collectors.toList());
         LOG.info("Finished comparing {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
         return allSearchResults;
