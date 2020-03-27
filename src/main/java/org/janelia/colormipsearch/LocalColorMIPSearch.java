@@ -93,7 +93,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 IntStream.range(0, maskMIPS.size()).boxed(),
                 maskMIPS.stream().filter(MIPInfo::exists),
                 (mIndex, maskMIP) -> {
-                    LOG.info("Compare {} with {} (mask # {}) libraries", maskMIP, mIndex+1, nlibraries);
+                    LOG.info("Compare {} (mask # {}) with {} libraries", maskMIP, mIndex+1, nlibraries);
                     return submitMaskSearches(mIndex, maskMIP, libraryImagesWithGradients);
                 })
                 .flatMap(Collection::stream)
