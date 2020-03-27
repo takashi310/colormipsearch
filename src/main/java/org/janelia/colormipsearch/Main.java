@@ -76,10 +76,10 @@ public class Main {
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         Double pctPositivePixels = 0.0;
 
-        @Parameter(names = {"--gradientPath", "-gpath"}, description = "Gradient masks location")
+        @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location")
         String gradientPath;
 
-        @Parameter(names = "-libraryPartitionSize", description = "Library partition size")
+        @Parameter(names = {"--libraryPartitionSize", "-lps"}, description = "Library partition size")
         int libraryPartitionSize = 100;
 
         @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
