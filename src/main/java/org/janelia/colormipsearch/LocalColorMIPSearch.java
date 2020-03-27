@@ -93,7 +93,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 IntStream.range(0, maskMIPS.size()).boxed(),
                 maskMIPS.stream().filter(MIPInfo::exists),
                 (mIndex, maskMIP) -> {
-                    LOG.info("{}. Compare {} with {} libraries", mIndex+1, maskMIP, nlibraries);
+                    LOG.info("Compare {} with {} (mask # {}) libraries", maskMIP, mIndex+1, nlibraries);
                     return submitMaskSearches(mIndex, maskMIP, libraryImagesWithGradients);
                 })
                 .flatMap(Collection::stream)
@@ -139,7 +139,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                 })
                 .collect(Collectors.toList());
-        LOG.info("Submitted {} color depth searches for {} with {} libraries", cdsComputations.size(), maskMIP, libraryImages.size());
+        LOG.info("Submitted {} color depth searches for {} (mask # {}) with {} libraries", cdsComputations.size(), maskMIP, mIndex, libraryImages.size());
         return cdsComputations;
     }
 
