@@ -378,7 +378,10 @@ public class Main {
                         })
                         .skip(from)
                         .map(p -> {
+                            String fname = p.getFileName().toString();
+                            int extIndex = fname.lastIndexOf('.');
                             MIPInfo mipInfo = new MIPInfo();
+                            mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
                             mipInfo.imagePath = mipsInputPath.toString();
                             return mipInfo;
                         })
@@ -434,7 +437,10 @@ public class Main {
                     })
                     .skip(from)
                     .map(ze -> {
+                        String fname = Paths.get(ze.getName()).getFileName().toString();
+                        int extIndex = fname.lastIndexOf('.');
                         MIPInfo mipInfo = new MIPInfo();
+                        mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
                         mipInfo.type = "zip";
                         mipInfo.archivePath = mipsArchive;
                         mipInfo.cdmPath = ze.getName();
