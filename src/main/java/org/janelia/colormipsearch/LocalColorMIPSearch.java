@@ -87,7 +87,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .filter(MIPInfo::exists)
                 .map(mip -> ImmutablePair.of(loadMIP(mip), loadGradientMIP(mip)))
                 .collect(Collectors.toList());
-        LOG.info("Loaded {} libraries in memory in {}s", nlibraries, System.currentTimeMillis() - startTime);
+        LOG.info("Loaded {} libraries in memory in {}s", nlibraries, (System.currentTimeMillis()-startTime)/1000);
 
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
                 IntStream.range(0, maskMIPS.size()).boxed(),
@@ -100,7 +100,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .collect(Collectors.toList());
 
         LOG.info("Submitted {} color depth searches for {} masks with {} libraries in {}s",
-                allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+                allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis()-startTime)/1000);
 
         List<ColorMIPSearchResult> allSearchResults = CompletableFuture.allOf(allColorDepthSearches.toArray(new CompletableFuture<?>[0]))
                 .thenApply(ignoredVoidResult -> allColorDepthSearches.stream()
@@ -108,7 +108,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         .collect(Collectors.toList()))
                 .join();
 
-        LOG.info("Finished all color depth searches {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+        LOG.info("Finished all color depth searches {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis()-startTime) / 1000);
         return allSearchResults;
     }
 
@@ -133,7 +133,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, librariesPartition.size(), System.currentTimeMillis() - startTime);
+                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, librariesPartition.size(), System.currentTimeMillis()-startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
