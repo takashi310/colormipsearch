@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch;
 
-import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +31,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
 
     private final Executor cdsExecutor;
-    private final int partitionSize = 200;
+    private final int libraryPartitionSize;
 
     LocalColorMIPSearch(String gradientMasksPath,
                         String outputPath,
@@ -43,8 +42,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         int negativeRadius,
                         boolean mirrorMask,
                         Double pctPositivePixels,
+                        int libraryPartitionSize,
                         Executor cdsExecutor) {
         super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
+        this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
         this.cdsExecutor = cdsExecutor;
     }
 
@@ -145,7 +146,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private <T> List<List<T>> partitionList(List<T> l) {
         BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
             List<T> currentPartition;
-            if (partitionResult.getRight().size() == partitionSize) {
+            if (partitionResult.getRight().size() == libraryPartitionSize) {
                 currentPartition = new ArrayList<>();
             } else {
                 currentPartition = partitionResult.getRight();

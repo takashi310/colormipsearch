@@ -79,6 +79,9 @@ public class Main {
         @Parameter(names = {"--gradientPath", "-gpath"}, description = "Gradient masks location")
         String gradientPath;
 
+        @Parameter(names = "-libraryPartitionSize", description = "Library partition size")
+        int libraryPartitionSize = 100;
+
         @Parameter(names = "-cdsConcurrency", description = "CDS concurrency - number of CDS tasks run concurrently")
         int cdsConcurrency;
 
@@ -297,6 +300,7 @@ public class Main {
                     args.negativeRadius,
                     args.mirrorMask,
                     args.pctPositivePixels,
+                    args.libraryPartitionSize,
                     createCDSExecutor(args));
         }
 
@@ -348,6 +352,7 @@ public class Main {
                 args.negativeRadius,
                 args.mirrorMask,
                 args.pctPositivePixels,
+                args.libraryPartitionSize,
                 createCDSExecutor(args));
         try {
             List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.libraryMIPsFilter);
@@ -576,6 +581,7 @@ public class Main {
                 args.negativeRadius,
                 args.mirrorMask,
                 args.pctPositivePixels,
+                args.libraryPartitionSize,
                 null);
         String outputDir = args.getOutputDir();
         if (StringUtils.isNotBlank(args.resultsFile)) {
