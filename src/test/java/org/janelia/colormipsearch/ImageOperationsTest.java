@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -13,11 +14,12 @@ public class ImageOperationsTest {
     public void maxFilterForRGBImage() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+        ImageArray testMIP = new ImageArray(testImage);
 
-        MIPImage maxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
+        ImageArray maxFilteredImage = ImageOperations.ImageProcessing.create()
                 .maxWithDiscPattern(10)
-                .asImage()
+                .applyTo(testMIP)
+                .asImageArray()
                 ;
         RankFilters maxFilter = new RankFilters();
         maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
@@ -29,12 +31,13 @@ public class ImageOperationsTest {
     public void maxFilterForBinary8Image() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+        ImageArray testMIP = new ImageArray(testImage);
 
-        MIPImage binaryMaxFilteredImage = ImageOperations.ImageProcessing.createFor(testMIP)
+        ImageArray binaryMaxFilteredImage = ImageOperations.ImageProcessing.create()
                 .toBinary8(50)
                 .maxWithDiscPattern(10)
-                .asImage()
+                .applyTo(testMIP)
+                .asImageArray()
                 ;
 
         RankFilters maxFilter = new RankFilters();
@@ -51,11 +54,12 @@ public class ImageOperationsTest {
     public void mirrorHorizontally() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+        ImageArray testMIP = new ImageArray(testImage);
 
-        MIPImage mirroredImage = ImageOperations.ImageProcessing.createFor(testMIP)
-                .mirror()
-                .asImage()
+        ImageArray mirroredImage = ImageOperations.ImageProcessing.create()
+                .horizontalMirror()
+                .applyTo(testMIP)
+                .asImageArray()
                 ;
 
         testImage.getProcessor().flipHorizontal();
@@ -67,12 +71,13 @@ public class ImageOperationsTest {
     public void imageSignal() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+        ImageArray testMIP = new ImageArray(testImage);
 
-        MIPImage signalImage = ImageOperations.ImageProcessing.createFor(testMIP)
+        ImageArray signalImage = ImageOperations.ImageProcessing.create()
                 .toGray16()
                 .toSignal()
-                .asImage()
+                .applyTo(testMIP)
+                .asImageArray()
                 ;
 
         ImageProcessor asShortProcessor = testImage.getProcessor().convertToShortProcessor(true);
@@ -87,12 +92,13 @@ public class ImageOperationsTest {
     public void maskRGBImage() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        MIPImage testMIP = new MIPImage(new MIPInfo(), testImage);
+        ImageArray testMIP = new ImageArray(testImage);
 
-        MIPImage maskedImage = ImageOperations.ImageProcessing.createFor(testMIP)
+        ImageArray maskedImage = ImageOperations.ImageProcessing.create()
+                .mask(250)
                 .maxWithDiscPattern(10)
-                .mask(200)
-                .asImage()
+                .applyTo(testMIP)
+                .asImageArray()
                 ;
 
         Assert.assertNotNull(maskedImage);

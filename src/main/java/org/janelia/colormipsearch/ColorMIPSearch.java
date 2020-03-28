@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,15 +17,12 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Streams;
 
 import ij.ImagePlus;
 import ij.io.Opener;
@@ -134,7 +130,7 @@ abstract class ColorMIPSearch implements Serializable {
         ImagePlus ij = null;
         try {
             ij = readImagePlus(mip.id, getImageFormat(mip.imagePath), inputStream);
-            return new MIPImage(mip, ij);
+            return new MIPImage(mip, new ImageArray(ij));
         } catch (Exception e) {
             throw new IllegalStateException(e);
         } finally {
@@ -241,7 +237,7 @@ abstract class ColorMIPSearch implements Serializable {
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    maskMIPImage,
+                    maskMIPImage.imageArray,
                     maskThreshold,
                     mirrorMask,
                     null,
@@ -251,7 +247,7 @@ abstract class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage);
+            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;

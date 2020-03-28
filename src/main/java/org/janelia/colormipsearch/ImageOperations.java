@@ -4,12 +4,8 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
-
-import ij.plugin.filter.RankFilters;
-import ij.process.ImageProcessor;
 
 class ImageOperations {
 
@@ -31,13 +27,12 @@ class ImageOperations {
         }
     }
 
-    abstract static class ColorTransformation implements BiFunction<MIPImage.ImageType, Integer, Integer> {
-        final Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange;
+    abstract static class ColorTransformation implements BiFunction<ImageType, Integer, Integer> {
+        final Function<ImageType, ImageType> pixelTypeChange;
 
-        ColorTransformation(Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange) {
+        ColorTransformation(Function<ImageType, ImageType> pixelTypeChange) {
             this.pixelTypeChange = pixelTypeChange;
         }
-
 
         private static int maskGray(int val, int threshold) {
             return val <= threshold ? 0 : val;
@@ -56,7 +51,7 @@ class ImageOperations {
             int g = (val >> 8) & 0xFF;
             int b = (val & 0xFF);
 
-            if (r <= threshold && g <= threshold && b <= threshold)
+            if (val != -16777216 && r <= threshold && g <= threshold && b <= threshold)
                 return -16777216; // alpha mask
             else
                 return val;
@@ -87,9 +82,9 @@ class ImageOperations {
         }
 
         static ColorTransformation toGray8() {
-            return new ColorTransformation(pt -> MIPImage.ImageType.GRAY8) {
+            return new ColorTransformation(pt -> ImageType.GRAY8) {
                 @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
+                public Integer apply(ImageType pt, Integer pv) {
                     switch (pt) {
                         case RGB:
                             return rgbToGray(pv, 255);
@@ -104,9 +99,9 @@ class ImageOperations {
         }
 
         static ColorTransformation toGray16() {
-            return new ColorTransformation(pt -> MIPImage.ImageType.GRAY16) {
+            return new ColorTransformation(pt -> ImageType.GRAY16) {
                 @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
+                public Integer apply(ImageType pt, Integer pv) {
                     switch (pt) {
                         case RGB:
                             return rgbToGray(pv, 65535);
@@ -123,7 +118,7 @@ class ImageOperations {
         static ColorTransformation mask(int threshold) {
             return new ColorTransformation(pt -> pt) {
                 @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
+                public Integer apply(ImageType pt, Integer pv) {
                     switch (pt) {
                         case RGB:
                             return maskRGB(pv, threshold);
@@ -147,7 +142,7 @@ class ImageOperations {
         static ColorTransformation toSignal() {
             return new ColorTransformation(pt -> pt) {
                 @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
+                public Integer apply(ImageType pt, Integer pv) {
                     switch (pt) {
                         case RGB:
                             int r = ((pv >> 16) & 0xFF) > 0 ? 1 : 0;
@@ -167,33 +162,187 @@ class ImageOperations {
             ColorTransformation currentTransformation = this;
             return new ColorTransformation(pixelTypeChange) {
                 @Override
-                public Integer apply(MIPImage.ImageType pt, Integer pv) {
+                public Integer apply(ImageType pt, Integer pv) {
                     return colorTransformation.apply(currentTransformation.apply(pt, pv));
                 }
             };
         }
     }
 
-    abstract static class PixelTransformation implements QuadFunction<Integer, Integer, MIPImage.ImageType, Integer, Integer> {
-        final Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange;
+    abstract static class ImageTransformation {
 
-        static Function<LImage, PixelTransformation> toIdentity() {
-            return lImage -> new PixelTransformation(pt -> pt) {
+        static ImageTransformation identity() {
+            return new ImageTransformation() {
                 @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pv;
+                public int apply(int x, int y, LImage lImage) {
+                    return lImage.get(x, y);
                 }
             };
         }
 
-        static Function<LImage, PixelTransformation> toMirror() {
-            return lImage -> lImage.mirror().pf;
+        static ImageTransformation horizontalMirror() {
+            return new ImageTransformation() {
+                @Override
+                public int apply(int x, int y, LImage lImage) {
+                    return lImage.get(lImage.width() - x - 1, y);
+                }
+            };
         }
 
-        PixelTransformation(Function<MIPImage.ImageType, MIPImage.ImageType> pixelTypeChange) {
+        static ImageTransformation maxWithDiscPattern(double radius) {
+            return new ImageTransformation() {
+                private final int[] radii = makeLineRadii(radius);
+                private final int kRadius = radii[radii.length - 1];
+                private final int kHeight = (radii.length - 1) / 2;
+                ColorHistogram histogram = null;
+                int[] imageCache = null;
+
+                @Override
+                public int apply(int x, int y, LImage lImage) {
+                    if (histogram == null) {
+                        histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
+                        imageCache = new int[kHeight*lImage.width()];
+                    }
+                    int m = -1;
+                    if (x == 0) {
+                        histogram.clear();
+                        Arrays.fill(imageCache, 0);
+                        for (int h = 0; h < kHeight; h++) {
+                            int ay = y - kRadius + h;
+                            if (ay >= 0 && ay < lImage.height()) {
+                                for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                                    int ax = x + dx;
+                                    if (ax < lImage.width()) {
+                                        int p = lImage.get(ax, ay);
+                                        imageCache[h * lImage.width() + ax] = p;
+                                        m = histogram.add(p);
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for (int h = 0; h < kHeight; h++) {
+                        int ay = y - kRadius + h;
+                        int nextx = x + radii[2 * h + 1];
+                        int prevx = x + radii[2 * h];
+                        if (ay >= 0 && ay < lImage.height()) {
+                            if (nextx < lImage.width()) {
+                                int p = lImage.get(nextx, ay);
+                                imageCache[h * lImage.width() + nextx] = p;
+                                m = histogram.add(p);
+                            }
+                            if (prevx > 0) {
+                                m = histogram.remove(imageCache[h * lImage.width() + prevx - 1]);
+                            }
+                        }
+                    }
+                    return m;
+                }
+            };
+        }
+
+        private static int[] makeLineRadii(double radiusArg) {
+            double radius;
+            if (radiusArg >= 1.5 && radiusArg < 1.75) //this code creates the same sizes as the previous RankFilters
+                radius = 1.75;
+            else if (radiusArg >= 2.5 && radiusArg < 2.85)
+                radius = 2.85;
+            else
+                radius = radiusArg;
+            int r2 = (int) (radius * radius) + 1;
+            int kRadius = (int) (Math.sqrt(r2 + 1e-10));
+            int kHeight = 2 * kRadius + 1;
+            int[] kernel = new int[2 * kHeight + 1];
+            kernel[2 * kRadius] = -kRadius;
+            kernel[2 * kRadius + 1] = kRadius;
+            for (int y = 1; y <= kRadius; y++) {        //lines above and below center together
+                int dx = (int) (Math.sqrt(r2 - y * y + 1e-10));
+                kernel[2 * (kRadius - y)] = -dx;
+                kernel[2 * (kRadius - y) + 1] = dx;
+                kernel[2 * (kRadius + y)] = -dx;
+                kernel[2 * (kRadius + y) + 1] = dx;
+            }
+            kernel[kernel.length - 1] = kRadius;
+            return kernel;
+        }
+
+        static ImageTransformation combine2(ImageTransformation it1, ImageTransformation it2, BinaryOperator<Integer> op) {
+            return new ImageTransformation(
+                    it1.pixelTypeChange.andThen(it2.pixelTypeChange),
+                    it1.widthChange.andThen(it2.widthChange),
+                    it1.heightChange.andThen(it2.heightChange)) {
+                @Override
+                public int apply(int x, int y, LImage lImage) {
+                    return op.apply(it1.apply(x, y, lImage), it2.apply(x, y, lImage));
+                }
+            };
+        }
+
+        static ImageTransformation combine3(ImageTransformation it1, ImageTransformation it2, ImageTransformation it3, TriFunction<Integer, Integer, Integer, Integer> op) {
+            return new ImageTransformation(
+                    it1.pixelTypeChange.andThen(it2.pixelTypeChange).andThen(it3.pixelTypeChange),
+                    it1.widthChange.andThen(it2.widthChange).andThen(it3.widthChange),
+                    it1.heightChange.andThen(it2.heightChange).andThen(it3.heightChange)) {
+                @Override
+                public int apply(int x, int y, LImage lImage) {
+                    return op.apply(it1.apply(x, y, lImage), it2.apply(x, y, lImage), it3.apply(x, y, lImage));
+                }
+            };
+        }
+
+        final Function<ImageType, ImageType> pixelTypeChange;
+        final Function<Integer, Integer> heightChange;
+        final Function<Integer, Integer> widthChange;
+
+        ImageTransformation() {
+            this(Function.identity(), Function.identity(), Function.identity());
+        }
+
+        ImageTransformation(Function<ImageType, ImageType> pixelTypeChange) {
+            this(pixelTypeChange, Function.identity(), Function.identity());
+        }
+
+        ImageTransformation(Function<ImageType, ImageType> pixelTypeChange,
+                            Function<Integer, Integer> widthChange,
+                            Function<Integer, Integer> heightChange) {
             this.pixelTypeChange = pixelTypeChange;
+            this.widthChange = widthChange;
+            this.heightChange = heightChange;
         }
 
+        ImageTransformation andThen(ImageTransformation pixelTransformation) {
+            ImageTransformation currentTransformation = this;
+            return new ImageTransformation(
+                    pixelTypeChange.andThen(pixelTransformation.pixelTypeChange),
+                    widthChange.andThen(pixelTransformation.widthChange),
+                    heightChange.andThen(pixelTransformation.heightChange)) {
+
+                LImage toUpdate  = null;
+                @Override
+                public int apply(int x, int y, LImage lImage) {
+                    if (toUpdate == null) {
+                        toUpdate = lImage.mapi(currentTransformation);
+                    }
+                    return pixelTransformation.apply(x, y, toUpdate);
+                }
+            };
+        }
+
+        ImageTransformation andThen(ColorTransformation colorTransformation) {
+            ImageTransformation currentTransformation = this;
+            return new ImageTransformation(pixelTypeChange.andThen(colorTransformation.pixelTypeChange)) {
+                @Override
+                int apply(int x, int y, LImage lImage) {
+                    int p = currentTransformation.apply(x, y, lImage);
+                    ImageType pt = currentTransformation.pixelTypeChange.apply(lImage.getPixelType());
+                    return colorTransformation.apply(pt, p);
+                }
+            };
+        }
+
+        abstract int apply(int x, int y, LImage lImage);
     }
 
     private interface ColorHistogram {
@@ -309,214 +458,108 @@ class ImageOperations {
     }
 
     static class LImage {
-        private final PixelTransformation pf;
-        private final MIPImage image;
-
-        LImage(PixelTransformation pf, MIPImage image) {
-            this.pf = pf;
-            this.image = image;
+        static LImage create(ImageArray imageArray) {
+            return new LImage(imageArray.type, imageArray.width, imageArray.height, (x, y) -> imageArray.getPixel(x, y));
         }
 
-        MIPImage.ImageType getPixelType() {
-            return pf.pixelTypeChange.apply(image.type);
+        static LImage combine2(LImage l1, LImage l2, BinaryOperator<Integer> op) {
+            return new LImage(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(l1.get(x, y), l2.get(x, y)));
+        }
+
+        static LImage combine3(LImage l1, LImage l2, LImage l3, TriFunction<Integer, Integer, Integer, Integer> op) {
+            return new LImage(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(l1.get(x, y), l2.get(x, y), l3.get(x, y)));
+        }
+
+        private final ImageType imageType;
+        private final int width;
+        private final int height;
+        private final BiFunction<Integer, Integer, Integer> pixelSupplier;
+
+        LImage(ImageType imageType, int width, int height,
+               BiFunction<Integer, Integer, Integer> pixelSupplier) {
+            this.imageType = imageType;
+            this.width = width;
+            this.height = height;
+            this.pixelSupplier = pixelSupplier;
+        }
+
+        ImageType getPixelType() {
+            return imageType;
         }
 
         int get(int x, int y) {
-            return pf.apply(x, y, image.type, image.getPixel(x, y));
-        }
-
-        int width() {
-            return this.image.width;
+            return pixelSupplier.apply(x, y);
         }
 
         int height() {
-            return this.image.height;
+            return height;
         }
 
-        LImage map(ColorTransformation pf1) {
-            return new LImage(new PixelTransformation(pf.pixelTypeChange.andThen(pf1.pixelTypeChange)) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pf1.apply(pf.pixelTypeChange.apply(pt), pf.apply(x, y, pt, pv));
-                }
-            }, image);
+        int width() {
+            return width;
         }
 
-        LImage mapi(PixelTransformation pf1) {
-            return new LImage(new PixelTransformation(pf.pixelTypeChange.andThen(pf1.pixelTypeChange)) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pf1.apply(x, y, pt, pf.apply(x, y, this.pixelTypeChange.apply(pt), pv));
-                }
-            }, image);
+        LImage map(ColorTransformation colorChange) {
+            return new LImage(
+                    colorChange.pixelTypeChange.apply(getPixelType()), width, height,
+                    (x, y) -> colorChange.apply(getPixelType(), get(x, y))
+            );
         }
 
-        LImage combineWith(LImage lImage, BinaryOperator<Integer> op) {
-            return mapi(new PixelTransformation(pt -> pt) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return op.apply(pv, lImage.get(x, y));
-                }
-            });
+        LImage mapi(ImageTransformation pixelChange) {
+            return new LImage(
+                    pixelChange.pixelTypeChange.apply(getPixelType()), pixelChange.widthChange.apply(width()), pixelChange.heightChange.apply(height()),
+                    (x, y) -> pixelChange.apply(x, y, this)
+            );
         }
 
-        LImage combineWith(LImage lImage1, LImage lImage2, TriFunction<Integer, Integer, Integer, Integer> op) {
-            return mapi(new PixelTransformation(pt -> pt) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return op.apply(pv, lImage1.get(x, y), lImage2.get(x, y));
-                }
-            });
+        ImageArray asImageArray() {
+            int[] pixels = new int[height() * width()];
+            return new ImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));
         }
 
-        LImage mirror() {
-            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pf.apply(x, y, pt, get(width() - x - 1, y));
-                }
-            }, image);
-        }
+//        /**
+//         * Copy from source.
+//         * @param before
+//         * @return
+//         */
+//        LImage init(LImage source) {
+//            return new LImage(
+//                    source.getPixelType(), before.width(), before.height(),
+//                    before.pixelSupplier
+//            );
+//        }
 
-        LImage maxWithBoxPattern(double radius) {
-            int kRadius = (int)Math.abs(radius);
-            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int m = IntStream.rangeClosed(-kRadius, kRadius)
-                            .map(dy -> y + dy)
-                            .filter(ay -> ay >= 0 & ay < image.height)
-                            .flatMap(ay -> IntStream.rangeClosed(-kRadius, kRadius)
-                                    .map(dx -> x + dx)
-                                    .filter(ax -> ax >= 0 && ax < image.width)
-                                    .map(ax -> get(ax, ay)))
-                            .reduce(Math::max)
-                            .orElse(pv)
-                            ;
-                    return pf.apply(x, y, pt, m);
-                }
-            }, image);
-        }
+//        LImage composeWithBiOp(LImage lImage, BinaryOperator<Integer> op) {
+//            return new LImage(
+//                    getPixelType(), width(), height(),
+//                    (x, y) -> get(x, y),
+//                    new ImageTransformation() {
+//                        @Override
+//                        public Integer apply(Integer x, Integer y, LImage li) {
+//                            return op.apply(li.get(x, y), lImage.get(x, y));
+//                        }
+//                    }
+//            );
+//        }
 
-        LImage maxWithDiscPatternAndSlidingWindow(double radius) {
-            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
-                final int[] radii = makeLineRadii(radius);
-                final int kRadius = radii[radii.length - 1];
-                final int kHeight = (radii.length - 1) / 2;
-                final int[] imageCache = new int[kHeight*width()];
-                final ColorHistogram histogram = getPixelType() == MIPImage.ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
-
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int m = -1;
-                    if (x == 0) {
-                        histogram.clear();
-                        Arrays.fill(imageCache, 0);
-                        for (int h = 0; h < kHeight; h++) {
-                            int ay = y - kRadius + h;
-                            if (ay >= 0 && ay < height()) {
-                                for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
-                                    int ax = x + dx;
-                                    if (ax < width()) {
-                                        int p = get(ax, ay);
-                                        imageCache[h * width() + ax] = p;
-                                        m = histogram.add(p);
-                                    } else {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    for (int h = 0; h < kHeight; h++) {
-                        int ay = y - kRadius + h;
-                        int nextx = x + radii[2 * h + 1];
-                        int prevx = x + radii[2 * h];
-                        if (ay >= 0 && ay < height()) {
-                            if (nextx < width()) {
-                                int p = get(nextx, ay);
-                                imageCache[h * width() + nextx] = p;
-                                m = histogram.add(p);
-                            }
-                            if (prevx > 0) {
-                                m = histogram.remove(imageCache[h * width() + prevx - 1]);
-                            }
-                        }
-                    }
-
-                    return pf.apply(x, y, pt, m);
-                }
-            }, image);
-        }
-
-        LImage maxWithDiscPattern(double radius) {
-            int[] radii = makeLineRadii(radius);
-            int kRadius = radii[radii.length - 1];
-            int kHeight = (radii.length - 1) / 2;
-
-            return new LImage(new PixelTransformation(pf.pixelTypeChange) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    int m = pv;
-                    BinaryOperator<Integer> maxOp = (p1, p2) -> {
-                        switch (pt) {
-                            case RGB:
-                                int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
-                                int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
-                                int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
-                                int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
-                                return (a << 24) | (r << 16) | (g << 8) | b;
-                            case GRAY8:
-                            case GRAY16:
-                            default:
-                                return Math.max(p1, p2);
-                        }
-                    };
-                    for (int h = 0; h < kHeight; h++) {
-                        int ay = y + h - kRadius;
-                        if (ay < 0 || ay >= height()) {
-                            continue;
-                        }
-                        for (int ax = x + radii[2*h]; ax <= x + radii[2*h+1]; ax++) {
-                            if (ax >= 0 && ax < width()) {
-                                m = maxOp.apply(m, get(ax, ay));
-                            }
-                        }
-                    }
-                    return pf.apply(x, y, pt, m);
-                }
-            }, image);
-        }
-
-        private int[] makeLineRadii(double radiusArg) {
-            double radius;
-            if (radiusArg >= 1.5 && radiusArg < 1.75) //this code creates the same sizes as the previous RankFilters
-                radius = 1.75;
-            else if (radiusArg >= 2.5 && radiusArg < 2.85)
-                radius = 2.85;
-            else
-                radius = radiusArg;
-            int r2 = (int) (radius * radius) + 1;
-            int kRadius = (int) (Math.sqrt(r2 + 1e-10));
-            int kHeight = 2 * kRadius + 1;
-            int[] kernel = new int[2 * kHeight + 1];
-            kernel[2 * kRadius] = -kRadius;
-            kernel[2 * kRadius + 1] = kRadius;
-            for (int y = 1; y <= kRadius; y++) {        //lines above and below center together
-                int dx = (int) (Math.sqrt(r2 - y * y + 1e-10));
-                kernel[2 * (kRadius - y)] = -dx;
-                kernel[2 * (kRadius - y) + 1] = dx;
-                kernel[2 * (kRadius + y)] = -dx;
-                kernel[2 * (kRadius + y) + 1] = dx;
-            }
-            kernel[kernel.length - 1] = kRadius;
-            return kernel;
-        }
+//        LImage composeWithTriOp(LImage lImage1, LImage lImage2, TriFunction<Integer, Integer, Integer, Integer> op) {
+//            return new LImage(
+//                    getPixelType(), width(), height(),
+//                    (x, y) -> get(x, y),
+//                    new ImageTransformation() {
+//                        @Override
+//                        public Integer apply(Integer x, Integer y, LImage li) {
+//                            return op.apply(li.get(x, y), lImage1.get(x, y), lImage2.get(x, y));
+//                        }
+//                    }
+//            );
+//        }
 
         <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
             R res = initialValue;
-            int imageHeight = height();
             int imageWidth = width();
+            int imageHeight = height();
             for (int y = 0; y < imageHeight; y++) {
                 for (int x = 0; x < imageWidth; x++) {
                     res = acumulator.apply(get(x, y), res);
@@ -527,8 +570,8 @@ class ImageOperations {
 
         <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
             R res = initialValue;
-            int imageHeight = height();
             int imageWidth = width();
+            int imageHeight = height();
             for (int y = 0; y < imageHeight; y++) {
                 for (int x = 0; x < imageWidth; x++) {
                     res = acumulator.apply(x, y, get(x, y), res);
@@ -537,88 +580,74 @@ class ImageOperations {
             return res;
         }
 
-        MIPImage asImage() {
-            int[] pixels = new int[width() * height()];
-            return new MIPImage(image.mipInfo, width(), height(), getPixelType(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width() + x] = pv; return pa;}));
-        }
     }
 
     static class ImageProcessing {
 
-        static ImageProcessing createFor(MIPImage mipImage) {
-            return new ImageProcessing(new LImage(new PixelTransformation(pt -> pt) {
-                @Override
-                public Integer apply(Integer x, Integer y, MIPImage.ImageType pt, Integer pv) {
-                    return pv;
-                }
-            }, mipImage));
+        static ImageProcessing create() {
+            return new ImageProcessing();
         }
 
-        private final LImage lImage;
+//        static ImageProcessing createFor(ImageArray mipImage) {
+//            return new ImageProcessing(new LImage(mipImage.type, mipImage.width, mipImage.height, (x, y) -> mipImage.getPixel(x, y), ImageTransformation.identity()));
+//        }
 
-        private ImageProcessing(LImage lImage) {
-            this.lImage = lImage;
+        private final ImageTransformation imageTransformation;
+
+        private ImageProcessing() {
+            this(ImageTransformation.identity());
+        }
+
+        private ImageProcessing(ImageTransformation imageTransformation) {
+            this.imageTransformation = imageTransformation;
         }
 
         ImageProcessing mask(int threshold) {
-            return new ImageProcessing(lImage.map(ColorTransformation.mask(threshold)));
+            return new ImageProcessing(imageTransformation.andThen(ColorTransformation.mask(threshold)));
         }
 
         ImageProcessing toGray16() {
-            return new ImageProcessing(lImage.map(ColorTransformation.toGray16()));
+            return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toGray16()));
         }
 
         ImageProcessing toBinary8(int threshold) {
-            return new ImageProcessing(lImage.map(ColorTransformation.toBinary8(threshold)));
+            return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toBinary8(threshold)));
         }
 
         ImageProcessing toBinary16(int threshold) {
-            return new ImageProcessing(lImage.map(ColorTransformation.toBinary16(threshold)));
+            return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toBinary16(threshold)));
         }
 
         ImageProcessing maxWithDiscPattern(double radius) {
-            return new ImageProcessing(lImage.maxWithDiscPatternAndSlidingWindow(radius));
+            return new ImageProcessing(imageTransformation.andThen(ImageTransformation.maxWithDiscPattern(radius)));
         }
 
-        ImageProcessing maxWithBoxPattern(double radius) {
-            return new ImageProcessing(lImage.maxWithBoxPattern(radius));
-        }
-
-        ImageProcessing ijMaxFilter(double radius) {
-            MIPImage image = asImage();
-            RankFilters maxFilter = new RankFilters();
-            ImageProcessor imageProcessor = image.getImageProcessor();
-            maxFilter.rank(imageProcessor, radius, RankFilters.MAX);
-            System.arraycopy(imageProcessor.getPixels(), 0, image.pixels, 0, image.pixels.length);
-            return ImageProcessing.createFor(image);
-        }
-
-        ImageProcessing mirror() {
-            return new ImageProcessing(lImage.mirror());
+        ImageProcessing horizontalMirror() {
+            return new ImageProcessing(imageTransformation.andThen(ImageTransformation.horizontalMirror()));
         }
 
         ImageProcessing toSignal() {
-            return new ImageProcessing(lImage.map(ColorTransformation.toSignal()));
+            return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toSignal()));
+        }
+
+        ImageProcessing thenApply(ImageProcessing after) {
+            return new ImageProcessing(imageTransformation.andThen(after.imageTransformation));
+        }
+
+        ImageProcessing thenApply(ImageTransformation f) {
+            return new ImageProcessing(imageTransformation.andThen(f));
         }
 
         ImageProcessing combineWith(ImageProcessing processing, BinaryOperator<Integer> op) {
-            return new ImageProcessing(lImage.combineWith(processing.lImage, op));
+            return new ImageProcessing(ImageTransformation.combine2(imageTransformation, processing.imageTransformation, op));
         }
 
-        ImageProcessing combineWith(ImageProcessing p1, ImageProcessing p2, TriFunction<Integer, Integer, Integer, Integer> op) {
-            return new ImageProcessing(lImage.combineWith(p1.lImage, p2.lImage, op));
+        ImageProcessing combineWith2(ImageProcessing p1, ImageProcessing p2, TriFunction<Integer, Integer, Integer, Integer> op) {
+            return new ImageProcessing(ImageTransformation.combine3(imageTransformation, p1.imageTransformation, p2.imageTransformation, op));
         }
 
-        ImageProcessing compose(Function<LImage, PixelTransformation> processing) {
-            return new ImageProcessing(lImage.mapi(processing.apply(lImage)));
-        }
-
-        <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
-            return lImage.fold(initialValue, acumulator);
-        }
-
-        MIPImage asImage() {
-            return lImage.asImage();
+        LImage applyTo(ImageArray image) {
+            return LImage.create(image).mapi(imageTransformation);
         }
     }
 }

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 class ColorMIPMaskCompare {
 
-    MIPImage m_query;
-    MIPImage m_negquery;
+    ImageArray m_query;
+    ImageArray m_negquery;
     int[] m_mask;
     int[] m_negmask;
     int[][] m_tarmasklist;
@@ -36,8 +36,8 @@ class ColorMIPMaskCompare {
     }
 
     //Advanced Search
-    ColorMIPMaskCompare(MIPImage query, int mask_th, boolean mirror_mask,
-                        MIPImage negquery, int negmask_th,
+    ColorMIPMaskCompare(ImageArray query, int mask_th, boolean mirror_mask,
+                        ImageArray negquery, int negmask_th,
                         boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
         m_query = query;
         m_negquery = negquery;
@@ -104,7 +104,7 @@ class ColorMIPMaskCompare {
 
     }
 
-    Output runSearch(MIPImage tarimg_in) {
+    Output runSearch(ImageArray tarimg_in) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = m_mask.length;
@@ -163,7 +163,7 @@ class ColorMIPMaskCompare {
         return new Output(posi, posipersent);
     }
 
-    private static int[] get_mskpos_array(MIPImage msk, int thresm) {
+    private static int[] get_mskpos_array(ImageArray msk, int thresm) {
         int sumpx = msk.getPixelCount();
         ArrayList<Integer> pos = new ArrayList<Integer>();
         int pix, red, green, blue;
@@ -226,7 +226,7 @@ class ColorMIPMaskCompare {
         return out;
     }
 
-    private static int calc_score(MIPImage src, int[] srcmaskposi, MIPImage tar, int[] tarmaskposi, int th, double pixfludub) {
+    private static int calc_score(ImageArray src, int[] srcmaskposi, ImageArray tar, int[] tarmaskposi, int th, double pixfludub) {
         int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
         int posi = 0;
         for (int masksig = 0; masksig < masksize; masksig++) {
