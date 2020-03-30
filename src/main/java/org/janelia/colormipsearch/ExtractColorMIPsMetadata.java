@@ -462,7 +462,8 @@ public class ExtractColorMIPsMetadata {
                                 String line = cdmipMetadata.line;
                                 String publishingName = cdmipMetadata.getAttr("Published Name");
                                 String slideCode = cdmipMetadata.getAttr("Slide Code");
-                                if ((StringUtils.contains(fn, publishingName) || StringUtils.contains(fn, line)) && StringUtils.contains(fn, slideCode)) {
+                                if ((StringUtils.contains(fn, publishingName) || StringUtils.contains(fn, line) || StringUtils.contains(fn, normalizeLineName(line))) &&
+                                        StringUtils.contains(fn, slideCode)) {
                                     int channelFromMip = getChannel(cdmipMetadata);
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode,""));
                                     LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
@@ -492,6 +493,11 @@ public class ExtractColorMIPsMetadata {
                 return Collections.singletonList(cdmipMetadata);
             }
         }
+    }
+
+    String normalizeLineName(String lname) {
+        int separator = StringUtils.indexOf(lname, '_');
+        return separator == -1 ? lname : lname.substring(separator + 1);
     }
 
     private int countColorDepthMips(String alignmentSpace, String library, List<String> datasets) {
