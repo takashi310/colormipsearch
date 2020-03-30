@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
 
 import com.beust.jcommander.JCommander;
@@ -24,9 +25,11 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.collection.mutable.LinkedHashMap;
@@ -649,17 +652,15 @@ public class Main {
                         return mip;
                     }, Collectors.toList()));
             int from = Math.max(offset, 0);
-            AtomicInteger count = new AtomicInteger(0);
-            resultsGroupedById.entrySet().stream()
-                    .skip(from)
+            int to = length > 0 ? length : Integer.MAX_VALUE;
+            Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i, resultsEntry))
                     .parallel()
-                    .filter(resultsEntry -> length <= 0 || count.incrementAndGet() < length)
                     .forEach(resultsEntry -> {
-                        LOG.info("Calculate gradient area scores for matches of {} from {}", resultsEntry.getKey(), inputResultsFile);
+                        LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();
-                        MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getKey());
-                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getKey());
-                        resultsEntry.getValue().forEach(csr ->{
+                        MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getRight().getKey());
+                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getRight().getKey());
+                        resultsEntry.getRight().getValue().forEach(csr ->{
                             MIPInfo matchedMIP = new MIPInfo();
                             matchedMIP.archivePath = csr.matchedImageArchivePath;
                             matchedMIP.imagePath = csr.matchedImageName;
@@ -673,7 +674,7 @@ public class Main {
                                 csr.setGradientAreaGap(areaGap.value); // update current result
 
                         });
-                        LOG.info("Finished gradient area scores for matches of {} from {} in {}s", resultsEntry.getKey(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
+                        LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
                     });
             LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, System.currentTimeMillis()-startTime);
 
