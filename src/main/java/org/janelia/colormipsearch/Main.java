@@ -600,8 +600,12 @@ public class Main {
             calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
         } else if (StringUtils.isNotBlank(args.resultsDir)) {
             try {
-                Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
-                        .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p.toString(), outputDir));
+                List<String> resultFileNames = Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                        .map(p -> p.toString())
+                        .collect(Collectors.toList());
+
+                resultFileNames.parallelStream()
+                        .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, outputDir));
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
