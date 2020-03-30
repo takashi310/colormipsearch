@@ -615,13 +615,24 @@ public class Main {
                 LOG.error("No color depth search results found in {}", inputResultsFile);
                 return;
             }
-            MIPImage inputMIP = colorMIPSearch.loadMIPFromPath(Paths.get(resultsFileContent.results.get(0).imageName));
-            MIPImage inputGradientMIP = colorMIPSearch.loadGradientMIP(inputMIP.mipInfo);
             Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream()
                     .peek(csr -> {
-                        MIPImage matchedMIP = colorMIPSearch.loadMIPFromPath(Paths.get(csr.matchedImageName));
-                        MIPImage matchedGradientMIP = colorMIPSearch.loadGradientMIP(matchedMIP.mipInfo);
-                        ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputMIP, inputGradientMIP, matchedMIP, matchedGradientMIP);
+                        MIPInfo inputMIP = new MIPInfo();
+                        inputMIP.archivePath = csr.imageArchivePath;
+                        inputMIP.imagePath = csr.imageName;
+                        inputMIP.type = csr.imageType;
+                        MIPImage inputImage = colorMIPSearch.loadMIP(inputMIP);
+                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(inputMIP);
+
+                        MIPInfo matchedMIP = new MIPInfo();
+                        matchedMIP.archivePath = csr.matchedImageArchivePath;
+                        matchedMIP.imagePath = csr.matchedImageName;
+                        matchedMIP.type = csr.matchedImageType;
+                        MIPImage matchedImage = colorMIPSearch.loadMIP(matchedMIP);
+                        MIPImage matchedGradientImage = colorMIPSearch.loadGradientMIP(matchedMIP);
+
+                        ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
+
                         if (areaGap != null)
                             csr.setGradientAreaGap(areaGap.value);
                     })
@@ -637,7 +648,6 @@ public class Main {
             LOG.error("Error reading {}", inputResultsFilename, e);
             throw new UncheckedIOException(e);
         }
-
     }
 
 }
