@@ -472,6 +472,7 @@ public class ExtractColorMIPsMetadata {
                                 return true;
                             }
                         })
+                        .filter(p -> Files.isRegularFile(p))
                         .map(p -> {
                             ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                             cdmipMetadata.copyTo(segmentMIPMetadata);
