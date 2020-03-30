@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import java.util.ArrayList;
 
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+
 class ColorMIPMaskCompare {
 
     ImageArray m_query;

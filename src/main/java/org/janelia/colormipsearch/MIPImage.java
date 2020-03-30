@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch;
 
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+
 public class MIPImage {
     final MIPInfo mipInfo;
     final ImageArray imageArray;

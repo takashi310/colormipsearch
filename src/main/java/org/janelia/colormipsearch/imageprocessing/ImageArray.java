@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.imageprocessing;
 
 import java.util.Arrays;
 
@@ -9,12 +9,12 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class ImageArray {
+public class ImageArray {
 
-    ImageType type;
-    int height;
-    int width;
-    int[] pixels;
+    public ImageType type;
+    public int height;
+    public int width;
+    public int[] pixels;
 
     ImageArray(ImageType type, int width, int height, int[] pixels) {
         this.height = height;
@@ -23,7 +23,7 @@ class ImageArray {
         this.pixels = pixels;
     }
 
-    ImageArray(ImagePlus image) {
+    public ImageArray(ImagePlus image) {
         ImageProcessor ip = image.getProcessor();
         this.type = ImageType.fromImagePlusType(image.getType());
         this.height = ip.getHeight();
@@ -43,11 +43,11 @@ class ImageArray {
                 .toString();
     }
 
-    int getPixelCount() {
+    public int getPixelCount() {
         return width * height;
     }
 
-    int get(int pi) {
+    public int get(int pi) {
         return pixels[pi];
     }
 

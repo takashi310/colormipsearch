@@ -1,6 +1,5 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.imageprocessing;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -12,28 +11,30 @@ public class ImageOperationsTest {
 
     @Test
     public void maxFilterForRGBImage() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageProcessing maxFilterProcessing = ImageProcessing.create()
+                .maxWithDiscPattern(10);
 
-        ImageArray maxFilteredImage = ImageOperations.ImageProcessing.create()
-                .maxWithDiscPattern(10)
-                .applyTo(testMIP)
-                .asImageArray()
-                ;
-        RankFilters maxFilter = new RankFilters();
-        maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
+        for (int i = 0; i < 5; i++) {
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImageArray testMIP = new ImageArray(testImage);
+            ImageArray maxFilteredImage = maxFilterProcessing
+                    .applyTo(testMIP).asImageArray();
+            RankFilters maxFilter = new RankFilters();
+            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
 
-        Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+        }
+
     }
 
     @Test
     public void maxFilterForBinary8Image() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
         ImageArray testMIP = new ImageArray(testImage);
 
-        ImageArray binaryMaxFilteredImage = ImageOperations.ImageProcessing.create()
+        ImageArray binaryMaxFilteredImage = ImageProcessing.create()
                 .toBinary8(50)
                 .maxWithDiscPattern(10)
                 .applyTo(testMIP)
@@ -52,11 +53,11 @@ public class ImageOperationsTest {
 
     @Test
     public void mirrorHorizontally() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
         ImageArray testMIP = new ImageArray(testImage);
 
-        ImageArray mirroredImage = ImageOperations.ImageProcessing.create()
+        ImageArray mirroredImage = ImageProcessing.create()
                 .horizontalMirror()
                 .applyTo(testMIP)
                 .asImageArray()
@@ -69,11 +70,11 @@ public class ImageOperationsTest {
 
     @Test
     public void imageSignal() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
         ImageArray testMIP = new ImageArray(testImage);
 
-        ImageArray signalImage = ImageOperations.ImageProcessing.create()
+        ImageArray signalImage = ImageProcessing.create()
                 .toGray16()
                 .toSignal()
                 .applyTo(testMIP)
@@ -90,11 +91,11 @@ public class ImageOperationsTest {
 
     @Test
     public void maskRGBImage() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
         ImageArray testMIP = new ImageArray(testImage);
 
-        ImageArray maskedImage = ImageOperations.ImageProcessing.create()
+        ImageArray maskedImage = ImageProcessing.create()
                 .mask(250)
                 .maxWithDiscPattern(10)
                 .applyTo(testMIP)

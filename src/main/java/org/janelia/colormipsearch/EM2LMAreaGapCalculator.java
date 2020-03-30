@@ -1,5 +1,10 @@
 package org.janelia.colormipsearch;
 
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
+import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
+import org.janelia.colormipsearch.imageprocessing.LImage;
+import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,15 +19,15 @@ class EM2LMAreaGapCalculator {
     private final int maskThreshold;
     private final int negativeRadius;
     private final boolean mirrorMask;
-    private final ImageOperations.TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustment;
-    private final ImageOperations.TriFunction<ImageArray, ImageArray, ImageArray, Long> mirrorScoreAdjustment;
+    private final TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustment;
+    private final TriFunction<ImageArray, ImageArray, ImageArray, Long> mirrorScoreAdjustment;
 
     EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
         this.maskThreshold = maskThreshold;
         this.negativeRadius = negativeRadius;
         this.mirrorMask = mirrorMask;
-        this.scoreAdjustment = scoreAdjustmentProcessing(ImageOperations.ImageTransformation.identity());
-        this.mirrorScoreAdjustment = scoreAdjustmentProcessing(ImageOperations.ImageTransformation.horizontalMirror());
+        this.scoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.identity());
+        this.mirrorScoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.horizontalMirror());
     }
 
     ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
@@ -50,24 +55,24 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private ImageOperations.TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageOperations.ImageTransformation mipTransformation) {
-        ImageOperations.ImageProcessing dilatedLibraryProcessing = ImageOperations.ImageProcessing.create()
+    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
+        ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
                 .mask(maskThreshold)
                 .maxWithDiscPattern(negativeRadius)
                 ;
 
-        ImageOperations.ImageProcessing patternSignalProcessing = ImageOperations.ImageProcessing.create()
+        ImageProcessing patternSignalProcessing = ImageProcessing.create()
                 .toGray16()
                 .toSignal()
                 .thenApply(mipTransformation)
                 ;
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
-            ImageOperations.LImage patternImage = ImageOperations.LImage.create(patternImageArray);
-            ImageOperations.LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
-            ImageOperations.LImage libraryGradientImage = ImageOperations.LImage.create(libraryGradientImageArray);
-            return ImageOperations.LImage.combine3(
-                    ImageOperations.LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
+            LImage patternImage = LImage.create(patternImageArray);
+            LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
+            LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
+            return LImage.combine3(
+                    LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
                     patternImage,
                     dilatedLibraryProcessing.applyTo(libraryImageArray),
                     (p, patternPix, dilatedPix) -> {
