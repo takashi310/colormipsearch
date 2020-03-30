@@ -636,7 +636,7 @@ public class Main {
                     }, Collectors.toList()));
             resultsGroupedById.entrySet().parallelStream()
                     .forEach(resultsEntry -> {
-                        LOG.info("Calculate gradient area scores for all matches of {}", resultsEntry.getKey());
+                        LOG.info("Calculate gradient area scores for matches of {}", resultsEntry.getKey());
                         long startTimeForCurrentEntry = System.currentTimeMillis();
                         MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getKey());
                         MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getKey());
@@ -654,7 +654,7 @@ public class Main {
                                 csr.setGradientAreaGap(areaGap.value); // update current result
 
                         });
-                        LOG.info("Finished gradient area scores for all matches of {} in {}s", resultsEntry.getKey(), (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
+                        LOG.info("Finished gradient area scores for matches of {} in {}s", resultsEntry.getKey(), (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
                     });
             LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, System.currentTimeMillis()-startTime);
 
