@@ -660,7 +660,7 @@ public class Main {
                         long startTimeForCurrentEntry = System.currentTimeMillis();
                         MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getRight().getKey());
                         MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getRight().getKey());
-                        resultsEntry.getRight().getValue().forEach(csr ->{
+                        resultsEntry.getRight().getValue().stream().parallel().forEach(csr ->{
                             MIPInfo matchedMIP = new MIPInfo();
                             matchedMIP.archivePath = csr.matchedImageArchivePath;
                             matchedMIP.imagePath = csr.matchedImageName;
@@ -674,9 +674,9 @@ public class Main {
                                 csr.setGradientAreaGap(areaGap.value); // update current result
 
                         });
-                        LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
+                        LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
                     });
-            LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, System.currentTimeMillis()-startTime);
+            LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, (System.currentTimeMillis()-startTime)/1000.);
 
             if (StringUtils.isBlank(outputDir)) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsFileContent);
