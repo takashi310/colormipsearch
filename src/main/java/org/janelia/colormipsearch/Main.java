@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -28,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.mutable.LinkedHashMap;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -171,18 +173,21 @@ public class Main {
 
     @Parameters(commandDescription = "Calculate gradient area score for the results")
     private static class GradientScoreResultsArgs extends AbstractArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be sorted")
-        private String resultsDir;
+        @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
+        private ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, description = "File containing results to be sorted")
-        private String resultsFile;
+        @Parameter(names = {"--resultsFile", "-rf"}, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
+        private ListArg resultsFile;
 
         GradientScoreResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 
         String getOutputDir() {
-            return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir);
+            if (resultsDir != null)
+                return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir.input);
+            else
+                return commonArgs.outputDir;
         }
     }
 
@@ -238,7 +243,7 @@ public class Main {
                 runSearchForLocalMIPFiles(localMIPFilesSearchArgs);
                 break;
             case "gradientScore":
-                if (StringUtils.isBlank(gradientScoreResultsArgs.resultsDir) && StringUtils.isBlank(gradientScoreResultsArgs.resultsFile)) {
+                if (gradientScoreResultsArgs.resultsDir == null && gradientScoreResultsArgs.resultsFile == null) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
                     cmdline.usage(sb);
                     System.exit(1);
@@ -596,23 +601,32 @@ public class Main {
                 args.libraryPartitionSize,
                 null);
         String outputDir = args.getOutputDir();
-        if (StringUtils.isNotBlank(args.resultsFile)) {
-            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
-        } else if (StringUtils.isNotBlank(args.resultsDir)) {
+        if (args.resultsFile != null) {
+            int from = Math.max(args.resultsFile.offset, 0);
+            int length = args.resultsFile.length;
+            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile.input, from, length, outputDir);
+        } else if (args.resultsDir != null) {
             try {
-                List<String> resultFileNames = Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                int from = Math.max(args.resultsDir.offset, 0);
+                int length = args.resultsDir.length;
+                List<String> resultFileNames = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
+                        .skip(from)
                         .map(p -> p.toString())
                         .collect(Collectors.toList());
-
-                resultFileNames.parallelStream()
-                        .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, outputDir));
+                if (length > 0 && length < resultFileNames.size()) {
+                    resultFileNames.subList(0, length).parallelStream()
+                            .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
+                } else {
+                    resultFileNames.parallelStream()
+                            .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
+                }
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
         }
     }
 
-    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, String outputDir) {
+    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, int offset, int length, String outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -634,7 +648,12 @@ public class Main {
                         mip.type = csr.imageType;
                         return mip;
                     }, Collectors.toList()));
-            resultsGroupedById.entrySet().parallelStream()
+            int from = Math.max(offset, 0);
+            AtomicInteger count = new AtomicInteger(0);
+            resultsGroupedById.entrySet().stream()
+                    .skip(from)
+                    .parallel()
+                    .filter(resultsEntry -> length <= 0 || count.incrementAndGet() < length)
                     .forEach(resultsEntry -> {
                         LOG.info("Calculate gradient area scores for matches of {} from {}", resultsEntry.getKey(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();

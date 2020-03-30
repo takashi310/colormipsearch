@@ -453,9 +453,10 @@ public class ExtractColorMIPsMetadata {
                         (p, fa) -> {
                             if (fa.isRegularFile()) {
                                 String fn = p.getFileName().toString();
-                                String line = cdmipMetadata.getAttr("Published Name");
+                                String line = cdmipMetadata.line;
+                                String publishingName = cdmipMetadata.getAttr("Published Name");
                                 String slideCode = cdmipMetadata.getAttr("Slide Code");
-                                if (StringUtils.contains(fn, line) && StringUtils.contains(fn, slideCode)) {
+                                if ((StringUtils.contains(fn, publishingName) || StringUtils.contains(fn, line)) && StringUtils.contains(fn, slideCode)) {
                                     int channelFromMip = getChannel(cdmipMetadata);
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn);
                                     LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
