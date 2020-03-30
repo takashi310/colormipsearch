@@ -95,6 +95,9 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
         private String outputDir;
 
+        @Parameter(names = "--ignore-channel-match", description = "Ignore channel number in matching the segmented image name", arity = 0)
+        private boolean ignoreChannelMatch;
+
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
     }
@@ -188,12 +191,6 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Objective", cdmip.objective);
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         cdMetadata.addAttr("Channel", cdmip.channelNumber);
-        // !!!!!!
-        if (cdmip.filepath.equalsIgnoreCase("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_SS00601-20130123_33_B1-20x-Brain-JRC2018_Unisex_20x_HR-1852298186517905506-CH1_CDM.png")) {
-            System.out.println(" !!!!!!!!! METADATA line: " + cdMetadata.line);
-            System.out.println(" !!!!!!!!! METADATA publishedName: " + cdMetadata.publishedName);
-            System.out.println(" !!!!!!!!! METADATA attr: " + cdMetadata.attrs);
-        }
         return cdMetadata;
     }
 
@@ -379,7 +376,7 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, String segmentedMIPsBaseDir, String outputDir) {
+    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, String segmentedMIPsBaseDir, boolean ignoreChannelMatch, String outputDir) {
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
@@ -420,7 +417,7 @@ public class ExtractColorMIPsMetadata {
                         })
                         .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir).stream())
+                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, ignoreChannelMatch).stream())
                         .forEach(cdmip -> {
                             try {
                                 Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
@@ -450,7 +447,7 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedMIPsBaseDir) {
+    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedMIPsBaseDir, boolean ignoreChannelMatch) {
         if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
             return Collections.singletonList(cdmipMetadata);
         } else {
@@ -467,11 +464,7 @@ public class ExtractColorMIPsMetadata {
                                     int channelFromMip = getChannel(cdmipMetadata);
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode,""));
                                     LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
-                                    // !!!!
-                                    if (cdmipMetadata.filepath.equals("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_SS00601-20130123_33_B1-20x-Brain-JRC2018_Unisex_20x_HR-1852298186517905506-CH1_CDM.png")) {
-                                        System.out.println("!!!!! FN " + fn + " -> " + matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN));
-                                    }
-                                    return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
+                                    return ignoreChannelMatch || matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
                                 } else {
                                     return false;
                                 }
@@ -479,7 +472,6 @@ public class ExtractColorMIPsMetadata {
                                 return true;
                             }
                         })
-                        .filter(p -> Files.isRegularFile(p))
                         .map(p -> {
                             ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                             cdmipMetadata.copyTo(segmentMIPMetadata);
@@ -621,7 +613,7 @@ public class ExtractColorMIPsMetadata {
                     cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.datasets, args.outputDir);
                     break;
                 case "prepareCDSArgs":
-                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.segmentedMIPsBaseDir, args.outputDir);
+                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.segmentedMIPsBaseDir, args.ignoreChannelMatch, args.outputDir);
                     break;
             }
         });
