@@ -516,8 +516,12 @@ public class Main {
         try {
             LOG.info("Reading {}", inputResultsFilename);
             File inputResultsFile = new File(inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
-            });
+            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {});
+            if (CollectionUtils.isEmpty(resultsFileContent.results)) {
+                LOG.error("No color depth search results found in {}", inputResultsFile);
+                return;
+            }
+            LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
             long maxAreaGap = resultsFileContent.results.stream()
                     .mapToLong(ColorMIPSearchResultMetadata::getGradientAreaGap)
                     .filter(a -> a != -1)
@@ -609,12 +613,12 @@ public class Main {
         try {
             LOG.info("Reading {}", inputResultsFilename);
             File inputResultsFile = new File(inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
-            });
+            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {});
             if (CollectionUtils.isEmpty(resultsFileContent.results)) {
                 LOG.error("No color depth search results found in {}", inputResultsFile);
                 return;
             }
+            LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
             Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream()
                     .peek(csr -> {
                         MIPInfo inputMIP = new MIPInfo();
