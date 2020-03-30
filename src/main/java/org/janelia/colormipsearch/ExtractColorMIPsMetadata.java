@@ -429,6 +429,8 @@ public class ExtractColorMIPsMetadata {
                                 gen.writeStringField("cdmPath", cdmip.filepath);
                                 gen.writeStringField("imageURL", cdmip.imageUrl);
                                 gen.writeStringField("thumbnailURL", cdmip.thumbnailUrl);
+                                gen.writeNumberField("volumeSize", cdmip.volumeSize);
+                                gen.writeNumberField("shapeScore", cdmip.shapeScore);
                                 gen.writeEndObject();
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);
@@ -452,6 +454,7 @@ public class ExtractColorMIPsMetadata {
             return Collections.singletonList(cdmipMetadata);
         } else {
             try {
+                Pattern segmentedImageFeaturesPattern = Pattern.compile("_\\d+_(\\d+)_(\\d+\\.?\\d+)$");
                 List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH,
                         (p, fa) -> {
                             if (fa.isRegularFile()) {
@@ -476,6 +479,18 @@ public class ExtractColorMIPsMetadata {
                         .map(p -> {
                             ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                             cdmipMetadata.copyTo(segmentMIPMetadata);
+                            String fn = StringUtils.replacePattern(p.getFileName().toString(), "\\.\\D$","");
+                            // find the 3D volume size
+                            System.out.println("!!!!!!! FN = " + fn);
+                            int segmentedImageFeaturesSeparator = fn.indexOf("__");
+                            if (segmentedImageFeaturesSeparator != -1) {
+                                // extract volume size and shape score from the file name - OL0045B_20140116_19_D6_f_c2__002_062022_0.03502.tif
+                                Matcher m = segmentedImageFeaturesPattern.matcher(fn);
+                                if (m.find()) {
+                                    cdmipMetadata.volumeSize = Integer.parseInt(m.group(1));
+                                    cdmipMetadata.shapeScore = Double.parseDouble(m.group(2));
+                                }
+                            }
                             segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
                             segmentMIPMetadata.segmentFilepath = p.toString();
                             return segmentMIPMetadata;
