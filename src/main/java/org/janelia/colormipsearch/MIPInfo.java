@@ -20,6 +20,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 class MIPInfo implements Serializable {
     @JsonProperty
     String id;
+    @JsonProperty
     String type = "file"; // this can be file or zip
     @JsonProperty
     String libraryName;
@@ -29,6 +30,7 @@ class MIPInfo implements Serializable {
     String imagePath;
     @JsonProperty
     String cdmPath;
+    @JsonProperty
     String archivePath;
     @JsonProperty
     String imageURL;
