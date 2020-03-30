@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -599,7 +600,7 @@ public class Main {
             calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile, outputDir);
         } else if (StringUtils.isNotBlank(args.resultsDir)) {
             try {
-                Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile()).parallel()
                         .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p.toString(), outputDir));
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
@@ -619,34 +620,46 @@ public class Main {
                 return;
             }
             LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream().parallel()
-                    .peek(csr -> {
-                        MIPInfo inputMIP = new MIPInfo();
-                        inputMIP.archivePath = csr.imageArchivePath;
-                        inputMIP.imagePath = csr.imageName;
-                        inputMIP.type = csr.imageType;
-                        MIPImage inputImage = colorMIPSearch.loadMIP(inputMIP);
-                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(inputMIP);
+            long startTime = System.currentTimeMillis();
+            Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = resultsFileContent.results.stream()
+                    .collect(Collectors.groupingBy(csr -> {
+                        MIPInfo mip = new MIPInfo();
+                        mip.id = csr.id;
+                        mip.archivePath = csr.imageArchivePath;
+                        mip.imagePath = csr.imageName;
+                        mip.type = csr.imageType;
+                        return mip;
+                    }, Collectors.toList()));
+            resultsGroupedById.entrySet().parallelStream()
+                    .forEach(resultsEntry -> {
+                        LOG.info("Calculate gradient area scores for all matches of {}", resultsEntry.getKey());
+                        long startTimeForCurrentEntry = System.currentTimeMillis();
+                        MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getKey());
+                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getKey());
+                        resultsEntry.getValue().forEach(csr ->{
+                            MIPInfo matchedMIP = new MIPInfo();
+                            matchedMIP.archivePath = csr.matchedImageArchivePath;
+                            matchedMIP.imagePath = csr.matchedImageName;
+                            matchedMIP.type = csr.matchedImageType;
+                            MIPImage matchedImage = colorMIPSearch.loadMIP(matchedMIP);
+                            MIPImage matchedGradientImage = colorMIPSearch.loadGradientMIP(matchedMIP);
 
-                        MIPInfo matchedMIP = new MIPInfo();
-                        matchedMIP.archivePath = csr.matchedImageArchivePath;
-                        matchedMIP.imagePath = csr.matchedImageName;
-                        matchedMIP.type = csr.matchedImageType;
-                        MIPImage matchedImage = colorMIPSearch.loadMIP(matchedMIP);
-                        MIPImage matchedGradientImage = colorMIPSearch.loadGradientMIP(matchedMIP);
+                            ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
 
-                        ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
+                            if (areaGap != null)
+                                csr.setGradientAreaGap(areaGap.value); // update current result
 
-                        if (areaGap != null)
-                            csr.setGradientAreaGap(areaGap.value);
-                    })
-                    .collect(Collectors.toList()));
+                        });
+                        LOG.info("Finished gradient area scores for all matches of {} in {}s", resultsEntry.getKey(), (System.currentTimeMillis()-startTimeForCurrentEntry)/1000);
+                    });
+            LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, System.currentTimeMillis()-startTime);
+
             if (StringUtils.isBlank(outputDir)) {
-                mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithAreaGradientAdjustment);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsFileContent);
             } else {
                 File outputResultsFile = new File(outputDir, inputResultsFile.getName());
                 LOG.info("Writing {}", outputResultsFile);
-                mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsWithAreaGradientAdjustment);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsFileContent);
             }
         } catch (IOException e) {
             LOG.error("Error reading {}", inputResultsFilename, e);
