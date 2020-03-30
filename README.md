@@ -54,3 +54,18 @@ java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar
     --maskThreshold 100 \
     -od /groups/jacs/jacsDev/devstore/goinac/cdtest/test3
 ```
+
+Here's another example to compare images from a zip archive in which we compare the first 1000
+images from `/nrs/jacs/jacsData/filestore/system/flylight_40xMCFO_Segmented_PackBits.zip` with 
+all images from `/groups/scicomp/scicompsoft/otsuna/Brain/EM_Hemibrain/Masayoshi_selected.zip`
+
+```
+java -Xmx480G -Xms480G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    searchLocalFiles \
+    -i /nrs/jacs/jacsData/filestore/system/flylight_40xMCFO_Segmented_PackBits.zip:0:1000 \
+    -m /groups/scicomp/scicompsoft/otsuna/Brain/EM_Hemibrain/Masayoshi_selected.zip \
+    -od local/testData/masayoshi-cds \
+    -gp /nrs/jacs/jacsData/filestore/system/flylight_40xMCFO_gradient_20px.zip \
+    -result masayoshiResult-0-1000 \
+    -lps 1000
+```
