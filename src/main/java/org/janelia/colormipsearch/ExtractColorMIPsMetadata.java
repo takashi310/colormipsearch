@@ -463,6 +463,10 @@ public class ExtractColorMIPsMetadata {
                                 String publishingName = cdmipMetadata.getAttr("Published Name");
                                 String slideCode = cdmipMetadata.getAttr("Slide Code");
                                 if ((StringUtils.contains(fn, publishingName) || StringUtils.contains(fn, line)) && StringUtils.contains(fn, slideCode)) {
+                                    // !!!!
+                                    if (cdmipMetadata.filepath.equals("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/JRC_SS03822-20150911_23_C1-20x-Brain-JRC2018_Unisex_20x_HR-2210498721907474530-CH1_CDM.png")) {
+                                        System.out.println("!!!!! FN " + fn);
+                                    }
                                     int channelFromMip = getChannel(cdmipMetadata);
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn);
                                     LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
