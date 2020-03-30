@@ -40,16 +40,6 @@ class MIPInfo implements Serializable {
     MIPInfo() {
     }
 
-    MIPInfo(MIPInfo that) {
-        this.id = that.id;
-        this.libraryName = that.libraryName;
-        this.publishedName = that.publishedName;
-        this.imagePath = that.imagePath;
-        this.cdmPath = that.cdmPath;
-        this.imageURL = that.imageURL;
-        this.thumbnailURL = that.thumbnailURL;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -62,6 +52,7 @@ class MIPInfo implements Serializable {
                 .append(id, mipImage.id)
                 .append(cdmPath, mipImage.cdmPath)
                 .append(imagePath, mipImage.imagePath)
+                .append(archivePath, mipImage.archivePath)
                 .isEquals();
     }
 
@@ -71,6 +62,7 @@ class MIPInfo implements Serializable {
                 .append(id)
                 .append(cdmPath)
                 .append(imagePath)
+                .append(archivePath)
                 .toHashCode();
     }
 
