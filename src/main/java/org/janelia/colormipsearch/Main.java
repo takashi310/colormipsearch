@@ -453,7 +453,7 @@ public class Main {
                         int extIndex = fname.lastIndexOf('.');
                         MIPInfo mipInfo = new MIPInfo();
                         mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
-                        mipInfo.type = "zip";
+                        mipInfo.type = "zipEntry";
                         mipInfo.archivePath = mipsArchive;
                         mipInfo.cdmPath = ze.getName();
                         mipInfo.imagePath = ze.getName();

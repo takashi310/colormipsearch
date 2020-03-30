@@ -89,7 +89,7 @@ class MIPInfo implements Serializable {
     }
 
     boolean exists() {
-        if (StringUtils.equalsIgnoreCase("zip", type)) {
+        if (StringUtils.equalsIgnoreCase("zipEntry", type)) {
             ZipFile archiveFile;
             try {
                 archiveFile = new ZipFile(archivePath);
@@ -110,7 +110,7 @@ class MIPInfo implements Serializable {
     }
 
     InputStream openInputStream() throws IOException {
-        if (StringUtils.equalsIgnoreCase("zip", type)) {
+        if (StringUtils.equalsIgnoreCase("zipEntry", type)) {
             ZipFile archiveFile = new ZipFile(archivePath);
             try {
                 ZipEntry ze = archiveFile.getEntry(imagePath);

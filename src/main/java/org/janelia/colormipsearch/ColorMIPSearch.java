@@ -222,7 +222,7 @@ abstract class ColorMIPSearch implements Serializable {
                 .mapToObj(i -> i < nComponents-1 ? gradientEntryPath.getName(i).toString() + "_gradient" : gradientEntryPath.getName(i).toString())
                 .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
         MIPInfo gradientMIP = new MIPInfo();
-        gradientMIP.type = "zip";
+        gradientMIP.type = "zipEntry";
         gradientMIP.archivePath = gradientMasksPath;
         gradientMIP.cdmPath = gradientEntryName;
         gradientMIP.imagePath = gradientEntryName;
