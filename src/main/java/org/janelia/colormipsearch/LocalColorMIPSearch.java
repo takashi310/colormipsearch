@@ -70,7 +70,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .collect(Collectors.groupingBy(ColorMIPSearchResult::getLibraryId, Collectors.toList()));
 
         LOG.info("Write {} results by library", srsByLibrary.size());
-        srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(libraryId, srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
+        srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(libraryId, srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()))));
 
         LOG.info("Finished writing {} results by {} masks and by {} libraries", allSearchResults.size(), srsByMasks.size(), srsByLibrary.size());
     }

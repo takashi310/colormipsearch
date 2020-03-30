@@ -653,7 +653,7 @@ public class Main {
                     }, Collectors.toList()));
             int from = Math.max(offset, 0);
             int to = length > 0 ? length : Integer.MAX_VALUE;
-            Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i, resultsEntry))
+            Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                     .parallel()
                     .forEach(resultsEntry -> {
                         LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
