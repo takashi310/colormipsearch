@@ -69,3 +69,20 @@ java -Xmx480G -Xms480G -jar target/colormipsearch-1.1-jar-with-dependencies.jar 
     -result masayoshiResult-0-1000 \
     -lps 1000
 ```
+
+### Calculating the gradient score for a set of existing results
+```
+java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    gradientScore \
+    -rf local/testData/results/qq.json \
+    -gp local/testData/flylight_40xMCFO_gradient_20px.zip \
+    -rd local/testData/results.withscore
+```
+
+### Sorting the results
+```
+java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    sortResults \
+    -rf local/testData/results.withscore/qq.json \
+    -rd local/testData/results.sorted
+```
