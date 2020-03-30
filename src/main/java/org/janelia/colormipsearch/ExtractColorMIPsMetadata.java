@@ -188,6 +188,12 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Objective", cdmip.objective);
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         cdMetadata.addAttr("Channel", cdmip.channelNumber);
+        // !!!!!!
+        if (cdmip.filepath.equalsIgnoreCase("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/JRC_SS03822-20150911_23_C1-20x-Brain-JRC2018_Unisex_20x_HR-2210498721907474530-CH1_CDM.png")) {
+            System.out.println(" !!!!!!!!! METADATA line: " + cdMetadata.line);
+            System.out.println(" !!!!!!!!! METADATA publishedName: " + cdMetadata.publishedName);
+            System.out.println(" !!!!!!!!! METADATA attr: " + cdMetadata.attrs);
+        }
         return cdMetadata;
     }
 
