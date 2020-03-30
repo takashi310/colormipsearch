@@ -189,7 +189,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         cdMetadata.addAttr("Channel", cdmip.channelNumber);
         // !!!!!!
-        if (cdmip.filepath.equalsIgnoreCase("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/JRC_SS03822-20150911_23_C1-20x-Brain-JRC2018_Unisex_20x_HR-2210498721907474530-CH1_CDM.png")) {
+        if (cdmip.filepath.equalsIgnoreCase("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_SS00601-20130123_33_B1-20x-Brain-JRC2018_Unisex_20x_HR-1852298186517905506-CH1_CDM.png")) {
             System.out.println(" !!!!!!!!! METADATA line: " + cdMetadata.line);
             System.out.println(" !!!!!!!!! METADATA publishedName: " + cdMetadata.publishedName);
             System.out.println(" !!!!!!!!! METADATA attr: " + cdMetadata.attrs);
@@ -467,7 +467,7 @@ public class ExtractColorMIPsMetadata {
                                     int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode,""));
                                     LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                                     // !!!!
-                                    if (cdmipMetadata.filepath.equals("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/JRC_SS03822-20150911_23_C1-20x-Brain-JRC2018_Unisex_20x_HR-2210498721907474530-CH1_CDM.png")) {
+                                    if (cdmipMetadata.filepath.equals("/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_SS00601-20130123_33_B1-20x-Brain-JRC2018_Unisex_20x_HR-1852298186517905506-CH1_CDM.png")) {
                                         System.out.println("!!!!! FN " + fn + " -> " + matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN));
                                     }
                                     return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
