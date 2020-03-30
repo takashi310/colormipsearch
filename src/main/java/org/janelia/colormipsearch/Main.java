@@ -619,7 +619,7 @@ public class Main {
                 return;
             }
             LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream()
+            Results<List<ColorMIPSearchResultMetadata>> resultsWithAreaGradientAdjustment = new Results<>(resultsFileContent.results.stream().parallel()
                     .peek(csr -> {
                         MIPInfo inputMIP = new MIPInfo();
                         inputMIP.archivePath = csr.imageArchivePath;
