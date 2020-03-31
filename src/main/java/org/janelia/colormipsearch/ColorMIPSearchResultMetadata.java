@@ -15,11 +15,19 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonProperty
     String imageType;
     @JsonProperty
+    int imageVolumeSize;
+    @JsonProperty
+    double imageShapeScore;
+    @JsonProperty
     String matchedImageArchivePath;
     @JsonProperty
     String matchedImageName;
     @JsonProperty
     String matchedImageType;
+    @JsonProperty
+    int matchedImageVolumeSize;
+    @JsonProperty
+    double matchedImageShapeScore;
 
     @JsonIgnore
     public int getMatchingSlices() {
