@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 import javax.imageio.ImageIO;
@@ -88,6 +90,7 @@ abstract class ColorMIPSearch implements Serializable {
     private final boolean mirrorMask;
     private final Double pixColorFluctuation;
     private final Double pctPositivePixels;
+    private final int negativeRadius;
     private final EM2LMAreaGapCalculator gradientBasedScoreAdjuster;
 
     ColorMIPSearch(String gradientMasksPath,
@@ -107,7 +110,21 @@ abstract class ColorMIPSearch implements Serializable {
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
+        this.negativeRadius = negativeRadius;
         this.gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(maskThreshold, negativeRadius, mirrorMask);
+    }
+
+    Map<String, String> getCDSParameters() {
+        Map<String, String> cdsParams = new LinkedHashMap<>();
+        cdsParams.put("gradientMasksPath", gradientMasksPath);
+        cdsParams.put("dataThreshold", dataThreshold != null ? dataThreshold.toString() : null);
+        cdsParams.put("maskThreshold", maskThreshold != null ? maskThreshold.toString() : null);
+        cdsParams.put("xyShift", xyShift != null ? xyShift.toString() : null);
+        cdsParams.put("mirrorMask", String.valueOf(mirrorMask));
+        cdsParams.put("pixColorFluctuation", pixColorFluctuation != null ? pixColorFluctuation.toString() : null);
+        cdsParams.put("pctPositivePixels", pctPositivePixels != null ? pctPositivePixels.toString() : null);
+        cdsParams.put("negativeRadius", String.valueOf(negativeRadius));
+        return cdsParams;
     }
 
     MIPImage loadMIPFromPath(Path mipPath) {

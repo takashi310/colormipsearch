@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private static final String CDS_PARAMETERS_FILE = "cdsParameters.json";
 
     private static class MainArgs {
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
@@ -319,9 +320,23 @@ public class Main {
                     .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.maskMIPsFilter).stream())
                     .collect(Collectors.toList());
 
+            saveCDSParameters(colorMIPSearch, args.getOutputDir(), "cdsParameters.json");
             colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips);
         } finally {
             colorMIPSearch.terminate();
+        }
+    }
+
+    private static void saveCDSParameters(ColorMIPSearch colorMIPSearch, String outputDir, String fname) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        File outputFile = new File(outputDir, fname);
+        try {
+            mapper.writerWithDefaultPrettyPrinter().
+                    writeValue(outputFile, colorMIPSearch.getCDSParameters());
+        } catch (IOException e) {
+            LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -363,6 +378,7 @@ public class Main {
         try {
             List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.libraryMIPsFilter);
             List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation, args.maskMIPsFilter);
+            saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
             List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(patternMIPs, libraryMIPs);
             colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
         } finally {
