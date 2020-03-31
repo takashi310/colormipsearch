@@ -107,10 +107,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
                 IntStream.range(0, maskMIPS.size()).boxed(),
                 maskMIPS.stream().filter(MIPInfo::exists),
-                (mIndex, maskMIP) -> {
-                    LOG.info("Compare {} (mask # {}) with {} libraries", maskMIP, mIndex+1, nlibraries);
-                    return submitMaskSearches(mIndex, maskMIP, libraryImagesWithGradients);
-                })
+                (mIndex, maskMIP) -> submitMaskSearches(mIndex + 1, maskMIP, libraryImagesWithGradients))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
@@ -133,6 +130,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(libraryImages).stream()
                 .map(librariesPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
+                        LOG.info("Compare {} (mask # {}) with {} out of {} libraries", maskMIP, mIndex, librariesPartition.size(), libraryImages.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = librariesPartition.stream()
                                 .map(libraryWithGradient -> {
