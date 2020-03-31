@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
@@ -32,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.mutable.LinkedHashMap;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -540,7 +538,7 @@ public class Main {
             switch (sortingType) {
                 case WITH_GRADIENT_AREA_GAP:
                     if (maxAreaGap == -1) {
-                        srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices);
+                        srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
                     } else {
                         srComparator = (sr1, sr2) -> {
                             // this is completely empirical because I don't know
@@ -550,13 +548,13 @@ public class Main {
                             double normalizedA1 = normalizedArea(a1, maxAreaGap);
                             double normalizedA2 = normalizedArea(a2, maxAreaGap);
                             // reverse comparison by the score to normalized area ratio
-                            return Double.compare(sr1.getMatchingSlicesPct() / normalizedA1, sr2.getMatchingSlicesPct() / normalizedA2);
+                            return Double.compare(sr1.getMatchingPixelsPct() / normalizedA1, sr2.getMatchingPixelsPct() / normalizedA2);
                         };
                     }
                     break;
                 case USE_MATCHING_SLICES_ONLY:
                 default:
-                    srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingSlices);
+                    srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
                     break;
             }
 

@@ -30,26 +30,26 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     double matchedImageShapeScore;
 
     @JsonIgnore
-    public int getMatchingSlices() {
-        String matchingSlices = getAttr("Matched slices");
-        return StringUtils.isBlank(matchingSlices) ? 0 : Integer.parseInt(matchingSlices);
+    public int getMatchingPixels() {
+        String matchingPixels = getAttr("Matched pixels");
+        return StringUtils.isBlank(matchingPixels) ? 0 : Integer.parseInt(matchingPixels);
     }
 
-    public void setMatchingSlices(int matchingSlices) {
-        if (matchingSlices > 0) {
-            addAttr("Matched slices", String.valueOf(matchingSlices));
+    public void setMatchingPixels(int matchingPixels) {
+        if (matchingPixels > 0) {
+            addAttr("Matched pixels", String.valueOf(matchingPixels));
         }
     }
 
     @JsonIgnore
-    public double getMatchingSlicesPct() {
-        String matchingSlicesPct = getAttr("Score");
-        return StringUtils.isBlank(matchingSlicesPct) ? 0. : Double.parseDouble(matchingSlicesPct);
+    public double getMatchingPixelsPct() {
+        String matchingPixelsPct = getAttr("Score");
+        return StringUtils.isBlank(matchingPixelsPct) ? 0. : Double.parseDouble(matchingPixelsPct);
     }
 
-    public void setMatchingSlicesPct(double matchingSlicesPct) {
-        if (matchingSlicesPct > 0.) {
-            addAttr("Score", String.valueOf(matchingSlicesPct));
+    public void setMatchingPixelsPct(double matchingPixelsPct) {
+        if (matchingPixelsPct > 0.) {
+            addAttr("Score", String.valueOf(matchingPixelsPct));
         }
     }
 

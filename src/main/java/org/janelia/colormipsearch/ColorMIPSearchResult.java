@@ -27,22 +27,22 @@ class ColorMIPSearchResult implements Serializable {
         }
     }
 
-    final MIPInfo maskMIP;
-    final MIPInfo libraryMIP;
-    final int matchingSlices;
-    final double matchingSlicesPct;
-    final boolean isMatch;
-    final boolean isError;
-    long gradientAreaGap;
-    boolean mirrorHasBetterMatch;
+    private final MIPInfo maskMIP;
+    private final MIPInfo libraryMIP;
+    private final int matchingPixels;
+    private final double matchingPixelsPct;
+    private final boolean isMatch;
+    private final boolean isError;
+    private long gradientAreaGap;
+    private boolean mirrorHasBetterMatch;
 
-    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingSlices, double matchingSlicesPct, boolean isMatch, boolean isError) {
+    ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingPixels, double matchingPixelsPct, boolean isMatch, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
         Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
         this.libraryMIP = libraryMIP;
-        this.matchingSlices = matchingSlices;
-        this.matchingSlicesPct = matchingSlicesPct;
+        this.matchingPixels = matchingPixels;
+        this.matchingPixelsPct = matchingPixelsPct;
         this.isMatch = isMatch;
         this.isError = isError;
     }
@@ -55,8 +55,8 @@ class ColorMIPSearchResult implements Serializable {
         return maskMIP.id;
     }
 
-    int getMatchingSlices() {
-        return matchingSlices;
+    int getMatchingPixels() {
+        return matchingPixels;
     }
 
     boolean isMatch() {
@@ -87,7 +87,7 @@ class ColorMIPSearchResult implements Serializable {
         ColorMIPSearchResult that = (ColorMIPSearchResult) o;
 
         return new EqualsBuilder()
-                .append(matchingSlices, that.matchingSlices)
+                .append(matchingPixels, that.matchingPixels)
                 .append(maskMIP, that.maskMIP)
                 .append(libraryMIP, that.libraryMIP)
                 .isEquals();
@@ -98,7 +98,7 @@ class ColorMIPSearchResult implements Serializable {
         return new HashCodeBuilder(17, 37)
                 .append(maskMIP)
                 .append(libraryMIP)
-                .append(matchingSlices)
+                .append(matchingPixels)
                 .toHashCode();
     }
 
@@ -107,8 +107,8 @@ class ColorMIPSearchResult implements Serializable {
         return new ToStringBuilder(this)
                 .append("maskMIP", maskMIP)
                 .append("libraryMIP", libraryMIP)
-                .append("matchingSlices", matchingSlices)
-                .append("matchingSlicesPct", matchingSlicesPct)
+                .append("matchingPixels", matchingPixels)
+                .append("matchingPixelsPct", matchingPixelsPct)
                 .append("areaGap", gradientAreaGap)
                 .append("mirrorHasBetterMatch", mirrorHasBetterMatch)
                 .append("isMatch", isMatch)
@@ -136,8 +136,8 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedImageShapeScore = maskMIP.shapeScore;
         srMetadata.addAttr("Library", maskMIP.libraryName);
         srMetadata.addAttr("PublishedName", maskMIP.publishedName);
-        srMetadata.setMatchingSlices(matchingSlices);
-        srMetadata.setMatchingSlicesPct(matchingSlicesPct);
+        srMetadata.setMatchingPixels(matchingPixels);
+        srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
     }
@@ -162,8 +162,8 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedImageShapeScore = libraryMIP.shapeScore;
         srMetadata.addAttr("Library", libraryMIP.libraryName);
         srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
-        srMetadata.setMatchingSlices(matchingSlices);
-        srMetadata.setMatchingSlicesPct(matchingSlicesPct);
+        srMetadata.setMatchingPixels(matchingPixels);
+        srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
     }

@@ -263,7 +263,7 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     ColorMIPSearchResult applyGradientAreaAdjustment(ColorMIPSearchResult sr, MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
-        if (sr.isMatch) {
+        if (sr.isMatch()) {
             return sr.applyGradientAreaGap(calculateGradientAreaAdjustment(libraryMIPImage, libraryGradientImage, patternMIPImage, patternGradientImage));
         } else {
             return sr;
@@ -286,7 +286,7 @@ abstract class ColorMIPSearch implements Serializable {
     }
 
     Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
-        return Comparator.comparingInt(ColorMIPSearchResult::getMatchingSlices).reversed();
+        return Comparator.comparingInt(ColorMIPSearchResult::getMatchingPixels).reversed();
     }
 
     void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
