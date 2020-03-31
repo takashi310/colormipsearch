@@ -31,13 +31,13 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
 
     @JsonIgnore
     public int getMatchingPixels() {
-        String matchingPixels = getAttr("Matched pixels");
+        String matchingPixels = getAttr("Matched slices");
         return StringUtils.isBlank(matchingPixels) ? 0 : Integer.parseInt(matchingPixels);
     }
 
     public void setMatchingPixels(int matchingPixels) {
         if (matchingPixels > 0) {
-            addAttr("Matched pixels", String.valueOf(matchingPixels));
+            addAttr("Matched slices", String.valueOf(matchingPixels));
         }
     }
 
