@@ -320,7 +320,7 @@ public class Main {
         }
 
         try {
-            List<MIPInfo> libraryMips = args.librariesInputs.stream()
+            List<MIPInfo> librariesMips = args.librariesInputs.stream()
                     .flatMap(libraryInput -> readMIPsFromJSON(libraryInput, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
@@ -328,8 +328,12 @@ public class Main {
                     .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
-            saveCDSParameters(colorMIPSearch, args.getOutputDir(), "cdsParameters.json");
-            colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, libraryMips);
+            if (librariesMips.isEmpty() || masksMips.isEmpty()) {
+                LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
+            } else {
+                saveCDSParameters(colorMIPSearch, args.getOutputDir(), "cdsParameters.json");
+                colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, librariesMips);
+            }
         } finally {
             colorMIPSearch.terminate();
         }
@@ -386,11 +390,15 @@ public class Main {
                 args.libraryPartitionSize,
                 createCDSExecutor(args));
         try {
-            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.filterAsLowerCase(args.libraryMIPsFilter));
-            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation, args.filterAsLowerCase(args.maskMIPsFilter));
-            saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
-            List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(patternMIPs, libraryMIPs);
-            colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
+            List<MIPInfo> librariesMips = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.filterAsLowerCase(args.libraryMIPsFilter));
+            List<MIPInfo> masksMips = readMIPsFromLocalFiles(args.maskMIPsLocation, args.filterAsLowerCase(args.maskMIPsFilter));
+            if (librariesMips.isEmpty() || masksMips.isEmpty()) {
+                LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
+            } else {
+                saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
+                List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
+                colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
+            }
         } finally {
             colorMIPSearch.terminate();
         }
