@@ -3,6 +3,7 @@ package org.janelia.colormipsearch;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -60,14 +61,28 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Group {} results by mask", allSearchResults.size());
         Map<String, List<ColorMIPSearchResult>> srsByMasks = allSearchResults.stream()
-                .collect(Collectors.groupingBy(ColorMIPSearchResult::getMaskId, Collectors.toList()));
+                .collect(Collectors.groupingBy(
+                        ColorMIPSearchResult::getMaskId,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                l -> {
+                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                    return l;
+                                })));
 
         LOG.info("Write {} results by mask", srsByMasks.size());
         srsByMasks.forEach((maskId, srsForCurrentMask) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(maskId, srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
 
         LOG.info("Group {} results by library", allSearchResults.size());
         Map<String, List<ColorMIPSearchResult>> srsByLibrary = allSearchResults.stream()
-                .collect(Collectors.groupingBy(ColorMIPSearchResult::getLibraryId, Collectors.toList()));
+                .collect(Collectors.groupingBy(
+                        ColorMIPSearchResult::getLibraryId,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                l -> {
+                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                    return l;
+                                })));
 
         LOG.info("Write {} results by library", srsByLibrary.size());
         srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(libraryId, srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()))));

@@ -123,9 +123,6 @@ public class Main {
         @Parameter(names = "-m", required = true, converter = ListArg.ListArgConverter.class, description = "Mask MIPs location")
         ListArg maskMIPsLocation;
 
-        @Parameter(names = "-result", description = "Result file name")
-        String resultName;
-
         LocalMIPFilesSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
@@ -396,8 +393,25 @@ public class Main {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
             } else {
                 saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
+                colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, librariesMips);
+
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
-                colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
+                // group the results by mask
+                Map<String, List<ColorMIPSearchResult>> cdsResultsByMasks = cdsResults.stream()
+                        .collect(Collectors.groupingBy(
+                                ColorMIPSearchResult::getMaskId,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        l -> {
+                                            l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                            return l;
+                                        })));
+
+                LOG.info("Write {} results by mask", cdsResultsByMasks.size());
+                cdsResultsByMasks
+                        .forEach((maskId, srsForCurrentMask) -> colorMIPSearch.writeSearchResults(
+                                maskId,
+                                srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList())));
             }
         } finally {
             colorMIPSearch.terminate();
