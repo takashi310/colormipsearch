@@ -454,6 +454,7 @@ public class ExtractColorMIPsMetadata {
             return Collections.singletonList(cdmipMetadata);
         } else {
             try {
+                Pattern segmentedImageFeaturesPattern = Pattern.compile("(\\d+)_(\\d+)_(\\d+\\.?\\d+)");
                 List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH,
                         (p, fa) -> {
                             if (fa.isRegularFile()) {
@@ -484,11 +485,10 @@ public class ExtractColorMIPsMetadata {
                             if (segmentedImageFeaturesSeparator != -1) {
                                 // extract volume size and shape score from the file name - OL0045B_20140116_19_D6_f_c2__002_062022_0.03502.tif
                                 String toMatch = fn.substring(segmentedImageFeaturesSeparator+2);
-                                Pattern segmentedImageFeaturesPattern = Pattern.compile("_\\d+_(\\d+)_(\\d+\\.?\\d+)");
                                 Matcher m = segmentedImageFeaturesPattern.matcher(toMatch);
                                 if (m.find()) {
-                                    cdmipMetadata.volumeSize = Integer.parseInt(m.group(1));
-                                    cdmipMetadata.shapeScore = Double.parseDouble(m.group(2));
+                                    cdmipMetadata.volumeSize = Integer.parseInt(m.group(2));
+                                    cdmipMetadata.shapeScore = Double.parseDouble(m.group(3));
                                 }
                             }
                             segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
