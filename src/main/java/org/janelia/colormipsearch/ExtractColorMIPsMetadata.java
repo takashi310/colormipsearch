@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -158,7 +159,14 @@ public class ExtractColorMIPsMetadata {
                     .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                     .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
-                    .collect(Collectors.groupingBy(cdmip -> cdmip.publishedName, Collectors.toList()));
+                    .collect(Collectors.groupingBy(
+                            cdmip -> cdmip.publishedName,
+                            Collectors.collectingAndThen(
+                                    Collectors.toList(),
+                                    l -> {
+                                        l.sort(Comparator.comparing(cdm -> cdm.internalName));
+                                        return l;
+                                    })));
             // write the results to the output
             resultsByLineOrSkeleton
                     .forEach((lineOrSkeletonName, results) -> writeColorDepthMetadata(outputPath.resolve(lineOrSkeletonName + ".json"), results))
