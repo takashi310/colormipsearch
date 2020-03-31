@@ -487,8 +487,8 @@ public class ExtractColorMIPsMetadata {
                                 String toMatch = fn.substring(segmentedImageFeaturesSeparator+2);
                                 Matcher m = segmentedImageFeaturesPattern.matcher(toMatch);
                                 if (m.find()) {
-                                    cdmipMetadata.volumeSize = Integer.parseInt(m.group(2));
-                                    cdmipMetadata.shapeScore = Double.parseDouble(m.group(3));
+                                    segmentMIPMetadata.volumeSize = Integer.parseInt(m.group(2));
+                                    segmentMIPMetadata.shapeScore = Double.parseDouble(m.group(3));
                                 }
                             }
                             segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
