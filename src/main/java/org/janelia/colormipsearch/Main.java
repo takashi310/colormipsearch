@@ -105,6 +105,14 @@ public class Main {
         String getOutputDir() {
             return commonArgs.outputDir;
         }
+
+        Set<String> filterAsLowerCase(Set<String> f) {
+            if (CollectionUtils.isEmpty(f)) {
+                return Collections.emptySet();
+            } else {
+                return f.stream().map(s -> s.toLowerCase()).collect(Collectors.toSet());
+            }
+        }
     }
 
     @Parameters(commandDescription = "Color depth search for MIP files")
@@ -313,11 +321,11 @@ public class Main {
 
         try {
             List<MIPInfo> libraryMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput, args.libraryMIPsFilter).stream())
+                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             List<MIPInfo> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.maskMIPsFilter).stream())
+                    .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             saveCDSParameters(colorMIPSearch, args.getOutputDir(), "cdsParameters.json");
@@ -354,7 +362,9 @@ public class Main {
                 return content.subList(from, to);
             } else {
                 LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream().filter(mip -> filter.contains(mip.publishedName.toLowerCase())).collect(Collectors.toList());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.publishedName.toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.id)))
+                        .collect(Collectors.toList());
             }
         } catch (IOException e) {
             LOG.error("Error reading {}", mipsArg, e);
@@ -376,8 +386,8 @@ public class Main {
                 args.libraryPartitionSize,
                 createCDSExecutor(args));
         try {
-            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.libraryMIPsFilter);
-            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation, args.maskMIPsFilter);
+            List<MIPInfo> libraryMIPs = readMIPsFromLocalFiles(args.libraryMIPsLocation, args.filterAsLowerCase(args.libraryMIPsFilter));
+            List<MIPInfo> patternMIPs = readMIPsFromLocalFiles(args.maskMIPsLocation, args.filterAsLowerCase(args.maskMIPsFilter));
             saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
             List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(patternMIPs, libraryMIPs);
             colorMIPSearch.writeSearchResults(args.resultName, cdsResults.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()));
