@@ -66,7 +66,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
                                     return l;
                                 })));
 
@@ -80,7 +80,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
                                     return l;
                                 })));
 

@@ -403,7 +403,7 @@ public class Main {
                                 Collectors.collectingAndThen(
                                         Collectors.toList(),
                                         l -> {
-                                            l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels));
+                                            l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
                                             return l;
                                         })));
 
