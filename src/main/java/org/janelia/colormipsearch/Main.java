@@ -438,6 +438,9 @@ public class Main {
                 saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), CDS_PARAMETERS_FILE);
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
                 new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
+                if (StringUtils.isNotBlank(args.perLibrarySubdir)) {
+                    new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
+                }
             }
         } finally {
             colorMIPSearch.terminate();
