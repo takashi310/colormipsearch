@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.imageprocessing;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
-
 public class LImage {
     public static LImage create(ImageArray imageArray) {
         return new LImage(imageArray.type, imageArray.width, imageArray.height, (x, y) -> imageArray.getPixel(x, y));

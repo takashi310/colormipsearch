@@ -35,7 +35,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private final int libraryPartitionSize;
 
     LocalColorMIPSearch(String gradientMasksPath,
-                        String outputPath,
                         Integer dataThreshold,
                         Integer maskThreshold,
                         Double pixColorFluctuation,
@@ -45,51 +44,12 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                         Double pctPositivePixels,
                         int libraryPartitionSize,
                         Executor cdsExecutor) {
-        super(gradientMasksPath, outputPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
+        super(gradientMasksPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
         this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
         this.cdsExecutor = cdsExecutor;
     }
 
     @Override
-    void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
-        RetryPolicy<List<ColorMIPSearchResult>> retryPolicy = new RetryPolicy<List<ColorMIPSearchResult>>()
-                .handle(IllegalStateException.class)
-                .withDelay(Duration.ofMillis(500))
-                .withMaxRetries(20);
-
-        List<ColorMIPSearchResult> allSearchResults = findAllColorDepthMatches(maskMIPS, libraryMIPS);
-
-        LOG.info("Group {} results by mask", allSearchResults.size());
-        Map<String, List<ColorMIPSearchResult>> srsByMasks = allSearchResults.stream()
-                .collect(Collectors.groupingBy(
-                        ColorMIPSearchResult::getMaskId,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
-                                    return l;
-                                })));
-
-        LOG.info("Write {} results by mask", srsByMasks.size());
-        srsByMasks.forEach((maskId, srsForCurrentMask) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(maskId, srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
-
-        LOG.info("Group {} results by library", allSearchResults.size());
-        Map<String, List<ColorMIPSearchResult>> srsByLibrary = allSearchResults.stream()
-                .collect(Collectors.groupingBy(
-                        ColorMIPSearchResult::getLibraryId,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
-                                    return l;
-                                })));
-
-        LOG.info("Write {} results by library", srsByLibrary.size());
-        srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> Failsafe.with(retryPolicy).run(() -> writeSearchResults(libraryId, srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()))));
-
-        LOG.info("Finished writing {} results by {} masks and by {} libraries", allSearchResults.size(), srsByMasks.size(), srsByLibrary.size());
-    }
-
     List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();

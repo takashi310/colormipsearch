@@ -98,12 +98,42 @@ public class Main {
         @Parameter(names = {"--masksFilter", "-mf"}, variableArity = true, description = "Filter for mask mips")
         Set<String> maskMIPsFilter;
 
+        @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
+        String perMaskSubdir;
+
+        @Parameter(names = {"--perLibrarySubdir"}, description = "Results subdirectory for results grouped by library MIP ID")
+        String perLibrarySubdir;
+
         AbstractArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
-        String getOutputDir() {
-            return commonArgs.outputDir;
+        Path getBaseOutputDir() {
+            return StringUtils.isBlank(commonArgs.outputDir) ? null : Paths.get(commonArgs.outputDir);
+        }
+
+        Path getPerMaskDir() {
+            if (StringUtils.isBlank(commonArgs.outputDir)) {
+                return null;
+            } else {
+                if (StringUtils.isBlank(perMaskSubdir)) {
+                    return Paths.get(commonArgs.outputDir);
+                } else {
+                    return Paths.get(commonArgs.outputDir, perMaskSubdir);
+                }
+            }
+        }
+
+        Path getPerLibraryDir() {
+            if (StringUtils.isBlank(commonArgs.outputDir)) {
+                return null;
+            } else {
+                if (StringUtils.isBlank(perLibrarySubdir)) {
+                    return Paths.get(commonArgs.outputDir);
+                } else {
+                    return Paths.get(commonArgs.outputDir, perLibrarySubdir);
+                }
+            }
         }
 
         Set<String> filterAsLowerCase(Set<String> f) {
@@ -173,8 +203,14 @@ public class Main {
             this.commonArgs = commonArgs;
         }
 
-        String getOutputDir() {
-            return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir);
+        Path getOutputDir() {
+            if (StringUtils.isBlank(resultsDir) && StringUtils.isBlank(commonArgs.outputDir)) {
+                return null;
+            } else if (StringUtils.isBlank(resultsDir)) {
+                return Paths.get(commonArgs.outputDir);
+            } else {
+                return Paths.get(resultsDir);
+            }
         }
     }
 
@@ -190,11 +226,14 @@ public class Main {
             super(commonArgs);
         }
 
-        String getOutputDir() {
-            if (resultsDir != null)
-                return StringUtils.defaultIfBlank(commonArgs.outputDir, resultsDir.input);
-            else
-                return commonArgs.outputDir;
+        Path getOutputDir() {
+            if (resultsDir == null && StringUtils.isBlank(commonArgs.outputDir)) {
+                return null;
+            } else if (resultsDir == null) {
+                return Paths.get(commonArgs.outputDir);
+            } else {
+                return Paths.get(resultsDir.input);
+            }
         }
     }
 
@@ -242,11 +281,11 @@ public class Main {
 
         switch (cmdline.getParsedCommand()) {
             case "searchFromJSON":
-                createOutputDir(jsonMIPsSearchArgs.getOutputDir());
+                createOutputDirs(jsonMIPsSearchArgs.getPerLibraryDir(), jsonMIPsSearchArgs.getPerMaskDir());
                 runSearchFromJSONInput(jsonMIPsSearchArgs);
                 break;
             case "searchLocalFiles":
-                createOutputDir(localMIPFilesSearchArgs.getOutputDir());
+                createOutputDirs(localMIPFilesSearchArgs.getPerLibraryDir(), localMIPFilesSearchArgs.getPerMaskDir());
                 runSearchForLocalMIPFiles(localMIPFilesSearchArgs);
                 break;
             case "gradientScore":
@@ -255,7 +294,7 @@ public class Main {
                     cmdline.usage(sb);
                     System.exit(1);
                 }
-                createOutputDir(gradientScoreResultsArgs.getOutputDir());
+                createOutputDirs(gradientScoreResultsArgs.getOutputDir());
                 calculateGradientAreaScore(gradientScoreResultsArgs);
                 break;
             case "sortResults":
@@ -264,7 +303,7 @@ public class Main {
                     cmdline.usage(sb);
                     System.exit(1);
                 }
-                createOutputDir(sortResultsArgs.getOutputDir());
+                createOutputDirs(sortResultsArgs.getOutputDir());
                 sortResults(sortResultsArgs);
                 break;
             default:
@@ -275,14 +314,16 @@ public class Main {
         }
     }
 
-    private static void createOutputDir(String outputDir) {
-        if (StringUtils.isNotBlank(outputDir)) {
-            try {
-                // create output directory
-                Files.createDirectories(Paths.get(outputDir));
-            } catch (IOException e) {
-                LOG.error("Error creating output directory: {}", outputDir, e);
-                System.exit(1);
+    private static void createOutputDirs(Path... outputDirs) {
+        for (Path outputDir : outputDirs) {
+            if (outputDir != null) {
+                try {
+                    // create output directory
+                    Files.createDirectories(outputDir);
+                } catch (IOException e) {
+                    LOG.error("Error creating output directory: {}", outputDir, e);
+                    System.exit(1);
+                }
             }
         }
     }
@@ -299,12 +340,11 @@ public class Main {
         ColorMIPSearch colorMIPSearch;
         if (args.useSpark()) {
             colorMIPSearch = new SparkColorMIPSearch(
-                    args.appName, args.gradientPath, args.getOutputDir(), args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
+                    args.appName, args.gradientPath, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
             );
         } else {
             colorMIPSearch = new LocalColorMIPSearch(
                     args.gradientPath,
-                    args.getOutputDir(),
                     args.dataThreshold,
                     args.maskThreshold,
                     args.pixColorFluctuation,
@@ -328,24 +368,28 @@ public class Main {
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
             } else {
-                saveCDSParameters(colorMIPSearch, args.getOutputDir(), "cdsParameters.json");
-                colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, librariesMips);
+                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "cdsParameters.json");
+                List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
+                new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
+                new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
             }
         } finally {
             colorMIPSearch.terminate();
         }
     }
 
-    private static void saveCDSParameters(ColorMIPSearch colorMIPSearch, String outputDir, String fname) {
+    private static void saveCDSParameters(ColorMIPSearch colorMIPSearch, Path outputDir, String fname) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        File outputFile = new File(outputDir, fname);
-        try {
-            mapper.writerWithDefaultPrettyPrinter().
-                    writeValue(outputFile, colorMIPSearch.getCDSParameters());
-        } catch (IOException e) {
-            LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
-            throw new IllegalStateException(e);
+        if (outputDir != null) {
+            File outputFile = outputDir.resolve(fname).toFile();
+            try {
+                mapper.writerWithDefaultPrettyPrinter().
+                        writeValue(outputFile, colorMIPSearch.getCDSParameters());
+            } catch (IOException e) {
+                LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
+                throw new IllegalStateException(e);
+            }
         }
     }
 
@@ -376,7 +420,6 @@ public class Main {
     private static void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
         LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
                 args.gradientPath,
-                args.getOutputDir(),
                 args.dataThreshold,
                 args.maskThreshold,
                 args.pixColorFluctuation,
@@ -392,26 +435,9 @@ public class Main {
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
             } else {
-                saveCDSParameters(colorMIPSearch, args.getOutputDir(), CDS_PARAMETERS_FILE);
-                colorMIPSearch.compareEveryMaskWithEveryLibrary(masksMips, librariesMips);
-
+                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), CDS_PARAMETERS_FILE);
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
-                // group the results by mask
-                Map<String, List<ColorMIPSearchResult>> cdsResultsByMasks = cdsResults.stream()
-                        .collect(Collectors.groupingBy(
-                                ColorMIPSearchResult::getMaskId,
-                                Collectors.collectingAndThen(
-                                        Collectors.toList(),
-                                        l -> {
-                                            l.sort(Comparator.comparing(ColorMIPSearchResult::getMatchingPixels).reversed());
-                                            return l;
-                                        })));
-
-                LOG.info("Write {} results by mask", cdsResultsByMasks.size());
-                cdsResultsByMasks
-                        .forEach((maskId, srsForCurrentMask) -> colorMIPSearch.writeSearchResults(
-                                maskId,
-                                srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList())));
+                new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
             }
         } finally {
             colorMIPSearch.terminate();
@@ -552,20 +578,19 @@ public class Main {
     }
 
     private static void sortResults(SortResultsArgs args) {
-        String outputDir = args.getOutputDir();
         if (StringUtils.isNotBlank(args.resultsFile)) {
-            sortResultsFile(args.resultsFile, args.sortingType, outputDir);
+            sortResultsFile(args.resultsFile, args.sortingType, args.getOutputDir());
         } else if (StringUtils.isNotBlank(args.resultsDir)) {
             try {
                 Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
-                        .forEach(p -> sortResultsFile(p.toString(), args.sortingType, outputDir));
+                        .forEach(p -> sortResultsFile(p.toString(), args.sortingType, args.getOutputDir()));
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
         }
     }
 
-    private static void sortResultsFile(String inputResultsFilename, SortingType sortingType, String outputDir) {
+    private static void sortResultsFile(String inputResultsFilename, SortingType sortingType, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -609,10 +634,10 @@ public class Main {
             Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
                     .sorted(srComparator.reversed())
                     .collect(Collectors.toList()));
-            if (StringUtils.isBlank(outputDir)) {
+            if (outputDir == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithSortedContent);
             } else {
-                File outputResultsFile = new File(outputDir, inputResultsFile.getName());
+                File outputResultsFile = outputDir.resolve(inputResultsFile.getName()).toFile();
                 LOG.info("Writing {}", outputResultsFile);
                 mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsWithSortedContent);
             }
@@ -639,7 +664,6 @@ public class Main {
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
         LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
                 args.gradientPath,
-                args.getOutputDir(),
                 args.dataThreshold,
                 args.maskThreshold,
                 args.pixColorFluctuation,
@@ -649,7 +673,7 @@ public class Main {
                 args.pctPositivePixels,
                 args.libraryPartitionSize,
                 null);
-        String outputDir = args.getOutputDir();
+        Path outputDir = args.getOutputDir();
         if (args.resultsFile != null) {
             int from = Math.max(args.resultsFile.offset, 0);
             int length = args.resultsFile.length;
@@ -675,7 +699,7 @@ public class Main {
         }
     }
 
-    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, int offset, int length, String outputDir) {
+    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, int offset, int length, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -724,10 +748,10 @@ public class Main {
                     });
             LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, (System.currentTimeMillis()-startTime)/1000.);
 
-            if (StringUtils.isBlank(outputDir)) {
+            if (outputDir == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsFileContent);
             } else {
-                File outputResultsFile = new File(outputDir, inputResultsFile.getName());
+                File outputResultsFile = outputDir.resolve(inputResultsFile.getName()).toFile();
                 LOG.info("Writing {}", outputResultsFile);
                 mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsFileContent);
             }

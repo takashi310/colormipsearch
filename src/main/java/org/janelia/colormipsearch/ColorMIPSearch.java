@@ -49,41 +49,7 @@ abstract class ColorMIPSearch implements Serializable {
         UNKNOWN
     }
 
-    private static class ResultsFileHandler {
-        private final RandomAccessFile rf;
-        private final FileLock fl;
-        private final OutputStream fs;
-
-        ResultsFileHandler(RandomAccessFile rf, FileLock fl, OutputStream fs) {
-            this.rf = rf;
-            this.fl = fl;
-            this.fs = fs;
-        }
-
-        void close() {
-            if (fl != null) {
-                try {
-                    fl.release();
-                } catch (IOException ignore) {
-                }
-            }
-            if (fs != null) {
-                try {
-                    fs.close();
-                } catch (IOException ignore) {
-                }
-            }
-            if (rf != null) {
-                try {
-                    rf.close();
-                } catch (IOException ignore) {
-                }
-            }
-        }
-    }
-
     private final String gradientMasksPath;
-    private final String outputPath;
     private final Integer dataThreshold;
     private final Integer maskThreshold;
     private final Integer xyShift;
@@ -94,7 +60,6 @@ abstract class ColorMIPSearch implements Serializable {
     private final EM2LMAreaGapCalculator gradientBasedScoreAdjuster;
 
     ColorMIPSearch(String gradientMasksPath,
-                   String outputPath,
                    Integer dataThreshold,
                    Integer maskThreshold,
                    Double pixColorFluctuation,
@@ -103,7 +68,6 @@ abstract class ColorMIPSearch implements Serializable {
                    boolean mirrorMask,
                    Double pctPositivePixels) {
         this.gradientMasksPath = gradientMasksPath;
-        this.outputPath =  outputPath;
         this.dataThreshold = dataThreshold;
         this.maskThreshold = maskThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
@@ -246,7 +210,7 @@ abstract class ColorMIPSearch implements Serializable {
         return loadMIP(gradientMIP);
     }
 
-    abstract void compareEveryMaskWithEveryLibrary(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
+    abstract List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
 
     ColorMIPSearchResult runImageComparison(MIPImage libraryMIPImage, MIPImage maskMIPImage) {
         long startTime = System.currentTimeMillis();
@@ -304,127 +268,6 @@ abstract class ColorMIPSearch implements Serializable {
 
     Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingPixels).reversed();
-    }
-
-    void writeSearchResults(String filename, List<ColorMIPSearchResultMetadata> searchResults) {
-        long startTime = System.currentTimeMillis();
-        if (CollectionUtils.isEmpty(searchResults)) {
-            // nothing to do
-            return;
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        if (StringUtils.isBlank(filename)) {
-            try {
-                JsonGenerator gen = mapper.getFactory().createGenerator(System.out, JsonEncoding.UTF8);
-                writeColorSearchResults(gen, searchResults);
-            } catch (IOException e) {
-                LOG.error("Error writing json output for {} results", searchResults.size(), e);
-                throw new UncheckedIOException(e);
-            } finally {
-                LOG.info("Written {} results in {}ms", searchResults.size(), System.currentTimeMillis() - startTime);
-            }
-        } else {
-            ResultsFileHandler rfHandler;
-            JsonGenerator gen;
-            File outputFile = StringUtils.isBlank(outputPath) ? new File(filename + ".json") : new File(outputPath, filename + ".json");
-            long initialOutputFileSize;
-            try {
-                rfHandler = openFile(outputFile);
-            } catch (IOException e) {
-                LOG.error("Error opening the outputfile {}", outputFile, e);
-                throw new UncheckedIOException(e);
-            }
-            try {
-                initialOutputFileSize = rfHandler.rf.length();
-                gen = mapper.getFactory().createGenerator(rfHandler.fs, JsonEncoding.UTF8);
-                gen.useDefaultPrettyPrinter();
-            } catch (IOException e) {
-                rfHandler.close();
-                LOG.error("Error creating the JSON writer for writing {} results", searchResults.size(), e);
-                throw new UncheckedIOException(e);
-            }
-            if (initialOutputFileSize > 0) {
-                try {
-                    LOG.info("Append {} results to {}", searchResults.size(), outputFile);
-                    // FP is positioned at the end of the last element
-                    // position FP after the end of the last item
-                    // this may not work on Windows because of the new line separator
-                    // - so on windows it may need to rollback more than 4 chars
-                    long endOfLastItemPos = initialOutputFileSize - 4;
-                    rfHandler.rf.seek(endOfLastItemPos);
-                    rfHandler.fs.write(", ".getBytes()); // write the separator for the next array element
-                    // append the new elements to the existing results
-                    gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
-                    gen.writeArrayFieldStart("results");
-                    gen.writeObject(searchResults.get(0)); // write the first element - it can be any element or dummy object
-                    // just to fool the generator that there is already an element in the array
-                    gen.flush();
-                    // reset the position
-                    rfHandler.rf.seek(endOfLastItemPos);
-                    // and now start writing the actual elements
-                    writeColorSearchResultsArray(gen, searchResults);
-                    gen.writeEndArray();
-                    gen.writeEndObject();
-                    gen.flush();
-                    long currentPos = rfHandler.rf.getFilePointer();
-                    rfHandler.rf.setLength(currentPos); // truncate
-                } catch (IOException e) {
-                    LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
-                    throw new UncheckedIOException(e);
-                } finally {
-                    closeFile(rfHandler);
-                    LOG.info("Written {} results to existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
-                }
-            } else {
-                try {
-                    LOG.info("Create {} with {} results", outputFile, searchResults.size());
-                    writeColorSearchResults(gen, searchResults);
-                } catch (IOException e) {
-                    LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
-                    throw new UncheckedIOException(e);
-                } finally {
-                    closeFile(rfHandler);
-                    LOG.info("Written {} results to new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
-                }
-            }
-        }
-    }
-
-    private ResultsFileHandler openFile(File f) throws IOException {
-        long startTime = System.currentTimeMillis();
-        RandomAccessFile rf = new RandomAccessFile(f, "rw");
-        FileChannel fc = rf.getChannel();
-        try {
-            FileLock fl = fc.tryLock();
-            if (fl == null) {
-                throw new IllegalStateException("Could not acquire lock for " + f);
-            } else {
-                LOG.info("Obtained the lock for {} in {}ms", f, System.currentTimeMillis() - startTime);
-                return new ResultsFileHandler(rf, fl, Channels.newOutputStream(fc));
-            }
-        } catch (OverlappingFileLockException e) {
-            throw new IllegalStateException("Could not acquire lock for " + f, e);
-        }
-    }
-
-    private void closeFile(ResultsFileHandler rfh) {
-        rfh.close();
-    }
-
-    private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
-        gen.useDefaultPrettyPrinter();
-        gen.writeStartObject();
-        gen.writeArrayFieldStart("results");
-        writeColorSearchResultsArray(gen, searchResults);
-        gen.writeEndArray();
-        gen.writeEndObject();
-        gen.flush();
-    }
-
-    private void writeColorSearchResultsArray(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
-        for (ColorMIPSearchResultMetadata sr : searchResults) {
-            gen.writeObject(sr);
-        }
     }
 
     void terminate() {

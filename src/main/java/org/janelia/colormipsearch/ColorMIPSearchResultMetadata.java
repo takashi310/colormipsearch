@@ -7,8 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonProperty
-    String matchedId;
-    @JsonProperty
     String imageArchivePath;
     @JsonProperty
     String imageName;
@@ -18,6 +16,10 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     int imageVolumeSize;
     @JsonProperty
     double imageShapeScore;
+    @JsonProperty
+    String matchedId;
+    @JsonProperty
+    String matchedPublishedName;
     @JsonProperty
     String matchedImageArchivePath;
     @JsonProperty

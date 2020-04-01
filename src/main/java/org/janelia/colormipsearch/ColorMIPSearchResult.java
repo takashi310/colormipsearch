@@ -121,7 +121,6 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.id = getLibraryId();
         srMetadata.libraryName = libraryMIP.libraryName;
         srMetadata.publishedName = libraryMIP.publishedName;
-        srMetadata.matchedId = getMaskId();
         srMetadata.imageUrl = maskMIP.imageURL;
         srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
         srMetadata.imageArchivePath = libraryMIP.archivePath;
@@ -129,6 +128,9 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.imageName = libraryMIP.imagePath;
         srMetadata.imageVolumeSize = libraryMIP.volumeSize;
         srMetadata.imageShapeScore = libraryMIP.shapeScore;
+
+        srMetadata.matchedId = getMaskId();
+        srMetadata.matchedPublishedName = maskMIP.publishedName;
         srMetadata.matchedImageArchivePath = maskMIP.archivePath;
         srMetadata.matchedImageName = maskMIP.imagePath;
         srMetadata.matchedImageType = maskMIP.type;
@@ -147,7 +149,6 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.id = getMaskId();
         srMetadata.libraryName = maskMIP.libraryName;
         srMetadata.publishedName = maskMIP.publishedName;
-        srMetadata.matchedId = getLibraryId();
         srMetadata.imageUrl = libraryMIP.imageURL;
         srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
         srMetadata.imageArchivePath = maskMIP.archivePath;
@@ -155,6 +156,9 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.imageType = maskMIP.type;
         srMetadata.imageVolumeSize  = maskMIP.volumeSize;
         srMetadata.imageShapeScore = maskMIP.shapeScore;
+
+        srMetadata.matchedId = getLibraryId();
+        srMetadata.matchedPublishedName = libraryMIP.publishedName;
         srMetadata.matchedImageArchivePath = libraryMIP.archivePath;
         srMetadata.matchedImageName = libraryMIP.imagePath;
         srMetadata.matchedImageType = libraryMIP.type;
