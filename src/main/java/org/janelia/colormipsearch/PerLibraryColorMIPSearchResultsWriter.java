@@ -36,7 +36,7 @@ class PerLibraryColorMIPSearchResultsWriter extends AbstractColorMIPSearchResult
                         outputPath == null
                                 ? null
                                 : outputPath.resolve(libraryId + ".json"),
-                        srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
+                        srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()))));
 
         LOG.info("Finished writing {} results by library", srsByLibrary.size());
     }
