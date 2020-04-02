@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -40,6 +42,8 @@ class MIPInfo implements Serializable {
     int volumeSize;
     @JsonProperty
     double shapeScore;
+    @JsonProperty("attrs")
+    Map<String, String> attrs = new LinkedHashMap<>();
 
     MIPInfo() {
     }

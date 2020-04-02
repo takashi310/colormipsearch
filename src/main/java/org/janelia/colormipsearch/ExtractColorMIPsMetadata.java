@@ -439,6 +439,7 @@ public class ExtractColorMIPsMetadata {
                                 gen.writeStringField("thumbnailURL", cdmip.thumbnailUrl);
                                 gen.writeNumberField("volumeSize", cdmip.volumeSize);
                                 gen.writeNumberField("shapeScore", cdmip.shapeScore);
+                                gen.writeObjectField("attrs", cdmip.attrs);
                                 gen.writeEndObject();
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);
