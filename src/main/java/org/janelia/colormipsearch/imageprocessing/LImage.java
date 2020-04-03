@@ -61,13 +61,6 @@ public class LImage {
         );
     }
 
-    LImage mapi(BiFunction<Integer, Integer, Integer> f) {
-        return new LImage(
-                getPixelType(), width(), height(),
-                (x, y) -> f.apply(x, y)
-        );
-    }
-
     ImageArray asImageArray() {
         int[] pixels = new int[height() * width()];
         return new ImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));

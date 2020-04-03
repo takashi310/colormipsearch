@@ -1,8 +1,5 @@
 package org.janelia.colormipsearch.imageprocessing;
 
-import java.util.function.Function;
-
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -13,28 +10,10 @@ import org.junit.Test;
 public class ImageOperationsTest {
 
     @Test
-    public void cMaxFilterForRGBImage() {
-
-        Function<CImage, Integer> maxFilterProcessing = CImageProcessing.maxFilter(10);
-
-        for (int i = 0; i < 1; i++) {
-            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
-            ImageArray testMIP = new ImageArray(testImage);
-            ImageArray maxFilteredImage = CImageProcessing.fromImageArray(testMIP).extend(maxFilterProcessing).toImageArray();
-            IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
-            RankFilters maxFilter = new RankFilters();
-            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
-
-            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
-        }
-
-    }
-
-    @Test
     public void maxFilterForRGBImage() {
 
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
-                .maxWithDiscPattern(10);
+                .maxFilterWithDiscPattern(10);
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
@@ -57,7 +36,7 @@ public class ImageOperationsTest {
 
         ImageArray binaryMaxFilteredImage = ImageProcessing.create()
                 .toBinary8(50)
-                .maxWithDiscPattern(10)
+                .maxFilterWithDiscPattern(10)
                 .applyTo(testMIP)
                 .asImageArray()
                 ;
@@ -118,7 +97,7 @@ public class ImageOperationsTest {
 
         ImageArray maskedImage = ImageProcessing.create()
                 .mask(250)
-                .maxWithDiscPattern(10)
+                .maxFilterWithDiscPattern(10)
                 .applyTo(testMIP)
                 .asImageArray()
                 ;

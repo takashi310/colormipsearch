@@ -32,7 +32,7 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary16(threshold)));
     }
 
-    public ImageProcessing maxWithDiscPattern(double radius) {
+    public ImageProcessing maxFilterWithDiscPattern(double radius) {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilterWithDiscPattern(radius)));
     }
 
@@ -44,11 +44,7 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignal()));
     }
 
-//    public ImageProcessing thenApply(ImageProcessing after) {
-//        return new ImageProcessing(imageTransformation.andThen(after.imageTransformation));
-//    }
-//
-    public ImageProcessing thenExtend(TriFunction<LImage, Integer, Integer, Integer> f) {
+    public ImageProcessing thenExtend(ImageTransformation f) {
         return new ImageProcessing(imageTransformation.extend(f));
     }
 

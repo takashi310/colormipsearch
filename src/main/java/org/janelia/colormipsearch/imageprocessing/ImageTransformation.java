@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
 
 public abstract class ImageTransformation {
 
-    interface ColorHistogram {
+    private interface ColorHistogram {
         /**
          * Add a value and return the new max
          * @param val
@@ -23,7 +23,7 @@ public abstract class ImageTransformation {
         void clear();
     }
 
-    static final class RGBHistogram implements ColorHistogram {
+    private static final class RGBHistogram implements ColorHistogram {
         private final Gray8Histogram rHistogram;
         private final Gray8Histogram gHistogram;
         private final Gray8Histogram bHistogram;
@@ -65,7 +65,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    static final class Gray8Histogram implements ColorHistogram {
+    private static final class Gray8Histogram implements ColorHistogram {
 
         private final int[] histogram;
         private int max;
@@ -128,82 +128,73 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static TriFunction<LImage, Integer, Integer, Integer> extractValue() {
-        return (lImage, x, y) -> lImage.get(x, y);
+    public static ImageTransformation horizontalMirror() {
+        return new ImageTransformation() {
+            @Override
+            int apply(LImage lImage, int x, int y) {
+                return lImage.get(lImage.width() - x - 1, y);
+            }
+        };
     }
 
-    public static TriFunction<LImage, Integer, Integer, Integer> horizontalMirror() {
-        return (lImage, x, y) -> lImage.get(lImage.width() - x - 1, y);
-    }
-
-    static TriFunction<LImage, Integer, Integer, Integer> maxFilterWithDiscPattern(double radius) {
+    static ImageTransformation maxFilterWithDiscPattern(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;
 
-        return (lImage, x, y) -> {
-            return 0; // !!!!!!!!!!!!!!!
+        return new ImageTransformation() {
+            @Override
+            int apply(LImage lImage, int x, int y) {
+                ColorHistogram histogram;
+                int[] imageCache;
+                if (lImage.imageProcessingContext.get("histogram") == null) {
+                    histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
+                    lImage.imageProcessingContext.set("histogram", histogram);
+                    imageCache = new int[kHeight * lImage.width()];
+                    lImage.imageProcessingContext.set("imageCache", imageCache);
+                } else {
+                    histogram = (ColorHistogram) lImage.imageProcessingContext.get("histogram");
+                    imageCache = (int[]) lImage.imageProcessingContext.get("imageCache");
+                }
+                int m = -1;
+                if (x == 0) {
+                    histogram.clear();
+                    Arrays.fill(imageCache, 0);
+                    for (int h = 0; h < kHeight; h++) {
+                        int ay = y - kRadius + h;
+                        if (ay >= 0 && ay < lImage.height()) {
+                            for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                                int ax = x + dx;
+                                if (ax < lImage.width()) {
+                                    int p = lImage.get(ax, ay);
+                                    imageCache[h * lImage.width() + ax] = p;
+                                    m = histogram.add(p);
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                for (int h = 0; h < kHeight; h++) {
+                    int ay = y - kRadius + h;
+                    int nextx = x + radii[2 * h + 1];
+                    int prevx = x + radii[2 * h];
+                    if (ay >= 0 && ay < lImage.height()) {
+                        if (nextx < lImage.width()) {
+                            int p = lImage.get(nextx, ay);
+                            imageCache[h * lImage.width() + nextx] = p;
+                            m = histogram.add(p);
+                        }
+                        if (prevx > 0) {
+                            m = histogram.remove(imageCache[h * lImage.width() + prevx - 1]);
+                        }
+                    }
+                }
+                return m;
+            }
         };
     }
-
-//    static ImageTransformation maxWithDiscPattern(double radius) {
-//        return new ImageTransformation() {
-//            private final int[] radii = makeLineRadii(radius);
-//            private final int kRadius = radii[radii.length - 1];
-//            private final int kHeight = (radii.length - 1) / 2;
-//
-//            @Override
-//            public int apply(int x, int y, LImage lImage) {
-//                ColorHistogram histogram;
-//                int[] imageCache;
-//                if (lImage.imageProcessingContext.get("histogram") == null) {
-//                    histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
-//                    lImage.imageProcessingContext.set("histogram", histogram);
-//                    imageCache = new int[kHeight*lImage.width()];
-//                    lImage.imageProcessingContext.set("imageCache", imageCache);
-//                } else {
-//                    histogram = (ColorHistogram) lImage.imageProcessingContext.get("histogram");
-//                    imageCache = (int[]) lImage.imageProcessingContext.get("imageCache");
-//                }
-//                int m = -1;
-//                if (x == 0) {
-//                    histogram.clear();
-//                    Arrays.fill(imageCache, 0);
-//                    for (int h = 0; h < kHeight; h++) {
-//                        int ay = y - kRadius + h;
-//                        if (ay >= 0 && ay < lImage.height()) {
-//                            for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
-//                                int ax = x + dx;
-//                                if (ax < lImage.width()) {
-//                                    int p = lImage.get(ax, ay);
-//                                    imageCache[h * lImage.width() + ax] = p;
-//                                    m = histogram.add(p);
-//                                } else {
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                for (int h = 0; h < kHeight; h++) {
-//                    int ay = y - kRadius + h;
-//                    int nextx = x + radii[2 * h + 1];
-//                    int prevx = x + radii[2 * h];
-//                    if (ay >= 0 && ay < lImage.height()) {
-//                        if (nextx < lImage.width()) {
-//                            int p = lImage.get(nextx, ay);
-//                            imageCache[h * lImage.width() + nextx] = p;
-//                            m = histogram.add(p);
-//                        }
-//                        if (prevx > 0) {
-//                            m = histogram.remove(imageCache[h * lImage.width() + prevx - 1]);
-//                        }
-//                    }
-//                }
-//                return m;
-//            }
-//        };
-//    }
 
     private static int[] makeLineRadii(double radiusArg) {
         double radius;
@@ -240,35 +231,25 @@ public abstract class ImageTransformation {
         this.pixelTypeChange = pixelTypeChange;
     }
 
-    ImageTransformation extend(TriFunction<LImage, Integer, Integer, Integer> f) {
+    ImageTransformation extend(ImageTransformation pixelTransformation) {
         ImageTransformation currentTransformation = this;
-        return new ImageTransformation() {
+        return new ImageTransformation(
+                pixelTypeChange.andThen(pixelTransformation.pixelTypeChange)) {
+
             @Override
-            int apply(LImage lImage, int x, int y) {
-                return f.apply(lImage.mapi(currentTransformation), x, y);
+            public int apply(LImage lImage, int x, int y) {
+                LImage updatedImage;
+                String updatedImageKey = "updatedBy" + currentTransformation.hashCode();
+                if (lImage.imageProcessingContext.get(updatedImageKey) == null) {
+                    updatedImage = lImage.mapi(currentTransformation);
+                    lImage.imageProcessingContext.set(updatedImageKey, updatedImage);
+                } else {
+                    updatedImage = (LImage) lImage.imageProcessingContext.get(updatedImageKey);
+                }
+                return pixelTransformation.apply(updatedImage, x, y);
             }
         };
     }
-
-//    ImageTransformation andThen(ImageTransformation pixelTransformation) {
-//        ImageTransformation currentTransformation = this;
-//        return new ImageTransformation(
-//                pixelTypeChange.andThen(pixelTransformation.pixelTypeChange)) {
-//
-//            @Override
-//            public int apply(int x, int y, LImage lImage) {
-//                LImage updatedImage;
-//                String updatedImageKey = "updatedBy" + currentTransformation.hashCode();
-//                if (lImage.imageProcessingContext.get(updatedImageKey) == null) {
-//                    updatedImage = lImage.mapi(currentTransformation);
-//                    lImage.imageProcessingContext.set(updatedImageKey, updatedImage);
-//                } else {
-//                    updatedImage = (LImage) lImage.imageProcessingContext.get(updatedImageKey);
-//                }
-//                return pixelTransformation.apply(x, y, updatedImage);
-//            }
-//        };
-//    }
 
     ImageTransformation fmap(ColorTransformation colorTransformation) {
         ImageTransformation currentTransformation = this;
