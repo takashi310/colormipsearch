@@ -57,7 +57,14 @@ public class LImage {
     LImage mapi(ImageTransformation imageTransformation) {
         return new LImage(
                 imageTransformation.pixelTypeChange.apply(getPixelType()), width(), height(),
-                (x, y) -> imageTransformation.apply(x, y, this)
+                (x, y) -> imageTransformation.apply(this, x, y)
+        );
+    }
+
+    LImage mapi(BiFunction<Integer, Integer, Integer> f) {
+        return new LImage(
+                getPixelType(), width(), height(),
+                (x, y) -> f.apply(x, y)
         );
     }
 

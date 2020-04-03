@@ -26,7 +26,7 @@ class EM2LMAreaGapCalculator {
         this.maskThreshold = maskThreshold;
         this.negativeRadius = negativeRadius;
         this.mirrorMask = mirrorMask;
-        this.scoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.identity());
+        this.scoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.extractValue());
         this.mirrorScoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.horizontalMirror());
     }
 
@@ -55,7 +55,7 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
+    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(TriFunction<LImage, Integer, Integer, Integer> mipTransformation) {
         ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
                 .mask(maskThreshold)
                 .maxWithDiscPattern(negativeRadius)
@@ -64,7 +64,7 @@ class EM2LMAreaGapCalculator {
         ImageProcessing patternSignalProcessing = ImageProcessing.create()
                 .toGray16()
                 .toSignal()
-                .thenApply(mipTransformation)
+                .thenExtend(mipTransformation)
                 ;
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {

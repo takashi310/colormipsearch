@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.imageprocessing;
 
-import java.util.function.BinaryOperator;
-
 public class ImageProcessing {
 
     public static ImageProcessing create() {
@@ -19,39 +17,39 @@ public class ImageProcessing {
     }
 
     public ImageProcessing mask(int threshold) {
-        return new ImageProcessing(imageTransformation.andThen(ColorTransformation.mask(threshold)));
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.mask(threshold)));
     }
 
     public ImageProcessing toGray16() {
-        return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toGray16()));
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16()));
     }
 
     public ImageProcessing toBinary8(int threshold) {
-        return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toBinary8(threshold)));
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary8(threshold)));
     }
 
     public ImageProcessing toBinary16(int threshold) {
-        return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toBinary16(threshold)));
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary16(threshold)));
     }
 
     public ImageProcessing maxWithDiscPattern(double radius) {
-        return new ImageProcessing(imageTransformation.andThen(ImageTransformation.maxWithDiscPattern(radius)));
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilterWithDiscPattern(radius)));
     }
 
     public ImageProcessing horizontalMirror() {
-        return new ImageProcessing(imageTransformation.andThen(ImageTransformation.horizontalMirror()));
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.horizontalMirror()));
     }
 
     public ImageProcessing toSignal() {
-        return new ImageProcessing(imageTransformation.andThen(ColorTransformation.toSignal()));
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignal()));
     }
 
-    public ImageProcessing thenApply(ImageProcessing after) {
-        return new ImageProcessing(imageTransformation.andThen(after.imageTransformation));
-    }
-
-    public ImageProcessing thenApply(ImageTransformation f) {
-        return new ImageProcessing(imageTransformation.andThen(f));
+//    public ImageProcessing thenApply(ImageProcessing after) {
+//        return new ImageProcessing(imageTransformation.andThen(after.imageTransformation));
+//    }
+//
+    public ImageProcessing thenExtend(TriFunction<LImage, Integer, Integer, Integer> f) {
+        return new ImageProcessing(imageTransformation.extend(f));
     }
 
     public LImage applyTo(ImageArray image) {
