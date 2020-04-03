@@ -138,7 +138,6 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedImageShapeScore = maskMIP.shapeScore;
         srMetadata.attrs.putAll(maskMIP.attrs);
         srMetadata.addAttr("Library", maskMIP.libraryName);
-        srMetadata.addAttr("PublishedName", maskMIP.publishedName);
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);
@@ -167,7 +166,6 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.matchedImageShapeScore = libraryMIP.shapeScore;
         srMetadata.attrs.putAll(libraryMIP.attrs);
         srMetadata.addAttr("Library", libraryMIP.libraryName);
-        srMetadata.addAttr("PublishedName", libraryMIP.publishedName);
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);

@@ -143,23 +143,36 @@ public abstract class ImageTransformation {
         int kHeight = (radii.length - 1) / 2;
 
         return new ImageTransformation() {
+            /**
+             * MaxFilterContext is used for immproving the performance of the max filter transformation and it
+             * contains the histogram for selecting the max pixel value and a cache of the image rows. This must
+             * be associated both with the image and the transformation.
+             */
+            class MaxFilterContext {
+                final ColorHistogram histogram;
+                final int[] imageCache;
+
+                MaxFilterContext(ColorHistogram histogram, int[] imageCache) {
+                    this.histogram = histogram;
+                    this.imageCache = imageCache;
+                }
+            }
             @Override
             int apply(LImage lImage, int x, int y) {
-                ColorHistogram histogram;
-                int[] imageCache;
-                if (lImage.imageProcessingContext.get("histogram") == null) {
-                    histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
-                    lImage.imageProcessingContext.set("histogram", histogram);
-                    imageCache = new int[kHeight * lImage.width()];
-                    lImage.imageProcessingContext.set("imageCache", imageCache);
+                MaxFilterContext maxFilterContext;
+                if (lImage.imageProcessingContext.get(this) == null) {
+                    maxFilterContext = new MaxFilterContext(
+                            lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram(),
+                            new int[kHeight * lImage.width()]
+                    );
+                    lImage.imageProcessingContext.set(this, maxFilterContext);
                 } else {
-                    histogram = (ColorHistogram) lImage.imageProcessingContext.get("histogram");
-                    imageCache = (int[]) lImage.imageProcessingContext.get("imageCache");
+                    maxFilterContext = (MaxFilterContext) lImage.imageProcessingContext.get(this);
                 }
                 int m = -1;
                 if (x == 0) {
-                    histogram.clear();
-                    Arrays.fill(imageCache, 0);
+                    maxFilterContext.histogram.clear();
+                    Arrays.fill(maxFilterContext.imageCache, 0);
                     for (int h = 0; h < kHeight; h++) {
                         int ay = y - kRadius + h;
                         if (ay >= 0 && ay < lImage.height()) {
@@ -167,8 +180,8 @@ public abstract class ImageTransformation {
                                 int ax = x + dx;
                                 if (ax < lImage.width()) {
                                     int p = lImage.get(ax, ay);
-                                    imageCache[h * lImage.width() + ax] = p;
-                                    m = histogram.add(p);
+                                    maxFilterContext.imageCache[h * lImage.width() + ax] = p;
+                                    m = maxFilterContext.histogram.add(p);
                                 } else {
                                     break;
                                 }
@@ -183,11 +196,11 @@ public abstract class ImageTransformation {
                     if (ay >= 0 && ay < lImage.height()) {
                         if (nextx < lImage.width()) {
                             int p = lImage.get(nextx, ay);
-                            imageCache[h * lImage.width() + nextx] = p;
-                            m = histogram.add(p);
+                            maxFilterContext.imageCache[h * lImage.width() + nextx] = p;
+                            m = maxFilterContext.histogram.add(p);
                         }
                         if (prevx > 0) {
-                            m = histogram.remove(imageCache[h * lImage.width() + prevx - 1]);
+                            m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx - 1]);
                         }
                     }
                 }
@@ -238,15 +251,11 @@ public abstract class ImageTransformation {
 
             @Override
             public int apply(LImage lImage, int x, int y) {
-                LImage updatedImage;
-                String updatedImageKey = "updatedBy" + currentTransformation.hashCode();
-                if (lImage.imageProcessingContext.get(updatedImageKey) == null) {
-                    updatedImage = lImage.mapi(currentTransformation);
-                    lImage.imageProcessingContext.set(updatedImageKey, updatedImage);
-                } else {
-                    updatedImage = (LImage) lImage.imageProcessingContext.get(updatedImageKey);
-                }
-                return pixelTransformation.apply(updatedImage, x, y);
+                /**
+                 * this relies on lImage.mapi being referential transparent and lImage.mapi with the same parameter
+                 * always returning exactly the same result.
+                 */
+                return pixelTransformation.apply(lImage.mapi(currentTransformation), x, y);
             }
         };
     }

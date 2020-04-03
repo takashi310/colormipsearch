@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 class ImageProcessingContext {
-    private Map<String, Object> ctxValues = new HashMap<>();
+    private Map<Object, Object> ctxValues = new HashMap<>();
 
-    void set(String name, Object value) {
+    void set(Object name, Object value) {
         ctxValues.put(name, value);
     }
 
-    Object get(String name) {
+    Object get(Object name) {
         return ctxValues.get(name);
     }
 
