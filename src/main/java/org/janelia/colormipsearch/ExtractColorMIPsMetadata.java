@@ -642,9 +642,17 @@ public class ExtractColorMIPsMetadata {
             System.exit(1);
         }
 
-        if (mainArgs.displayHelpMessage || args.displayHelpMessage || StringUtils.isBlank(cmdline.getParsedCommand())) {
+        if (mainArgs.displayHelpMessage) {
             cmdline.usage();
             System.exit(0);
+        } else if (args.displayHelpMessage && StringUtils.isNotBlank(cmdline.getParsedCommand())) {
+            cmdline.usage(cmdline.getParsedCommand());
+            System.exit(0);
+        } else if (StringUtils.isBlank(cmdline.getParsedCommand())) {
+            StringBuilder sb = new StringBuilder("Missing command\n");
+            cmdline.usage(sb);
+            JCommander.getConsole().println(sb.toString());
+            System.exit(1);
         }
 
         ExtractColorMIPsMetadata cdmipMetadataExtractor = new ExtractColorMIPsMetadata(args.dataServiceURL, args.authorization);
