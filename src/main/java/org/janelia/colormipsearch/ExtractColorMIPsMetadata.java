@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,10 +16,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipFile;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -41,10 +44,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
@@ -217,7 +223,7 @@ public class ExtractColorMIPsMetadata {
     }
 
     private int extractChannelFromSegmentedImageName(String imageName) {
-        Pattern regExPattern = Pattern.compile("_c(\\d+)_", Pattern.CASE_INSENSITIVE);
+        Pattern regExPattern = Pattern.compile("_ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
             String channel = chMatcher.group(1);
@@ -419,6 +425,8 @@ public class ExtractColorMIPsMetadata {
             return;
         }
         try {
+            Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(segmentedMIPsBaseDir);
+            LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
             gen.useDefaultPrettyPrinter();
             gen.writeStartArray();
@@ -435,7 +443,7 @@ public class ExtractColorMIPsMetadata {
                         .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
                         .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImageHandling).stream())
+                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedImages, segmentedImageHandling).stream())
                         .forEach(cdmip -> {
                             try {
                                 Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
@@ -443,6 +451,8 @@ public class ExtractColorMIPsMetadata {
                                 gen.writeStringField("id", cdmip.id);
                                 gen.writeStringField("libraryName", cdmip.libraryName);
                                 gen.writeStringField("publishedName", cdmip.publishedName);
+                                gen.writeStringField("type", cdmip.type);
+                                gen.writeStringField("archivePath", cdmip.segmentedDataBasePath);
                                 gen.writeStringField("imagePath", imageFilepath.toString());
                                 gen.writeStringField("cdmPath", cdmip.filepath);
                                 gen.writeStringField("imageURL", cdmip.imageUrl);
@@ -468,69 +478,126 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedMIPsBaseDir, int segmentedImageHandling) {
-        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
+    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, Pair<String, Map<String, List<String>>> segmentedImages, int segmentedImageHandling) {
+        if (StringUtils.isBlank(segmentedImages.getLeft())) {
             return Collections.singletonList(cdmipMetadata);
         } else {
-            try {
-                Pattern segmentedImageFeaturesPattern = Pattern.compile("(\\d+)_(\\d+)_(\\d+\\.?\\d+)");
-                List<ColorDepthMetadata> segmentedCDMIPs = Files.find(Paths.get(segmentedMIPsBaseDir), MAX_SEGMENTED_DATA_DEPTH,
-                        (p, fa) -> {
-                            if (fa.isRegularFile()) {
-                                String fn = p.getFileName().toString();
-                                String line = cdmipMetadata.line;
-                                String publishingName = cdmipMetadata.getAttr("Published Name");
-                                String slideCode = cdmipMetadata.getAttr("Slide Code");
-                                if ((StringUtils.contains(fn, publishingName) || StringUtils.contains(fn, line) || StringUtils.contains(fn, normalizeLineName(line))) &&
-                                        StringUtils.contains(fn, slideCode)) {
-                                    int channelFromMip = getChannel(cdmipMetadata);
-                                    int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode,""));
-                                    LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
-                                    return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
-                                } else {
-                                    return false;
-                                }
-                            } else {
-                                return true;
-                            }
-                        })
-                        .filter(p -> Files.isRegularFile(p))
-                        .map(p -> {
-                            ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
-                            cdmipMetadata.copyTo(segmentMIPMetadata);
-                            String fn = StringUtils.replacePattern(p.getFileName().toString(), "\\.\\D*$","");
-                            // find the 3D volume size
-                            int segmentedImageFeaturesSeparator = fn.indexOf("__");
-                            if (segmentedImageFeaturesSeparator != -1) {
-                                // extract volume size and shape score from the file name - OL0045B_20140116_19_D6_f_c2__002_062022_0.03502.tif
-                                String toMatch = fn.substring(segmentedImageFeaturesSeparator+2);
-                                Matcher m = segmentedImageFeaturesPattern.matcher(toMatch);
-                                if (m.find()) {
-                                    segmentMIPMetadata.volumeSize = Integer.parseInt(m.group(2));
-                                    segmentMIPMetadata.shapeScore = Double.parseDouble(m.group(3));
-                                }
-                            }
-                            segmentMIPMetadata.segmentedDataBasePath = segmentedMIPsBaseDir;
-                            segmentMIPMetadata.segmentFilepath = p.toString();
-                            return segmentMIPMetadata;
-                        }).collect(Collectors.toList());
-                if (segmentedImageHandling == 0x1) {
-                    return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
-                } else if (segmentedImageHandling == 0x2) {
-                    return segmentedCDMIPs;
-                } else {
-                    return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
-                }
-            } catch (IOException e) {
-                LOG.warn("Error finding the segmented mips for {}", cdmipMetadata, e);
-                return Collections.singletonList(cdmipMetadata);
+            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImages.getLeft(), segmentedImages.getRight());
+            if (segmentedImageHandling == 0x1) {
+                return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
+            } else if (segmentedImageHandling == 0x2) {
+                return segmentedCDMIPs;
+            } else {
+                return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
             }
         }
     }
 
-    String normalizeLineName(String lname) {
-        int separator = StringUtils.indexOf(lname, '_');
-        return separator == -1 ? lname : lname.substring(separator + 1);
+    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String type, Map<String, List<String>> segmentedImages) {
+        String slideCode = cdmipMetadata.getAttr("Slide Code");
+        if (segmentedImages.get(slideCode) == null) {
+            return Collections.emptyList();
+        } else {
+            Pattern segmentedImageFeaturesPattern = Pattern.compile("(\\d+)_(\\d+)_(\\d+\\.?\\d+)");
+            return segmentedImages.get(slideCode).stream()
+                    .filter(p -> {
+                        String fn = Paths.get(p).getFileName().toString();
+                        Preconditions.checkArgument(fn.contains(slideCode));
+                        int channelFromMip = getChannel(cdmipMetadata);
+                        int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode, ""));
+                        LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
+                        return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
+                    })
+                    .map(p -> {
+                        String sifn = Paths.get(p).getFileName().toString();
+                        int scIndex = sifn.indexOf(slideCode);
+                        Preconditions.checkArgument(scIndex != -1);
+                        ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
+                        cdmipMetadata.copyTo(segmentMIPMetadata);
+                        String fn = StringUtils.replacePattern(sifn.substring(scIndex + slideCode.length()), "\\.\\D*$", "");
+                        // find the 3D volume size
+                        int segmentedImageFeaturesSeparator = fn.indexOf("__");
+                        if (segmentedImageFeaturesSeparator != -1) {
+                            // extract volume size and shape score from the file name - OL0045B_20140116_19_D6_f_c2__002_062022_0.03502.tif
+                            String toMatch = fn.substring(segmentedImageFeaturesSeparator + 2);
+                            Matcher m = segmentedImageFeaturesPattern.matcher(toMatch);
+                            if (m.find()) {
+                                segmentMIPMetadata.volumeSize = Integer.parseInt(m.group(2));
+                                segmentMIPMetadata.shapeScore = Double.parseDouble(m.group(3));
+                            }
+                        }
+                        segmentMIPMetadata.type = type;
+                        segmentMIPMetadata.segmentFilepath = p;
+                        return segmentMIPMetadata;
+                    })
+                    .collect(Collectors.toList());
+        }
+    }
+
+    private Pair<String, Map<String, List<String>>> getSegmentedImages(String segmentedMIPsBaseDir) {
+        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
+            return ImmutablePair.of("", Collections.emptyMap());
+        } else {
+            Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
+            if (Files.isDirectory(segmentdMIPsBasePath)) {
+                return ImmutablePair.of("file", getSegmentedImagesFromDir(segmentdMIPsBasePath));
+            } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
+                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(segmentdMIPsBasePath.toFile()));
+            } else {
+                return ImmutablePair.of("file", Collections.emptyMap());
+            }
+        }
+    }
+
+    private Map<String, List<String>> getSegmentedImagesFromDir(Path segmentedMIPsBasePath) {
+        try {
+            Pattern slideCodeRegExPattern = Pattern.compile("_(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)_(m|f)_ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+            return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
+                    (p, fa) -> fa.isRegularFile())
+                    .map(p -> p.toString())
+                    .collect(Collectors.groupingBy(entryName -> {
+                        Matcher m = slideCodeRegExPattern.matcher(entryName);
+                        if (m.find()) {
+                            return m.group(1);
+                        } else {
+                            LOG.warn("Slide code not found in {}", entryName);
+                            throw new IllegalArgumentException("Slide code not found in " + entryName);
+                        }
+                    }));
+        } catch (IOException e) {
+            LOG.warn("Error scanning {} for segmented images", segmentedMIPsBasePath, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    private Map<String, List<String>> getSegmentedImagesFromZip(File segmentedMIPsFile) {
+        ZipFile segmentedMIPsZipFile;
+        try {
+            segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
+        } catch (Exception e) {
+            LOG.warn("Error opening segmented mips archive {}", segmentedMIPsFile, e);
+            return Collections.emptyMap();
+        }
+        try {
+            Pattern slideCodeRegExPattern = Pattern.compile("_(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)_(m|f)_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+            return segmentedMIPsZipFile.stream()
+                    .filter(ze -> !ze.isDirectory())
+                    .map(ze -> ze.getName())
+                    .collect(Collectors.groupingBy(entryName -> {
+                        Matcher m = slideCodeRegExPattern.matcher(entryName);
+                        if (m.find()) {
+                            return m.group(1);
+                        } else {
+                            LOG.warn("Slide code not found in {}", entryName);
+                            throw new IllegalArgumentException("Slide code not found in " + entryName);
+                        }
+                    }));
+        } finally {
+            try {
+                segmentedMIPsZipFile.close();
+            } catch (IOException ignore) {
+            }
+        }
     }
 
     private int countColorDepthMips(String alignmentSpace, String library, List<String> datasets) {

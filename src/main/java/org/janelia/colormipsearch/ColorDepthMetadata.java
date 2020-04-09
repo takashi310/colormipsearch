@@ -10,6 +10,7 @@ class ColorDepthMetadata extends MetadataAttrs {
     @JsonProperty
     String sampleRef;
     String filepath;
+    String type;
     String segmentedDataBasePath;
     String segmentFilepath;
     int volumeSize;
