@@ -443,7 +443,7 @@ public class ExtractColorMIPsMetadata {
                         .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
                         .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedImages, segmentedImageHandling).stream())
+                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
                         .forEach(cdmip -> {
                             try {
                                 Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
@@ -478,11 +478,11 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, Pair<String, Map<String, List<String>>> segmentedImages, int segmentedImageHandling) {
-        if (StringUtils.isBlank(segmentedImages.getLeft())) {
+    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedImagesBasePath, Pair<String, Map<String, List<String>>> segmentedImages, int segmentedImageHandling) {
+        if (StringUtils.isBlank(segmentedImagesBasePath)) {
             return Collections.singletonList(cdmipMetadata);
         } else {
-            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImages.getLeft(), segmentedImages.getRight());
+            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImagesBasePath, segmentedImages.getLeft(), segmentedImages.getRight());
             if (segmentedImageHandling == 0x1) {
                 return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
             } else if (segmentedImageHandling == 0x2) {
@@ -493,7 +493,7 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String type, Map<String, List<String>> segmentedImages) {
+    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages) {
         String slideCode = cdmipMetadata.getAttr("Slide Code");
         if (segmentedImages.get(slideCode) == null) {
             return Collections.emptyList();
@@ -526,6 +526,7 @@ public class ExtractColorMIPsMetadata {
                                 segmentMIPMetadata.shapeScore = Double.parseDouble(m.group(3));
                             }
                         }
+                        segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
                         segmentMIPMetadata.type = type;
                         segmentMIPMetadata.segmentFilepath = p;
                         return segmentMIPMetadata;
