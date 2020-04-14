@@ -429,7 +429,8 @@ public class ExtractColorMIPsMetadata {
             return;
         }
         try {
-            Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(segmentedMIPsBaseDir);
+            Pattern slideCodeRegExPattern = Pattern.compile("-(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)-(m|f)_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+            Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
             gen.useDefaultPrettyPrinter();
@@ -539,24 +540,23 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private Pair<String, Map<String, List<String>>> getSegmentedImages(String segmentedMIPsBaseDir) {
+    private Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern slideCodeRegExPattern, String segmentedMIPsBaseDir) {
         if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
             return ImmutablePair.of("", Collections.emptyMap());
         } else {
             Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
             if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(segmentdMIPsBasePath));
+                return ImmutablePair.of("file", getSegmentedImagesFromDir(slideCodeRegExPattern, segmentdMIPsBasePath));
             } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(segmentdMIPsBasePath.toFile()));
+                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(slideCodeRegExPattern, segmentdMIPsBasePath.toFile()));
             } else {
                 return ImmutablePair.of("file", Collections.emptyMap());
             }
         }
     }
 
-    private Map<String, List<String>> getSegmentedImagesFromDir(Path segmentedMIPsBasePath) {
+    private Map<String, List<String>> getSegmentedImagesFromDir(Pattern slideCodeRegExPattern, Path segmentedMIPsBasePath) {
         try {
-            Pattern slideCodeRegExPattern = Pattern.compile("_(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)_(m|f)_ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
             return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.toString())
@@ -575,7 +575,7 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private Map<String, List<String>> getSegmentedImagesFromZip(File segmentedMIPsFile) {
+    private Map<String, List<String>> getSegmentedImagesFromZip(Pattern slideCodeRegExPattern, File segmentedMIPsFile) {
         ZipFile segmentedMIPsZipFile;
         try {
             segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
@@ -584,7 +584,6 @@ public class ExtractColorMIPsMetadata {
             return Collections.emptyMap();
         }
         try {
-            Pattern slideCodeRegExPattern = Pattern.compile("_(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)_(m|f)_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
             return segmentedMIPsZipFile.stream()
                     .filter(ze -> !ze.isDirectory())
                     .map(ze -> ze.getName())
