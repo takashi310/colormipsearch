@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.imageprocessing;
 
 import java.util.Arrays;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
@@ -133,6 +134,19 @@ public abstract class ImageTransformation {
             @Override
             int apply(LImage lImage, int x, int y) {
                 return lImage.get(lImage.width() - x - 1, y);
+            }
+        };
+    }
+
+    public static ImageTransformation clearRegion(BiPredicate<Integer, Integer> regionDefnPredicate) {
+        return new ImageTransformation() {
+            @Override
+            protected int apply(LImage lImage, int x, int y) {
+                if (regionDefnPredicate.test(x, y)) {
+                    return -16777216;
+                } else {
+                    return lImage.get(x, y);
+                }
             }
         };
     }

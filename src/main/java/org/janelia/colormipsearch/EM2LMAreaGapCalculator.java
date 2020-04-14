@@ -56,7 +56,18 @@ class EM2LMAreaGapCalculator {
     }
 
     private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
+        ImageProcessing dilated60pxPatternProcessing = ImageProcessing.create()
+                .maxFilterWithDiscPattern(60)
+                .toSignal()
+                .thenExtend(mipTransformation)
+                ;
+        ImageProcessing dilated20pxPatternProcessing = ImageProcessing.create()
+                .maxFilterWithDiscPattern(20)
+                .thenExtend(mipTransformation)
+                ;
+
         ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
+                .clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85)
                 .mask(maskThreshold)
                 .maxFilterWithDiscPattern(negativeRadius)
                 ;
@@ -68,10 +79,16 @@ class EM2LMAreaGapCalculator {
                 ;
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
-            LImage patternImage = LImage.create(patternImageArray);
+            LImage overExpressedRegionsInPatternImage = LImage.combine2(
+                    dilated60pxPatternProcessing.applyTo(patternImageArray),
+                    dilated20pxPatternProcessing.applyTo(patternImageArray),
+                    (p1, p2) -> p2 != -16777216 ? 0 : p1
+            );
+
+            LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
-            LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
-            return LImage.combine3(
+            LImage libraryGradientImage = LImage.create(libraryGradientImageArray).mapi(mipTransformation);
+            long area = LImage.combine3(
                     LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
                     patternImage,
                     dilatedLibraryProcessing.applyTo(libraryImageArray),
@@ -88,6 +105,18 @@ class EM2LMAreaGapCalculator {
                         return p;
                     }
             ).fold(0L, (p, s) -> p > 3 ? s + p : s);
+            long overExpressedArea = overExpressedRegionsInPatternImage
+                    .fold(0L, (p, s) -> {
+                        int red = (p >>> 16) & 0xff;
+                        int green = (p >>> 8) & 0xff;
+                        int blue = p & 0xff;
+
+                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
+                            return s + 1;
+                        else
+                            return s;
+                    });
+            return area + overExpressedArea / 2;
         };
     }
 
@@ -175,10 +204,9 @@ class EM2LMAreaGapCalculator {
 
         if (dataslinumber == 0 || maskslinumber == 0) {
             return (int) dataslinumber;
+        } else {
+            return Math.abs(maskslinumber - dataslinumber);
         }
-
-        int gapslicenum = Math.abs(maskslinumber - dataslinumber);
-        return gapslicenum;
     }
 
     private int findSliceNumber(String maxColor, String secondMaxColor, double colorRatio) {

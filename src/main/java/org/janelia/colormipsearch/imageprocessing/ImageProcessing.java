@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.imageprocessing;
 
+import java.util.function.BiPredicate;
+
 public class ImageProcessing {
 
     public static ImageProcessing create() {
@@ -14,6 +16,10 @@ public class ImageProcessing {
 
     private ImageProcessing(ImageTransformation imageTransformation) {
         this.imageTransformation = imageTransformation;
+    }
+
+    public ImageProcessing clearRegion(BiPredicate<Integer, Integer> regionDefnPredicate) {
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.clearRegion(regionDefnPredicate)));
     }
 
     public ImageProcessing mask(int threshold) {

@@ -38,26 +38,26 @@ public class LImage {
         return imageType;
     }
 
-    int get(int x, int y) {
+    public int get(int x, int y) {
         return pixelSupplier.apply(x, y);
     }
 
-    int height() {
+    public int height() {
         return height;
     }
 
-    int width() {
+    public int width() {
         return width;
     }
 
-    LImage map(ColorTransformation colorChange) {
+    public LImage map(ColorTransformation colorChange) {
         return new LImage(
                 colorChange.pixelTypeChange.apply(getPixelType()), width, height,
                 (x, y) -> colorChange.apply(getPixelType(), get(x, y))
         );
     }
 
-    LImage mapi(ImageTransformation imageTransformation) {
+    public LImage mapi(ImageTransformation imageTransformation) {
         if (transformationCache.get(imageTransformation) == null) {
             // cache the result to mimic referential transparency
             LImage result = new LImage(
@@ -71,7 +71,7 @@ public class LImage {
         }
     }
 
-    ImageArray asImageArray() {
+    public ImageArray asImageArray() {
         int[] pixels = new int[height() * width()];
         return new ImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));
     }
