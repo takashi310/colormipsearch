@@ -229,7 +229,7 @@ public class Main {
         Path getOutputDir() {
             if (resultsDir == null && StringUtils.isBlank(commonArgs.outputDir)) {
                 return null;
-            } else if (resultsDir == null) {
+            } else if (StringUtils.isNotBlank(commonArgs.outputDir)) {
                 return Paths.get(commonArgs.outputDir);
             } else {
                 return Paths.get(resultsDir.input);
