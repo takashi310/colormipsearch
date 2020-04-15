@@ -729,7 +729,7 @@ public class Main {
                         return mip;
                     }, Collectors.collectingAndThen(Collectors.toList(), r -> {
                         LOG.info("Load {} images and gradients if they exist", r.size());
-                        List<ColorMIPSearchResultMetadataWithImages> rWithImages = r.stream()
+                        List<ColorMIPSearchResultMetadataWithImages> rWithImages = r.stream().parallel()
                                     .map(csr -> {
                                         ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
                                         csrWithImages.csr = csr;
