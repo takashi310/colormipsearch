@@ -277,11 +277,15 @@ public abstract class ImageTransformation {
 
             @Override
             public int apply(LImage lImage, int x, int y) {
-                /**
-                 * this relies on lImage.mapi being referential transparent and lImage.mapi with the same parameter
-                 * always returning exactly the same result.
-                 */
-                return pixelTransformation.apply(lImage.mapi(currentTransformation), x, y);
+                LImage updatedImage;
+                String updatedImageKey = "updatedBy" + currentTransformation.hashCode();
+                if (lImage.imageProcessingContext.get(updatedImageKey) == null) {
+                    updatedImage = lImage.mapi(currentTransformation);
+                    lImage.imageProcessingContext.set(updatedImageKey, updatedImage);
+                } else {
+                    updatedImage = (LImage) lImage.imageProcessingContext.get(updatedImageKey);
+                }
+                return pixelTransformation.apply(updatedImage, x, y);
             }
         };
     }

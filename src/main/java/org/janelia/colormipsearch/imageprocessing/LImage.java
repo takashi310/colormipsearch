@@ -22,7 +22,6 @@ public class LImage {
     private final int width;
     private final int height;
     private final BiFunction<Integer, Integer, Integer> pixelSupplier;
-    private final Map<ImageTransformation, LImage> transformationCache = new HashMap<>();
     final ImageProcessingContext imageProcessingContext;
 
     LImage(ImageType imageType, int width, int height,
@@ -58,17 +57,10 @@ public class LImage {
     }
 
     public LImage mapi(ImageTransformation imageTransformation) {
-        if (transformationCache.get(imageTransformation) == null) {
-            // cache the result to mimic referential transparency
-            LImage result = new LImage(
-                    imageTransformation.pixelTypeChange.apply(getPixelType()), width(), height(),
-                    (x, y) -> imageTransformation.apply(this, x, y)
-            );
-            transformationCache.put(imageTransformation, result);
-            return result;
-        } else {
-            return transformationCache.get(imageTransformation);
-        }
+        return new LImage(
+                imageTransformation.pixelTypeChange.apply(getPixelType()), width(), height(),
+                (x, y) -> imageTransformation.apply(this, x, y)
+        );
     }
 
     public ImageArray asImageArray() {
