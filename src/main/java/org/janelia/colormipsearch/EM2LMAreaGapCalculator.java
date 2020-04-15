@@ -76,8 +76,8 @@ class EM2LMAreaGapCalculator {
                     .mapi(ImageTransformation.maxFilterWithDiscPattern(20))
                     ;
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
-                    dilated60pxPatternImage,
-                    dilated20pxPatternImage,
+                    dilated60pxPatternImage.mapi(mipTransformation),
+                    dilated20pxPatternImage.mapi(mipTransformation),
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
             ).map(ColorTransformation.toSignal());
 
