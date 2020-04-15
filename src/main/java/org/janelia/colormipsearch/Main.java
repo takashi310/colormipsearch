@@ -742,13 +742,14 @@ public class Main {
                                         return csrWithImages;
                                     })
                                     .collect(Collectors.toList());
-                        LOG.info("Loaded {} images and gradients if they exist", rWithImages.size());
+                        LOG.info("Loaded {} images and gradients", rWithImages.size());
                         return rWithImages;
                     })));
             long startTime = System.currentTimeMillis();
             int from = Math.max(offset, 0);
             int to = length > 0 ? length : Integer.MAX_VALUE;
             Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
+                    .parallel()
                     .forEach(resultsEntry -> {
                         LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();
