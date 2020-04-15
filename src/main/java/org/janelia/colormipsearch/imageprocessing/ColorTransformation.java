@@ -74,7 +74,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         };
     }
 
-    static ColorTransformation toGray16() {
+    public static ColorTransformation toGray16() {
         return new ColorTransformation(pt -> ImageType.GRAY16) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {

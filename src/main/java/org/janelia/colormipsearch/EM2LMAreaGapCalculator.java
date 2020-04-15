@@ -57,8 +57,10 @@ class EM2LMAreaGapCalculator {
     }
 
     private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
-        ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
+        ImageProcessing clearLabelsProcessing = ImageProcessing.create()
                 .clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85)
+                ;
+        ImageProcessing dilatedLibraryProcessing = clearLabelsProcessing
                 .mask(maskThreshold)
                 .maxFilterWithDiscPattern(negativeRadius)
                 ;
@@ -67,7 +69,6 @@ class EM2LMAreaGapCalculator {
                 .toSignal()
                 .thenExtend(mipTransformation)
                 ;
-
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
             LImage dilated60pxPatternImage = LImage.create(libraryImageArray)
                     .mapi(ImageTransformation.maxFilterWithDiscPattern(60))
@@ -76,10 +77,10 @@ class EM2LMAreaGapCalculator {
                     .mapi(ImageTransformation.maxFilterWithDiscPattern(20))
                     ;
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
-                    dilated60pxPatternImage.mapi(mipTransformation),
-                    dilated20pxPatternImage.mapi(mipTransformation),
+                    dilated60pxPatternImage,
+                    dilated20pxPatternImage,
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
-            ).map(ColorTransformation.toSignal());
+            ).mapi(mipTransformation);
 
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
@@ -101,7 +102,10 @@ class EM2LMAreaGapCalculator {
                         return p;
                     }
             ).fold(0L, (p, s) -> p > 3 ? s + p : s);
-            long overExpressedArea = overExpressedRegionsInPatternImage
+            long overExpressedArea = LImage.combine2(
+                    overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16()),
+                    clearLabelsProcessing.applyTo(libraryImageArray),
+                    (p1, p2) -> p1 > 0 ? p2 : 0)
                     .fold(0L, (p, s) -> {
                         int red = (p >>> 16) & 0xff;
                         int green = (p >>> 8) & 0xff;
