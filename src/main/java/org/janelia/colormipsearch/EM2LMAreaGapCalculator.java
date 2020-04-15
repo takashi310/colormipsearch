@@ -79,7 +79,7 @@ class EM2LMAreaGapCalculator {
                     dilated60pxPatternImage,
                     dilated20pxPatternImage,
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
-            ).map(ColorTransformation.toSignal()).mapi(mipTransformation);
+            ).map(ColorTransformation.toSignal());
 
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
@@ -101,18 +101,17 @@ class EM2LMAreaGapCalculator {
                         return p;
                     }
             ).fold(0L, (p, s) -> p > 3 ? s + p : s);
-//            long overExpressedArea = overExpressedRegionsInPatternImage
-//                    .fold(0L, (p, s) -> {
-//                        int red = (p >>> 16) & 0xff;
-//                        int green = (p >>> 8) & 0xff;
-//                        int blue = p & 0xff;
-//
-//                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
-//                            return s + 1;
-//                        else
-//                            return s;
-//                    });
-            long overExpressedArea = 0;
+            long overExpressedArea = overExpressedRegionsInPatternImage
+                    .fold(0L, (p, s) -> {
+                        int red = (p >>> 16) & 0xff;
+                        int green = (p >>> 8) & 0xff;
+                        int blue = p & 0xff;
+
+                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
+                            return s + 1;
+                        else
+                            return s;
+                    });
             return area + overExpressedArea / 2;
         };
     }
