@@ -79,7 +79,7 @@ class EM2LMAreaGapCalculator {
                     dilated60pxPatternImage,
                     dilated20pxPatternImage,
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
-            ).mapi(mipTransformation.fmap(ColorTransformation.toSignal()));
+            ).map(ColorTransformation.toSignal()).mapi(mipTransformation);
 
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
