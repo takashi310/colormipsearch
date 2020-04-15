@@ -219,11 +219,12 @@ public abstract class ImageTransformation {
                             m = maxFilterContext.histogram.add(p);
                         }
                         if (prevx >= 0) {
+                            int p = maxFilterContext.imageCache[h * lImage.width() + prevx];
                             try {
-                                m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx]);
+                                m = maxFilterContext.histogram.remove(p);
                             } catch (IllegalArgumentException e) {
-                                LOG.error("Exception at ({}, {}) -> ({}, {}) : ({}, {}) : ({}, {})",
-                                        x, y, lImage.width(), lImage.height(), prevx, h, radii[2 * h + 1], radii[2 * h]);
+                                LOG.error("Exception removing {} at ({}, {}) -> ({}, {}) : ({}, {}) : ({}, {})",
+                                        Integer.toHexString(p), x, y, lImage.width(), lImage.height(), prevx, h, radii[2 * h + 1], radii[2 * h]);
                                 throw e;
                             }
                         }
