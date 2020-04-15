@@ -195,7 +195,7 @@ public abstract class ImageTransformation {
                     for (int h = 0; h < kHeight; h++) {
                         int ay = y - kRadius + h;
                         if (ay >= 0 && ay < lImage.height()) {
-                            for (int dx = 0; dx <= radii[2 * h + 1]; dx++) {
+                            for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
                                 int ax = x + dx;
                                 if (ax < lImage.width()) {
                                     int p = lImage.get(ax, ay);
@@ -211,18 +211,19 @@ public abstract class ImageTransformation {
                 for (int h = 0; h < kHeight; h++) {
                     int ay = y - kRadius + h;
                     int nextx = x + radii[2 * h + 1];
-                    int prevx = x + radii[2 * h];
+                    int prevx = x + radii[2 * h] - 1;
                     if (ay >= 0 && ay < lImage.height()) {
                         if (nextx < lImage.width()) {
                             int p = lImage.get(nextx, ay);
                             maxFilterContext.imageCache[h * lImage.width() + nextx] = p;
                             m = maxFilterContext.histogram.add(p);
                         }
-                        if (prevx > 0) {
+                        if (prevx >= 0) {
                             try {
-                                m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx - 1]);
+                                m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx]);
                             } catch (IllegalArgumentException e) {
-                                LOG.error("Exception at ({}, {}) -> ({}, {}) : ({}, {})", x, y, lImage.width(), lImage.height(), prevx - 1, h);
+                                LOG.error("Exception at ({}, {}) -> ({}, {}) : ({}, {}) : ({}, {})",
+                                        x, y, lImage.width(), lImage.height(), prevx, h, radii[2 * h + 1], radii[2 * h]);
                                 throw e;
                             }
                         }
