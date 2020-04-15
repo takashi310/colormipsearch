@@ -6,7 +6,12 @@ import java.util.function.Function;
 
 import com.google.common.base.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class ImageTransformation {
+
+    private static Logger LOG = LoggerFactory.getLogger(ImageTransformation.class);
 
     private interface ColorHistogram {
         /**
@@ -214,7 +219,12 @@ public abstract class ImageTransformation {
                             m = maxFilterContext.histogram.add(p);
                         }
                         if (prevx > 0) {
-                            m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx - 1]);
+                            try {
+                                m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx - 1]);
+                            } catch (IllegalArgumentException e) {
+                                LOG.error("Exception at ({}, {}) -> ({}, {})", x, y, prevx - 1, h);
+                                throw e;
+                            }
                         }
                     }
                 }
