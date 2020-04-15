@@ -101,17 +101,18 @@ class EM2LMAreaGapCalculator {
                         return p;
                     }
             ).fold(0L, (p, s) -> p > 3 ? s + p : s);
-            long overExpressedArea = overExpressedRegionsInPatternImage
-                    .fold(0L, (p, s) -> {
-                        int red = (p >>> 16) & 0xff;
-                        int green = (p >>> 8) & 0xff;
-                        int blue = p & 0xff;
-
-                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
-                            return s + 1;
-                        else
-                            return s;
-                    });
+//            long overExpressedArea = overExpressedRegionsInPatternImage
+//                    .fold(0L, (p, s) -> {
+//                        int red = (p >>> 16) & 0xff;
+//                        int green = (p >>> 8) & 0xff;
+//                        int blue = p & 0xff;
+//
+//                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
+//                            return s + 1;
+//                        else
+//                            return s;
+//                    });
+            long overExpressedArea = 0;
             return area + overExpressedArea / 2;
         };
     }
