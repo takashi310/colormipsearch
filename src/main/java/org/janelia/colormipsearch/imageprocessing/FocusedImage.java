@@ -15,12 +15,13 @@ public class FocusedImage {
 
     public static Function<FocusedImage, Integer> maxFilter(double radius) {
         return new Function<FocusedImage, Integer>() {
-            int[] radii = makeLineRadii(radius);
-            int kRadius = radii[radii.length - 1];
-            int kHeight = (radii.length - 1) / 2;
+            final int[] radii = makeLineRadii(radius);
+            final int kRadius = radii[radii.length - 1];
+            final int kHeight = (radii.length - 1) / 2;
 
-            ImageTransformation.ColorHistogram histogram = null;
-            int[] imageCache = null;
+            private ImageTransformation.ColorHistogram histogram = null;
+            private int[] imageCache = null;
+            private boolean forward;
             @Override
             public Integer apply(FocusedImage fImage) {
                 if (histogram == null) {
@@ -29,36 +30,100 @@ public class FocusedImage {
                 }
                 int m = -1;
                 if (fImage.x == 0) {
-                    histogram.clear();
-                    Arrays.fill(imageCache, 0);
-                    for (int h = 0; h < kHeight; h++) {
-                        int ay = fImage.y - kRadius + h;
-                        if (ay >= 0 && ay < fImage.lImage.height()) {
-                            for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
-                                int ax = fImage.x + dx;
-                                if (ax < fImage.lImage.width()) {
-                                    int p = fImage.lImage.get(ax, ay);
-                                    imageCache[h * fImage.lImage.width() + ax] = p;
-                                    m = histogram.add(p);
-                                } else {
-                                    break;
-                                }
+                    m = initializeHistogramForForwardTraverse(fImage.lImage, fImage.x, fImage.y);
+                    forward = true;
+                }
+                if (m == -1 && fImage.x == fImage.lImage.width() - 1) {
+                    m = initializeHistogramForBackwardTraverse(fImage.lImage, fImage.x, fImage.y);
+                    forward = false;
+                }
+                if (forward) {
+                    m = traverseForward(fImage.lImage, fImage.x, fImage.y);
+                } else {
+                    m = traverseBackward(fImage.lImage, fImage.x, fImage.y);
+                }
+                return m;
+            }
+
+            int initializeHistogramForForwardTraverse(LImage lImage, int x, int y) {
+                int m = -1;
+                histogram.clear();
+                Arrays.fill(imageCache, 0);
+                for (int h = 0; h < kHeight; h++) {
+                    int ay = y - kRadius + h;
+                    if (ay >= 0 && ay < lImage.height()) {
+                        for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                            int ax = x + dx;
+                            if (ax < lImage.width()) {
+                                int p = lImage.get(ax, ay);
+                                imageCache[h * lImage.width() + ax] = p;
+                                m = histogram.add(p);
+                            } else {
+                                break;
                             }
                         }
                     }
                 }
+                return m;
+            }
+
+            int initializeHistogramForBackwardTraverse(LImage lImage, int x, int y) {
+                int m = -1;
+                histogram.clear();
                 for (int h = 0; h < kHeight; h++) {
-                    int ay = fImage.y - kRadius + h;
-                    int nextx = fImage.x + radii[2 * h + 1];
-                    int prevx = fImage.x + radii[2 * h] - 1;
-                    if (ay >= 0 && ay < fImage.lImage.height()) {
-                        if (nextx < fImage.lImage.width()) {
-                            int p = fImage.lImage.get(nextx, ay);
-                            imageCache[h * fImage.lImage.width() + nextx] = p;
+                    int ay = y - kRadius + h;
+                    if (ay >= 0 && ay < lImage.height()) {
+                        for (int dx = radii[2*h]; dx <= 0; dx++) {
+                            int ax = x + dx;
+                            if (ax < lImage.width()) {
+                                int p = lImage.get(ax, ay);
+                                imageCache[h * lImage.width() + ax] = p;
+                                m = histogram.add(p);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                Arrays.fill(imageCache, 0);
+                return m;
+            }
+
+            int traverseForward(LImage lImage, int x, int y) {
+                int m = -1;
+                for (int h = 0; h < kHeight; h++) {
+                    int ay = y - kRadius + h;
+                    if (ay >= 0 && ay < lImage.height()) {
+                        int nextx = x + radii[2 * h + 1];
+                        if (nextx < lImage.width()) {
+                            int p = lImage.get(nextx, ay);
+                            imageCache[h * lImage.width() + nextx] = p;
                             m = histogram.add(p);
                         }
+                        int prevx = x + radii[2 * h] - 1;
                         if (prevx >= 0) {
-                            int p = imageCache[h * fImage.lImage.width() + prevx];
+                            int p = imageCache[h * lImage.width() + prevx];
+                            m = histogram.remove(p);
+                        }
+                    }
+                }
+                return m;
+            }
+
+            int traverseBackward(LImage lImage, int x, int y) {
+                int m = -1;
+                for (int h = 0; h < kHeight; h++) {
+                    int ay = y - kRadius + h;
+                    if (ay >= 0 && ay < lImage.height()) {
+                        int prevx = x + radii[2 * h];
+                        if (prevx >= 0) {
+                            int p = lImage.get(prevx, ay);
+                            imageCache[h * lImage.width() + prevx] = p;
+                            m = histogram.add(p);
+                        }
+                        int nextx = x + radii[2 * h + 1] + 1;
+                        if (nextx < lImage.width()) {
+                            int p = imageCache[h * lImage.width() + nextx];
                             m = histogram.remove(p);
                         }
                     }
