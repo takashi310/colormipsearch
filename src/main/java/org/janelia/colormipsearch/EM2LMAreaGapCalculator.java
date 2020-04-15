@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
@@ -68,17 +69,15 @@ class EM2LMAreaGapCalculator {
                 ;
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
-            ImageProcessing dilated60pxPatternProcessing = ImageProcessing.create()
-                    .maxFilterWithDiscPattern(60)
-                    .toSignal()
+            LImage dilated60pxPatternImage = LImage.create(libraryImageArray)
+                    .mapi(ImageTransformation.maxFilterWithDiscPattern(60).fmap(ColorTransformation.toSignal()))
                     ;
-            ImageProcessing dilated20pxPatternProcessing = ImageProcessing.create()
-                    .maxFilterWithDiscPattern(20)
-                    .thenExtend(mipTransformation)
+            LImage dilated20pxPatternImage = LImage.create(libraryImageArray)
+                    .mapi(ImageTransformation.maxFilterWithDiscPattern(20))
                     ;
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
-                    dilated60pxPatternProcessing.applyTo(patternImageArray),
-                    dilated20pxPatternProcessing.applyTo(patternImageArray),
+                    dilated60pxPatternImage,
+                    dilated20pxPatternImage,
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
             ).mapi(mipTransformation);
 

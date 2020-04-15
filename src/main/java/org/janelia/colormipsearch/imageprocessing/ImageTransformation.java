@@ -151,7 +151,7 @@ public abstract class ImageTransformation {
         };
     }
 
-    static ImageTransformation maxFilterWithDiscPattern(double radius) {
+    public static ImageTransformation maxFilterWithDiscPattern(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;
@@ -258,7 +258,7 @@ public abstract class ImageTransformation {
         this.pixelTypeChange = pixelTypeChange;
     }
 
-    ImageTransformation extend(ImageTransformation pixelTransformation) {
+    public ImageTransformation extend(ImageTransformation pixelTransformation) {
         ImageTransformation currentTransformation = this;
         return new ImageTransformation(
                 pixelTypeChange.andThen(pixelTransformation.pixelTypeChange)) {
@@ -274,7 +274,7 @@ public abstract class ImageTransformation {
         };
     }
 
-    ImageTransformation fmap(ColorTransformation colorTransformation) {
+    public ImageTransformation fmap(ColorTransformation colorTransformation) {
         ImageTransformation currentTransformation = this;
         return new ImageTransformation(pixelTypeChange.andThen(colorTransformation.pixelTypeChange)) {
             @Override

@@ -115,7 +115,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         return ColorTransformation.toGray8().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
     }
 
-    static ColorTransformation toSignal() {
+    public static ColorTransformation toSignal() {
         return new ColorTransformation(pt -> pt) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
