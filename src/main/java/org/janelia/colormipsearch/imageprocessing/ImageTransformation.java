@@ -195,7 +195,7 @@ public abstract class ImageTransformation {
                     for (int h = 0; h < kHeight; h++) {
                         int ay = y - kRadius + h;
                         if (ay >= 0 && ay < lImage.height()) {
-                            for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                            for (int dx = 0; dx <= radii[2 * h + 1]; dx++) {
                                 int ax = x + dx;
                                 if (ax < lImage.width()) {
                                     int p = lImage.get(ax, ay);
@@ -222,7 +222,7 @@ public abstract class ImageTransformation {
                             try {
                                 m = maxFilterContext.histogram.remove(maxFilterContext.imageCache[h * lImage.width() + prevx - 1]);
                             } catch (IllegalArgumentException e) {
-                                LOG.error("Exception at ({}, {}) -> ({}, {})", x, y, prevx - 1, h);
+                                LOG.error("Exception at ({}, {}) -> ({}, {}) : ({}, {})", x, y, lImage.width(), lImage.height(), prevx - 1, h);
                                 throw e;
                             }
                         }
