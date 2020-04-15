@@ -727,19 +727,22 @@ public class Main {
                         mip.imagePath = csr.imageName;
                         mip.type = csr.imageType;
                         return mip;
-                    }, Collectors.collectingAndThen(Collectors.toList(), r -> r.stream()
-                            .map(csr -> {
-                                ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
-                                csrWithImages.csr = csr;
-                                MIPInfo matchedMIP = new MIPInfo();
-                                matchedMIP.archivePath = csr.matchedImageArchivePath;
-                                matchedMIP.imagePath = csr.matchedImageName;
-                                matchedMIP.type = csr.matchedImageType;
-                                csrWithImages.matchedImage = colorMIPSearch.loadMIP(matchedMIP);
-                                csrWithImages.matchedImageGradient = colorMIPSearch.loadGradientMIP(matchedMIP);
-                                return csrWithImages;
-                            })
-                            .collect(Collectors.toList()))));
+                    }, Collectors.collectingAndThen(Collectors.toList(), r -> {
+                        LOG.info("Load {} images and gradients if they exist", r.size());
+                        return r.stream()
+                                    .map(csr -> {
+                                        ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
+                                        csrWithImages.csr = csr;
+                                        MIPInfo matchedMIP = new MIPInfo();
+                                        matchedMIP.archivePath = csr.matchedImageArchivePath;
+                                        matchedMIP.imagePath = csr.matchedImageName;
+                                        matchedMIP.type = csr.matchedImageType;
+                                        csrWithImages.matchedImage = colorMIPSearch.loadMIP(matchedMIP);
+                                        csrWithImages.matchedImageGradient = colorMIPSearch.loadGradientMIP(matchedMIP);
+                                        return csrWithImages;
+                                    })
+                                    .collect(Collectors.toList());
+                    })));
             long startTime = System.currentTimeMillis();
             int from = Math.max(offset, 0);
             int to = length > 0 ? length : Integer.MAX_VALUE;
