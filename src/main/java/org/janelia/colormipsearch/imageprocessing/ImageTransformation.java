@@ -13,7 +13,7 @@ public abstract class ImageTransformation {
 
     private static Logger LOG = LoggerFactory.getLogger(ImageTransformation.class);
 
-    private interface ColorHistogram {
+    interface ColorHistogram {
         /**
          * Add a value and return the new max
          * @param val
@@ -29,7 +29,7 @@ public abstract class ImageTransformation {
         void clear();
     }
 
-    private static final class RGBHistogram implements ColorHistogram {
+    static final class RGBHistogram implements ColorHistogram {
         private final Gray8Histogram rHistogram;
         private final Gray8Histogram gHistogram;
         private final Gray8Histogram bHistogram;
@@ -71,7 +71,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    private static final class Gray8Histogram implements ColorHistogram {
+    static final class Gray8Histogram implements ColorHistogram {
 
         private final int[] histogram;
         private int max;

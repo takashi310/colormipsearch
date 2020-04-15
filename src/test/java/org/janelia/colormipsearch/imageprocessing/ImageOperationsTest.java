@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.imageprocessing;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -22,6 +23,29 @@ public class ImageOperationsTest {
                     .applyTo(testMIP).asImageArray();
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
+
+            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+        }
+
+    }
+
+    @Test
+    public void maxFilterForRGBImageWithHorizontalMirroring() {
+
+        ImageProcessing maxFilterProcessing = ImageProcessing.create()
+                .thenExtend(ImageTransformation.horizontalMirror())
+                .thenExtend(ImageTransformation.maxFilterWithDiscPattern(10))
+                ;
+
+        for (int i = 0; i < 5; i++) {
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImageArray testMIP = new ImageArray(testImage);
+            ImageArray maxFilteredImage = maxFilterProcessing
+                    .applyTo(testMIP).asImageArray();
+            IJ.save(new ImagePlus(null, maxFilteredImage.getImageProcessor()), "tt.png");
+            RankFilters maxFilter = new RankFilters();
+            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
+            testImage.getProcessor().flipHorizontal();
 
             Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
         }
