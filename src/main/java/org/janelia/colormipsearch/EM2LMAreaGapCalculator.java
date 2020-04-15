@@ -56,32 +56,31 @@ class EM2LMAreaGapCalculator {
     }
 
     private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
+        ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
+                .clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85)
+                .mask(maskThreshold)
+                .maxFilterWithDiscPattern(negativeRadius)
+                ;
+        ImageProcessing patternSignalProcessing = ImageProcessing.create()
+                .toGray16()
+                .toSignal()
+                .thenExtend(mipTransformation)
+                ;
+
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
             ImageProcessing dilated60pxPatternProcessing = ImageProcessing.create()
                     .maxFilterWithDiscPattern(60)
                     .toSignal()
-                    .thenExtend(mipTransformation)
                     ;
             ImageProcessing dilated20pxPatternProcessing = ImageProcessing.create()
                     .maxFilterWithDiscPattern(20)
                     .thenExtend(mipTransformation)
                     ;
-            ImageProcessing dilatedLibraryProcessing = ImageProcessing.create()
-                    .clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85)
-                    .mask(maskThreshold)
-                    .maxFilterWithDiscPattern(negativeRadius)
-                    ;
-            ImageProcessing patternSignalProcessing = ImageProcessing.create()
-                    .toGray16()
-                    .toSignal()
-                    .thenExtend(mipTransformation)
-                    ;
-
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
                     dilated60pxPatternProcessing.applyTo(patternImageArray),
                     dilated20pxPatternProcessing.applyTo(patternImageArray),
                     (p1, p2) -> p2 != -16777216 ? 0 : p1
-            );
+            ).mapi(mipTransformation);
 
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = patternSignalProcessing.applyTo(patternImageArray);
