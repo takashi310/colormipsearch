@@ -1,35 +1,45 @@
 package org.janelia.colormipsearch;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageArchivePath;
     @JsonProperty
     String imageName;
     @JsonProperty
     String imageType;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    int imageVolumeSize;
+    Integer imageVolumeSize;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    double imageShapeScore;
+    Double imageShapeScore;
     @JsonProperty
     String matchedId;
     @JsonProperty
     String matchedPublishedName;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedImageArchivePath;
     @JsonProperty
     String matchedImageName;
     @JsonProperty
     String matchedImageType;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    int matchedImageVolumeSize;
+    Integer matchedImageVolumeSize;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    double matchedImageShapeScore;
+    Double matchedImageShapeScore;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty
+    Long maxGradientAreaGap;
 
     @JsonIgnore
     public int getMatchingPixels() {
@@ -66,4 +76,5 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
             addAttr("Gradient Area Gap", String.valueOf(gradientAreaGap));
         }
     }
+
 }
