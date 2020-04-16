@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 
 import ij.ImagePlus;
@@ -26,33 +27,38 @@ class MIPsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
 
-    static MIPImage loadMIP(MIPInfo mip) {
+    @Nullable
+    static MIPImage loadMIP(@Nullable MIPInfo mip) {
         long startTime = System.currentTimeMillis();
-        LOG.debug("Load MIP {}", mip);
-        InputStream inputStream;
-        try {
-            inputStream = mip.openInputStream();
-            if (inputStream == null) {
-                return null;
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        ImagePlus ij = null;
-        try {
-            ij = readImagePlus(mip.id, getImageFormat(mip.imagePath), inputStream);
-            return new MIPImage(mip, new ImageArray(ij));
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        } finally {
+        if (mip == null) {
+            return null;
+        } else {
+            LOG.debug("Load MIP {}", mip);
+            InputStream inputStream;
             try {
-                inputStream.close();
-            } catch (IOException ignore) {
+                inputStream = mip.openInputStream();
+                if (inputStream == null) {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
             }
-            if (ij != null) {
-                ij.close();
+            ImagePlus ij = null;
+            try {
+                ij = readImagePlus(mip.id, getImageFormat(mip.imagePath), inputStream);
+                return new MIPImage(mip, new ImageArray(ij));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            } finally {
+                try {
+                    inputStream.close();
+                } catch (IOException ignore) {
+                }
+                if (ij != null) {
+                    ij.close();
+                }
+                LOG.debug("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
             }
-            LOG.debug("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
         }
     }
 
