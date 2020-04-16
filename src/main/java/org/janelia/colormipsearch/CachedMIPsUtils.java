@@ -24,7 +24,7 @@ class CachedMIPsUtils {
 
     static MIPImage loadMIP(MIPInfo mipInfo) {
         try {
-            if (mipInfo == null) {
+            if (mipInfo == null || !mipInfo.exists()) {
                 return null;
             } else {
                 return MIP_IMAGES_CACHE.get(mipInfo);
