@@ -75,45 +75,34 @@ class EM2LMAreaGapCalculator {
         ImageProcessing clearLabels = ImageProcessing.create(
                 ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85))
                 ;
-        ImageProcessing maskThenMaxOverNegativeRadius = clearLabels
+        ImageProcessing maskThenMaxFilterOverNegativeRadius = clearLabels
                 .mask(maskThreshold)
-                .maxFilterWithDiscPattern(negativeRadius)
+                .maxFilter(negativeRadius)
                 ;
         ImageProcessing toSignal = ImageProcessing.create()
                 .toGray16()
                 .toSignal()
-                .thenExtend(mipTransformation)
                 ;
-        ImageProcessing maxFilterOver60px = ImageProcessing.create(ImageTransformation.maxFilterWithDiscPattern(60));
-        ImageProcessing maxFilterOver20px = ImageProcessing.create(ImageTransformation.maxFilterWithDiscPattern(20));
+        ImageProcessing maxFilterOver60px = ImageProcessing.create(ImageTransformation.maxFilter(60));
+        ImageProcessing maxFilterOver20px = ImageProcessing.create(ImageTransformation.maxFilter(20));
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
             long startTime = System.currentTimeMillis();
-            LOG.debug("Step 1: {}ms", System.currentTimeMillis() - startTime);
             LImage dilated60pxPatternImage = maxFilterOver60px.applyTo(patternImageArray);
-            LOG.debug("Step 2: {}ms", System.currentTimeMillis() - startTime);
             LImage dilated20pxPatternImage = maxFilterOver20px.applyTo(patternImageArray);
-            LOG.debug("Step 3: {}ms", System.currentTimeMillis() - startTime);
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
                     dilated60pxPatternImage,
                     dilated20pxPatternImage,
                     (p1, p2) -> p2 != -16777216 ? -16777216 : p1
             ).mapi(mipTransformation);
-            LOG.debug("Step 4: {}ms", System.currentTimeMillis() - startTime);
 
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
-            LOG.debug("Step 5: {}ms", System.currentTimeMillis() - startTime);
-
-            LImage patternSignalImage = toSignal.applyTo(patternImageArray);
-            LOG.debug("Step 6: {}ms", System.currentTimeMillis() - startTime);
-
-            LImage libraryGradientImage = LImage.create(libraryGradientImageArray).mapi(mipTransformation);
-            LOG.debug("Step 7: {}ms", System.currentTimeMillis() - startTime);
-
+            LImage patternSignalImage = toSignal.applyTo(patternImageArray).mapi(mipTransformation);
+            LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
             long area = LImage.combine3(
                     LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
                     patternImage,
-                    maskThenMaxOverNegativeRadius.applyTo(libraryImageArray),
+                    maskThenMaxFilterOverNegativeRadius.applyTo(libraryImageArray),
                     (p, patternPix, dilatedPix) -> {
                         if (dilatedPix != -16777216) {
                             if (patternPix != -16777216) {
@@ -127,7 +116,7 @@ class EM2LMAreaGapCalculator {
                         return p;
                     }
             ).fold(0L, (p, s) -> p > 3 ? s + p : s);
-            LOG.debug("Step 8: {}ms", System.currentTimeMillis() - startTime);
+            LOG.debug("Sum area gap: {}ms", System.currentTimeMillis() - startTime);
 
             long overExpressedArea = LImage.combine2(
                     overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16()),
@@ -143,7 +132,7 @@ class EM2LMAreaGapCalculator {
                         else
                             return s;
                     });
-            LOG.debug("Step 9");
+            LOG.debug("Sum overexpressed regions: {}ms", System.currentTimeMillis() - startTime);
             return area + overExpressedArea / 2;
         };
     }

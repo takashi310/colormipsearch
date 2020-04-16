@@ -13,7 +13,7 @@ public class ImageOperationsTest {
     public void maxFilterForRGBImage() {
 
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
-                .maxFilterWithDiscPattern(10);
+                .maxFilter(10);
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
@@ -31,7 +31,7 @@ public class ImageOperationsTest {
     @Test
     public void maxFilterThenHorizontalMirroringForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
-                .thenExtend(ImageTransformation.maxFilterWithDiscPattern(10))
+                .thenExtend(ImageTransformation.maxFilter(10))
                 .thenExtend(ImageTransformation.horizontalMirror())
                 ;
 
@@ -52,7 +52,7 @@ public class ImageOperationsTest {
     public void horizontalMirrorThenMaxFilterForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .thenExtend(ImageTransformation.horizontalMirror())
-                .thenExtend(ImageTransformation.maxFilterWithDiscPattern(10))
+                .thenExtend(ImageTransformation.maxFilter(10))
                 ;
 
         for (int i = 0; i < 5; i++) {
@@ -77,7 +77,7 @@ public class ImageOperationsTest {
 
         ImageArray binaryMaxFilteredImage = ImageProcessing.create()
                 .toBinary8(50)
-                .maxFilterWithDiscPattern(10)
+                .maxFilter(10)
                 .applyTo(testMIP)
                 .asImageArray()
                 ;
@@ -138,7 +138,7 @@ public class ImageOperationsTest {
 
         ImageArray maskedImage = ImageProcessing.create()
                 .mask(250)
-                .maxFilterWithDiscPattern(10)
+                .maxFilter(10)
                 .applyTo(testMIP)
                 .asImageArray()
                 ;

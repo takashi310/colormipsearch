@@ -156,7 +156,7 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation maxFilterWithDiscPattern(double radius) {
+    public static ImageTransformation maxFilter(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;

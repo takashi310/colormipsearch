@@ -42,8 +42,8 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary16(threshold)));
     }
 
-    public ImageProcessing maxFilterWithDiscPattern(double radius) {
-        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilterWithDiscPattern(radius)));
+    public ImageProcessing maxFilter(double radius) {
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilter(radius)));
     }
 
     public ImageProcessing horizontalMirror() {
