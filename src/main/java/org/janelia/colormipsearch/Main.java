@@ -494,7 +494,10 @@ public class Main {
                 return readMIPsFromZipArchive(mipsArg.input, mipsFilter, mipsArg.offset, mipsArg.length);
             } else if (isImageFile(mipsInputPath)) {
                 // treat the file as a single image file
+                String fname = mipsInputPath.getFileName().toString();
+                int extIndex = fname.lastIndexOf('.');
                 MIPInfo mipInfo = new MIPInfo();
+                mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
                 mipInfo.imagePath = mipsInputPath.toString();
                 return Collections.singletonList(mipInfo);
             } else {
@@ -733,8 +736,8 @@ public class Main {
                                         matchedMIP.archivePath = csr.matchedImageArchivePath;
                                         matchedMIP.imagePath = csr.matchedImageName;
                                         matchedMIP.type = csr.matchedImageType;
-                                        csrWithImages.matchedImage = Utils.loadMIP(matchedMIP);
-                                        csrWithImages.matchedImageGradient = Utils.loadGradientMIP(matchedMIP, gradientsLocation);
+                                        csrWithImages.matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
+                                        csrWithImages.matchedImageGradient = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
                                         return csrWithImages;
                                     })
                                     .collect(Collectors.toList());
@@ -749,8 +752,8 @@ public class Main {
                     .forEach(resultsEntry -> {
                         LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();
-                        MIPImage inputImage = Utils.loadMIP(resultsEntry.getRight().getKey());
-                        MIPImage inputGradientImage = Utils.loadGradientMIP(resultsEntry.getRight().getKey(), gradientsLocation);
+                        MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
+                        MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(resultsEntry.getRight().getKey(), gradientsLocation));
                         resultsEntry.getRight().getValue().stream().parallel().forEach(csr ->{
                             ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
                             if (areaGap != null) {

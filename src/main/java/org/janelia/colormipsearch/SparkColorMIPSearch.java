@@ -47,7 +47,9 @@ class SparkColorMIPSearch extends ColorMIPSearch {
 
         JavaRDD<Tuple2<MIPImage, MIPImage>> librariesRDD = sparkContext.parallelize(libraryMIPS)
                 .filter(mip -> new File(mip.imagePath).exists())
-                .map(mip -> new Tuple2<>(Utils.loadMIP(mip), Utils.loadGradientMIP(mip, gradientMasksPath)))
+                .map(mip -> new Tuple2<>(
+                        MIPsUtils.loadMIP(mip),
+                        MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(mip, gradientMasksPath))))
                 ;
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
@@ -63,8 +65,8 @@ class SparkColorMIPSearch extends ColorMIPSearch {
                 .groupBy(lms -> lms._2) // group by mask
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
-                            MIPImage maskMIP = Utils.loadMIP(mls._1);
-                            MIPImage gradientMask = Utils.loadGradientMIP(mls._1, gradientMasksPath);
+                            MIPImage maskMIP = MIPsUtils.loadMIP(mls._1);
+                            MIPImage gradientMask = MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(mls._1, gradientMasksPath));
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(lmPair -> {
                                         ColorMIPSearchResult sr = runImageComparison(lmPair._1._1, maskMIP);

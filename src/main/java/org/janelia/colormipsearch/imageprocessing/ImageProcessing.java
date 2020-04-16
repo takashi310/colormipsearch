@@ -4,6 +4,10 @@ import java.util.function.BiPredicate;
 
 public class ImageProcessing {
 
+    public static ImageProcessing create(ImageTransformation imageTransformation) {
+        return new ImageProcessing(imageTransformation);
+    }
+
     public static ImageProcessing create() {
         return new ImageProcessing();
     }

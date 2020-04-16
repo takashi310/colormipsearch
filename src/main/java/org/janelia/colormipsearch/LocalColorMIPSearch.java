@@ -53,7 +53,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Load {} libraries", nlibraries);
         List<Pair<MIPImage, MIPImage>> libraryImagesWithGradients = libraryMIPS.stream().parallel()
                 .filter(MIPInfo::exists)
-                .map(mip -> ImmutablePair.of(Utils.loadMIP(mip), Utils.loadGradientMIP(mip, gradientMasksPath)))
+                .map(mip -> ImmutablePair.of(
+                        MIPsUtils.loadMIP(mip),
+                        MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(mip, gradientMasksPath)))
+                )
                 .collect(Collectors.toList());
         LOG.info("Loaded {} libraries in memory in {}s", nlibraries, (System.currentTimeMillis()-startTime)/1000);
 
@@ -78,8 +81,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     }
 
     private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(int mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
-        MIPImage maskImage = Utils.loadMIP(maskMIP); // load image
-        MIPImage maskGradientImage = Utils.loadGradientMIP(maskMIP, gradientMasksPath); // load gradient
+        MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image
+        MIPImage maskGradientImage = MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath)); // load gradient
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryImages, libraryPartitionSize).stream()
                 .map(librariesPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
