@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -669,11 +670,12 @@ public class Main {
 
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
         EM2LMAreaGapCalculator gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
+        Executor executor = createCDSExecutor(args);
         Path outputDir = args.getOutputDir();
         if (args.resultsFile != null) {
             int from = Math.max(args.resultsFile.offset, 0);
             int length = args.resultsFile.length;
-            calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, args.resultsFile.input, args.gradientPath, from, length, outputDir);
+            calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, args.resultsFile.input, args.gradientPath, from, length, outputDir, executor);
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);
@@ -683,16 +685,14 @@ public class Main {
                         .map(p -> p.toString())
                         .collect(Collectors.toList());
                 if (length > 0 && length < resultFileNames.size()) {
-                    Utils.partitionList(resultFileNames.subList(0, length), args.libraryPartitionSize)
+                    Utils.partitionList(resultFileNames.subList(0, length), args.libraryPartitionSize).stream().parallel()
                             .forEach(fileList -> {
-                                fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir));
+                                fileList.forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir, executor));
                             });
                 } else {
-                    Utils.partitionList(resultFileNames, args.libraryPartitionSize)
+                    Utils.partitionList(resultFileNames, args.libraryPartitionSize).stream().parallel()
                             .forEach(fileList -> {
-                                fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir));
+                                fileList.forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir, executor));
                             });
                 }
             } catch (IOException e) {
@@ -701,7 +701,13 @@ public class Main {
         }
     }
 
-    private static void calculateGradientAreaScoreForResultsFile(EM2LMAreaGapCalculator gradientBasedScoreAdjuster, String inputResultsFilename, String gradientsLocation, int offset, int length, Path outputDir) {
+    private static void calculateGradientAreaScoreForResultsFile(
+            EM2LMAreaGapCalculator gradientBasedScoreAdjuster,
+            String inputResultsFilename,
+            String gradientsLocation,
+            int offset, int length,
+            Path outputDir,
+            Executor executor) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -747,23 +753,30 @@ public class Main {
             long startTime = System.currentTimeMillis();
             int from = Math.max(offset, 0);
             int to = length > 0 ? length : Integer.MAX_VALUE;
-            Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
-                    .parallel()
-                    .forEach(resultsEntry -> {
-                        LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
+            List<CompletableFuture<Void>> gradientAreaGapComputations = Streams.zip(IntStream.range(0, to).boxed(), resultsGroupedById.entrySet().stream().skip(from), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
+                    .map(resultsEntry -> {
+                        LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();
                         MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
                         MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(resultsEntry.getRight().getKey(), gradientsLocation));
-                        resultsEntry.getRight().getValue().stream().parallel().forEach(csr ->{
-                            ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
-                            if (areaGap != null) {
-                                csr.csr.setGradientAreaGap(areaGap.value); // update current result
-                            }
-                        });
-                        LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
-                    });
+                        List<CompletableFuture<ColorMIPSearchResultMetadata>> gradientAreaGapForCurrentInput = resultsEntry.getRight().getValue().stream()
+                                .map(csr -> CompletableFuture.supplyAsync(() -> {
+                                    ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
+                                    if (areaGap != null) {
+                                        csr.csr.setGradientAreaGap(areaGap.value); // update current result
+                                    }
+                                    return csr.csr;
+                                }, executor))
+                        .collect(Collectors.toList());
+                        return CompletableFuture.allOf(gradientAreaGapForCurrentInput.toArray(new CompletableFuture<?>[0]))
+                            .thenAccept(vr -> {
+                                LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFilename, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
+                            });
+                    })
+                    .collect(Collectors.toList());
             LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFilename, (System.currentTimeMillis()-startTime)/1000.);
-
+            // wait for all results to complete
+            CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
             if (outputDir == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsFileContent);
             } else {
