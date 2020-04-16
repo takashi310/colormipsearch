@@ -24,7 +24,11 @@ class CachedMIPsUtils {
 
     static MIPImage loadMIP(MIPInfo mipInfo) {
         try {
-            return MIP_IMAGES_CACHE.get(mipInfo);
+            if (mipInfo == null) {
+                return null;
+            } else {
+                return MIP_IMAGES_CACHE.get(mipInfo);
+            }
         } catch (ExecutionException e) {
             LOG.error("Error loading {}", mipInfo, e);
             throw new IllegalStateException(e);
