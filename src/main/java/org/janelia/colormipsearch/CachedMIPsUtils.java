@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.cache.CacheBuilder;
@@ -14,14 +15,14 @@ class CachedMIPsUtils {
 
     private static LoadingCache<MIPInfo, MIPImage> MIP_IMAGES_CACHE = CacheBuilder.newBuilder()
             .maximumSize(200000)
+            .expireAfterAccess(Duration.ofMinutes(10))
             .build(new CacheLoader<MIPInfo, MIPImage>() {
                 @Override
                 public MIPImage load(MIPInfo mipInfo) {
                     return MIPsUtils.loadMIP(mipInfo);
                 }
             });
-
-
+    
     static MIPImage loadMIP(MIPInfo mipInfo) {
         try {
             if (mipInfo == null || !mipInfo.exists()) {
