@@ -690,11 +690,17 @@ public class Main {
                         .map(p -> p.toString())
                         .collect(Collectors.toList());
                 if (length > 0 && length < resultFileNames.size()) {
-                    resultFileNames.subList(0, length).stream().parallel()
-                            .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
+                    Utils.partitionList(resultFileNames.subList(0, length), args.libraryPartitionSize)
+                            .forEach(fileList -> {
+                                fileList.stream().parallel()
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, 0, -1, outputDir));
+                            });
                 } else {
-                    resultFileNames.stream().parallel()
-                            .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
+                    Utils.partitionList(resultFileNames, args.libraryPartitionSize)
+                            .forEach(fileList -> {
+                                fileList.stream().parallel()
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, 0, -1, outputDir));
+                            });
                 }
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);

@@ -1,22 +1,15 @@
 package org.janelia.colormipsearch;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.google.common.collect.Streams;
 
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -87,7 +80,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
     private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(int mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
         MIPImage maskImage = loadMIP(maskMIP); // load image
         MIPImage maskGradientImage = loadGradientMIP(maskMIP); // load gradient
-        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = partitionList(libraryImages).stream()
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryImages, libraryPartitionSize).stream()
                 .map(librariesPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
                         LOG.info("Compare {} (mask # {}) with {} out of {} libraries", maskMIP, mIndex, librariesPartition.size(), libraryImages.size());
@@ -114,30 +107,6 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .collect(Collectors.toList());
         LOG.info("Submitted {} color depth searches for {} (mask # {}) with {} libraries", cdsComputations.size(), maskMIP, mIndex, libraryImages.size());
         return cdsComputations;
-    }
-
-    private <T> List<List<T>> partitionList(List<T> l) {
-        BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
-            List<T> currentPartition;
-            if (partitionResult.getRight().size() == libraryPartitionSize) {
-                currentPartition = new ArrayList<>();
-            } else {
-                currentPartition = partitionResult.getRight();
-            }
-            currentPartition.add(s);
-            if (currentPartition.size() == 1) {
-                partitionResult.getLeft().add(currentPartition);
-            }
-            return ImmutablePair.of(partitionResult.getLeft(), currentPartition);
-        };
-        return l.stream().reduce(
-                ImmutablePair.of(new ArrayList<>(), new ArrayList<>()),
-                partitionAcumulator,
-                (r1, r2) -> r2.getLeft().stream().flatMap(p -> p.stream())
-                        .map(s -> partitionAcumulator.apply(r1, s))
-                        .reduce((first, second) -> second)
-                        .orElse(r1)).getLeft()
-                ;
     }
 
 }
