@@ -62,6 +62,7 @@ class MIPsUtils {
         }
     }
 
+    @Nullable
     static MIPInfo getGradientMIPInfo(MIPInfo mipInfo, String gradientsLocation) {
         if (StringUtils.isBlank(gradientsLocation)) {
             return null;
@@ -77,6 +78,7 @@ class MIPsUtils {
         }
     }
 
+    @Nullable
     private static MIPInfo getGradientMIPInfoFromFilePath(Path gradientBasePath, Path mipPath) {
         Path parentGradientBasePath = gradientBasePath.getParent();
         if (parentGradientBasePath == null || !mipPath.startsWith(parentGradientBasePath)) {
@@ -101,6 +103,7 @@ class MIPsUtils {
         }
     }
 
+    @Nullable
     private static MIPInfo getGradientMIPInfoFromZipEntry(String gradientsLocation, String mipEntryName) {
         String gradientFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
         Path gradientEntryPath = Paths.get(gradientFilename);
