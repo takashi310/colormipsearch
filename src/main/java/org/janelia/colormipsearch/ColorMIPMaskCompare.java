@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
@@ -167,7 +168,7 @@ class ColorMIPMaskCompare {
 
     private static int[] get_mskpos_array(ImageArray msk, int thresm) {
         int sumpx = msk.getPixelCount();
-        ArrayList<Integer> pos = new ArrayList<Integer>();
+        List<Integer> pos = new ArrayList<>();
         int pix, red, green, blue;
         for (int n4 = 0; n4 < sumpx; n4++) {
 
@@ -184,7 +185,7 @@ class ColorMIPMaskCompare {
     }
 
     private static int[] shift_mskpos_array(int[] src, int xshift, int yshift, int w, int h) {
-        ArrayList<Integer> pos = new ArrayList<Integer>();
+        List<Integer> pos = new ArrayList<>();
         int x, y;
         int ypitch = w;
         for (int i = 0; i < src.length; i++) {
