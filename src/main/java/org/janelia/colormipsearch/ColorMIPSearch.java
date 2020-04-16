@@ -95,25 +95,10 @@ abstract class ColorMIPSearch implements Serializable {
 
     ColorMIPSearchResult applyGradientAreaAdjustment(ColorMIPSearchResult sr, MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
         if (sr.isMatch()) {
-            return sr.applyGradientAreaGap(calculateGradientAreaAdjustment(libraryMIPImage, libraryGradientImage, patternMIPImage, patternGradientImage));
+            return sr.applyGradientAreaGap(gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(libraryMIPImage, libraryGradientImage, patternMIPImage, patternGradientImage));
         } else {
             return sr;
         }
-    }
-
-    ColorMIPSearchResult.AreaGap calculateGradientAreaAdjustment(MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
-        ColorMIPSearchResult.AreaGap areaGap;
-        long startTime = System.currentTimeMillis();
-        if (patternMIPImage.mipInfo.isEmSkelotonMIP() || libraryGradientImage != null) {
-            areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(libraryMIPImage, patternMIPImage, libraryGradientImage);
-            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, patternMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
-        } else if (patternGradientImage != null) {
-            areaGap = gradientBasedScoreAdjuster.calculateAdjustedScore(patternMIPImage, libraryMIPImage, patternGradientImage);
-            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryMIPImage, patternMIPImage, patternGradientImage, System.currentTimeMillis() - startTime);
-        } else {
-            areaGap = null;
-        }
-        return areaGap;
     }
 
     Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {

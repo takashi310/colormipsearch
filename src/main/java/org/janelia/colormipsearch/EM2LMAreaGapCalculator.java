@@ -31,7 +31,22 @@ class EM2LMAreaGapCalculator {
         this.mirrorScoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.horizontalMirror());
     }
 
-    ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
+    ColorMIPSearchResult.AreaGap calculateGradientAreaAdjustment(MIPImage libraryImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
+        ColorMIPSearchResult.AreaGap areaGap;
+        long startTime = System.currentTimeMillis();
+        if (patternMIPImage.mipInfo.isEmSkelotonMIP() || libraryGradientImage != null) {
+            areaGap = calculateAdjustedScore(libraryImage, patternMIPImage, libraryGradientImage);
+            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryImage, patternMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
+        } else if (patternGradientImage != null) {
+            areaGap = calculateAdjustedScore(patternMIPImage, libraryImage, patternGradientImage);
+            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryImage, patternMIPImage, patternGradientImage, System.currentTimeMillis() - startTime);
+        } else {
+            areaGap = null;
+        }
+        return areaGap;
+    }
+
+    private ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
         if (libraryGradient == null) {
             LOG.trace("No gradient image provided for {}", libraryMIP);
             return null;

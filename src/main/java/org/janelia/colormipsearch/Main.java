@@ -665,22 +665,12 @@ public class Main {
     }
 
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
-                args.gradientPath,
-                args.dataThreshold,
-                args.maskThreshold,
-                args.pixColorFluctuation,
-                args.xyShift,
-                args.negativeRadius,
-                args.mirrorMask,
-                args.pctPositivePixels,
-                args.libraryPartitionSize,
-                null);
+        EM2LMAreaGapCalculator gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
         Path outputDir = args.getOutputDir();
         if (args.resultsFile != null) {
             int from = Math.max(args.resultsFile.offset, 0);
             int length = args.resultsFile.length;
-            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile.input, args.gradientPath, from, length, outputDir);
+            calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, args.resultsFile.input, args.gradientPath, from, length, outputDir);
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);
@@ -693,13 +683,13 @@ public class Main {
                     Utils.partitionList(resultFileNames.subList(0, length), args.libraryPartitionSize)
                             .forEach(fileList -> {
                                 fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, args.gradientPath, 0, -1, outputDir));
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir));
                             });
                 } else {
                     Utils.partitionList(resultFileNames, args.libraryPartitionSize)
                             .forEach(fileList -> {
                                 fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, args.gradientPath, 0, -1, outputDir));
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, 0, -1, outputDir));
                             });
                 }
             } catch (IOException e) {
@@ -708,7 +698,7 @@ public class Main {
         }
     }
 
-    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, String gradientsLocation, int offset, int length, Path outputDir) {
+    private static void calculateGradientAreaScoreForResultsFile(EM2LMAreaGapCalculator gradientBasedScoreAdjuster, String inputResultsFilename, String gradientsLocation, int offset, int length, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -762,7 +752,7 @@ public class Main {
                         MIPImage inputImage = Utils.loadMIP(resultsEntry.getRight().getKey());
                         MIPImage inputGradientImage = Utils.loadGradientMIP(resultsEntry.getRight().getKey(), gradientsLocation);
                         resultsEntry.getRight().getValue().stream().parallel().forEach(csr ->{
-                            ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
+                            ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
                             if (areaGap != null) {
                                 csr.csr.setGradientAreaGap(areaGap.value); // update current result
                             }
