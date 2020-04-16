@@ -680,7 +680,7 @@ public class Main {
         if (args.resultsFile != null) {
             int from = Math.max(args.resultsFile.offset, 0);
             int length = args.resultsFile.length;
-            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile.input, from, length, outputDir);
+            calculateGradientAreaScoreForResultsFile(colorMIPSearch, args.resultsFile.input, args.gradientPath, from, length, outputDir);
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);
@@ -693,13 +693,13 @@ public class Main {
                     Utils.partitionList(resultFileNames.subList(0, length), args.libraryPartitionSize)
                             .forEach(fileList -> {
                                 fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, 0, -1, outputDir));
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, args.gradientPath, 0, -1, outputDir));
                             });
                 } else {
                     Utils.partitionList(resultFileNames, args.libraryPartitionSize)
                             .forEach(fileList -> {
                                 fileList.stream().parallel()
-                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, 0, -1, outputDir));
+                                        .forEach(f -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, f, args.gradientPath, 0, -1, outputDir));
                             });
                 }
             } catch (IOException e) {
@@ -708,7 +708,7 @@ public class Main {
         }
     }
 
-    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, int offset, int length, Path outputDir) {
+    private static void calculateGradientAreaScoreForResultsFile(LocalColorMIPSearch colorMIPSearch, String inputResultsFilename, String gradientsLocation, int offset, int length, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -743,8 +743,8 @@ public class Main {
                                         matchedMIP.archivePath = csr.matchedImageArchivePath;
                                         matchedMIP.imagePath = csr.matchedImageName;
                                         matchedMIP.type = csr.matchedImageType;
-                                        csrWithImages.matchedImage = colorMIPSearch.loadMIP(matchedMIP);
-                                        csrWithImages.matchedImageGradient = colorMIPSearch.loadGradientMIP(matchedMIP);
+                                        csrWithImages.matchedImage = Utils.loadMIP(matchedMIP);
+                                        csrWithImages.matchedImageGradient = Utils.loadGradientMIP(matchedMIP, gradientsLocation);
                                         return csrWithImages;
                                     })
                                     .collect(Collectors.toList());
@@ -759,8 +759,8 @@ public class Main {
                     .forEach(resultsEntry -> {
                         LOG.info("Calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                         long startTimeForCurrentEntry = System.currentTimeMillis();
-                        MIPImage inputImage = colorMIPSearch.loadMIP(resultsEntry.getRight().getKey());
-                        MIPImage inputGradientImage = colorMIPSearch.loadGradientMIP(resultsEntry.getRight().getKey());
+                        MIPImage inputImage = Utils.loadMIP(resultsEntry.getRight().getKey());
+                        MIPImage inputGradientImage = Utils.loadGradientMIP(resultsEntry.getRight().getKey(), gradientsLocation);
                         resultsEntry.getRight().getValue().stream().parallel().forEach(csr ->{
                             ColorMIPSearchResult.AreaGap areaGap = colorMIPSearch.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
                             if (areaGap != null) {
