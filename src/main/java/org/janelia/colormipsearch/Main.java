@@ -690,10 +690,10 @@ public class Main {
                         .map(p -> p.toString())
                         .collect(Collectors.toList());
                 if (length > 0 && length < resultFileNames.size()) {
-                    resultFileNames.subList(0, length).stream()
+                    resultFileNames.subList(0, length).stream().parallel()
                             .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
                 } else {
-                    resultFileNames.stream()
+                    resultFileNames.stream().parallel()
                             .forEach(p -> calculateGradientAreaScoreForResultsFile(colorMIPSearch, p, 0, -1, outputDir));
                 }
             } catch (IOException e) {
