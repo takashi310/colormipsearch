@@ -31,7 +31,7 @@ public class ImageOperationsTest {
     @Test
     public void maxFilterThenHorizontalMirroringForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
-                .thenExtend(ImageTransformation.maxFilter(10))
+                .thenExtend(ImageTransformation.maxFilterWithHistogram(10))
                 .thenExtend(ImageTransformation.horizontalMirror())
                 ;
 
@@ -52,7 +52,7 @@ public class ImageOperationsTest {
     public void horizontalMirrorThenMaxFilterForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .thenExtend(ImageTransformation.horizontalMirror())
-                .thenExtend(ImageTransformation.maxFilter(10))
+                .thenExtend(ImageTransformation.maxFilterWithHistogram(10))
                 ;
 
         for (int i = 0; i < 5; i++) {

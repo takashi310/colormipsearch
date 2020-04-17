@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch;
 
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
@@ -83,8 +85,8 @@ class EM2LMAreaGapCalculator {
                 .toGray16()
                 .toSignal()
                 ;
-        ImageProcessing maxFilterOver60px = ImageProcessing.create(ImageTransformation.maxFilter(60));
-        ImageProcessing maxFilterOver20px = ImageProcessing.create(ImageTransformation.maxFilter(20));
+        ImageProcessing maxFilterOver60px = ImageProcessing.create(ImageTransformation.maxFilterWithHistogram(60));
+        ImageProcessing maxFilterOver20px = ImageProcessing.create(ImageTransformation.maxFilterWithHistogram(20));
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
             long startTime = System.currentTimeMillis();
@@ -99,7 +101,7 @@ class EM2LMAreaGapCalculator {
             LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
             LImage patternSignalImage = toSignal.applyTo(patternImageArray).mapi(mipTransformation);
             LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
-            long area = LImage.combine3(
+            LImage gaps = LImage.combine3(
                     LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
                     patternImage,
                     maskThenMaxFilterOverNegativeRadius.applyTo(libraryImageArray),
@@ -115,25 +117,27 @@ class EM2LMAreaGapCalculator {
                         }
                         return p;
                     }
-            ).fold(0L, (p, s) -> p > 3 ? s + p : s);
-            LOG.debug("Sum area gap: {}ms", System.currentTimeMillis() - startTime);
-
-            long overExpressedArea = LImage.combine2(
+            );
+            LImage overExpressedRegions = LImage.combine2(
                     overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16()),
                     clearLabels.applyTo(libraryImageArray),
-                    (p1, p2) -> p1 != -16777216 && p1 != 0 ? p2 : 0)
-                    .fold(0L, (p, s) -> {
-                        int red = (p >>> 16) & 0xff;
-                        int green = (p >>> 8) & 0xff;
-                        int blue = p & 0xff;
+                    (p1, p2) -> p1 != -16777216 && p1 != 0 ? p2 : 0);
+
+            Pair<Long, Long> areas = gaps.foldi(MutablePair.of(0L, 0L),
+                    (x, y, p, ap) -> {
+                        if (p > 3) ap.setLeft(ap.getLeft() + p);
+                        int op = overExpressedRegions.get(x, y);
+                        int red = (op >>> 16) & 0xff;
+                        int green = (op >>> 8) & 0xff;
+                        int blue = op & 0xff;
 
                         if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
-                            return s + 1;
-                        else
-                            return s;
+                            ap.setRight(ap.getRight() + 1);
+
+                        return ap;
                     });
-            LOG.debug("Sum overexpressed regions: {}ms", System.currentTimeMillis() - startTime);
-            return area + overExpressedArea / 2;
+            LOG.debug("Sum areas: {}ms", System.currentTimeMillis() - startTime);
+            return areas.getLeft() + areas.getRight() / 2;
         };
     }
 

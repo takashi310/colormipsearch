@@ -1,9 +1,10 @@
 package org.janelia.colormipsearch.imageprocessing;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.stream.IntStream;
+
+import scala.Int;
 
 public class LImage {
     public static LImage create(ImageArray imageArray) {
@@ -80,7 +81,17 @@ public class LImage {
         return res;
     }
 
-    <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
+    <R> R foldp(R initialValue, BiFunction<Integer, R, R> acumulator, BinaryOperator<R> combiner) {
+        R res = initialValue;
+        int imageWidth = width();
+        int imageHeight = height();
+        return IntStream.range(0, imageHeight).parallel()
+                .flatMap(y -> IntStream.range(0, imageWidth).parallel().map(x -> get(x, y)))
+                .boxed()
+                .reduce(res, (r, p) -> acumulator.apply(p, r), combiner);
+    }
+
+    public <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
         R res = initialValue;
         int imageWidth = width();
         int imageHeight = height();
@@ -90,6 +101,20 @@ public class LImage {
             }
         }
         return res;
+    }
+
+    public <R> R foldip(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator, BinaryOperator<R> combiner) {
+        R res = initialValue;
+        int imageWidth = width();
+        int imageHeight = height();
+        return IntStream.range(0, imageHeight).parallel()
+                .boxed()
+                .reduce(res,
+                        (r, y) -> IntStream.range(0, imageWidth).parallel()
+                                .boxed()
+                                .reduce(r, (r1, x) -> acumulator.apply(x, y, get(x, y), r1), combiner),
+                        combiner
+                );
     }
 
 }

@@ -43,7 +43,7 @@ public class ImageProcessing {
     }
 
     public ImageProcessing maxFilter(double radius) {
-        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilter(radius)));
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilterWithHistogram(radius)));
     }
 
     public ImageProcessing horizontalMirror() {

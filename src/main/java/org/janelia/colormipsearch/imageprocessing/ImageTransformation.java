@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.imageprocessing;
 import java.util.Arrays;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
 
@@ -13,7 +14,7 @@ public abstract class ImageTransformation {
 
     private static Logger LOG = LoggerFactory.getLogger(ImageTransformation.class);
 
-    interface ColorHistogram {
+    private interface ColorHistogram {
         /**
          * Add a value and return the new max
          * @param val
@@ -29,7 +30,7 @@ public abstract class ImageTransformation {
         void clear();
     }
 
-    static final class RGBHistogram implements ColorHistogram {
+    private static final class RGBHistogram implements ColorHistogram {
         private final Gray8Histogram rHistogram;
         private final Gray8Histogram gHistogram;
         private final Gray8Histogram bHistogram;
@@ -71,7 +72,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    static final class Gray8Histogram implements ColorHistogram {
+    private static final class Gray8Histogram implements ColorHistogram {
 
         private final int[] histogram;
         private int max;
@@ -156,7 +157,43 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation maxFilter(double radius) {
+    public static ImageTransformation maxFilterOverFullRegion(double radius) {
+        int[] radii = makeLineRadii(radius);
+        int kRadius = radii[radii.length - 1];
+        int kHeight = (radii.length - 1) / 2;
+        TriFunction<ImageType, Integer, Integer, Integer> maxValue = (pt, p1, p2) -> {
+            switch (pt) {
+                case RGB:
+                    int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
+                    int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
+                    int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
+                    int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
+                    return (a << 24) | (r << 16) | (g << 8) | b;
+                case GRAY8:
+                case GRAY16:
+                default:
+                    return Math.max(p1, p2);
+            }
+        };
+        return new ImageTransformation() {
+
+            @Override
+            int apply(LImage lImage, int x, int y) {
+                return IntStream.range(0, kHeight)
+                        .filter(h -> {
+                            int ay = y + h - kRadius;
+                            return ay >= 0 && ay < lImage.height();
+                        })
+                        .flatMap(h -> IntStream.rangeClosed(x+radii[2*h], x+radii[2*h+1])
+                                .filter(ax -> ax >= 0 && ax < lImage.width())
+                                .map(ax -> lImage.get(ax, y + h - kRadius)))
+                        .reduce(lImage.get(x, y), (p1, p2) -> maxValue.apply(lImage.getPixelType(), p1, p2));
+            }
+
+        };
+    }
+
+    public static ImageTransformation maxFilterWithHistogram(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;
