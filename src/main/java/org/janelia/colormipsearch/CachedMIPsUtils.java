@@ -22,7 +22,7 @@ class CachedMIPsUtils {
                     return MIPsUtils.loadMIP(mipInfo);
                 }
             });
-    
+
     static MIPImage loadMIP(MIPInfo mipInfo) {
         try {
             if (mipInfo == null || !mipInfo.exists()) {
