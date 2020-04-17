@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -725,18 +726,13 @@ public class Main {
             int topResultsToProcess,
             ObjectMapper mapper,
             Executor executor) {
-        class ColorMIPSearchResultMetadataWithImages {
-            ColorMIPSearchResultMetadata csr;
-            MIPImage matchedImage;
-            MIPImage matchedImageGradient;
-        }
         Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = readCDSResultsFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(resultsFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return CompletableFuture.completedFuture(resultsFileContent);
         }
         LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFile);
-        Map<MIPInfo, List<ColorMIPSearchResultMetadataWithImages>> resultsGroupedById = resultsFileContent.results.stream()
+        Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = resultsFileContent.results.stream()
                 .collect(Collectors.groupingBy(csr -> {
                     MIPInfo mip = new MIPInfo();
                     mip.id = csr.id;
@@ -752,62 +748,40 @@ public class Main {
                     } else {
                         toProcess = r;
                     }
-                    LOG.info("Load {} images", r.size());
-                    List<ColorMIPSearchResultMetadataWithImages> rWithImages = toProcess.stream()
-                            .map(csr -> {
-                                ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
-                                csrWithImages.csr = csr;
-                                MIPInfo matchedMIP = new MIPInfo();
-                                matchedMIP.archivePath = csr.matchedImageArchivePath;
-                                matchedMIP.imagePath = csr.matchedImageName;
-                                matchedMIP.type = csr.matchedImageType;
-                                csrWithImages.matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                                csrWithImages.matchedImageGradient = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
-                                return csrWithImages;
-                            })
-                            .collect(Collectors.toList());
-                    LOG.info("Finished loading {} images", rWithImages.size());
-                    return rWithImages;
+                    return toProcess;
                 })));
         long startTime = System.currentTimeMillis();
-        List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
-                Streams.zip(IntStream.range(0, Integer.MAX_VALUE).boxed(), resultsGroupedById.entrySet().stream(), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
-                        .map(resultsEntry -> {
-                            LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
-                            long startTimeForCurrentEntry = System.currentTimeMillis();
-                            MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
-                            MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(resultsEntry.getRight().getKey(), gradientsLocation));
-                            List<CompletableFuture<ColorMIPSearchResultMetadata>> gradientAreaGapForCurrentInput = resultsEntry.getRight().getValue().stream()
-                                    .map(csr -> CompletableFuture.supplyAsync(() -> {
-                                        ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, csr.matchedImage, csr.matchedImageGradient);
-                                        if (areaGap != null) {
-                                            csr.csr.setGradientAreaGap(areaGap.value); // update current result
-                                        }
-                                        return csr.csr;
-                                    }, executor))
-                                    .collect(Collectors.toList());
-                            return CompletableFuture.supplyAsync(() -> null, executor)
-                                    .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapForCurrentInput.toArray(new CompletableFuture<?>[0])))
-                                    .thenApply(ignoredVoidResult -> {
-                                        LOG.info("Finished gradient area scores for matches of {} (entry# {}) from {} in {}s", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile, (System.currentTimeMillis() - startTimeForCurrentEntry) / 1000.);
-                                        List<ColorMIPSearchResultMetadata> cdsResultsWithGradientAreaGap = gradientAreaGapForCurrentInput.stream()
-                                                .map(gaComputation -> gaComputation.join())
-                                                .collect(Collectors.toList());
-                                        long maxAreaGap = cdsResultsWithGradientAreaGap.stream()
-                                                .map(csr -> csr.getGradientAreaGap())
-                                                .max(Long::compare)
-                                                .orElse(-1L);
-                                        if (maxAreaGap >= 0)
-                                            cdsResultsWithGradientAreaGap.forEach(csr -> csr.maxGradientAreaGap = maxAreaGap);
-                                        return cdsResultsWithGradientAreaGap;
-                                    });
-                        })
-                        .collect(Collectors.toList());
+        int i = 0;
+        List<CompletableFuture<ColorMIPSearchResultMetadata>> gradientAreaGapComputations = new ArrayList<>();
+        for (Map.Entry<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsEntry : resultsGroupedById.entrySet()) {
+            int currentEntryIndex = i;
+            LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry, currentEntryIndex, inputResultsFile);
+            MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getKey());
+            MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(resultsEntry.getKey(), gradientsLocation));
+            for (ColorMIPSearchResultMetadata csr : resultsEntry.getValue()) {
+                gradientAreaGapComputations.add(
+                        CompletableFuture.supplyAsync(() -> {
+                            MIPInfo matchedMIP = new MIPInfo();
+                            matchedMIP.archivePath = csr.matchedImageArchivePath;
+                            matchedMIP.imagePath = csr.matchedImageName;
+                            matchedMIP.type = csr.matchedImageType;
+                            MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
+                            MIPImage matchedImageGradient = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
+                            ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedImageGradient);
+                            if (areaGap != null) {
+                                csr.setGradientAreaGap(areaGap.value); // update current result
+                            }
+                            return csr;
+                        }, executor)
+                );
+            }
+            i++;
+        }
         // wait for all results to complete
         return CompletableFuture.supplyAsync(() -> null, executor)
                 .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])))
                 .thenApply(r -> {
-                    LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+                    LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
     }
