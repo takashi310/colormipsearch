@@ -801,7 +801,7 @@ public class Main {
         return CompletableFuture.supplyAsync(() -> null, executor)
                 .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])))
                 .thenApply(r -> {
-                    LOG.info("Finished gradient area score for all {} entries from {} in {}s", resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+                    LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
     }
