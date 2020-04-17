@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Streams;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -338,7 +339,13 @@ public class Main {
 
     private static Executor createCDSExecutor(AbstractArgs args) {
         if (args.cdsConcurrency > 0) {
-            return Executors.newWorkStealingPool(args.cdsConcurrency);
+            return Executors.newFixedThreadPool(
+                    args.cdsConcurrency,
+                    new ThreadFactoryBuilder()
+                            .setNameFormat("CDSRUNNER-%d")
+                            .setDaemon(true)
+                            .setPriority(Thread.NORM_PRIORITY + 1)
+                            .build());
         } else {
             return Executors.newWorkStealingPool();
         }
