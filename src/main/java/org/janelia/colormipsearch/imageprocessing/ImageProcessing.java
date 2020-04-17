@@ -2,6 +2,9 @@ package org.janelia.colormipsearch.imageprocessing;
 
 import java.util.function.BiPredicate;
 
+import ij.plugin.filter.RankFilters;
+import ij.process.ImageProcessor;
+
 public class ImageProcessing {
 
     public static ImageProcessing create(ImageTransformation imageTransformation) {

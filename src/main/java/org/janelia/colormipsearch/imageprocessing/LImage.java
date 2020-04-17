@@ -1,22 +1,39 @@
 package org.janelia.colormipsearch.imageprocessing;
 
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.stream.IntStream;
 
-import scala.Int;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import ij.plugin.filter.RankFilters;
+import ij.process.ImageProcessor;
 
 public class LImage {
     public static LImage create(ImageArray imageArray) {
         return new LImage(imageArray.type, imageArray.width, imageArray.height, (x, y) -> imageArray.getPixel(x, y));
     }
 
+    public static LImage create(ImageType imageType, ImageProcessor ijProcessor) {
+        return new LImage(imageType, ijProcessor.getWidth(), ijProcessor.getHeight(), (x, y) -> ijProcessor.getPixel(x, y));
+    }
+
+    public static LImage createDilatedImage(ImageArray imageArray, double radius) {
+        RankFilters maxFilter = new RankFilters();
+        ImageProcessor ijImageProcessor = imageArray.getImageProcessor();
+        maxFilter.rank(ijImageProcessor, radius, RankFilters.MAX);
+        return LImage.create(imageArray.type, ijImageProcessor);
+    }
+
     public static LImage combine2(LImage l1, LImage l2, BinaryOperator<Integer> op) {
-        return new LImage(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(l1.get(x, y), l2.get(x, y)));
+        return new LImage(l1.getPixelType(), l1.width, l1.height, (x, y) -> op.apply(l1.get(x, y), l2.get(x, y)));
     }
 
     public static LImage combine3(LImage l1, LImage l2, LImage l3, TriFunction<Integer, Integer, Integer, Integer> op) {
-        return new LImage(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(l1.get(x, y), l2.get(x, y), l3.get(x, y)));
+        return new LImage(l1.getPixelType(), l1.width, l1.height, (x, y) -> op.apply(l1.get(x, y), l2.get(x, y), l3.get(x, y)));
     }
 
     private final ImageType imageType;
@@ -59,22 +76,20 @@ public class LImage {
 
     public LImage mapi(ImageTransformation imageTransformation) {
         return new LImage(
-                imageTransformation.pixelTypeChange.apply(getPixelType()), width(), height(),
+                imageTransformation.pixelTypeChange.apply(getPixelType()), width, height,
                 (x, y) -> imageTransformation.apply(this, x, y)
         );
     }
 
     public ImageArray asImageArray() {
-        int[] pixels = new int[height() * width()];
-        return new ImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));
+        int[] pixels = new int[height * width];
+        return new ImageArray(getPixelType(), width, height, foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));
     }
 
     public <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
         R res = initialValue;
-        int imageWidth = width();
-        int imageHeight = height();
-        for (int y = 0; y < imageHeight; y++) {
-            for (int x = 0; x < imageWidth; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 res = acumulator.apply(get(x, y), res);
             }
         }
@@ -83,20 +98,16 @@ public class LImage {
 
     <R> R foldp(R initialValue, BiFunction<Integer, R, R> acumulator, BinaryOperator<R> combiner) {
         R res = initialValue;
-        int imageWidth = width();
-        int imageHeight = height();
-        return IntStream.range(0, imageHeight).parallel()
-                .flatMap(y -> IntStream.range(0, imageWidth).parallel().map(x -> get(x, y)))
+        return IntStream.range(0, height).parallel()
+                .flatMap(y -> IntStream.range(0, width).parallel().map(x -> get(x, y)))
                 .boxed()
                 .reduce(res, (r, p) -> acumulator.apply(p, r), combiner);
     }
 
     public <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
         R res = initialValue;
-        int imageWidth = width();
-        int imageHeight = height();
-        for (int y = 0; y < imageHeight; y++) {
-            for (int x = 0; x < imageWidth; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 res = acumulator.apply(x, y, get(x, y), res);
             }
         }
@@ -105,12 +116,10 @@ public class LImage {
 
     public <R> R foldip(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator, BinaryOperator<R> combiner) {
         R res = initialValue;
-        int imageWidth = width();
-        int imageHeight = height();
-        return IntStream.range(0, imageHeight).parallel()
+        return IntStream.range(0, height).parallel()
                 .boxed()
                 .reduce(res,
-                        (r, y) -> IntStream.range(0, imageWidth).parallel()
+                        (r, y) -> IntStream.range(0, width).parallel()
                                 .boxed()
                                 .reduce(r, (r1, x) -> acumulator.apply(x, y, get(x, y), r1), combiner),
                         combiner

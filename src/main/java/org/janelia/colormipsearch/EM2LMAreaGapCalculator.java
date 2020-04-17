@@ -90,8 +90,8 @@ class EM2LMAreaGapCalculator {
 
         return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
             long startTime = System.currentTimeMillis();
-            LImage dilated60pxPatternImage = maxFilterOver60px.applyTo(patternImageArray);
-            LImage dilated20pxPatternImage = maxFilterOver20px.applyTo(patternImageArray);
+            LImage dilated60pxPatternImage = LImage.createDilatedImage(patternImageArray, 60);
+            LImage dilated20pxPatternImage = LImage.createDilatedImage(patternImageArray, 20);
             LImage overExpressedRegionsInPatternImage = LImage.combine2(
                     dilated60pxPatternImage,
                     dilated20pxPatternImage,
