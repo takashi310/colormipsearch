@@ -783,33 +783,37 @@ public class Main {
         List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
                 Streams.zip(IntStream.range(0, Integer.MAX_VALUE).boxed(), resultsGroupedById.entrySet().stream(), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                         .map(resultsEntry -> {
-                            return CompletableFuture.supplyAsync(() -> {
-                                LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
-                                long startTimeForCurrentEntry = System.currentTimeMillis();
-                                LOG.info("Load image {}", resultsEntry.getRight().getKey());
-                                MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
-                                List<ImageArray> matchedImages = resultsEntry.getRight().getValue().stream()
-                                        .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
-                                        .map(csr -> csr.matchedImage.imageArray)
-                                        .collect(Collectors.toList());
-                                List<ImageArray> matchedGradientImages = resultsEntry.getRight().getValue().stream()
-                                        .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
-                                        .map(csr -> csr.matchedImageGradient.imageArray)
-                                        .collect(Collectors.toList());
-                                List<Long> areaGaps = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, matchedImages, matchedGradientImages);
-                                long maxAreaGap = areaGaps.stream().max(Long::compare).orElse(-1L);
-                                return Streams.zip(
-                                        resultsEntry.getRight().getValue().stream()
-                                                .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null),
-                                        areaGaps.stream(),
-                                        (csr, areaGap) -> {
-                                            csr.csr.setGradientAreaGap(areaGap);
-                                            csr.csr.maxGradientAreaGap = maxAreaGap;
-                                            return csr.csr;
-                                        }
-                                ).collect(Collectors.toList());
-
-                            }, executor);
+                            LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
+                            long startTimeForCurrentEntry = System.currentTimeMillis();
+                            LOG.info("Load image {}", resultsEntry.getRight().getKey());
+                            MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
+                            List<ImageArray> matchedImages = resultsEntry.getRight().getValue().stream()
+                                    .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
+                                    .map(csr -> csr.matchedImage.imageArray)
+                                    .collect(Collectors.toList());
+                            List<ImageArray> matchedGradientImages = resultsEntry.getRight().getValue().stream()
+                                    .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
+                                    .map(csr -> csr.matchedImageGradient.imageArray)
+                                    .collect(Collectors.toList());
+                            List<CompletableFuture<Long>> areaGapComputations = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, matchedImages, matchedGradientImages);
+                            return CompletableFuture.supplyAsync(() -> null, executor)
+                                    .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
+                                    .thenApply(vr -> {
+                                        List<Long> areaGaps = areaGapComputations.stream()
+                                                .map(areaGapComputation -> areaGapComputation.join())
+                                                .collect(Collectors.toList());
+                                        long maxAreaGap = areaGaps.stream().max(Long::compare).orElse(-1L);
+                                        return Streams.zip(
+                                                resultsEntry.getRight().getValue().stream()
+                                                        .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null),
+                                                areaGaps.stream(),
+                                                (csr, areaGap) -> {
+                                                    csr.csr.setGradientAreaGap(areaGap);
+                                                    csr.csr.maxGradientAreaGap = maxAreaGap;
+                                                    return csr.csr;
+                                                }
+                                        ).collect(Collectors.toList());
+                                    });
                         })
                         .collect(Collectors.toList());
         // wait for all results to complete

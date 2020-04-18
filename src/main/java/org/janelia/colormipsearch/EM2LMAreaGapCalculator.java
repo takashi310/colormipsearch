@@ -1,22 +1,15 @@
 package org.janelia.colormipsearch;
 
-import java.awt.Image;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Streams;
 
-import ij.process.ImageProcessor;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
-import org.janelia.colormipsearch.imageprocessing.QuadFunction;
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +39,7 @@ class EM2LMAreaGapCalculator {
     private final ImageProcessing negativeRadiusDilation;
     private final ImageProcessing toSignalTransformation;
     private final TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustment;
-    private final TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<Long>> batchScoreAdjustment;
+    private final TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<CompletableFuture<Long>>> batchScoreAdjustment;
 
     EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
         this.labelsClearing = ImageProcessing.create(
@@ -71,8 +64,8 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    List<Long> calculateGradientAreaAdjustment(MIPImage patternMIP, List<ImageArray> libraryImages, List<ImageArray> libraryGradientImages) {
-        return  batchScoreAdjustment.apply(patternMIP.imageArray, libraryImages, libraryGradientImages);
+    List<CompletableFuture<Long>> calculateGradientAreaAdjustment(MIPImage patternMIP, List<ImageArray> libraryImages, List<ImageArray> libraryGradientImages) {
+        return batchScoreAdjustment.apply(patternMIP.imageArray, libraryImages, libraryGradientImages);
     }
 
     private long calculateAdjustedScore(MIPImage patternMIP, MIPImage libraryMIP, MIPImage libraryGradient) {
@@ -145,8 +138,7 @@ class EM2LMAreaGapCalculator {
         };
     }
 
-    private TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<Long>> batchScoreAdjustmentProcessing(int maskThreshold, boolean mirrorMask) {
-
+    private TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<CompletableFuture<Long>>> batchScoreAdjustmentProcessing(int maskThreshold, boolean mirrorMask) {
         return (ImageArray patternImageArray, List<ImageArray> libraryImages, List<ImageArray> libraryGradientImages) -> {
             LImage dilated60pxPatternImage = LImage.createDilatedImage(patternImageArray, 60);
             LImage dilated20pxPatternImage = LImage.createDilatedImage(patternImageArray, 20);
@@ -196,7 +188,7 @@ class EM2LMAreaGapCalculator {
                 return Streams.zip(
                         libraryImages.stream().map(LImage::create),
                         libraryGradientImages.stream().map(LImage::create),
-                        (libraryImage, libraryGradientImage) -> {
+                        (libraryImage, libraryGradientImage) -> CompletableFuture.supplyAsync(() -> {
                             long areaGap = gapCalculator.apply(libraryImage, libraryGradientImage, ImageTransformation.IDENTITY);
                             if (mirrorMask) {
                                 long mirrorAreaGap = gapCalculator.apply(libraryImage, libraryGradientImage, MIRROR_IMAGE);
@@ -205,7 +197,7 @@ class EM2LMAreaGapCalculator {
                                 }
                             }
                             return areaGap;
-                        })
+                        }))
                         .collect(Collectors.toList());
             } finally {
                 LOG.info("Calculated area gap scores for {} images in {}ms", libraryImages.size(), System.currentTimeMillis()-startTime);
