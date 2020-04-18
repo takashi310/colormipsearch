@@ -71,6 +71,10 @@ class EM2LMAreaGapCalculator {
         }
     }
 
+    List<Long> calculateGradientAreaAdjustment(MIPImage patternMIP, List<ImageArray> libraryImages, List<ImageArray> libraryGradientImages) {
+        return  batchScoreAdjustment.apply(patternMIP.imageArray, libraryImages, libraryGradientImages);
+    }
+
     private long calculateAdjustedScore(MIPImage patternMIP, MIPImage libraryMIP, MIPImage libraryGradient) {
         long startTimestamp = System.currentTimeMillis();
         try {
