@@ -34,7 +34,6 @@ class ColorMIPSearchResult implements Serializable {
     private final boolean isMatch;
     private final boolean isError;
     private long gradientAreaGap;
-    private boolean mirrorHasBetterMatch;
 
     ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingPixels, double matchingPixelsPct, boolean isMatch, boolean isError) {
         Preconditions.checkArgument(maskMIP != null);
@@ -67,14 +66,8 @@ class ColorMIPSearchResult implements Serializable {
         return isError;
     }
 
-    ColorMIPSearchResult applyGradientAreaGap(@Nullable AreaGap gradientAreaGap) {
-        if (gradientAreaGap == null) {
-            this.gradientAreaGap = -1;
-            this.mirrorHasBetterMatch = false;
-        } else {
-            this.gradientAreaGap = gradientAreaGap.value;
-            this.mirrorHasBetterMatch = gradientAreaGap.mirrorHasBetterMatch;
-        }
+    ColorMIPSearchResult applyGradientAreaGap(long gradientAreaGap) {
+        this.gradientAreaGap = gradientAreaGap;
         return this;
     }
 
@@ -110,7 +103,6 @@ class ColorMIPSearchResult implements Serializable {
                 .append("matchingPixels", matchingPixels)
                 .append("matchingPixelsPct", matchingPixelsPct)
                 .append("areaGap", gradientAreaGap)
-                .append("mirrorHasBetterMatch", mirrorHasBetterMatch)
                 .append("isMatch", isMatch)
                 .append("isError", isError)
                 .toString();

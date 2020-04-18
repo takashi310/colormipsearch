@@ -1,5 +1,14 @@
 package org.janelia.colormipsearch;
 
+import java.awt.Image;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
+
+import com.google.common.collect.Streams;
+
+import ij.process.ImageProcessor;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
@@ -7,6 +16,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
+import org.janelia.colormipsearch.imageprocessing.QuadFunction;
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,130 +28,188 @@ class EM2LMAreaGapCalculator {
 
     private static final Logger LOG = LoggerFactory.getLogger(EM2LMAreaGapCalculator.class);
     private static final int DEFAULT_COLOR_FLUX = 40;
-
-    private final int maskThreshold;
-    private final int negativeRadius;
-    private final boolean mirrorMask;
-    private final TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustment;
-    private final TriFunction<ImageArray, ImageArray, ImageArray, Long> mirrorScoreAdjustment;
-
-    EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
-        this.maskThreshold = maskThreshold;
-        this.negativeRadius = negativeRadius;
-        this.mirrorMask = mirrorMask;
-        this.scoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.identity());
-        this.mirrorScoreAdjustment = scoreAdjustmentProcessing(ImageTransformation.horizontalMirror());
-    }
-
-    ColorMIPSearchResult.AreaGap calculateGradientAreaAdjustment(MIPImage libraryImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
-        ColorMIPSearchResult.AreaGap areaGap;
-        long startTime = System.currentTimeMillis();
-        if (patternMIPImage.mipInfo.isEmSkelotonMIP() || libraryGradientImage != null) {
-            areaGap = calculateAdjustedScore(libraryImage, patternMIPImage, libraryGradientImage);
-            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryImage, patternMIPImage, libraryGradientImage, System.currentTimeMillis() - startTime);
-        } else if (patternGradientImage != null) {
-            areaGap = calculateAdjustedScore(patternMIPImage, libraryImage, patternGradientImage);
-            LOG.debug("Completed calculating area gap between {} and {} with {} in {}ms", libraryImage, patternMIPImage, patternGradientImage, System.currentTimeMillis() - startTime);
-        } else {
-            areaGap = null;
-        }
-        return areaGap;
-    }
-
-    private ColorMIPSearchResult.AreaGap calculateAdjustedScore(MIPImage libraryMIP, MIPImage patternMIP, MIPImage libraryGradient) {
-        if (libraryGradient == null) {
-            LOG.trace("No gradient image provided for {}", libraryMIP);
-            return null;
-        } else {
-            long startTimestamp = System.currentTimeMillis();
-            try {
-                LOG.debug("Calculate area gap {} mirror mask between {} - {} using {}", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient);
-                long adjustmentForNormalImage = scoreAdjustment.apply(libraryMIP.imageArray, patternMIP.imageArray, libraryGradient.imageArray);
-                if (mirrorMask) {
-                    long adjustmentForMirroredImage = mirrorScoreAdjustment.apply(libraryMIP.imageArray, patternMIP.imageArray, libraryGradient.imageArray);
-                    if (adjustmentForNormalImage <= adjustmentForMirroredImage) {
-                        return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
-                    } else {
-                        return new ColorMIPSearchResult.AreaGap(adjustmentForMirroredImage, true);
-                    }
-                } else {
-                    return new ColorMIPSearchResult.AreaGap(adjustmentForNormalImage, false);
+    private static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, patternPix, dilatedPix) -> {
+        if (dilatedPix != -16777216) {
+            if (patternPix != -16777216) {
+                int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
+                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+                    // negative score value
+                    return pxGapSlice - DEFAULT_COLOR_FLUX;
                 }
-            } finally {
-                LOG.debug("Finished calculating area gap {} mirror mask between {} - {} using {} in {}ms", mirrorMask ? "with" : "without", libraryMIP, patternMIP, libraryGradient, System.currentTimeMillis()-startTimestamp);
             }
         }
+        return gradScorePix;
+    };
+    private static final ImageTransformation MIRROR_IMAGE = ImageTransformation.horizontalMirror();
+
+    private final ImageProcessing labelsClearing;
+    private final ImageProcessing negativeRadiusDilation;
+    private final ImageProcessing toSignalTransformation;
+    private final TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustment;
+    private final TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<Long>> batchScoreAdjustment;
+
+    EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
+        this.labelsClearing = ImageProcessing.create(
+                ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85));
+        this.negativeRadiusDilation = labelsClearing
+                .mask(maskThreshold)
+                .maxFilter(negativeRadius);
+        this.toSignalTransformation = ImageProcessing.create()
+                .toGray16()
+                .toSignal();
+        this.scoreAdjustment = scoreAdjustmentProcessing(maskThreshold, mirrorMask);
+        this.batchScoreAdjustment = batchScoreAdjustmentProcessing(maskThreshold, mirrorMask);
     }
 
-    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(ImageTransformation mipTransformation) {
-        ImageProcessing clearLabels = ImageProcessing.create(
-                ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85))
-                ;
-        ImageProcessing maskThenMaxFilterOverNegativeRadius = clearLabels
-                .mask(maskThreshold)
-                .maxFilter(negativeRadius)
-                ;
-        ImageProcessing toSignal = ImageProcessing.create()
-                .toGray16()
-                .toSignal()
-                ;
-        ImageProcessing maxFilterOver60px = ImageProcessing.create(ImageTransformation.maxFilterWithHistogram(60));
-        ImageProcessing maxFilterOver20px = ImageProcessing.create(ImageTransformation.maxFilterWithHistogram(20));
+    long calculateGradientAreaAdjustment(MIPImage image1, MIPImage imageGradient1, MIPImage image2, MIPImage imageGradient2) {
+        if (imageGradient1 != null) {
+            return calculateAdjustedScore(image2, image1, imageGradient1);
+        } else if (imageGradient2 != null) {
+            return calculateAdjustedScore(image1, image2, imageGradient2);
+        } else {
+            return -1;
+        }
+    }
 
-        return (libraryImageArray, patternImageArray, libraryGradientImageArray) -> {
-            long startTime = System.currentTimeMillis();
+    private long calculateAdjustedScore(MIPImage patternMIP, MIPImage libraryMIP, MIPImage libraryGradient) {
+        long startTimestamp = System.currentTimeMillis();
+        try {
+            LOG.debug("Calculate area gap between {} - {} using {}", patternMIP, libraryMIP, libraryGradient);
+            return scoreAdjustment.apply(patternMIP.imageArray, libraryMIP.imageArray, libraryGradient.imageArray);
+        } finally {
+            LOG.debug("Finished calculating area gap between {} - {} using {} in {}ms", patternMIP, libraryMIP, libraryGradient, System.currentTimeMillis()-startTimestamp);
+        }
+    }
+
+    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(int maskThreshold, boolean mirrorMask) {
+        return (patternImageArray, libraryImageArray, libraryGradientImageArray) -> {
             LImage dilated60pxPatternImage = LImage.createDilatedImage(patternImageArray, 60);
             LImage dilated20pxPatternImage = LImage.createDilatedImage(patternImageArray, 20);
-            LImage overExpressedRegionsInPatternImage = LImage.combine2(
-                    dilated60pxPatternImage,
-                    dilated20pxPatternImage,
-                    (p1, p2) -> p2 != -16777216 ? -16777216 : p1
-            ).mapi(mipTransformation);
 
-            LImage patternImage = LImage.create(patternImageArray).mapi(mipTransformation);
-            LImage patternSignalImage = toSignal.applyTo(patternImageArray).mapi(mipTransformation);
+            LImage overExpressedRegionsInPatternImage = toSignalTransformation.applyTo(
+                    LImage.combine2(
+                            dilated60pxPatternImage,
+                            dilated20pxPatternImage,
+                            (p1, p2) -> p2 != -16777216 ? -16777216 : p1
+                    )).apply();
+
+            LImage patternImage = LImage.create(patternImageArray);
+            LImage patternSignalImage = toSignalTransformation.applyTo(patternImageArray);
+
+            TriFunction<LImage, LImage, ImageTransformation, Long> gapCalculator = (libraryImage, libraryGradientImage, patternTransformation) -> {
+                long startTime = System.currentTimeMillis();
+                LImage gaps = LImage.combine3(
+                        LImage.combine2(
+                                patternSignalImage.mapi(patternTransformation),
+                                libraryGradientImage,
+                                (p1, p2) -> p1 * p2),
+                        patternImage.mapi(patternTransformation),
+                        negativeRadiusDilation.applyTo(libraryImage),
+                        PIXEL_GAP_OP
+                );
+                LImage overExpressedRegions = LImage.combine2(
+                        overExpressedRegionsInPatternImage.mapi(patternTransformation),
+                        labelsClearing.applyTo(libraryImage),
+                        (p1, p2) -> p1 != 0 ? p2 : 0);
+                long sum = gaps.fold(0L, (p, s) -> p > 3 ? s + p : s);
+                long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> {
+                    int red = (p >>> 16) & 0xff;
+                    int green = (p >>> 8) & 0xff;
+                    int blue = p & 0xff;
+
+                    if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
+                        return s + 1;
+                    else
+                        return s;
+                });
+                long areaGapScore = sum + tooMuchExpression / 2;
+                LOG.debug("Area gap score -> {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
+                return areaGapScore;
+            };
+
+            LImage libraryImage = LImage.create(libraryImageArray);
             LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
-            LImage gaps = LImage.combine3(
-                    LImage.combine2(patternSignalImage, libraryGradientImage, (p1, p2) -> p1 * p2),
-                    patternImage,
-                    maskThenMaxFilterOverNegativeRadius.applyTo(libraryImageArray),
-                    (p, patternPix, dilatedPix) -> {
-                        if (dilatedPix != -16777216) {
-                            if (patternPix != -16777216) {
-                                int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
-                                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                                    // negative score value
-                                    return pxGapSlice - DEFAULT_COLOR_FLUX;
-                                }
-                            }
-                        }
-                        return p;
-                    }
-            );
-            LImage overExpressedRegions = LImage.combine2(
-                    overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16()),
-                    clearLabels.applyTo(libraryImageArray),
-                    (p1, p2) -> p1 != -16777216 && p1 != 0 ? p2 : 0);
 
-            Pair<Long, Long> areas = gaps.foldi(MutablePair.of(0L, 0L),
-                    (x, y, p, ap) -> {
-                        if (p > 3) ap.setLeft(ap.getLeft() + p);
-                        int op = overExpressedRegions.get(x, y);
-                        int red = (op >>> 16) & 0xff;
-                        int green = (op >>> 8) & 0xff;
-                        int blue = op & 0xff;
-
-                        if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
-                            ap.setRight(ap.getRight() + 1);
-
-                        return ap;
-                    });
-            LOG.debug("Sum areas: {}ms", System.currentTimeMillis() - startTime);
-            return areas.getLeft() + areas.getRight() / 2;
+            long areaGap = gapCalculator.apply(libraryImage, libraryGradientImage, ImageTransformation.IDENTITY);
+            if (mirrorMask) {
+                long mirrorAreaGap = gapCalculator.apply(libraryImage, libraryGradientImage, MIRROR_IMAGE);
+                if (mirrorAreaGap < areaGap) {
+                    return mirrorAreaGap;
+                }
+            }
+            return areaGap;
         };
     }
 
-    private int calculateSliceGap(int rgb1, int rgb2) {
+    private TriFunction<ImageArray, List<ImageArray>, List<ImageArray>, List<Long>> batchScoreAdjustmentProcessing(int maskThreshold, boolean mirrorMask) {
+
+        return (ImageArray patternImageArray, List<ImageArray> libraryImages, List<ImageArray> libraryGradientImages) -> {
+            LImage dilated60pxPatternImage = LImage.createDilatedImage(patternImageArray, 60);
+            LImage dilated20pxPatternImage = LImage.createDilatedImage(patternImageArray, 20);
+
+            LImage overExpressedRegionsInPatternImage = toSignalTransformation.applyTo(
+                    LImage.combine2(
+                            dilated60pxPatternImage,
+                            dilated20pxPatternImage,
+                            (p1, p2) -> p2 != -16777216 ? -16777216 : p1
+                    )).apply();
+
+            LImage patternImage = LImage.create(patternImageArray);
+            LImage patternSignalImage = toSignalTransformation.applyTo(patternImageArray).apply();
+
+            TriFunction<LImage, LImage, ImageTransformation, Long> gapCalculator = (libraryImage, libraryGradientImage, patternTransformation) -> {
+                long startTime = System.currentTimeMillis();
+                LImage gaps = LImage.combine3(
+                        LImage.combine2(
+                                patternSignalImage.mapi(patternTransformation),
+                                libraryGradientImage,
+                                (p1, p2) -> p1 * p2),
+                        patternImage.mapi(patternTransformation),
+                        negativeRadiusDilation.applyTo(libraryImage),
+                        PIXEL_GAP_OP
+                );
+                LImage overExpressedRegions = LImage.combine2(
+                        overExpressedRegionsInPatternImage.mapi(patternTransformation),
+                        labelsClearing.applyTo(libraryImage),
+                        (p1, p2) -> p1 != 0 ? p2 : 0);
+                long sum = gaps.fold(0L, (p, s) -> p > 3 ? s + p : s);
+                long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> {
+                    int red = (p >>> 16) & 0xff;
+                    int green = (p >>> 8) & 0xff;
+                    int blue = p & 0xff;
+
+                    if (red > maskThreshold || green > maskThreshold || blue > maskThreshold)
+                        return s + 1;
+                    else
+                        return s;
+                });
+                long areaGapScore = sum + tooMuchExpression / 2;
+                LOG.debug("Area gap score -> {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
+                return areaGapScore;
+            };
+            long startTime = System.currentTimeMillis();
+            try {
+                return Streams.zip(
+                        libraryImages.stream().map(LImage::create),
+                        libraryGradientImages.stream().map(LImage::create),
+                        (libraryImage, libraryGradientImage) -> {
+                            long areaGap = gapCalculator.apply(libraryImage, libraryGradientImage, ImageTransformation.IDENTITY);
+                            if (mirrorMask) {
+                                long mirrorAreaGap = gapCalculator.apply(libraryImage, libraryGradientImage, MIRROR_IMAGE);
+                                if (mirrorAreaGap < areaGap) {
+                                    return mirrorAreaGap;
+                                }
+                            }
+                            return areaGap;
+                        })
+                        .collect(Collectors.toList());
+            } finally {
+                LOG.info("Calculated area gap scores for {} images in {}ms", libraryImages.size(), System.currentTimeMillis()-startTime);
+            }
+        };
+    }
+
+    private static int calculateSliceGap(int rgb1, int rgb2) {
 
         int max1stvalMASK = 0, max2ndvalMASK = 0, max1stvalDATA = 0, max2ndvalDATA = 0, maskslinumber = 0, dataslinumber = 0;
         String mask1stMaxColor = "Black", mask2ndMaxColor = "Black", data1stMaxColor = "Black", data2ndMaxColor = "Black";
@@ -224,13 +292,13 @@ class EM2LMAreaGapCalculator {
         dataslinumber = findSliceNumber(data1stMaxColor, data2ndMaxColor, dataratio);
 
         if (dataslinumber == 0 || maskslinumber == 0) {
-            return (int) dataslinumber;
+            return dataslinumber;
         } else {
             return Math.abs(maskslinumber - dataslinumber);
         }
     }
 
-    private int findSliceNumber(String maxColor, String secondMaxColor, double colorRatio) {
+    private static int findSliceNumber(String maxColor, String secondMaxColor, double colorRatio) {
         switch (maxColor) {
             case "red": //cheking slice num 172-256
                 if (secondMaxColor.equals("green")) { // 172-213
@@ -254,7 +322,7 @@ class EM2LMAreaGapCalculator {
         return 0;
     }
 
-    private int findSliceNumberInLUT(int lutStartRange, int lutEndRange, double colorRatio) {
+    private static int findSliceNumberInLUT(int lutStartRange, int lutEndRange, double colorRatio) {
         short[][] lut = {
                 {127, 0, 255}, {125, 3, 255}, {124, 6, 255}, {122, 9, 255}, {121, 12, 255}, {120, 15, 255}, {119, 18, 255}, {118, 21, 255}, {116, 24, 255}, {115, 27, 255}, {114, 30, 255}, {113, 33, 255},
                 {112, 36, 255}, {110, 39, 255}, {109, 42, 255}, {108, 45, 255}, {106, 48, 255}, {105, 51, 255}, {104, 54, 255}, {103, 57, 255}, {101, 60, 255}, {100, 63, 255}, {99, 66, 255}, {98, 69, 255},

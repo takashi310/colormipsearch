@@ -1,13 +1,8 @@
 package org.janelia.colormipsearch.imageprocessing;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.stream.IntStream;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import ij.plugin.filter.RankFilters;
 import ij.process.ImageProcessor;
@@ -75,15 +70,26 @@ public class LImage {
     }
 
     public LImage mapi(ImageTransformation imageTransformation) {
-        return new LImage(
-                imageTransformation.pixelTypeChange.apply(getPixelType()), width, height,
-                (x, y) -> imageTransformation.apply(this, x, y)
-        );
+        if (imageTransformation == ImageTransformation.IDENTITY) {
+            return this;
+        } else {
+            return new LImage(
+                    imageTransformation.pixelTypeChange.apply(getPixelType()), width, height,
+                    (x, y) -> imageTransformation.apply(this, x, y)
+            );
+        }
     }
 
     public ImageArray asImageArray() {
         int[] pixels = new int[height * width];
-        return new ImageArray(getPixelType(), width, height, foldi(pixels, (x, y, pv, pa) -> {pa[y * width + x] = pv; return pa;}));
+        return new ImageArray(getPixelType(), width, height, foldi(pixels, (x, y, pv, pa) -> {
+            pa[y * width + x] = pv;
+            return pa;
+        }));
+    }
+
+    public LImage apply() {
+        return LImage.create(asImageArray());
     }
 
     public <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {

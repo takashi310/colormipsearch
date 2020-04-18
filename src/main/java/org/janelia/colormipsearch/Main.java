@@ -763,6 +763,7 @@ public class Main {
                         .map(resultsEntry -> {
                             LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
                             long startTimeForCurrentEntry = System.currentTimeMillis();
+                            LOG.info("Load image and gradient for {}", resultsEntry.getRight().getKey());
                             MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
                             MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(resultsEntry.getRight().getKey(), gradientsLocation));
                             List<CompletableFuture<ColorMIPSearchResultMetadata>> gradientAreaGapForCurrentInput = resultsEntry.getRight().getValue().stream().parallel()
@@ -773,10 +774,7 @@ public class Main {
                                         matchedMIP.type = csr.matchedImageType;
                                         MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
                                         MIPImage matchedImageGradient = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
-                                        ColorMIPSearchResult.AreaGap areaGap = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedImageGradient);
-                                        if (areaGap != null) {
-                                            csr.setGradientAreaGap(areaGap.value); // update current result
-                                        }
+                                        csr.setGradientAreaGap(gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedImageGradient)); // update current result
                                         return csr;
                                     }, executor))
                                     .collect(Collectors.toList());

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 public abstract class ImageTransformation {
 
     private static Logger LOG = LoggerFactory.getLogger(ImageTransformation.class);
+    public static ImageTransformation IDENTITY = ImageTransformation.identity();
 
     private interface ColorHistogram {
         /**
@@ -126,7 +127,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    public static ImageTransformation identity() {
+    private static ImageTransformation identity() {
         return new ImageTransformation() {
             @Override
             public int apply(LImage lImage, int x, int y) {

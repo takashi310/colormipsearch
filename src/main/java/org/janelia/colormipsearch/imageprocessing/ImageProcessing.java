@@ -18,7 +18,7 @@ public class ImageProcessing {
     private final ImageTransformation imageTransformation;
 
     private ImageProcessing() {
-        this(ImageTransformation.identity());
+        this(ImageTransformation.IDENTITY);
     }
 
     private ImageProcessing(ImageTransformation imageTransformation) {
@@ -61,7 +61,11 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.extend(f));
     }
 
+    public LImage applyTo(LImage image) {
+        return image.mapi(imageTransformation);
+    }
+
     public LImage applyTo(ImageArray image) {
-        return LImage.create(image).mapi(imageTransformation);
+        return applyTo(LImage.create(image));
     }
 }
