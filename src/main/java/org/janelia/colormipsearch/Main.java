@@ -807,8 +807,8 @@ public class Main {
                             return CompletableFuture.supplyAsync(() -> null, executor)
                                     .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
                                     .thenApply(vr -> {
-                                        LOG.info("Completed gradient area scores for {} matches of {} from {} in {}ms",
-                                                matchedImages.size(), resultsEntry.getRight().getKey(), inputResultsFile, System.currentTimeMillis()-startTimeForCurrentEntry);
+                                        LOG.info("Completed gradient area scores for {} matches of {} from {} in {}s",
+                                                matchedImages.size(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
                                         List<Long> areaGaps = areaGapComputations.stream()
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
