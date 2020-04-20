@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
@@ -729,7 +730,7 @@ public class Main {
     }
 
     private static CompletableFuture<Results<List<ColorMIPSearchResultMetadata>>> calculateGradientAreaScoreForResultsFile(
-            EM2LMAreaGapCalculator gradientBasedScoreAdjuster,
+            EM2LMAreaGapCalculator emlmAreaGapCalculator,
             File inputResultsFile,
             String gradientsLocation,
             int topResultsToProcess,
@@ -787,15 +788,20 @@ public class Main {
                             long startTimeForCurrentEntry = System.currentTimeMillis();
                             LOG.info("Load image {}", resultsEntry.getRight().getKey());
                             MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
-                            List<ImageArray> matchedImages = resultsEntry.getRight().getValue().stream()
+                            List<MIPImage> matchedImages = resultsEntry.getRight().getValue().stream()
                                     .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
-                                    .map(csr -> csr.matchedImage.imageArray)
+                                    .map(csr -> csr.matchedImage)
                                     .collect(Collectors.toList());
-                            List<ImageArray> matchedGradientImages = resultsEntry.getRight().getValue().stream()
+                            List<MIPImage> matchedGradientImages = resultsEntry.getRight().getValue().stream()
                                     .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
-                                    .map(csr -> csr.matchedImageGradient.imageArray)
+                                    .map(csr -> csr.matchedImageGradient)
                                     .collect(Collectors.toList());
-                            List<CompletableFuture<Long>> areaGapComputations = gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(inputImage, matchedImages, matchedGradientImages);
+                            BiFunction<MIPImage, MIPImage, Long> gradientGapCalculator = emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
+                            List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
+                                    matchedImages.stream(),
+                                    matchedGradientImages.stream(),
+                                    (image, gradientImage) -> CompletableFuture.supplyAsync(() -> gradientGapCalculator.apply(image, gradientImage), executor))
+                                    .collect(Collectors.toList());
                             return CompletableFuture.supplyAsync(() -> null, executor)
                                     .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
                                     .thenApply(vr -> {
