@@ -763,10 +763,12 @@ public class Main {
                     } else {
                         toProcess = r;
                     }
+                    Double maxPctPixelScore = toProcess.stream().map(csr -> csr.getMatchingPixelsPct()).max(Double::compare).orElse(null);
                     LOG.info("Load {} images", r.size());
                     List<ColorMIPSearchResultMetadataWithImages> rWithImages = toProcess.stream()
                             .map(csr -> {
                                 ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
+                                csr.maxMatchingPixelPct = maxPctPixelScore;
                                 csrWithImages.csr = csr;
                                 MIPInfo matchedMIP = new MIPInfo();
                                 matchedMIP.archivePath = csr.matchedImageArchivePath;
@@ -805,6 +807,8 @@ public class Main {
                             return CompletableFuture.supplyAsync(() -> null, executor)
                                     .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
                                     .thenApply(vr -> {
+                                        LOG.info("Completed gradient area scores for {} matches of {} from {} in {}ms",
+                                                matchedImages.size(), resultsEntry.getRight().getKey(), inputResultsFile, System.currentTimeMillis()-startTimeForCurrentEntry);
                                         List<Long> areaGaps = areaGapComputations.stream()
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
@@ -816,6 +820,17 @@ public class Main {
                                                 (csr, areaGap) -> {
                                                     csr.csr.setGradientAreaGap(areaGap);
                                                     csr.csr.maxGradientAreaGap = maxAreaGap;
+                                                    if (maxAreaGap > 0 && areaGap >= 0) {
+                                                        double normAreaGapScore = areaGap / maxAreaGap * 2.5;
+                                                        if (normAreaGapScore > 1) {
+                                                            csr.csr.normGradientAreaGap = 1.;
+                                                        } else {
+                                                            csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
+                                                        }
+                                                        if (csr.csr.maxMatchingPixelPct != null && csr.csr.maxMatchingPixelPct != 0.) {
+                                                            csr.csr.normGapScore = csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct / csr.csr.normGradientAreaGap;
+                                                        }
+                                                    }
                                                     return csr.csr;
                                                 }
                                         ).collect(Collectors.toList());

@@ -40,6 +40,15 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     Long maxGradientAreaGap;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty
+    Double normGradientAreaGap;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty
+    Double maxMatchingPixelPct;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty
+    Double normGapScore;
 
     @JsonIgnore
     public int getMatchingPixels() {
