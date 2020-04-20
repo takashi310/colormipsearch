@@ -18,18 +18,32 @@ import org.slf4j.LoggerFactory;
 class EM2LMAreaGapCalculator {
 
     private static class GradientAreaComputeContext {
-        LImage pattern;
-        LImage overExpressedRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
-        LImage patternRegions; // pix(x,y) = 1 if pattern.pix(x,y) is set
+        private static final ImageTransformation MIRROR_IMAGE = ImageTransformation.horizontalMirror();
+
+        final LImage pattern;
+        final LImage overExpressedRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
+        final LImage patternRegions; // pix(x,y) = 1 if pattern.pix(x,y) is set
+
+        public GradientAreaComputeContext(LImage pattern, LImage overExpressedRegions, LImage patternRegions) {
+            this.pattern = pattern;
+            this.overExpressedRegions = overExpressedRegions;
+            this.patternRegions = patternRegions;
+        }
+
+        GradientAreaComputeContext horizontalMirror() {
+            return new GradientAreaComputeContext(
+                    pattern.mapi(MIRROR_IMAGE),
+                    overExpressedRegions.mapi(MIRROR_IMAGE),
+                    patternRegions.mapi(MIRROR_IMAGE));
+        }
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(EM2LMAreaGapCalculator.class);
-    private static final ImageTransformation MIRROR_IMAGE = ImageTransformation.horizontalMirror();
 
     private final ImageProcessing labelsClearing;
     private final ImageProcessing negativeRadiusDilation;
     private final ImageProcessing toSignalTransformation;
-    private final QuadFunction<LImage, LImage, GradientAreaComputeContext, ImageTransformation, Long> gapCalculator;
+    private final TriFunction<LImage, LImage, GradientAreaComputeContext, Long> gapCalculator;
     private final Function<MIPImage, BiFunction<MIPImage, MIPImage, Long>> gradientAreaCalculatorForMask;
 
     EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
@@ -59,20 +73,20 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private QuadFunction<LImage, LImage, GradientAreaComputeContext, ImageTransformation, Long> createGapCalculator(int maskThreshold) {
-        return (inputImage, inputGradientImage, gradientAreaComputeContext, patternTransformation) -> {
+    private TriFunction<LImage, LImage, GradientAreaComputeContext, Long> createGapCalculator(int maskThreshold) {
+        return (inputImage, inputGradientImage, gradientAreaComputeContext) -> {
             long startTime = System.currentTimeMillis();
             LImage gaps = LImage.combine3(
                     LImage.combine2(
-                            gradientAreaComputeContext.patternRegions.mapi(patternTransformation),
+                            gradientAreaComputeContext.patternRegions,
                             inputGradientImage,
                             (p1, p2) -> p1 * p2),
-                    gradientAreaComputeContext.pattern.mapi(patternTransformation),
+                    gradientAreaComputeContext.pattern,
                     negativeRadiusDilation.applyTo(inputImage),
                     GradientAreaGapUtils.PIXEL_GAP_OP
             );
             LImage overExpressedRegions = LImage.combine2(
-                    gradientAreaComputeContext.overExpressedRegions.mapi(patternTransformation),
+                    gradientAreaComputeContext.overExpressedRegions,
                     labelsClearing.applyTo(inputImage),
                     (p1, p2) -> {
                         if (p1 == 0) {
@@ -106,34 +120,17 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-    private TriFunction<ImageArray, ImageArray, ImageArray, Long> scoreAdjustmentProcessing(boolean mirrorMask) {
-        return (patternImageArray, libraryImageArray, libraryGradientImageArray) -> {
-            GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(patternImageArray);
-
-            LImage libraryImage = LImage.create(libraryImageArray);
-            LImage libraryGradientImage = LImage.create(libraryGradientImageArray);
-
-            long areaGap = gapCalculator.apply(libraryImage, libraryGradientImage, gradientAreaComputeContext, ImageTransformation.IDENTITY);
-            if (mirrorMask) {
-                long mirrorAreaGap = gapCalculator.apply(libraryImage, libraryGradientImage, gradientAreaComputeContext, MIRROR_IMAGE);
-                if (mirrorAreaGap < areaGap) {
-                    return mirrorAreaGap;
-                }
-            }
-            return areaGap;
-        };
-    }
-
     private Function<MIPImage, BiFunction<MIPImage, MIPImage, Long>> createGradientAreaCalculatorForMask(boolean mirrorMask) {
         return (MIPImage maskMIP) -> {
             GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
+            GradientAreaComputeContext mirroredGradientAreaComputeContext = gradientAreaComputeContext.horizontalMirror();
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
                 LImage inputImage = LImage.create(inputMIP.imageArray);
                 LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
 
-                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext, ImageTransformation.IDENTITY);
+                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext);
                 if (mirrorMask) {
-                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext, MIRROR_IMAGE);
+                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, mirroredGradientAreaComputeContext);
                     if (mirrorAreaGap < areaGap) {
                         return mirrorAreaGap;
                     }
@@ -144,22 +141,18 @@ class EM2LMAreaGapCalculator {
     }
 
     private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
-        LImage dilated60pxPatternImage = LImage.createDilatedImage(patternImageArray, 60);
-        LImage dilated20pxPatternImage = LImage.createDilatedImage(patternImageArray, 20);
-
         LImage overExpressedRegionsInPatternImage = toSignalTransformation.applyTo(
                 LImage.combine2(
-                        dilated60pxPatternImage,
-                        dilated20pxPatternImage,
+                        LImage.createDilatedImage(patternImageArray, 60),
+                        LImage.createDilatedImage(patternImageArray, 20),
                         (p1, p2) -> p2 != -16777216 ? -16777216 : p1
                 ));
 
         LImage patternImage = LImage.create(patternImageArray);
-        LImage patternSignalImage = toSignalTransformation.applyTo(patternImage);
-        GradientAreaComputeContext gradientAreaComputeContext = new GradientAreaComputeContext();
-        gradientAreaComputeContext.pattern = patternImage;
-        gradientAreaComputeContext.patternRegions = patternSignalImage;
-        gradientAreaComputeContext.overExpressedRegions = toSignalTransformation.applyTo(overExpressedRegionsInPatternImage);
+        GradientAreaComputeContext gradientAreaComputeContext = new GradientAreaComputeContext(
+                patternImage,
+                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage),
+                toSignalTransformation.applyTo(patternImage));
         return gradientAreaComputeContext;
     }
 
