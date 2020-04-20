@@ -841,7 +841,15 @@ public class Main {
         return CompletableFuture.supplyAsync(() -> null, executor)
                 .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])))
                 .thenApply(r -> {
-                    LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+                    Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
+                        if (csr1.normGapScore != null && csr2.normGapScore != null) {
+                            return Double.compare(csr1.normGapScore, csr2.normGapScore);
+                        } else {
+                            return Integer.compare(csr1.getMatchingPixels(), csr2.getMatchingPixels());
+                        }
+                    };
+                    resultsFileContent.results.sort(csrComp.reversed());
+                     LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
     }
