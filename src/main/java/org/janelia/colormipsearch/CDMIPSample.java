@@ -26,6 +26,8 @@ class CDMIPSample {
     @JsonProperty
     String publishingName;
     @JsonProperty
+    Boolean publishedToStaging;
+    @JsonProperty
     String publishedExternally;
     @JsonProperty
     String crossBarcode;

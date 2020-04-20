@@ -12,6 +12,7 @@ abstract class MetadataAttrs {
     String id;
     @JsonProperty
     String publishedName;
+    Boolean publishedToStaging;
     @JsonProperty("image_path")
     String imageUrl;
     @JsonProperty("thumbnail_path")
@@ -34,6 +35,7 @@ abstract class MetadataAttrs {
     void copyTo(MetadataAttrs that) {
         that.id = this.id;
         that.publishedName = this.publishedName;
+        that.publishedToStaging = this.publishedToStaging;
         that.imageUrl = this.imageUrl;
         that.thumbnailUrl = this.thumbnailUrl;
         that.libraryName = this.libraryName;

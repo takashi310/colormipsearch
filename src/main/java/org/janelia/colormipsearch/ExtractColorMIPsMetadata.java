@@ -198,6 +198,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.imageUrl = cdmip.publicImageUrl;
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         if (cdmip.sample != null) {
+            cdMetadata.publishedToStaging = cdmip.sample.publishedToStaging;
             cdMetadata.publishedName = cdmip.sample.publishingName;
             cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
@@ -269,7 +270,7 @@ public class ExtractColorMIPsMetadata {
     private boolean hasPublishedName(boolean ignorePublishingName,  ColorDepthMIP cdmip) {
         String publishingName = cdmip.sample.publishingName;
         return ignorePublishingName ||
-                StringUtils.isNotBlank(publishingName) && !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName);
+                cdmip.sample.publishedToStaging && StringUtils.isNotBlank(publishingName) && !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName);
     }
 
     private boolean hasPublishedImageURL(ColorDepthMIP cdmip) {
