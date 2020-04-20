@@ -3,11 +3,12 @@ package org.janelia.colormipsearch;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
-import org.janelia.colormipsearch.imageprocessing.QuadFunction;
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,20 +22,21 @@ class EM2LMAreaGapCalculator {
         private static final ImageTransformation MIRROR_IMAGE = ImageTransformation.horizontalMirror();
 
         final LImage pattern;
-        final LImage overExpressedRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
         final LImage patternRegions; // pix(x,y) = 1 if pattern.pix(x,y) is set
+        final LImage overExpressedRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
 
-        public GradientAreaComputeContext(LImage pattern, LImage overExpressedRegions, LImage patternRegions) {
+        private GradientAreaComputeContext(LImage pattern, LImage patternRegions, LImage overExpressedRegions) {
             this.pattern = pattern;
-            this.overExpressedRegions = overExpressedRegions;
             this.patternRegions = patternRegions;
+            this.overExpressedRegions = overExpressedRegions;
         }
 
-        GradientAreaComputeContext horizontalMirror() {
+        private GradientAreaComputeContext horizontalMirror() {
             return new GradientAreaComputeContext(
                     pattern.mapi(MIRROR_IMAGE),
-                    overExpressedRegions.mapi(MIRROR_IMAGE),
-                    patternRegions.mapi(MIRROR_IMAGE));
+                    patternRegions.mapi(MIRROR_IMAGE),
+                    overExpressedRegions.mapi(MIRROR_IMAGE)
+            );
         }
     }
 
@@ -122,15 +124,14 @@ class EM2LMAreaGapCalculator {
 
     private Function<MIPImage, BiFunction<MIPImage, MIPImage, Long>> createGradientAreaCalculatorForMask(boolean mirrorMask) {
         return (MIPImage maskMIP) -> {
-            GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
-            GradientAreaComputeContext mirroredGradientAreaComputeContext = gradientAreaComputeContext.horizontalMirror();
+            Pair<GradientAreaComputeContext, GradientAreaComputeContext> gradientAreaComputeContextPair = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray, mirrorMask);
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
                 LImage inputImage = LImage.create(inputMIP.imageArray);
                 LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
 
-                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext);
+                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContextPair.getLeft());
                 if (mirrorMask) {
-                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, mirroredGradientAreaComputeContext);
+                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContextPair.getRight());
                     if (mirrorAreaGap < areaGap) {
                         return mirrorAreaGap;
                     }
@@ -140,21 +141,21 @@ class EM2LMAreaGapCalculator {
         };
     }
 
-    private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
-        LImage overExpressedRegionsInPatternImage = toSignalTransformation.applyTo(
-                LImage.combine2(
-                        LImage.createDilatedImage(patternImageArray, 60),
-                        LImage.createDilatedImage(patternImageArray, 20),
-                        (p1, p2) -> p2 != -16777216 ? -16777216 : p1
-                ));
-
+    private Pair<GradientAreaComputeContext, GradientAreaComputeContext> prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray, boolean mirrorMask) {
         LImage patternImage = LImage.create(patternImageArray);
+        LImage overExpressedRegionsInPatternImage = LImage.combine2(
+                LImage.createDilatedImage(patternImageArray, 60),
+                LImage.createDilatedImage(patternImageArray, 20),
+                (p1, p2) -> p2 != -16777216 ? -16777216 : p1
+        );
         GradientAreaComputeContext gradientAreaComputeContext = new GradientAreaComputeContext(
                 patternImage,
-                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage),
-                toSignalTransformation.applyTo(patternImage));
-        return gradientAreaComputeContext;
+                toSignalTransformation.applyTo(patternImage),
+                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage)
+        );
+        return mirrorMask
+                ? ImmutablePair.of(gradientAreaComputeContext, gradientAreaComputeContext.horizontalMirror())
+                : ImmutablePair.of(gradientAreaComputeContext, null);
     }
-
 
 }
