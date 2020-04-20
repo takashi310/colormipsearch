@@ -828,8 +828,12 @@ public class Main {
                                                             csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
                                                         }
                                                         if (csr.csr.maxMatchingPixelPct != null && csr.csr.maxMatchingPixelPct != 0.) {
-                                                            csr.csr.normGapScore = csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct / csr.csr.normGradientAreaGap;
+                                                            csr.csr.setNormalizedGapScore(csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct / csr.csr.normGradientAreaGap);
+                                                        } else {
+                                                            csr.csr.setNormalizedGapScore(null);
                                                         }
+                                                    } else {
+                                                        csr.csr.setNormalizedGapScore(null);
                                                     }
                                                     return csr.csr;
                                                 }
@@ -842,8 +846,8 @@ public class Main {
                 .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])))
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
-                        if (csr1.normGapScore != null && csr2.normGapScore != null) {
-                            return Double.compare(csr1.normGapScore, csr2.normGapScore);
+                        if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
+                            return Double.compare(csr1.getNormalizedGapScore(), csr2.getNormalizedGapScore());
                         } else {
                             return Integer.compare(csr1.getMatchingPixels(), csr2.getMatchingPixels());
                         }

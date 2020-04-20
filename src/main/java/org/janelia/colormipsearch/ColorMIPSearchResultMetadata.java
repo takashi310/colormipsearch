@@ -46,9 +46,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     Double maxMatchingPixelPct;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Double normGapScore;
 
     @JsonIgnore
     public int getMatchingPixels() {
@@ -83,6 +80,19 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     public void setGradientAreaGap(long gradientAreaGap) {
         if (gradientAreaGap >= 0L) {
             addAttr("Gradient Area Gap", String.valueOf(gradientAreaGap));
+        }
+    }
+
+    public Double getNormalizedGapScore() {
+        String normalizedGapScore = getAttr("NormalizedGapScore");
+        return StringUtils.isBlank(normalizedGapScore) ? null : Double.parseDouble(normalizedGapScore);
+    }
+
+    public void setNormalizedGapScore(Double normalizedGapScore) {
+        if (normalizedGapScore == null) {
+            attrs.remove("NormalizedGapScore");
+        } else {
+            attrs.put("NormalizedGapScore", normalizedGapScore.toString());
         }
     }
 
