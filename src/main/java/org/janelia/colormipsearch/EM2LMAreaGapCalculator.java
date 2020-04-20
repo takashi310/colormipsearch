@@ -124,14 +124,14 @@ class EM2LMAreaGapCalculator {
 
     private Function<MIPImage, BiFunction<MIPImage, MIPImage, Long>> createGradientAreaCalculatorForMask(boolean mirrorMask) {
         return (MIPImage maskMIP) -> {
-            Pair<GradientAreaComputeContext, GradientAreaComputeContext> gradientAreaComputeContextPair = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray, mirrorMask);
+            GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
                 LImage inputImage = LImage.create(inputMIP.imageArray);
                 LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
 
-                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContextPair.getLeft());
+                long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext);
                 if (mirrorMask) {
-                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContextPair.getRight());
+                    long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext.horizontalMirror());
                     if (mirrorAreaGap < areaGap) {
                         return mirrorAreaGap;
                     }
@@ -141,21 +141,18 @@ class EM2LMAreaGapCalculator {
         };
     }
 
-    private Pair<GradientAreaComputeContext, GradientAreaComputeContext> prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray, boolean mirrorMask) {
+    private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
         LImage patternImage = LImage.create(patternImageArray);
         LImage overExpressedRegionsInPatternImage = LImage.combine2(
                 LImage.createDilatedImage(patternImageArray, 60),
                 LImage.createDilatedImage(patternImageArray, 20),
                 (p1, p2) -> p2 != -16777216 ? -16777216 : p1
         );
-        GradientAreaComputeContext gradientAreaComputeContext = new GradientAreaComputeContext(
+        return new GradientAreaComputeContext(
                 patternImage,
                 toSignalTransformation.applyTo(patternImage),
                 toSignalTransformation.applyTo(overExpressedRegionsInPatternImage)
         );
-        return mirrorMask
-                ? ImmutablePair.of(gradientAreaComputeContext, gradientAreaComputeContext.horizontalMirror())
-                : ImmutablePair.of(gradientAreaComputeContext, null);
     }
 
 }
