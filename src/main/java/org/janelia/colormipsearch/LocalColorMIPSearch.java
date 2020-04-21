@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
@@ -61,7 +61,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         LOG.info("Loaded {} libraries in memory in {}s", nlibraries, (System.currentTimeMillis()-startTime)/1000);
 
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
-                IntStream.range(0, maskMIPS.size()).boxed(),
+                LongStream.range(0, maskMIPS.size()).boxed(),
                 maskMIPS.stream().filter(MIPInfo::exists),
                 (mIndex, maskMIP) -> submitMaskSearches(mIndex + 1, maskMIP, libraryImagesWithGradients))
                 .flatMap(Collection::stream)
@@ -80,7 +80,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         return allSearchResults;
     }
 
-    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(int mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image
         MIPImage maskGradientImage = MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath)); // load gradient
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryImages, libraryPartitionSize).stream()
