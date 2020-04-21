@@ -86,7 +86,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryImages, libraryPartitionSize).stream()
                 .map(librariesPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
-                        LOG.info("Compare {} (mask # {}) with {} out of {} libraries", maskMIP, mIndex, librariesPartition.size(), libraryImages.size());
+                        LOG.info("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, librariesPartition.size(), libraryImages.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = librariesPartition.stream()
                                 .map(libraryWithGradient -> {
