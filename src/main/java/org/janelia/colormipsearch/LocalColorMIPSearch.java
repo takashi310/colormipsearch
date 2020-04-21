@@ -67,7 +67,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        LOG.info("Submitted {} color depth searches for {} masks with {} libraries in {}s",
+        LOG.info("Submitted all {} color depth searches for {} masks with {} libraries in {}s",
                 allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis()-startTime)/1000);
 
         List<ColorMIPSearchResult> allSearchResults = CompletableFuture.allOf(allColorDepthSearches.toArray(new CompletableFuture<?>[0]))
@@ -108,7 +108,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                 })
                 .collect(Collectors.toList());
-        LOG.info("Submitted {} color depth searches for {} (mask # {}) with {} libraries", cdsComputations.size(), maskMIP, mIndex, libraryImages.size());
+        LOG.info("Submitted {} partitioned color depth searches with {} libraries for mask# {} - {}",
+                cdsComputations.size(), libraryImages.size(), mIndex, maskMIP);
         return cdsComputations;
     }
 
