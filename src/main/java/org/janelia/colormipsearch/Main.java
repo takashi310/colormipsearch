@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
@@ -49,7 +50,6 @@ import org.slf4j.LoggerFactory;
 public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-    private static final String CDS_PARAMETERS_FILE = "cdsParameters.json";
 
     private static class MainArgs {
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
@@ -386,7 +386,13 @@ public class Main {
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
             } else {
-                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "cdsParameters.json");
+                String inputNames = args.librariesInputs.stream()
+                        .map(ListArg::listArgName)
+                        .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
+                String maskNames = args.masksInputs.stream()
+                        .map(ListArg::listArgName)
+                        .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
+                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskNames + "-inputs-" + inputNames + "-cdsParameters.json");
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
                 new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
                 new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
@@ -453,7 +459,9 @@ public class Main {
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
             } else {
-                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), CDS_PARAMETERS_FILE);
+                String inputName = args.libraryMIPsLocation.listArgName();
+                String maskName = args.maskMIPsLocation.listArgName();
+                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskName + "-inputs-" + inputName + "-cdsParameters.json");
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
                 new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
                 if (StringUtils.isNotBlank(args.perLibrarySubdir)) {

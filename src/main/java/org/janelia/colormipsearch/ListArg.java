@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
 import java.util.List;
 
 import com.beust.jcommander.IStringConverter;
@@ -58,5 +59,14 @@ class ListArg {
             sb.append(':').append(length);
         }
         return sb.toString();
+    }
+
+    String listArgName() {
+        String fn = StringUtils.removePattern(new File(input).getName(), "\\..*");
+        if (length > 0) {
+            return fn + "_" + Math.max(offset, 0) + "_" + length;
+        } else {
+            return fn;
+        }
     }
 }
