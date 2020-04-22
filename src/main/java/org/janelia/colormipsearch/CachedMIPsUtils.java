@@ -14,7 +14,7 @@ class CachedMIPsUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CachedMIPsUtils.class);
 
     private static LoadingCache<MIPInfo, MIPImage> MIP_IMAGES_CACHE = CacheBuilder.newBuilder()
-            .maximumSize(200000)
+            .maximumSize(200000L)
             .expireAfterAccess(Duration.ofMinutes(10))
             .build(new CacheLoader<MIPInfo, MIPImage>() {
                 @Override
