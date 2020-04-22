@@ -10,8 +10,7 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +80,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                 .map(libraryMIP -> {
                                     MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
                                     ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
-                                    if (sr.isMatch()) {
+                                    if (sr.isMatch() && StringUtils.isNotBlank(gradientMasksPath)) {
                                         // try to load gradients
                                         MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(libraryMIP, gradientMasksPath));
                                         MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath));
