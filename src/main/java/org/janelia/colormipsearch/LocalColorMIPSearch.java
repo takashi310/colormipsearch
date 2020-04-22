@@ -75,7 +75,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
                 .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
-                        LOG.info("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size());
+                        LOG.debug("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
                                 .map(libraryMIP -> {
@@ -93,7 +93,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, libraryMIPsPartition.size(), System.currentTimeMillis()-startTime);
+                        LOG.info("Found {} results with matches comparing mask# {} - {} with {} out of {} libraries in {}ms", srs.size(), mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size(), System.currentTimeMillis()-startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
