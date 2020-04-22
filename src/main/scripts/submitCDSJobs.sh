@@ -18,4 +18,13 @@ MASK_OFFSET=$((MASK_INDEX * MASKS_PER_JOB))
 
 MEM_RESOURCE=${MEM_RESOURCE:-180}
 
-local/scripts/runCDSBatch.sh ":${MASK_OFFSET}:${MASKS_PER_JOB}" ":${LIBRARY_OFFSET}:${LIBRARIES_PER_JOB}" ${MEM_RESOURCE} > cds_${LSB_JOBINDEX}.log
+local/scripts/runCDSBatch.sh \
+  ":${MASK_OFFSET}:${MASKS_PER_JOB}" \
+  ":${LIBRARY_OFFSET}:${LIBRARIES_PER_JOB}" \
+  "${MEM_RESOURCE}" \
+  -m /nrs/scicompsoft/goinac/em-lm-cds/flyem_hemibrain.json${mask_range} \
+  -i /nrs/scicompsoft/goinac/em-lm-cds/em-mcfo-cdsresults/flylight_gen1_mcfo_published.json${input_range} \
+  --perMaskSubdir flyem_hemibrain \
+  --perLibrarySubdir flylight_gen1_mcfo_published \
+  -od /nrs/scicompsoft/goinac/em-lm-cds/em-mcfo-bsub-cdsresults \
+  > cds_${LSB_JOBINDEX}.log
