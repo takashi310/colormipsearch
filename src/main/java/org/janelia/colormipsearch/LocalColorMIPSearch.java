@@ -50,20 +50,10 @@ class LocalColorMIPSearch extends ColorMIPSearch {
 
         LOG.info("Searching {} masks against {} libraries", nmasks, nlibraries);
 
-        LOG.info("Load {} libraries", nlibraries);
-        List<Pair<MIPImage, MIPImage>> libraryImagesWithGradients = libraryMIPS.stream().parallel()
-                .filter(MIPInfo::exists)
-                .map(mip -> ImmutablePair.of(
-                        MIPsUtils.loadMIP(mip),
-                        MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(mip, gradientMasksPath)))
-                )
-                .collect(Collectors.toList());
-        LOG.info("Loaded {} libraries in memory in {}s", nlibraries, (System.currentTimeMillis()-startTime)/1000);
-
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
                 LongStream.range(0, maskMIPS.size()).boxed(),
                 maskMIPS.stream().filter(MIPInfo::exists),
-                (mIndex, maskMIP) -> submitMaskSearches(mIndex + 1, maskMIP, libraryImagesWithGradients))
+                (mIndex, maskMIP) -> submitMaskSearches(mIndex + 1, maskMIP, libraryMIPS))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
@@ -80,36 +70,37 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         return allSearchResults;
     }
 
-    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPInfo maskMIP, List<Pair<MIPImage, MIPImage>> libraryImages) {
-        MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image
-        MIPImage maskGradientImage = MIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath)); // load gradient
-        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryImages, libraryPartitionSize).stream()
-                .map(librariesPartition -> {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPInfo maskMIP, List<MIPInfo> libraryMIPs) {
+        MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
+                .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
-                        LOG.info("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, librariesPartition.size(), libraryImages.size());
+                        LOG.info("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size());
                         long startTime = System.currentTimeMillis();
-                        List<ColorMIPSearchResult> srs = librariesPartition.stream()
-                                .map(libraryWithGradient -> {
-                                    MIPImage libraryImage = libraryWithGradient.getLeft();
-                                    MIPImage libraryGradientImage = libraryWithGradient.getRight();
+                        List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
+                                .map(libraryMIP -> {
+                                    MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
                                     ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
                                     if (sr.isError()) {
                                         LOG.warn("Errors encountered comparing {} with {}", libraryImage, maskImage);
                                     } else {
+                                        // try to load gradients
+                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(libraryMIP, gradientMasksPath));
+                                        MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath));
                                         applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
                                     }
                                     return sr;
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, librariesPartition.size(), System.currentTimeMillis()-startTime);
+                        LOG.info("Found {} results with matches comparing {} (mask # {}) with {} libraries in {}ms", srs.size(), maskMIP, mIndex, libraryMIPsPartition.size(), System.currentTimeMillis()-startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
                 })
                 .collect(Collectors.toList());
         LOG.info("Submitted {} partitioned color depth searches with {} libraries for mask# {} - {}",
-                cdsComputations.size(), libraryImages.size(), mIndex, maskMIP);
+                cdsComputations.size(), libraryMIPs.size(), mIndex, maskMIP);
         return cdsComputations;
     }
 
