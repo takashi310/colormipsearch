@@ -836,7 +836,8 @@ public class Main {
                                                             csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
                                                         }
                                                         if (csr.csr.maxMatchingPixelPct != null && csr.csr.maxMatchingPixelPct != 0.) {
-                                                            csr.csr.setNormalizedGapScore((csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct) / csr.csr.normGradientAreaGap * 100.);
+                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct) / csr.csr.normGradientAreaGap * 100.;
+                                                            csr.csr.setNormalizedGapScore(normalizedGapScore);
                                                         } else {
                                                             csr.csr.setNormalizedGapScore(null);
                                                         }
