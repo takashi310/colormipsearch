@@ -864,9 +864,9 @@ public class Main {
                         } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
                             return 0;
                         } else if (csr1.getNormalizedGapScore() == null) {
-                            return -1;
-                        } else {
                             return 1;
+                        } else {
+                            return -1;
                         }
                     };
                     resultsFileContent.results.sort(csrComp.reversed().thenComparing(ColorMIPSearchResultMetadata::getMatchingPixelsPct).reversed());
