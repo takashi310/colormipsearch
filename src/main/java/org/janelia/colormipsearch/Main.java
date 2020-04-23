@@ -771,12 +771,10 @@ public class Main {
                     } else {
                         toProcess = r;
                     }
-                    Double maxPctPixelScore = toProcess.stream().map(ColorMIPSearchResultMetadata::getMatchingPixelsPct).max(Double::compare).orElse(null);
                     LOG.info("Load {} images", r.size());
                     List<ColorMIPSearchResultMetadataWithImages> rWithImages = toProcess.stream()
                             .map(csr -> {
                                 ColorMIPSearchResultMetadataWithImages csrWithImages = new ColorMIPSearchResultMetadataWithImages();
-                                csr.maxMatchingPixelPct = maxPctPixelScore;
                                 csrWithImages.csr = csr;
                                 MIPInfo matchedMIP = new MIPInfo();
                                 matchedMIP.archivePath = csr.matchedImageArchivePath;
@@ -817,6 +815,11 @@ public class Main {
                                     .thenApply(vr -> {
                                         LOG.info("Completed gradient area scores for {} matches of {} from {} in {}s",
                                                 matchedImages.size(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
+                                        Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
+                                                .map(csr -> csr.csr.getMatchingPixelsPct())
+                                                .max(Double::compare).orElse(null);
+                                        LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
+                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                                         List<Long> areaGaps = areaGapComputations.stream()
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
@@ -837,8 +840,8 @@ public class Main {
                                                         } else {
                                                             csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
                                                         }
-                                                        if (csr.csr.maxMatchingPixelPct != null && csr.csr.maxMatchingPixelPct != 0.) {
-                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct) / csr.csr.normGradientAreaGap * 100.;
+                                                        if (maxPctPixelScore != null) {
+                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.csr.normGradientAreaGap * 100.;
                                                             csr.csr.setNormalizedGapScore(normalizedGapScore);
                                                         } else {
                                                             csr.csr.setNormalizedGapScore(null);
