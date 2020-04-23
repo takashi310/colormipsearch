@@ -860,17 +860,16 @@ public class Main {
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            int res = Double.compare(csr2.getNormalizedGapScore(), csr1.getNormalizedGapScore());
-                            if (res == 0) {
-                                return Double.compare(csr2.getMatchingPixelsPct(), csr1.getMatchingPixelsPct());
-                            } else {
-                                return res;
-                            }
+                            return Double.compare(csr2.getNormalizedGapScore(), csr1.getNormalizedGapScore());
+                        } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
+                            return 0;
+                        } else if (csr1.getNormalizedGapScore() == null) {
+                            return -1;
                         } else {
-                            return Double.compare(csr2.getMatchingPixelsPct(), csr1.getMatchingPixelsPct());
+                            return 1;
                         }
                     };
-                    resultsFileContent.results.sort(csrComp);
+                    resultsFileContent.results.sort(csrComp.reversed().thenComparing(ColorMIPSearchResultMetadata::getMatchingPixelsPct).reversed());
                      LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
