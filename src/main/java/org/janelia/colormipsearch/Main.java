@@ -832,7 +832,6 @@ public class Main {
                                                 areaGaps.stream(),
                                                 (csr, areaGap) -> {
                                                     csr.csr.setGradientAreaGap(areaGap);
-                                                    csr.csr.maxGradientAreaGap = maxAreaGap;
                                                     if (maxAreaGap > 0 && areaGap >= 0) {
                                                         double normAreaGapScore = ((double) areaGap / maxAreaGap) * 2.5;
                                                         if (normAreaGapScore > 1) {

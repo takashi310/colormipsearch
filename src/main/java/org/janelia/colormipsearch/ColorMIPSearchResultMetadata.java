@@ -39,9 +39,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     Double matchedImageShapeScore;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    Long maxGradientAreaGap;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
     Double normGradientAreaGap;
 
     @JsonIgnore
