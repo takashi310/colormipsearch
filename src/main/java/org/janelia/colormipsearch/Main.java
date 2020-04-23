@@ -861,7 +861,7 @@ public class Main {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
                             return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore).reversed()
-                                    .thenComparing(ColorMIPSearchResultMetadata::getGradientAreaGap).reversed()
+                                    .thenComparing(ColorMIPSearchResultMetadata::getGradientAreaGap)
                                     .compare(csr1, csr2)
                                     ;
                         } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
