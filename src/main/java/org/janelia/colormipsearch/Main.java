@@ -860,7 +860,7 @@ public class Main {
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            return Double.compare(csr2.getNormalizedGapScore(), csr1.getNormalizedGapScore());
+                            return Double.compare(csr1.getNormalizedGapScore(), csr2.getNormalizedGapScore());
                         } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
                             return 0;
                         } else if (csr1.getNormalizedGapScore() == null) {
