@@ -771,7 +771,8 @@ public class Main {
                     } else {
                         toProcess = r;
                     }
-                    Double maxPctPixelScore = toProcess.stream().map(csr -> csr.getMatchingPixelsPct()).max(Double::compare).orElse(null);
+                    Double maxPctPixelScore = toProcess.stream().map(ColorMIPSearchResultMetadata::getMatchingPixelsPct).max(Double::compare).orElse(null);
+                    LOG.info("Max pixel percentage score from {} -> {}", inputResultsFile, maxPctPixelScore);
                     LOG.info("Load {} images", r.size());
                     List<ColorMIPSearchResultMetadataWithImages> rWithImages = toProcess.stream()
                             .map(csr -> {
@@ -794,7 +795,7 @@ public class Main {
         List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
                 Streams.zip(IntStream.range(0, Integer.MAX_VALUE).boxed(), resultsGroupedById.entrySet().stream(), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                         .map(resultsEntry -> {
-                            LOG.info("Submit calculate gradient area scores for matches of {} (entry# {}) from {}", resultsEntry.getRight().getKey(), resultsEntry.getLeft(), inputResultsFile);
+                            LOG.info("Submit calculate gradient area scores for matches of entry# {} - {} from {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile);
                             long startTimeForCurrentEntry = System.currentTimeMillis();
                             LOG.info("Load image {}", resultsEntry.getRight().getKey());
                             MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
@@ -821,6 +822,7 @@ public class Main {
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
                                         long maxAreaGap = areaGaps.stream().max(Long::compare).orElse(-1L);
+                                        LOG.info("Max area gap for matches of entry# {} - {} from {} -> {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxAreaGap);
                                         return Streams.zip(
                                                 resultsEntry.getRight().getValue().stream()
                                                         .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null),
