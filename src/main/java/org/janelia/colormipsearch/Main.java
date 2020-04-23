@@ -868,14 +868,14 @@ public class Main {
                             }
                         } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
                             return Double.compare(csr1.getMatchingPixelsPct(), csr2.getMatchingPixelsPct());
-                        } else if (csr1.getNormalizedGapScore() == null) {
-                            return 1;
-                        } else {
+                        } else if (csr1.getNormalizedGapScore() != null) {
                             return -1;
+                        } else {
+                            return 1;
                         }
                     };
                     resultsFileContent.results.sort(csrComp.reversed());
-                     LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+                    LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
     }
