@@ -829,14 +829,14 @@ public class Main {
                                                     csr.csr.setGradientAreaGap(areaGap);
                                                     csr.csr.maxGradientAreaGap = maxAreaGap;
                                                     if (maxAreaGap > 0 && areaGap >= 0) {
-                                                        double normAreaGapScore = areaGap / maxAreaGap * 2.5;
+                                                        double normAreaGapScore = ((double) areaGap / maxAreaGap) * 2.5;
                                                         if (normAreaGapScore > 1) {
                                                             csr.csr.normGradientAreaGap = 1.;
                                                         } else {
                                                             csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
                                                         }
                                                         if (csr.csr.maxMatchingPixelPct != null && csr.csr.maxMatchingPixelPct != 0.) {
-                                                            csr.csr.setNormalizedGapScore(csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct / csr.csr.normGradientAreaGap);
+                                                            csr.csr.setNormalizedGapScore((csr.csr.getMatchingPixelsPct() / csr.csr.maxMatchingPixelPct) / csr.csr.normGradientAreaGap * 100.);
                                                         } else {
                                                             csr.csr.setNormalizedGapScore(null);
                                                         }
