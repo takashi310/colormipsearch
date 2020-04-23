@@ -33,7 +33,7 @@ class MIPsUtils {
         if (mip == null) {
             return null;
         } else {
-            LOG.debug("Load MIP {}", mip);
+            LOG.trace("Load MIP {}", mip);
             InputStream inputStream;
             try {
                 inputStream = mip.openInputStream();
@@ -57,7 +57,7 @@ class MIPsUtils {
                 if (ij != null) {
                     ij.close();
                 }
-                LOG.debug("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
+                LOG.trace("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
             }
         }
     }
@@ -138,7 +138,7 @@ class MIPsUtils {
             return ImageFormat.TIFF;
         }
 
-        LOG.info("Image format unknown: {}", filepath);
+        LOG.warn("Image format unknown: {}", filepath);
         return ImageFormat.UNKNOWN;
     }
 
