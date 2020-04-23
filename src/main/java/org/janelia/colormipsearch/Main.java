@@ -858,12 +858,12 @@ public class Main {
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            return Double.compare(csr1.getNormalizedGapScore(), csr2.getNormalizedGapScore());
+                            return Double.compare(csr2.getNormalizedGapScore(), csr1.getNormalizedGapScore());
                         } else {
                             return 0;
                         }
                     };
-                    resultsFileContent.results.sort(csrComp.reversed().thenComparing(csr -> csr.getMatchingPixels()).reversed());
+                    resultsFileContent.results.sort(csrComp.thenComparing(csr -> csr.getMatchingPixels()).reversed());
                      LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
