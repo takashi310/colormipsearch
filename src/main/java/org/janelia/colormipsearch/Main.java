@@ -876,7 +876,7 @@ public class Main {
                             return 1;
                         }
                     };
-                    resultsFileContent.results.sort(csrComp);
+                    resultsFileContent.results.sort(csrComp.reversed());
                     LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
