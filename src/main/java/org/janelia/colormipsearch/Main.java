@@ -772,7 +772,6 @@ public class Main {
                         toProcess = r;
                     }
                     Double maxPctPixelScore = toProcess.stream().map(ColorMIPSearchResultMetadata::getMatchingPixelsPct).max(Double::compare).orElse(null);
-                    LOG.info("Max pixel percentage score from {} -> {}", inputResultsFile, maxPctPixelScore);
                     LOG.info("Load {} images", r.size());
                     List<ColorMIPSearchResultMetadataWithImages> rWithImages = toProcess.stream()
                             .map(csr -> {
@@ -822,7 +821,8 @@ public class Main {
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
                                         long maxAreaGap = areaGaps.stream().max(Long::compare).orElse(-1L);
-                                        LOG.info("Max area gap for matches of entry# {} - {} from {} -> {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxAreaGap);
+                                        LOG.info("Max area gap for matches and max pixel percentage of entry# {} - {} from {} -> {}",
+                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxAreaGap);
                                         return Streams.zip(
                                                 resultsEntry.getRight().getValue().stream()
                                                         .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null),
@@ -858,17 +858,12 @@ public class Main {
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            int res = Double.compare(csr1.getNormalizedGapScore(), csr2.getNormalizedGapScore());
-                            if (res == 0) {
-                                return Integer.compare(csr1.getMatchingPixels(), csr2.getMatchingPixels());
-                            } else {
-                                return res;
-                            }
+                            return Double.compare(csr1.getNormalizedGapScore(), csr2.getNormalizedGapScore());
                         } else {
-                            return Integer.compare(csr1.getMatchingPixels(), csr2.getMatchingPixels());
+                            return 0;
                         }
                     };
-                    resultsFileContent.results.sort(csrComp.reversed());
+                    resultsFileContent.results.sort(csrComp.reversed().thenComparing(csr -> csr.getMatchingPixels()).reversed());
                      LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
