@@ -37,9 +37,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     Double matchedImageShapeScore;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Double normGradientAreaGap;
 
     @JsonIgnore
     public int getMatchingPixels() {
@@ -77,6 +74,7 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
         }
     }
 
+    @JsonIgnore
     public Double getNormalizedGapScore() {
         String normalizedGapScore = getAttr("NormalizedGapScore");
         return StringUtils.isBlank(normalizedGapScore) ? null : Double.parseDouble(normalizedGapScore);

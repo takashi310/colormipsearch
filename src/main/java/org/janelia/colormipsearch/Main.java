@@ -835,12 +835,12 @@ public class Main {
                                                     if (maxAreaGap > 0 && areaGap >= 0) {
                                                         double normAreaGapScore = ((double) areaGap / maxAreaGap) * 2.5;
                                                         if (normAreaGapScore > 1) {
-                                                            csr.csr.normGradientAreaGap = 1.;
+                                                            csr.csr.setNormalizedGapScore(1.);
                                                         } else {
-                                                            csr.csr.normGradientAreaGap = Math.max(normAreaGapScore, 0.002);
+                                                            csr.csr.setNormalizedGapScore(Math.max(normAreaGapScore, 0.002));
                                                         }
                                                         if (maxPctPixelScore != null) {
-                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.csr.normGradientAreaGap * 100.;
+                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.csr.getNormalizedGapScore() * 100.;
                                                             csr.csr.setNormalizedGapScore(normalizedGapScore);
                                                         } else {
                                                             csr.csr.setNormalizedGapScore(null);
