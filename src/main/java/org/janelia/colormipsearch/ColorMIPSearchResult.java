@@ -44,6 +44,7 @@ class ColorMIPSearchResult implements Serializable {
         this.matchingPixelsPct = matchingPixelsPct;
         this.isMatch = isMatch;
         this.isError = isError;
+        this.gradientAreaGap = -1;
     }
 
     String getLibraryId() {
