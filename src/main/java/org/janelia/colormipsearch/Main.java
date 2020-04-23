@@ -868,7 +868,7 @@ public class Main {
                             return Double.compare(csr2.getMatchingPixelsPct(), csr1.getMatchingPixelsPct());
                         }
                     };
-                    resultsFileContent.results.sort(csrComp));
+                    resultsFileContent.results.sort(csrComp);
                      LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
                     return resultsFileContent;
                 });
