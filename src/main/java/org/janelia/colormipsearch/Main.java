@@ -802,6 +802,8 @@ public class Main {
                                         long startGapCalcTime = System.currentTimeMillis();
                                         MIPImage matchedImage = CachedMIPsUtils.loadMIP(csr.matchedMIP);
                                         MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(csr.matchedMIP, gradientsLocation));
+                                        LOG.debug("Loaded images for calculating area gap for {} - {} with {} in {}ms",
+                                                resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage, System.currentTimeMillis()-startGapCalcTime);
                                         if (matchedImage != null && matchedGradientImage != null) {
                                             LOG.debug("Calculate area gap for {} - {} with {}",
                                                     resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage);
