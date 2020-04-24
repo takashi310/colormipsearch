@@ -744,7 +744,7 @@ public class Main {
         Comparator<ColorMIPSearchResultMetadata> csrComparison = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
         Collection<ColorMIPSearchResultMetadata> bestCdsResultsForEachMatchMatchName = cdsResults.stream()
                 .collect(Collectors.groupingBy(
-                        csr -> csr.matchedPublishedName,
+                        csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 r -> r.stream().max(csrComparison)
@@ -758,6 +758,12 @@ public class Main {
         } else {
             return sortedBestResults;
         }
+    }
+
+    private static String extractPublishingNameCandidateFromImageName(String imageName) {
+        String fn = StringUtils.replacePattern(new File(imageName).getName(), "\\.\\D*$", "");
+        int sepIndex = fn.indexOf('_');
+        return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
 
     private static CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(int resultIDIndex,
