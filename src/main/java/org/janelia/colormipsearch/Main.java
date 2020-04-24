@@ -793,6 +793,11 @@ public class Main {
                 Streams.zip(IntStream.range(0, Integer.MAX_VALUE).boxed(), resultsGroupedById.entrySet().stream(), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                         .map(resultsEntry -> {
                             LOG.info("Submit calculate gradient area scores for matches of entry# {} - {} from {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile);
+                            Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
+                                    .map(csr -> csr.csr.getMatchingPixelsPct())
+                                    .max(Double::compare).orElse(null);
+                            LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
+                                    resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                             long startTimeForCurrentEntry = System.currentTimeMillis();
                             LOG.info("Load image {}", resultsEntry.getRight().getKey());
                             MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
@@ -815,11 +820,6 @@ public class Main {
                                     .thenApply(vr -> {
                                         LOG.info("Completed gradient area scores for {} matches of {} from {} in {}s",
                                                 matchedImages.size(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
-                                        Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
-                                                .map(csr -> csr.csr.getMatchingPixelsPct())
-                                                .max(Double::compare).orElse(null);
-                                        LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
-                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                                         List<Long> areaGaps = areaGapComputations.stream()
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
@@ -869,9 +869,9 @@ public class Main {
                                     ;
                         } else if (csr1.getNormalizedGapScore() == null) {
                             // null gap scores should be at the beginning
-                            return 1;
-                        } else {
                             return -1;
+                        } else {
+                            return 1;
                         }
                     };
                     resultsFileContent.results.sort(csrComp.reversed());
