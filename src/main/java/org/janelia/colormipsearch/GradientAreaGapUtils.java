@@ -4,7 +4,13 @@ import org.janelia.colormipsearch.imageprocessing.TriFunction;
 
 public class GradientAreaGapUtils {
 
-    private static final int DEFAULT_COLOR_FLUX = 40;
+    private static final int DEFAULT_COLOR_FLUX = 40; // 40um
+    private enum Color {
+        BLACK,
+        RED,
+        GREEN,
+        BLUE
+    }
 
     static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, patternPix, dilatedPix) -> {
         if (dilatedPix != -16777216) {
@@ -23,7 +29,7 @@ public class GradientAreaGapUtils {
     private static int calculateSliceGap(int rgb1, int rgb2) {
 
         int max1stvalMASK = 0, max2ndvalMASK = 0, max1stvalDATA = 0, max2ndvalDATA = 0, maskslinumber = 0, dataslinumber = 0;
-        String mask1stMaxColor = "Black", mask2ndMaxColor = "Black", data1stMaxColor = "Black", data2ndMaxColor = "Black";
+        Color mask1stMaxColor = Color.BLACK, mask2ndMaxColor = Color.BLACK, data1stMaxColor = Color.BLACK, data2ndMaxColor = Color.BLACK;
 
         int red1 = (rgb1 >>> 16) & 0xff;
         int green1 = (rgb1 >>> 8) & 0xff;
@@ -35,65 +41,65 @@ public class GradientAreaGapUtils {
 
         if (red1 >= green1 && red1 >= blue1) {
             max1stvalMASK = red1;
-            mask1stMaxColor = "red";
+            mask1stMaxColor = Color.RED;
             if (green1 >= blue1) {
                 max2ndvalMASK = green1;
-                mask2ndMaxColor = "green";
+                mask2ndMaxColor = Color.GREEN;
             } else {
                 max2ndvalMASK = blue1;
-                mask2ndMaxColor = "blue";
+                mask2ndMaxColor = Color.BLUE;
             }
         } else if (green1 >= red1 && green1 >= blue1) {
             max1stvalMASK = green1;
-            mask1stMaxColor = "green";
+            mask1stMaxColor = Color.GREEN;
             if (red1 >= blue1) {
-                mask2ndMaxColor = "red";
+                mask2ndMaxColor = Color.RED;
                 max2ndvalMASK = red1;
             } else {
                 max2ndvalMASK = blue1;
-                mask2ndMaxColor = "blue";
+                mask2ndMaxColor = Color.BLUE;
             }
         } else if (blue1 >= red1 && blue1 >= green1) {
             max1stvalMASK = blue1;
-            mask1stMaxColor = "blue";
+            mask1stMaxColor = Color.BLUE;
             if (red1 >= green1) {
                 max2ndvalMASK = red1;
-                mask2ndMaxColor = "red";
+                mask2ndMaxColor = Color.RED;
             } else {
                 max2ndvalMASK = green1;
-                mask2ndMaxColor = "green";
+                mask2ndMaxColor = Color.GREEN;
             }
         }
 
         if (red2 >= green2 && red2 >= blue2) {
             max1stvalDATA = red2;
-            data1stMaxColor = "red";
+            data1stMaxColor = Color.RED;
             if (green2 >= blue2) {
                 max2ndvalDATA = green2;
-                data2ndMaxColor = "green";
+                data2ndMaxColor = Color.GREEN;
             } else {
                 max2ndvalDATA = blue2;
-                data2ndMaxColor = "blue";
+                data2ndMaxColor = Color.BLUE;
             }
         } else if (green2 >= red2 && green2 >= blue2) {
             max1stvalDATA = green2;
-            data1stMaxColor = "green";
+            data1stMaxColor = Color.GREEN;
             if (red2 >= blue2) {
                 max2ndvalDATA = red2;
-                data2ndMaxColor = "red";
+                data2ndMaxColor = Color.RED;
             } else {
                 max2ndvalDATA = blue2;
-                data2ndMaxColor = "blue";
+                data2ndMaxColor = Color.BLUE;
             }
         } else if (blue2 >= red2 && blue2 >= green2) {
             max1stvalDATA = blue2;
-            data1stMaxColor = "blue";
+            data1stMaxColor = Color.BLUE;
             if (red2 >= green2) {
                 max2ndvalDATA = red2;
-                data2ndMaxColor = "red";
+                data2ndMaxColor = Color.RED;
             } else {
                 max2ndvalDATA = green2;
-                data2ndMaxColor = "green";
+                data2ndMaxColor = Color.GREEN;
             }
         }
 
@@ -109,24 +115,24 @@ public class GradientAreaGapUtils {
         }
     }
 
-    private static int findSliceNumber(String maxColor, String secondMaxColor, double colorRatio) {
+    private static int findSliceNumber(Color maxColor, Color secondMaxColor, double colorRatio) {
         switch (maxColor) {
-            case "red": //cheking slice num 172-256
-                if (secondMaxColor.equals("green")) { // 172-213
+            case RED: //cheking slice num 172-256
+                if (secondMaxColor == Color.GREEN) { // 172-213
                     return findSliceNumberInLUT(171, 212, colorRatio);
-                } else if (secondMaxColor.equals("blue"))//214-256
+                } else if (secondMaxColor == Color.BLUE)//214-256
                     return findSliceNumberInLUT(213, 255, colorRatio);
                 break;
-            case "green":  // cheking slice num 87-171
-                if (secondMaxColor.equals("red")) // 129-171
+            case GREEN:  // cheking slice num 87-171
+                if (secondMaxColor == Color.RED) // 129-171
                     return findSliceNumberInLUT(128, 170, colorRatio);
-                if (secondMaxColor.equals("blue")) // 87-128
+                if (secondMaxColor == Color.BLUE) // 87-128
                     return findSliceNumberInLUT(86, 127, colorRatio);
                 break;
-            case "blue":  // cheking slice num 1-86 = 0-85
-                if (secondMaxColor.equals("red")) // 1-30
+            case BLUE:  // cheking slice num 1-86 = 0-85
+                if (secondMaxColor == Color.RED) // 1-30
                     return findSliceNumberInLUT(0, 29, colorRatio);
-                if (secondMaxColor.equals("green")) // 31-86
+                if (secondMaxColor == Color.GREEN) // 31-86
                     return findSliceNumberInLUT(30, 85, colorRatio);
                 break;
         }
