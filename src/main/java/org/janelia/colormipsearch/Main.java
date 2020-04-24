@@ -634,63 +634,12 @@ public class Main {
                 LOG.error("No color depth search results found in {}", inputResultsFile);
                 return;
             }
-            LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
-            long maxAreaGap = resultsFileContent.results.stream()
-                    .mapToLong(ColorMIPSearchResultMetadata::getGradientAreaGap)
-                    .filter(a -> a != -1)
-                    .max()
-                    .orElse(-1);
-            Comparator<ColorMIPSearchResultMetadata> srComparator;
-            switch (sortingType) {
-                case WITH_GRADIENT_AREA_GAP:
-                    if (maxAreaGap == -1) {
-                        srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
-                    } else {
-                        srComparator = (sr1, sr2) -> {
-                            // this is completely empirical because I don't know
-                            // how to compare the results that have no area gap with the ones that have
-                            long a1 = sr1.getGradientAreaGap();
-                            long a2 = sr2.getGradientAreaGap();
-                            double normalizedA1 = normalizedArea(a1, maxAreaGap);
-                            double normalizedA2 = normalizedArea(a2, maxAreaGap);
-                            // reverse comparison by the score to normalized area ratio
-                            return Double.compare(sr1.getMatchingPixelsPct() / normalizedA1, sr2.getMatchingPixelsPct() / normalizedA2);
-                        };
-                    }
-                    break;
-                case USE_MATCHING_SLICES_ONLY:
-                default:
-                    srComparator = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
-                    break;
-            }
-
-            Results<List<ColorMIPSearchResultMetadata>> resultsWithSortedContent = new Results<>(resultsFileContent.results.stream()
-                    .sorted(srComparator.reversed())
-                    .collect(Collectors.toList()));
-            if (outputDir == null) {
-                mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, resultsWithSortedContent);
-            } else {
-                File outputResultsFile = outputDir.resolve(inputResultsFile.getName()).toFile();
-                LOG.info("Writing {}", outputResultsFile);
-                mapper.writerWithDefaultPrettyPrinter().writeValue(outputResultsFile, resultsWithSortedContent);
-            }
+            LOG.info("Read {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
+            sortCDSResults(resultsFileContent);
+            writeCDSResultsToJSONFile(resultsFileContent, getOutputFile(outputDir, inputResultsFile), mapper);
         } catch (IOException e) {
             LOG.error("Error reading {}", inputResultsFilename, e);
             throw new UncheckedIOException(e);
-        }
-    }
-
-    private static double normalizedArea(long a, long maxArea) {
-        if (a == -1) {
-            return 0.004;
-        } else {
-            double r;
-            if ((double) a / maxArea < 0.002) {
-                r = 0.002;
-            } else {
-                r = (double) a / maxArea;
-            }
-            return r;
         }
     }
 
@@ -702,9 +651,10 @@ public class Main {
         Path outputDir = args.getOutputDir();
         if (args.resultsFile != null) {
             File cdsResultsFile = new File(args.resultsFile.input);
-            calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, cdsResultsFile, args.gradientPath, args.processTopResults, mapper, executor)
-                    .thenAccept(cdsResults -> writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, cdsResultsFile), mapper))
-                    .join();
+            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                    gradientBasedScoreAdjuster, cdsResultsFile, args.gradientPath, args.processTopResults, mapper, executor
+            );
+            writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, cdsResultsFile), mapper);
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);
@@ -719,22 +669,21 @@ public class Main {
                 } else {
                     filesToProcess = resultFileNames;
                 }
-                List<CompletableFuture<?>> allGAComputations = filesToProcess.stream()
-                        .map(fn -> {
+                filesToProcess
+                        .forEach(fn -> {
                             File f = new File(fn);
-                            return calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor)
-                                    .thenAccept(cdsResults -> writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper));
-                        })
-                        .collect(Collectors.toList());
-                CompletableFuture.allOf(allGAComputations.toArray(new CompletableFuture<?>[0]))
-                        .join();
+                            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                                    gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor
+                            );
+                            writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper);
+                        });
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
         }
     }
 
-    private static CompletableFuture<Results<List<ColorMIPSearchResultMetadata>>> calculateGradientAreaScoreForResultsFile(
+    private static Results<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForResultsFile(
             EM2LMAreaGapCalculator emlmAreaGapCalculator,
             File inputResultsFile,
             String gradientsLocation,
@@ -748,7 +697,7 @@ public class Main {
         Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = readCDSResultsFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(resultsFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
-            return CompletableFuture.completedFuture(resultsFileContent);
+            return resultsFileContent;
         }
         LOG.info("Read {} entries from {}", resultsFileContent.results.size(), inputResultsFile);
         Map<MIPInfo, List<ColorMIPSearchResultMetadataWithMIP>> resultsGroupedById = resultsFileContent.results.stream()
@@ -865,28 +814,30 @@ public class Main {
                         })
                         .collect(Collectors.toList());
         // wait for all results to complete
-        return CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0]))
-                .thenApply(r -> {
-                    Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
-                        if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore)
-                                    .compare(csr1, csr2)
-                                    ;
-                        } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
-                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
-                                    .compare(csr1, csr2)
-                                    ;
-                        } else if (csr1.getNormalizedGapScore() == null) {
-                            // null gap scores should be at the beginning
-                            return -1;
-                        } else {
-                            return 1;
-                        }
-                    };
-                    resultsFileContent.results.sort(csrComp.reversed());
-                    LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-                    return resultsFileContent;
-                });
+        CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
+        LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        sortCDSResults(resultsFileContent);
+        return resultsFileContent;
+    }
+
+    private static void sortCDSResults(Results<List<ColorMIPSearchResultMetadata>> cdsResults) {
+        Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
+            if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
+                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore)
+                        .compare(csr1, csr2)
+                        ;
+            } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
+                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
+                        .compare(csr1, csr2)
+                        ;
+            } else if (csr1.getNormalizedGapScore() == null) {
+                // null gap scores should be at the beginning
+                return -1;
+            } else {
+                return 1;
+            }
+        };
+        cdsResults.results.sort(csrComp.reversed());
     }
 
     private static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
