@@ -781,12 +781,15 @@ public class Main {
                                 return csrWithMIP;
                             })
                             .collect(Collectors.toList());
-                    LOG.info("Finished loading {} images", rWithMatchedMIPs.size());
+                    LOG.info("Finished preparing {} mips", rWithMatchedMIPs.size());
                     return rWithMatchedMIPs;
                 })));
         long startTime = System.currentTimeMillis();
         List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
-                Streams.zip(IntStream.range(0, Integer.MAX_VALUE).boxed(), resultsGroupedById.entrySet().stream(), (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
+                Streams.zip(
+                        IntStream.range(0, Integer.MAX_VALUE).boxed(),
+                        resultsGroupedById.entrySet().stream(),
+                        (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                         .map(resultsEntry -> {
                             LOG.info("Submit calculate gradient area scores for matches of entry# {} - {} from {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile);
                             Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
