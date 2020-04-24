@@ -124,7 +124,9 @@ class EM2LMAreaGapCalculator {
 
     private Function<MIPImage, BiFunction<MIPImage, MIPImage, Long>> createGradientAreaCalculatorForMask(boolean mirrorMask) {
         return (MIPImage maskMIP) -> {
+            long startTime = System.currentTimeMillis();
             GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
+            LOG.debug("Prepare gradient area gap context for {} in {}ms", maskMIP, System.currentTimeMillis()-startTime);
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
                 LImage inputImage = LImage.create(inputMIP.imageArray);
                 LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
