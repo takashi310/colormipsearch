@@ -430,7 +430,7 @@ public class ExtractColorMIPsMetadata {
             return;
         }
         try {
-            Pattern slideCodeRegExPattern = Pattern.compile("-(\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)-(m|f)_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+            Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)[-_][mf]_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
             Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
@@ -591,6 +591,7 @@ public class ExtractColorMIPsMetadata {
                     .collect(Collectors.groupingBy(entryName -> {
                         Matcher m = slideCodeRegExPattern.matcher(entryName);
                         if (m.find()) {
+                            System.out.println("!!!!!!!! " + m.group(1));
                             return m.group(1);
                         } else {
                             LOG.warn("Slide code not found in {}", entryName);
