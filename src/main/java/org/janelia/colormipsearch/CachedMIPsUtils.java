@@ -15,8 +15,8 @@ class CachedMIPsUtils {
 
     private static final LoadingCache<MIPInfo, MIPImage> MIP_IMAGES_CACHE = CacheBuilder.newBuilder()
             .maximumSize(200000L)
-            .expireAfterAccess(Duration.ofMinutes(10))
-            .concurrencyLevel(64)
+            .expireAfterAccess(Duration.ofMinutes(30))
+            .concurrencyLevel(16)
             .build(new CacheLoader<MIPInfo, MIPImage>() {
                 @Override
                 public MIPImage load(MIPInfo mipInfo) {
