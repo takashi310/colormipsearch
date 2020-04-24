@@ -860,19 +860,18 @@ public class Main {
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore).reversed()
+                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore)
                                     .compare(csr1, csr2)
                                     ;
                         } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
-                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct).reversed()
+                            return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
                                     .compare(csr1, csr2)
                                     ;
                         } else if (csr1.getNormalizedGapScore() == null) {
-                            // this is because the comparator is actually a reverse comparator
-                            // so null gap scores should be at the end
-                            return -1;
-                        } else {
+                            // null gap scores should be at the beginning
                             return 1;
+                        } else {
+                            return -1;
                         }
                     };
                     resultsFileContent.results.sort(csrComp.reversed());
