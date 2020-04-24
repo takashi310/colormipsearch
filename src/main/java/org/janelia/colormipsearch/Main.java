@@ -719,13 +719,12 @@ public class Main {
                 } else {
                     filesToProcess = resultFileNames;
                 }
-                List<CompletableFuture<?>> allGAComputations = Utils.partitionList(filesToProcess, args.libraryPartitionSize).stream()
-                        .flatMap(fileList -> fileList.stream()
-                                .map(fn -> {
-                                    File f = new File(fn);
-                                    return calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor)
-                                            .thenAccept(cdsResults -> writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper));
-                                }))
+                List<CompletableFuture<?>> allGAComputations = filesToProcess.stream()
+                        .map(fn -> {
+                            File f = new File(fn);
+                            return calculateGradientAreaScoreForResultsFile(gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor)
+                                    .thenAccept(cdsResults -> writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper));
+                        })
                         .collect(Collectors.toList());
                 CompletableFuture.allOf(allGAComputations.toArray(new CompletableFuture<?>[0]))
                         .join();
@@ -751,7 +750,7 @@ public class Main {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return CompletableFuture.completedFuture(resultsFileContent);
         }
-        LOG.info("Finished reading {} entries from {}", resultsFileContent.results.size(), inputResultsFile);
+        LOG.info("Read {} entries from {}", resultsFileContent.results.size(), inputResultsFile);
         Map<MIPInfo, List<ColorMIPSearchResultMetadataWithMIP>> resultsGroupedById = resultsFileContent.results.stream()
                 .collect(Collectors.groupingBy(csr -> {
                     MIPInfo mip = new MIPInfo();
