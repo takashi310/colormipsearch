@@ -107,7 +107,7 @@ class EM2LMAreaGapCalculator {
             long gradientArea = gaps.fold(0L, (p, s) -> s + p);
             long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> s + p);
             long areaGapScore = gradientArea + tooMuchExpression / 2;
-            LOG.debug("Area gap score -> {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
+            LOG.trace("Area gap score -> {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
             return areaGapScore;
         };
     }

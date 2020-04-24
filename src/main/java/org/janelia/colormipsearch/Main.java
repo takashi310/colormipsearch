@@ -802,6 +802,7 @@ public class Main {
                                         MIPImage matchedImage = CachedMIPsUtils.loadMIP(csr.matchedMIP);
                                         MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(csr.matchedMIP, gradientsLocation));
                                         if (matchedImage != null && matchedGradientImage != null) {
+                                            LOG.debug("Calculate area gap for {} with {}", matchedImage, matchedGradientImage);
                                             return gradientGapCalculator.apply(matchedImage, matchedGradientImage);
                                         } else {
                                             // this branch is really inefficient but the hope is to not do it this way
