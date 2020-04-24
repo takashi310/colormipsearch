@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -97,7 +98,19 @@ class MIPInfo implements Serializable {
                 return false;
             }
             try {
-                return archiveFile.getEntry(imagePath) != null;
+                if (archiveFile.getEntry(imagePath) != null) {
+                    return true;
+                } else {
+                    // slightly longer test
+                    String imageFn = Paths.get(imagePath).getFileName().toString();
+                    return archiveFile.stream()
+                            .filter(ze -> !ze.isDirectory())
+                            .map(ze -> Paths.get(ze.getName()).getFileName().toString())
+                            .filter(fn -> imageFn.equals(fn))
+                            .findFirst()
+                            .map(fn -> true)
+                            .orElse(false);
+                }
             } finally {
                 try {
                     archiveFile.close();
@@ -117,16 +130,32 @@ class MIPInfo implements Serializable {
                 if (ze != null) {
                     return archiveFile.getInputStream(ze);
                 } else {
-                    try {
-                        archiveFile.close();
-                    } catch (IOException ignore) {
-                    }
-                    return null;
+                    String imageFn = Paths.get(imagePath).getFileName().toString();
+                    return archiveFile.stream()
+                            .filter(aze -> !aze.isDirectory())
+                            .filter(aze -> imageFn.equals(Paths.get(aze.getName()).getFileName().toString()))
+                            .findFirst()
+                            .map(aze -> getEntryStream(archiveFile, aze))
+                            .orElseGet(() -> {
+                                try {
+                                    archiveFile.close();
+                                } catch (IOException ignore) {
+                                }
+                                return null;
+                            });
                 }
             } finally {
             }
         } else {
             return new FileInputStream(imagePath);
+        }
+    }
+
+    private InputStream getEntryStream(ZipFile archiveFile, ZipEntry zipEntry) {
+        try {
+            return archiveFile.getInputStream(zipEntry);
+        } catch (IOException e) {
+            return null;
         }
     }
 }
