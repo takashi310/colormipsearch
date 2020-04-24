@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 public abstract class ImageTransformation {
 
-    private static Logger LOG = LoggerFactory.getLogger(ImageTransformation.class);
     public static ImageTransformation IDENTITY = ImageTransformation.identity();
 
     private interface ColorHistogram {

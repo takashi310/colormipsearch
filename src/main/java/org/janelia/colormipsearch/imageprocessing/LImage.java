@@ -88,6 +88,10 @@ public class LImage {
         }));
     }
 
+    public LImage reduce() {
+        return LImage.create(asImageArray());
+    }
+
     public <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
         R res = initialValue;
         for (int y = 0; y < height; y++) {
