@@ -768,7 +768,6 @@ public class Main {
                     } else {
                         toProcess = r;
                     }
-                    LOG.info("Prepare {} mips", toProcess.size());
                     List<ColorMIPSearchResultMetadataWithMIP> rWithMatchedMIPs = toProcess.stream()
                             .map(csr -> {
                                 ColorMIPSearchResultMetadataWithMIP csrWithMIP = new ColorMIPSearchResultMetadataWithMIP();
@@ -781,7 +780,7 @@ public class Main {
                                 return csrWithMIP;
                             })
                             .collect(Collectors.toList());
-                    LOG.info("Finished preparing {} mips", rWithMatchedMIPs.size());
+                    LOG.info("Prepare {} mips out of {}", rWithMatchedMIPs.size(), r.size());
                     return rWithMatchedMIPs;
                 })));
         long startTime = System.currentTimeMillis();
@@ -792,11 +791,6 @@ public class Main {
                         (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
                         .map(resultsEntry -> {
                             LOG.info("Submit calculate gradient area scores for matches of entry# {} - {} from {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile);
-                            Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
-                                    .map(csr -> csr.csr.getMatchingPixelsPct())
-                                    .max(Double::compare).orElse(null);
-                            LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
-                                    resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                             long startTimeForCurrentEntry = System.currentTimeMillis();
                             CompletableFuture<BiFunction<MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
                                 LOG.info("Load image {}", resultsEntry.getRight().getKey());
@@ -824,6 +818,11 @@ public class Main {
                                     .thenApply(vr -> {
                                         LOG.info("Completed gradient area scores for {} matches of entry# {} - {} from {} in {}s",
                                                 resultsEntry.getRight().getValue().size(), resultsEntry.getKey(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
+                                        Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
+                                                .map(csr -> csr.csr.getMatchingPixelsPct())
+                                                .max(Double::compare).orElse(null);
+                                        LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
+                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                                         List<Long> areaGaps = areaGapComputations.stream()
                                                 .map(areaGapComputation -> areaGapComputation.join())
                                                 .collect(Collectors.toList());
