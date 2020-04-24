@@ -32,6 +32,10 @@ abstract class MetadataAttrs {
         return attrs.get(attribute);
     }
 
+    void removeAttr(String attribute) {
+        attrs.remove(attribute);
+    }
+
     void copyTo(MetadataAttrs that) {
         that.id = this.id;
         that.publishedName = this.publishedName;

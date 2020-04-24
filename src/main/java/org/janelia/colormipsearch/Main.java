@@ -722,6 +722,7 @@ public class Main {
 
     private static Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int n) {
         return cdsResults.stream()
+                .peek(csr -> csr.setGradientAreaGap(-1))
                 .collect(Collectors.groupingBy(csr -> {
                     MIPInfo mip = new MIPInfo();
                     mip.id = csr.id;

@@ -47,6 +47,8 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     public void setMatchingPixels(int matchingPixels) {
         if (matchingPixels > 0) {
             addAttr("Matched pixels", String.valueOf(matchingPixels));
+        } else {
+            removeAttr("Matched pixels");
         }
     }
 
@@ -59,6 +61,8 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     public void setMatchingPixelsPct(double matchingPixelsPct) {
         if (matchingPixelsPct > 0.) {
             addAttr("Score", String.valueOf(matchingPixelsPct));
+        } else {
+            removeAttr("Score");
         }
     }
 
@@ -71,6 +75,8 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     public void setGradientAreaGap(long gradientAreaGap) {
         if (gradientAreaGap >= 0L) {
             addAttr("Gradient Area Gap", String.valueOf(gradientAreaGap));
+        } else {
+            removeAttr("Gradient Area Gap");
         }
     }
 
@@ -81,11 +87,10 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     }
 
     public void setNormalizedGapScore(Double normalizedGapScore) {
-        if (normalizedGapScore == null) {
-            attrs.remove("NormalizedGapScore");
+        if (normalizedGapScore != null) {
+            addAttr("NormalizedGapScore", normalizedGapScore.toString());
         } else {
-            attrs.put("NormalizedGapScore", normalizedGapScore.toString());
+            removeAttr("NormalizedGapScore");
         }
     }
-
 }
