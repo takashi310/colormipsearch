@@ -670,14 +670,15 @@ public class Main {
                 } else {
                     filesToProcess = resultFileNames;
                 }
-                filesToProcess
-                        .forEach(fn -> {
+                Utils.partitionList(filesToProcess, args.libraryPartitionSize).stream().parallel()
+                        .flatMap(fileList -> fileList.stream().peek(fn -> {
                             File f = new File(fn);
                             Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
                                     gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor
                             );
                             writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper);
-                        });
+                        }))
+                        .forEach(fn -> LOG.info("Completed {}",fn));
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
