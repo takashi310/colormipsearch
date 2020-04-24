@@ -3,8 +3,6 @@ package org.janelia.colormipsearch;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
@@ -107,7 +105,7 @@ class EM2LMAreaGapCalculator {
             long gradientArea = gaps.fold(0L, (p, s) -> s + p);
             long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> s + p);
             long areaGapScore = gradientArea + tooMuchExpression / 2;
-            LOG.trace("Area gap score -> {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
+            LOG.trace("Area gap score {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
             return areaGapScore;
         };
     }
@@ -118,7 +116,7 @@ class EM2LMAreaGapCalculator {
             LOG.debug("Calculate area gap between {} - {} using {}", maskMIP, inputMIP, inputGradientMIP);
             return getGradientAreaCalculator(maskMIP).apply(inputMIP, inputGradientMIP);
         } finally {
-            LOG.debug("Finished calculating area gap between {} - {} using {} in {}ms", maskMIP, inputMIP, inputGradientMIP, System.currentTimeMillis()-startTimestamp);
+            LOG.debug("Finished calculating area gap between {} - {} using {} in {}ms", maskMIP, inputMIP, inputGradientMIP, System.currentTimeMillis() - startTimestamp);
         }
     }
 
@@ -126,7 +124,7 @@ class EM2LMAreaGapCalculator {
         return (MIPImage maskMIP) -> {
             long startTime = System.currentTimeMillis();
             GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
-            LOG.debug("Prepare gradient area gap context for {} in {}ms", maskMIP, System.currentTimeMillis()-startTime);
+            LOG.debug("Prepare gradient area gap context for {} in {}ms", maskMIP, System.currentTimeMillis() - startTime);
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
                 LImage inputImage = LImage.create(inputMIP.imageArray);
                 LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
