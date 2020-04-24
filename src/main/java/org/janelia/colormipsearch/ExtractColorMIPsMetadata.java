@@ -591,7 +591,6 @@ public class ExtractColorMIPsMetadata {
                     .collect(Collectors.groupingBy(entryName -> {
                         Matcher m = slideCodeRegExPattern.matcher(entryName);
                         if (m.find()) {
-                            System.out.println("!!!!!!!! " + m.group(1));
                             return m.group(1);
                         } else {
                             LOG.warn("Slide code not found in {}", entryName);
