@@ -799,8 +799,11 @@ public class Main {
                             LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
                                     resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
                             long startTimeForCurrentEntry = System.currentTimeMillis();
-                            LOG.info("Load image {}", resultsEntry.getRight().getKey());
-                            MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
+                            CompletableFuture<BiFunction<MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
+                                LOG.info("Load image {}", resultsEntry.getRight().getKey());
+                                MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
+                                return emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
+                            }, executor);
                             List<MIPImage> matchedImages = resultsEntry.getRight().getValue().stream()
                                     .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
                                     .map(csr -> csr.matchedImage)
@@ -809,11 +812,10 @@ public class Main {
                                     .filter(csr -> csr.matchedImage != null && csr.matchedImageGradient != null)
                                     .map(csr -> csr.matchedImageGradient)
                                     .collect(Collectors.toList());
-                            BiFunction<MIPImage, MIPImage, Long> gradientGapCalculator = emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
                             List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
                                     matchedImages.stream(),
                                     matchedGradientImages.stream(),
-                                    (image, gradientImage) -> CompletableFuture.supplyAsync(() -> gradientGapCalculator.apply(image, gradientImage), executor))
+                                    (image, gradientImage) -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> gradientGapCalculator.apply(image, gradientImage), executor))
                                     .collect(Collectors.toList());
                             return CompletableFuture.supplyAsync(() -> null, executor)
                                     .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
