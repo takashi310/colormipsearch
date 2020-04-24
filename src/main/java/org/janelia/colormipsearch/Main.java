@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -690,17 +691,37 @@ public class Main {
             int topResultsToProcess,
             ObjectMapper mapper,
             Executor executor) {
-        class ColorMIPSearchResultMetadataWithMIP {
-            ColorMIPSearchResultMetadata csr;
-            MIPInfo matchedMIP;
-        }
         Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = readCDSResultsFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(resultsFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return resultsFileContent;
         }
-        LOG.info("Read {} entries from {}", resultsFileContent.results.size(), inputResultsFile);
-        Map<MIPInfo, List<ColorMIPSearchResultMetadataWithMIP>> resultsGroupedById = resultsFileContent.results.stream()
+        Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topResultsToProcess);
+        LOG.info("Read {} entries ({} distinct IDs) from {}", resultsFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
+
+        long startTime = System.currentTimeMillis();
+        List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
+                Streams.zip(
+                        IntStream.range(0, Integer.MAX_VALUE).boxed(),
+                        resultsGroupedById.entrySet().stream(),
+                        (i, resultsEntry) -> calculateGradientAreaScoreForCDSResults(
+                                i+1,
+                                resultsEntry.getKey(),
+                                resultsEntry.getValue(),
+                                gradientsLocation,
+                                emlmAreaGapCalculator,
+                                executor))
+                        .collect(Collectors.toList());
+        // wait for all results to complete
+        CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
+        LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        sortCDSResults(resultsFileContent);
+        LOG.info("Finished sorting by gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        return resultsFileContent;
+    }
+
+    private static Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int n) {
+        return cdsResults.stream()
                 .collect(Collectors.groupingBy(csr -> {
                     MIPInfo mip = new MIPInfo();
                     mip.id = csr.id;
@@ -708,116 +729,118 @@ public class Main {
                     mip.imagePath = csr.imageName;
                     mip.type = csr.imageType;
                     return mip;
-                }, Collectors.collectingAndThen(Collectors.toList(), r -> {
-                    List<ColorMIPSearchResultMetadata> toProcess;
-                    if (topResultsToProcess > 0 && topResultsToProcess < r.size()) {
-                        r.sort(Comparator.comparingInt(ColorMIPSearchResultMetadata::getMatchingPixels).reversed());
-                        toProcess = r.subList(0, topResultsToProcess);
+                }, Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        resultsForAnId -> {
+                            List<ColorMIPSearchResultMetadata> bestMatches = pickBestMatches(resultsForAnId, n);
+                            LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
+                            return bestMatches;
+                        })));
+    }
+
+    private static List<ColorMIPSearchResultMetadata> pickBestMatches(List<ColorMIPSearchResultMetadata> cdsResults, int n) {
+        Comparator<ColorMIPSearchResultMetadata> csrComparison = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
+        Collection<ColorMIPSearchResultMetadata> bestCdsResultsForEachMatchMatchName = cdsResults.stream()
+                .collect(Collectors.groupingBy(
+                        csr -> csr.matchedPublishedName,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                r -> r.stream().max(csrComparison)
+                                        .orElse(null))))
+                .values();
+        List<ColorMIPSearchResultMetadata> sortedBestResults = bestCdsResultsForEachMatchMatchName.stream()
+                .sorted(csrComparison.reversed())
+                .collect(Collectors.toList());
+        if (n > 0 && n < sortedBestResults.size()) {
+            return sortedBestResults.subList(0, n);
+        } else {
+            return sortedBestResults;
+        }
+    }
+
+    private static CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(int resultIDIndex,
+                                                                                                                 MIPInfo inputMIP,
+                                                                                                                 List<ColorMIPSearchResultMetadata> selectedCDSResultsForInputMIP,
+                                                                                                                 String gradientsLocation,
+                                                                                                                 EM2LMAreaGapCalculator emlmAreaGapCalculator,
+                                                                                                                 Executor executor) {
+        LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP);
+        long startTimeForCurrentEntry = System.currentTimeMillis();
+        CompletableFuture<BiFunction<MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
+            LOG.info("Load image {}", inputMIP);
+            MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
+            return emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
+        }, executor);
+        List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
+                IntStream.range(0, Integer.MAX_VALUE).boxed(),
+                selectedCDSResultsForInputMIP.stream(),
+                (i, csr) -> ImmutablePair.of(i + 1, csr))
+                .map(indexedCsr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
+                    long startGapCalcTime = System.currentTimeMillis();
+                    MIPInfo matchedMIP = new MIPInfo();
+                    matchedMIP.archivePath = indexedCsr.getRight().matchedImageArchivePath;
+                    matchedMIP.imagePath = indexedCsr.getRight().matchedImageName;
+                    matchedMIP.type = indexedCsr.getRight().matchedImageType;
+                    MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
+                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
+                    LOG.debug("Loaded images for calculating area gap for {}:{} ({}:{}) in {}ms",
+                            resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis()-startGapCalcTime);
+                    long areaGap;
+                    if (matchedImage != null && matchedGradientImage != null) {
+                        LOG.debug("Calculate area gap for {}:{} ({}:{})",
+                                resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP);
+                        areaGap = gradientGapCalculator.apply(matchedImage, matchedGradientImage);
+                        LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",
+                                resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     } else {
-                        toProcess = r;
+                        // this branch is really inefficient and it would be the equivalent of using
+                        // a LM results file in which all results are grouped by LM line and we do not have the gradients for the EM
+                        // only for LM
+                        MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
+                        MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(
+                                MIPsUtils.getGradientMIPInfo(inputMIP, gradientsLocation)
+                        );
+                        areaGap = emlmAreaGapCalculator.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
                     }
-                    List<ColorMIPSearchResultMetadataWithMIP> rWithMatchedMIPs = toProcess.stream()
-                            .map(csr -> {
-                                ColorMIPSearchResultMetadataWithMIP csrWithMIP = new ColorMIPSearchResultMetadataWithMIP();
-                                csrWithMIP.csr = csr;
-                                MIPInfo matchedMIP = new MIPInfo();
-                                matchedMIP.archivePath = csr.matchedImageArchivePath;
-                                matchedMIP.imagePath = csr.matchedImageName;
-                                matchedMIP.type = csr.matchedImageType;
-                                csrWithMIP.matchedMIP = matchedMIP;
-                                return csrWithMIP;
-                            })
+                    indexedCsr.getRight().setGradientAreaGap(areaGap);
+                    return areaGap;
+                }, executor))
+                .collect(Collectors.toList());
+        return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
+                .thenApply(vr -> {
+                    LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMIP);
+                    Double maxPctPixelScore = selectedCDSResultsForInputMIP.stream()
+                            .map(csr -> csr.getMatchingPixelsPct())
+                            .max(Double::compare)
+                            .orElse(null);
+                    LOG.info("Max pixel percentage score for the {} selected matches of entry# {} ({}) -> {}",
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxPctPixelScore);
+                    List<Long> areaGaps = areaGapComputations.stream()
+                            .map(areaGapComputation -> areaGapComputation.join())
                             .collect(Collectors.toList());
-                    LOG.info("Prepare {} mips out of {}", rWithMatchedMIPs.size(), r.size());
-                    return rWithMatchedMIPs;
-                })));
-        long startTime = System.currentTimeMillis();
-        List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
-                Streams.zip(
-                        IntStream.range(0, Integer.MAX_VALUE).boxed(),
-                        resultsGroupedById.entrySet().stream(),
-                        (i, resultsEntry) -> ImmutablePair.of(i + 1, resultsEntry))
-                        .map(resultsEntry -> {
-                            LOG.info("Submit calculate gradient area scores for matches of entry# {} - {} from {}", resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile);
-                            long startTimeForCurrentEntry = System.currentTimeMillis();
-                            CompletableFuture<BiFunction<MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
-                                LOG.info("Load image {}", resultsEntry.getRight().getKey());
-                                MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
-                                return emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
-                            }, executor);
-                            List<CompletableFuture<Long>> areaGapComputations = resultsEntry.getRight().getValue().stream()
-                                    .map(csr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
-                                        long startGapCalcTime = System.currentTimeMillis();
-                                        MIPImage matchedImage = CachedMIPsUtils.loadMIP(csr.matchedMIP);
-                                        MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(csr.matchedMIP, gradientsLocation));
-                                        LOG.debug("Loaded images for calculating area gap for {} - {} with {} in {}ms",
-                                                resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage, System.currentTimeMillis()-startGapCalcTime);
-                                        if (matchedImage != null && matchedGradientImage != null) {
-                                            LOG.debug("Calculate area gap for {} - {} with {}",
-                                                    resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage);
-                                            try {
-                                                return gradientGapCalculator.apply(matchedImage, matchedGradientImage);
-                                            } finally {
-                                                LOG.debug("Finished calculating area gap for {} - {} with {} in {}ms",
-                                                        resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage, System.currentTimeMillis()-startGapCalcTime);
-                                            }
-                                        } else {
-                                            // this branch is really inefficient but the hope is to not do it this way
-                                            MIPImage inputImage = CachedMIPsUtils.loadMIP(resultsEntry.getRight().getKey());
-                                            MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(
-                                                    MIPsUtils.getGradientMIPInfo(resultsEntry.getRight().getKey(), gradientsLocation)
-                                            );
-                                            return emlmAreaGapCalculator.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
-                                        }
-                                    }, executor))
-                                    .collect(Collectors.toList());
-                            return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
-                                    .thenApply(vr -> {
-                                        LOG.info("Completed gradient area scores for {} matches of entry# {} - {} from {} in {}s",
-                                                resultsEntry.getRight().getValue().size(), resultsEntry.getKey(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
-                                        Double maxPctPixelScore = resultsEntry.getRight().getValue().stream()
-                                                .map(csr -> csr.csr.getMatchingPixelsPct())
-                                                .max(Double::compare).orElse(null);
-                                        LOG.info("Max pixel percentage score for matches and max pixel percentage of entry# {} - {} from {} -> {}",
-                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxPctPixelScore);
-                                        List<Long> areaGaps = areaGapComputations.stream()
-                                                .map(areaGapComputation -> areaGapComputation.join())
-                                                .collect(Collectors.toList());
-                                        long maxAreaGap = areaGaps.stream().max(Long::compare).orElse(-1L);
-                                        LOG.info("Max area gap for matches and max pixel percentage of entry# {} - {} from {} -> {}",
-                                                resultsEntry.getLeft(), resultsEntry.getRight().getKey(), inputResultsFile, maxAreaGap);
-                                        return Streams.zip(
-                                                resultsEntry.getRight().getValue().stream(),
-                                                areaGaps.stream(),
-                                                (csr, areaGap) -> {
-                                                    csr.csr.setGradientAreaGap(areaGap);
-                                                    if (maxAreaGap > 0 && areaGap >= 0) {
-                                                        double normAreaGapScore = ((double) areaGap / maxAreaGap) * 2.5;
-                                                        if (normAreaGapScore > 1) {
-                                                            csr.csr.setNormalizedGapScore(1.);
-                                                        } else {
-                                                            csr.csr.setNormalizedGapScore(Math.max(normAreaGapScore, 0.002));
-                                                        }
-                                                        if (maxPctPixelScore != null) {
-                                                            double normalizedGapScore = (csr.csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.csr.getNormalizedGapScore() * 100.;
-                                                            csr.csr.setNormalizedGapScore(normalizedGapScore);
-                                                        } else {
-                                                            csr.csr.setNormalizedGapScore(null);
-                                                        }
-                                                    } else {
-                                                        csr.csr.setNormalizedGapScore(null);
-                                                    }
-                                                    return csr.csr;
-                                                }
-                                        ).collect(Collectors.toList());
-                                    });
-                        })
-                        .collect(Collectors.toList());
-        // wait for all results to complete
-        CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
-        LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-        sortCDSResults(resultsFileContent);
-        return resultsFileContent;
+                    long maxAreaGap = areaGaps.stream()
+                            .max(Long::compare)
+                            .orElse(-1L);
+                    LOG.info("Max area gap for the {} selected matches of entry# {} ({}) -> {}",
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxAreaGap);
+                    // set the normalized area gap values
+                    if (maxAreaGap > 0) {
+                        selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
+                                .forEach(csr -> {
+                                    double normAreaGapScore = ((double) csr.getGradientAreaGap() / maxAreaGap) * 2.5;
+                                    if (normAreaGapScore > 1) {
+                                        csr.setNormalizedGapScore(1.);
+                                    } else {
+                                        csr.setNormalizedGapScore(Math.max(normAreaGapScore, 0.002));
+                                    }
+                                    if (maxPctPixelScore != null) {
+                                        double normalizedGapScore = (csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.getNormalizedGapScore() * 100.;
+                                        csr.setNormalizedGapScore(normalizedGapScore);
+                                    }
+                                });
+                    };
+                    return selectedCDSResultsForInputMIP;
+                });
     }
 
     private static void sortCDSResults(Results<List<ColorMIPSearchResultMetadata>> cdsResults) {
