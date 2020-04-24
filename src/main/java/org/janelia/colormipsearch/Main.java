@@ -823,8 +823,7 @@ public class Main {
                                         }
                                     }, executor))
                                     .collect(Collectors.toList());
-                            return CompletableFuture.supplyAsync(() -> null, executor)
-                                    .thenCompose(r -> CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0])))
+                            return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
                                     .thenApply(vr -> {
                                         LOG.info("Completed gradient area scores for {} matches of entry# {} - {} from {} in {}s",
                                                 resultsEntry.getRight().getValue().size(), resultsEntry.getKey(), resultsEntry.getRight().getKey(), inputResultsFile, (System.currentTimeMillis()-startTimeForCurrentEntry)/1000.);
@@ -867,8 +866,7 @@ public class Main {
                         })
                         .collect(Collectors.toList());
         // wait for all results to complete
-        return CompletableFuture.supplyAsync(() -> null, executor)
-                .thenCompose(r -> CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])))
+        return CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(r -> {
                     Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
                         if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
