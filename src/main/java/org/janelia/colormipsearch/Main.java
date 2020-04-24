@@ -799,6 +799,7 @@ public class Main {
                             }, executor);
                             List<CompletableFuture<Long>> areaGapComputations = resultsEntry.getRight().getValue().stream()
                                     .map(csr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
+                                        long startGapCalcTime = System.currentTimeMillis();
                                         MIPImage matchedImage = CachedMIPsUtils.loadMIP(csr.matchedMIP);
                                         MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(csr.matchedMIP, gradientsLocation));
                                         if (matchedImage != null && matchedGradientImage != null) {
@@ -807,8 +808,8 @@ public class Main {
                                             try {
                                                 return gradientGapCalculator.apply(matchedImage, matchedGradientImage);
                                             } finally {
-                                                LOG.debug("Finished calculating area gap for {} - {} with {}",
-                                                        resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage);
+                                                LOG.debug("Finished calculating area gap for {} - {} with {} in {}ms",
+                                                        resultsEntry.getRight().getKey(), matchedImage, matchedGradientImage, System.currentTimeMillis()-startGapCalcTime);
                                             }
                                         } else {
                                             // this branch is really inefficient but the hope is to not do it this way
