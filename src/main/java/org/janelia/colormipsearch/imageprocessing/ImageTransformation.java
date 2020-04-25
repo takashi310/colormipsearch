@@ -7,9 +7,6 @@ import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public abstract class ImageTransformation {
 
     public static ImageTransformation IDENTITY = ImageTransformation.identity();
@@ -157,7 +154,11 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation maxFilterOverFullRegion(double radius) {
+    public static ImageTransformation maxFilter(double radius) {
+        return ImageTransformation.maxFilterWithHistogram(radius);
+    }
+
+    private static ImageTransformation maxFilterOverFullRegion(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;
@@ -193,7 +194,7 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation maxFilterWithHistogram(double radius) {
+    private static ImageTransformation maxFilterWithHistogram(double radius) {
         int[] radii = makeLineRadii(radius);
         int kRadius = radii[radii.length - 1];
         int kHeight = (radii.length - 1) / 2;
@@ -219,14 +220,15 @@ public abstract class ImageTransformation {
             @Override
             int apply(LImage lImage, int x, int y) {
                 MaxFilterContext maxFilterContext;
-                if (lImage.imageProcessingContext.get(this) == null) {
+                String maxFilterContextEntry = "maxFilter-" + this.hashCode();
+                if (lImage.getProcessingContext(maxFilterContextEntry) == null) {
                     maxFilterContext = new MaxFilterContext(
                             lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram(),
                             new int[kHeight * lImage.width()]
                     );
-                    lImage.imageProcessingContext.set(this, maxFilterContext);
+                    lImage.setProcessingContext(maxFilterContextEntry, maxFilterContext);
                 } else {
-                    maxFilterContext = (MaxFilterContext) lImage.imageProcessingContext.get(this);
+                    maxFilterContext = (MaxFilterContext) lImage.getProcessingContext(maxFilterContextEntry);
                 }
                 int m = -1;
                 if (x == 0) {
@@ -381,11 +383,11 @@ public abstract class ImageTransformation {
             public int apply(LImage lImage, int x, int y) {
                 LImage updatedImage;
                 String updatedImageKey = "updatedBy" + currentTransformation.hashCode();
-                if (lImage.imageProcessingContext.get(updatedImageKey) == null) {
+                if (lImage.getProcessingContext(updatedImageKey) == null) {
                     updatedImage = lImage.mapi(currentTransformation);
-                    lImage.imageProcessingContext.set(updatedImageKey, updatedImage);
+                    lImage.setProcessingContext(updatedImageKey, updatedImage);
                 } else {
-                    updatedImage = (LImage) lImage.imageProcessingContext.get(updatedImageKey);
+                    updatedImage = (LImage) lImage.getProcessingContext(updatedImageKey);
                 }
                 return pixelTransformation.apply(updatedImage, x, y);
             }

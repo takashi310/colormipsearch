@@ -2,9 +2,6 @@ package org.janelia.colormipsearch.imageprocessing;
 
 import java.util.function.BiPredicate;
 
-import ij.plugin.filter.RankFilters;
-import ij.process.ImageProcessor;
-
 public class ImageProcessing {
 
     public static ImageProcessing create(ImageTransformation imageTransformation) {
@@ -46,7 +43,7 @@ public class ImageProcessing {
     }
 
     public ImageProcessing maxFilter(double radius) {
-        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilterWithHistogram(radius)));
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilter(radius)));
     }
 
     public ImageProcessing horizontalMirror() {
@@ -66,6 +63,6 @@ public class ImageProcessing {
     }
 
     public LImage applyTo(ImageArray image) {
-        return applyTo(LImage.create(image));
+        return applyTo(LImageUtils.create(image));
     }
 }

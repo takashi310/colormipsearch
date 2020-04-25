@@ -7,6 +7,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
+import org.janelia.colormipsearch.imageprocessing.LImageUtils;
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,8 +77,8 @@ class EM2LMAreaGapCalculator {
     private TriFunction<LImage, LImage, GradientAreaComputeContext, Long> createGapCalculator(int maskThreshold) {
         return (inputImage, inputGradientImage, gradientAreaComputeContext) -> {
             long startTime = System.currentTimeMillis();
-            LImage gaps = LImage.combine3(
-                    LImage.combine2(
+            LImage gaps = LImageUtils.combine3(
+                    LImageUtils.combine2(
                             gradientAreaComputeContext.patternRegions,
                             inputGradientImage,
                             (p1, p2) -> p1 * p2),
@@ -85,7 +86,7 @@ class EM2LMAreaGapCalculator {
                     negativeRadiusDilation.applyTo(inputImage),
                     GradientAreaGapUtils.PIXEL_GAP_OP
             );
-            LImage overExpressedRegions = LImage.combine2(
+            LImage overExpressedRegions = LImageUtils.combine2(
                     gradientAreaComputeContext.overExpressedRegions,
                     labelsClearing.applyTo(inputImage),
                     (p1, p2) -> {
@@ -126,8 +127,8 @@ class EM2LMAreaGapCalculator {
             GradientAreaComputeContext gradientAreaComputeContext = prepareContextForCalculatingGradientAreaGap(maskMIP.imageArray);
             LOG.debug("Prepare gradient area gap context for {} in {}ms", maskMIP, System.currentTimeMillis() - startTime);
             return (MIPImage inputMIP, MIPImage inputGradientMIP) -> {
-                LImage inputImage = LImage.create(inputMIP.imageArray);
-                LImage inputGradientImage = LImage.create(inputGradientMIP.imageArray);
+                LImage inputImage = LImageUtils.create(inputMIP.imageArray);
+                LImage inputGradientImage = LImageUtils.create(inputGradientMIP.imageArray);
 
                 long areaGap = gapCalculator.apply(inputImage, inputGradientImage, gradientAreaComputeContext);
                 if (mirrorMask) {
@@ -142,16 +143,16 @@ class EM2LMAreaGapCalculator {
     }
 
     private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
-        LImage patternImage = LImage.create(patternImageArray);
-        LImage overExpressedRegionsInPatternImage = LImage.combine2(
-                LImage.create(patternImageArray).mapi(ImageTransformation.maxFilterWithHistogram(60)),
-                LImage.create(patternImageArray).mapi(ImageTransformation.maxFilterWithHistogram(20)),
+        LImage patternImage = LImageUtils.create(patternImageArray);
+        LImage overExpressedRegionsInPatternImage = LImageUtils.combine2(
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)),
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)),
                 (p1, p2) -> p2 != -16777216 ? -16777216 : p1
-        ).reduce();
+        );
         return new GradientAreaComputeContext(
                 patternImage,
                 toSignalTransformation.applyTo(patternImage),
-                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage)
+                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage).reduce()
         );
     }
 
