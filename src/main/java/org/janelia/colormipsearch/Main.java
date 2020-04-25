@@ -671,13 +671,17 @@ public class Main {
                     filesToProcess = resultFileNames;
                 }
                 Utils.partitionList(filesToProcess, args.libraryPartitionSize).stream().parallel()
-                        .forEach(fileList -> fileList.forEach(fn -> {
-                            File f = new File(fn);
-                            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                                    gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor
-                            );
-                            writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper);
-                        }));
+                        .forEach(fileList -> {
+                            long startTime = System.currentTimeMillis();
+                            fileList.forEach(fn -> {
+                                File f = new File(fn);
+                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                                        gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor
+                                );
+                                writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper);
+                            });
+                            LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis()-startTime)/1000.);
+                        });
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
