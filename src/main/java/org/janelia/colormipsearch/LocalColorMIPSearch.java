@@ -86,7 +86,7 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                         MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(maskMIP, gradientMasksPath));
                                         applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
                                     } else if (sr.isError()) {
-                                        LOG.warn("Errors encountered comparing {} with {}", libraryImage, maskImage);
+                                        LOG.warn("Errors encountered comparing {} with {}", libraryMIP, maskMIP);
                                     }
                                     return sr;
                                 })

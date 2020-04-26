@@ -84,10 +84,16 @@ abstract class ColorMIPSearch implements Serializable {
             double pixThresdub = pctPositivePixels / 100;
             boolean isMatch = output.matchingPct > pixThresdub;
 
-            return new ColorMIPSearchResult(maskMIPImage.mipInfo, libraryMIPImage.mipInfo, output.matchingPixNum, output.matchingPct, isMatch, false);
+            return new ColorMIPSearchResult(
+                    maskMIPImage.mipInfo,
+                    libraryMIPImage.mipInfo,
+                    output.matchingPixNum, output.matchingPct, isMatch, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", libraryMIPImage,  maskMIPImage, e);
-            return new ColorMIPSearchResult(maskMIPImage.mipInfo, libraryMIPImage.mipInfo, 0, 0, false, true);
+            return new ColorMIPSearchResult(
+                    maskMIPImage != null ? maskMIPImage.mipInfo : null,
+                    libraryMIPImage != null ? libraryMIPImage.mipInfo : null,
+                    0, 0, false, true);
         } finally {
             LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);
         }

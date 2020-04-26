@@ -36,8 +36,6 @@ class ColorMIPSearchResult implements Serializable {
     private long gradientAreaGap;
 
     ColorMIPSearchResult(MIPInfo maskMIP, MIPInfo libraryMIP, int matchingPixels, double matchingPixelsPct, boolean isMatch, boolean isError) {
-        Preconditions.checkArgument(maskMIP != null);
-        Preconditions.checkArgument(libraryMIP != null);
         this.maskMIP = maskMIP;
         this.libraryMIP = libraryMIP;
         this.matchingPixels = matchingPixels;
