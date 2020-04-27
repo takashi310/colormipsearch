@@ -709,7 +709,7 @@ public class Main {
                         IntStream.range(0, Integer.MAX_VALUE).boxed(),
                         resultsGroupedById.entrySet().stream(),
                         (i, resultsEntry) -> calculateGradientAreaScoreForCDSResults(
-                                i+1,
+                                inputResultsFile.getAbsolutePath() + "#" + String.valueOf(i+1),
                                 resultsEntry.getKey(),
                                 resultsEntry.getValue(),
                                 gradientsLocation,
@@ -769,7 +769,7 @@ public class Main {
         return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
 
-    private static CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(int resultIDIndex,
+    private static CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,
                                                                                                                  MIPInfo inputMIP,
                                                                                                                  List<ColorMIPSearchResultMetadata> selectedCDSResultsForInputMIP,
                                                                                                                  String gradientsLocation,
