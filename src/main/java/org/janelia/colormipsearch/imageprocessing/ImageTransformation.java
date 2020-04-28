@@ -123,7 +123,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    private static ImageTransformation identity() {
+    public static ImageTransformation identity() {
         return new ImageTransformation() {
             @Override
             public int apply(LImage lImage, int x, int y) {

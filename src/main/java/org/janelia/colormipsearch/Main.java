@@ -1,13 +1,11 @@
 package org.janelia.colormipsearch;
 
-import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,8 +15,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
@@ -32,14 +28,13 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +87,12 @@ public class Main {
 
         @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location")
         String gradientPath;
+
+        @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location")
+        String zgapPath;
+
+        @Parameter(names = {"--zgapSuffix"}, description = "ZGap suffix")
+        String zgapSuffix;
 
         @Parameter(names = {"--libraryPartitionSize", "-lps"}, description = "Library partition size")
         int libraryPartitionSize = 100;
@@ -653,7 +654,14 @@ public class Main {
         if (args.resultsFile != null) {
             File cdsResultsFile = new File(args.resultsFile.input);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                    gradientBasedScoreAdjuster, cdsResultsFile, args.gradientPath, args.processTopResults, mapper, executor
+                    gradientBasedScoreAdjuster,
+                    cdsResultsFile,
+                    args.gradientPath,
+                    args.zgapPath,
+                    StringUtils.defaultString(args.zgapSuffix, ""),
+                    args.processTopResults,
+                    mapper,
+                    executor
             );
             writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, cdsResultsFile), mapper);
         } else if (args.resultsDir != null) {
@@ -676,7 +684,14 @@ public class Main {
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
                                 Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                                        gradientBasedScoreAdjuster, f, args.gradientPath, args.processTopResults, mapper, executor
+                                        gradientBasedScoreAdjuster,
+                                        f,
+                                        args.gradientPath,
+                                        args.zgapPath,
+                                        StringUtils.defaultString(args.zgapSuffix, ""),
+                                        args.processTopResults,
+                                        mapper,
+                                        executor
                                 );
                                 writeCDSResultsToJSONFile(cdsResults, getOutputFile(outputDir, f), mapper);
                             });
@@ -692,6 +707,8 @@ public class Main {
             EM2LMAreaGapCalculator emlmAreaGapCalculator,
             File inputResultsFile,
             String gradientsLocation,
+            String zgapsLocation,
+            String zgapsSuffix,
             int topResultsToProcess,
             ObjectMapper mapper,
             Executor executor) {
@@ -713,6 +730,8 @@ public class Main {
                                 resultsEntry.getKey(),
                                 resultsEntry.getValue(),
                                 gradientsLocation,
+                                zgapsLocation,
+                                zgapsSuffix,
                                 emlmAreaGapCalculator,
                                 executor))
                         .collect(Collectors.toList());
@@ -773,11 +792,13 @@ public class Main {
                                                                                                                  MIPInfo inputMIP,
                                                                                                                  List<ColorMIPSearchResultMetadata> selectedCDSResultsForInputMIP,
                                                                                                                  String gradientsLocation,
+                                                                                                                 String zgapsLocation,
+                                                                                                                 String zgapsSuffix,
                                                                                                                  EM2LMAreaGapCalculator emlmAreaGapCalculator,
                                                                                                                  Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP);
         long startTimeForCurrentEntry = System.currentTimeMillis();
-        CompletableFuture<BiFunction<MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<TriFunction<MIPImage, MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load image {}", inputMIP);
             MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
             return emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
@@ -793,25 +814,22 @@ public class Main {
                     matchedMIP.imagePath = indexedCsr.getRight().matchedImageName;
                     matchedMIP.type = indexedCsr.getRight().matchedImageType;
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getGradientMIPInfo(matchedMIP, gradientsLocation));
+                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, gradientsLocation, GradientAreaGapUtils.GRADIENT_LOCATION_SUFFIX));
+                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
                     LOG.debug("Loaded images for calculating area gap for {}:{} ({}:{}) in {}ms",
                             resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis()-startGapCalcTime);
                     long areaGap;
                     if (matchedImage != null && matchedGradientImage != null) {
+                        // only calculate the area gap if the gradient exist
                         LOG.debug("Calculate area gap for {}:{} ({}:{})",
                                 resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP);
-                        areaGap = gradientGapCalculator.apply(matchedImage, matchedGradientImage);
+                        areaGap = gradientGapCalculator.apply(matchedImage, matchedGradientImage, matchedZGapImage);
                         LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",
                                 resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     } else {
-                        // this branch is really inefficient and it would be the equivalent of using
-                        // a LM results file in which all results are grouped by LM line and we do not have the gradients for the EM
-                        // only for LM
-                        MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
-                        MIPImage inputGradientImage = CachedMIPsUtils.loadMIP(
-                                MIPsUtils.getGradientMIPInfo(inputMIP, gradientsLocation)
-                        );
-                        areaGap = emlmAreaGapCalculator.calculateGradientAreaAdjustment(inputImage, inputGradientImage, matchedImage, matchedGradientImage);
+                        // in this case we could assume the grdients are available for the input and
+                        // we could group the results by matched ID but for now we simply do not do it because it's too inefficient.
+                        areaGap = -1;
                     }
                     indexedCsr.getRight().setGradientAreaGap(areaGap);
                     return areaGap;

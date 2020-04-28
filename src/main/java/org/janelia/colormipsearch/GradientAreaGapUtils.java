@@ -4,6 +4,7 @@ import org.janelia.colormipsearch.imageprocessing.TriFunction;
 
 public class GradientAreaGapUtils {
 
+    static final String GRADIENT_LOCATION_SUFFIX = "_gradient";
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private enum Color {
         BLACK,

@@ -62,16 +62,25 @@ class MIPsUtils {
         }
     }
 
+    /**
+     * TransformedMIP can be the corresponding gradient image or a ZGap image that has applied the dilation already.
+     * The typical pattern is that the image file name is the same but the path to it has a certain suffix
+     * such as '_gradient' or '_20pxRGBMAX'
+     * @param mipInfo
+     * @param transformedMIPLocation
+     * @param transformationLookupSuffix
+     * @return
+     */
     @Nullable
-    static MIPInfo getGradientMIPInfo(MIPInfo mipInfo, String gradientsLocation) {
-        if (StringUtils.isBlank(gradientsLocation)) {
+    static MIPInfo getTransformedMIPInfo(MIPInfo mipInfo, String transformedMIPLocation, String transformationLookupSuffix) {
+        if (StringUtils.isBlank(transformedMIPLocation)) {
             return null;
         } else {
-            Path gradientBasePath = Paths.get(gradientsLocation);
-            if (Files.isDirectory(gradientBasePath)) {
-                return getGradientMIPInfoFromFilePath(gradientBasePath, Paths.get(mipInfo.imagePath));
-            } else if (Files.isRegularFile(gradientBasePath) && StringUtils.endsWithIgnoreCase(gradientsLocation, ".zip")) {
-                return getGradientMIPInfoFromZipEntry(gradientsLocation, mipInfo.imagePath);
+            Path transformedMIPPath = Paths.get(transformedMIPLocation);
+            if (Files.isDirectory(transformedMIPPath)) {
+                return getTransformedMIPInfoFromFilePath(transformedMIPPath, Paths.get(mipInfo.imagePath), transformationLookupSuffix);
+            } else if (Files.isRegularFile(transformedMIPPath) && StringUtils.endsWithIgnoreCase(transformedMIPLocation, ".zip")) {
+                return getTransformedMIPInfoFromZipEntry(transformedMIPLocation, mipInfo.imagePath, transformationLookupSuffix);
             } else {
                 return null;
             }
@@ -79,44 +88,44 @@ class MIPsUtils {
     }
 
     @Nullable
-    private static MIPInfo getGradientMIPInfoFromFilePath(Path gradientBasePath, Path mipPath) {
-        Path parentGradientBasePath = gradientBasePath.getParent();
-        if (parentGradientBasePath == null || !mipPath.startsWith(parentGradientBasePath)) {
-            // don't know where to look for the gradient - I could try searching all subdirectories but is too expensive
+    private static MIPInfo getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
+        Path parentTransformedMIPBasePath = transformedMIPPath.getParent();
+        if (parentTransformedMIPBasePath == null || !mipPath.startsWith(parentTransformedMIPBasePath)) {
+            // don't know where to look for the transformed MIP  - I could try searching all subdirectories but is too expensive
             return null;
         }
-        Path mipBasePath = parentGradientBasePath.relativize(mipPath);
-        String gradientFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+        Path mipBasePath = parentTransformedMIPBasePath.relativize(mipPath);
+        String transformedMIPFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
         int nComponents = mipBasePath.getNameCount();
-        Path gradientImagePath = IntStream.range(1, nComponents - 1)
+        Path transformedMIPImagePath = IntStream.range(1, nComponents - 1)
                 .mapToObj(i -> mipBasePath.getName(i).toString())
-                .map(pc -> pc + "_gradient")
-                .reduce(gradientBasePath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
-                .resolve(gradientFilename)
+                .map(pc -> pc + transformationLookupSuffix)
+                .reduce(transformedMIPPath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
+                .resolve(transformedMIPFilename)
                 ;
-        if (Files.notExists(gradientImagePath)) {
+        if (Files.notExists(transformedMIPImagePath)) {
             return null;
         } else {
-            MIPInfo gradientMIP = new MIPInfo();
-            gradientMIP.cdmPath = gradientMIP.imagePath = gradientImagePath.toString();
-            return gradientMIP;
+            MIPInfo transformedMIP = new MIPInfo();
+            transformedMIP.cdmPath = transformedMIP.imagePath = transformedMIPImagePath.toString();
+            return transformedMIP;
         }
     }
 
     @Nullable
-    private static MIPInfo getGradientMIPInfoFromZipEntry(String gradientsLocation, String mipEntryName) {
-        String gradientFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
-        Path gradientEntryPath = Paths.get(gradientFilename);
-        int nComponents = gradientEntryPath.getNameCount();
-        String gradientEntryName = IntStream.range(0, nComponents)
-                .mapToObj(i -> i < nComponents-1 ? gradientEntryPath.getName(i).toString() + "_gradient" : gradientEntryPath.getName(i).toString())
+    private static MIPInfo getTransformedMIPInfoFromZipEntry(String transformedMIPLocation, String mipEntryName, String transformationLookupSuffix) {
+        String transformedMIPFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
+        Path transformedMIPEntryPath = Paths.get(transformedMIPFilename);
+        int nComponents = transformedMIPEntryPath.getNameCount();
+        String transformedMIPEntryName = IntStream.range(0, nComponents)
+                .mapToObj(i -> i < nComponents-1 ? transformedMIPEntryPath.getName(i).toString() + transformationLookupSuffix : transformedMIPEntryPath.getName(i).toString())
                 .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
-        MIPInfo gradientMIP = new MIPInfo();
-        gradientMIP.type = "zipEntry";
-        gradientMIP.archivePath = gradientsLocation;
-        gradientMIP.cdmPath = gradientEntryName;
-        gradientMIP.imagePath = gradientEntryName;
-        return gradientMIP;
+        MIPInfo transformedMIP = new MIPInfo();
+        transformedMIP.type = "zipEntry";
+        transformedMIP.archivePath = transformedMIPLocation;
+        transformedMIP.cdmPath = transformedMIPEntryName;
+        transformedMIP.imagePath = transformedMIPEntryName;
+        return transformedMIP;
     }
 
     private static ImagePlus readImagePlus(String title, ImageFormat format, InputStream stream) throws Exception {
