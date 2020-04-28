@@ -79,43 +79,6 @@ class EM2LMAreaGapCalculator {
         }
     }
 
-//    private TriFunction<LImage, LImage, GradientAreaComputeContext, Long> createGapCalculator(int maskThreshold) {
-//        return (inputImage, inputGradientImage, gradientAreaComputeContext) -> {
-//            long startTime = System.currentTimeMillis();
-//            LImage gaps = LImageUtils.combine3(
-//                    LImageUtils.combine2(
-//                            gradientAreaComputeContext.patternRegions,
-//                            inputGradientImage,
-//                            (p1, p2) -> p1 * p2),
-//                    gradientAreaComputeContext.pattern,
-//                    negativeRadiusDilation.thenExtend(gradientAreaComputeContext.negativeRadiusImageTransformation).applyTo(inputImage),
-//                    GradientAreaGapUtils.PIXEL_GAP_OP
-//            );
-//            LImage overExpressedRegions = LImageUtils.combine2(
-//                    gradientAreaComputeContext.overExpressedRegions,
-//                    labelsClearing.applyTo(inputImage),
-//                    (p1, p2) -> {
-//                        if (p1 == 0) {
-//                            return 0;
-//                        } else {
-//                            int r2 = (p2 >>> 16) & 0xff;
-//                            int g2 = (p2 >>> 8) & 0xff;
-//                            int b2 = p2 & 0xff;
-//                            if (r2 > maskThreshold || g2 > maskThreshold || b2 > maskThreshold) {
-//                                return 1;
-//                            } else {
-//                                return 0;
-//                            }
-//                        }
-//                    });
-//            long gradientArea = gaps.fold(0L, (p, s) -> s + p);
-//            long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> s + p);
-//            long areaGapScore = gradientArea + tooMuchExpression / 2;
-//            LOG.trace("Area gap score {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
-//            return areaGapScore;
-//        };
-//    }
-
     private QuadFunction<LImage, LImage, LImage, GradientAreaComputeContext, Long> createGapCalculator(int maskThreshold) {
         return (inputImage, inputGradientImage, inputZGapImage, gradientAreaComputeContext) -> {
             long startTime = System.currentTimeMillis();
