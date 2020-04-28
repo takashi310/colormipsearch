@@ -816,7 +816,7 @@ public class Main {
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
                     MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, gradientsLocation, GradientAreaGapUtils.GRADIENT_LOCATION_SUFFIX));
                     MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
-                    LOG.debug("Loaded images for calculating area gap for {}:{} ({}:{}) in {}ms",
+                    LOG.debug("Loaded images for calculating area gap for {}:{} ({} vs {}) in {}ms",
                             resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis()-startGapCalcTime);
                     long areaGap;
                     if (matchedImage != null && matchedGradientImage != null) {
