@@ -5,6 +5,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
@@ -13,6 +17,7 @@ import javax.imageio.ImageIO;
 import ij.ImagePlus;
 import ij.io.Opener;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,15 +96,34 @@ class MIPsUtils {
     private static MIPInfo getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
         Path mipParentPath = mipPath.getParent();
         String transformedMIPFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
-        int nComponents = mipPath.getNameCount();
-        Path transformedMIPImagePath = IntStream.range(1, nComponents)
-                .map(i -> nComponents - 1)
-                .mapToObj(i -> mipParentPath.getName(i).toString())
-                .map(pc -> pc + transformationLookupSuffix)
-                .reduce(transformedMIPPath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
-                .resolve(transformedMIPFilename)
-                ;
-        if (Files.notExists(transformedMIPImagePath)) {
+        List<Path> transformedMIPPaths;
+        if (mipParentPath == null) {
+            transformedMIPPaths = Collections.singletonList(transformedMIPPath.resolve(transformedMIPFilename));
+        } else {
+            int nComponents = mipParentPath.getNameCount();
+            transformedMIPPaths = IntStream.range(1, nComponents)
+                    .map(i -> nComponents - 1)
+                    .mapToObj(i -> mipParentPath.getName(i).toString() + transformationLookupSuffix)
+                    .reduce(new ArrayList<String>(),
+                            (a, e) -> {
+                                if (a.isEmpty()) {
+                                    a.add(e);
+                                } else {
+                                    String lastElement = a.get(a.size() - 1);
+                                    a.add(lastElement + "/" + e);
+                                }
+                                return a;
+                            },
+                            (a1, a2) -> {
+                                a1.addAll(a2);
+                                return a1;
+                            })
+                    .stream()
+                    .map(p -> transformedMIPPath.resolve(p).resolve(transformedMIPFilename))
+                    .collect(Collectors.toList());
+        }
+        Path transformedMIPImagePath = transformedMIPPaths.stream().filter(p -> Files.exists(p)).filter(p -> Files.isRegularFile(p)).findFirst().orElse(null);
+        if (transformedMIPImagePath == null) {
             return null;
         } else {
             MIPInfo transformedMIP = new MIPInfo();
