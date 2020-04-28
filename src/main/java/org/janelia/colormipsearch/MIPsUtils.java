@@ -89,16 +89,12 @@ class MIPsUtils {
 
     @Nullable
     private static MIPInfo getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
-        Path parentTransformedMIPBasePath = transformedMIPPath.getParent();
-        if (parentTransformedMIPBasePath == null || !mipPath.startsWith(parentTransformedMIPBasePath)) {
-            // don't know where to look for the transformed MIP  - I could try searching all subdirectories but is too expensive
-            return null;
-        }
-        Path mipBasePath = parentTransformedMIPBasePath.relativize(mipPath);
+        Path mipParentPath = mipPath.getParent();
         String transformedMIPFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
-        int nComponents = mipBasePath.getNameCount();
-        Path transformedMIPImagePath = IntStream.range(1, nComponents - 1)
-                .mapToObj(i -> mipBasePath.getName(i).toString())
+        int nComponents = mipPath.getNameCount();
+        Path transformedMIPImagePath = IntStream.range(1, nComponents)
+                .map(i -> nComponents - 1)
+                .mapToObj(i -> mipParentPath.getName(i).toString())
                 .map(pc -> pc + transformationLookupSuffix)
                 .reduce(transformedMIPPath, (p, pc) -> p.resolve(pc), (p1, p2) -> p1.resolve(p2))
                 .resolve(transformedMIPFilename)
