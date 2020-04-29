@@ -14,12 +14,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     String imageName;
     @JsonProperty
     String imageType;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Integer imageVolumeSize;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Double imageShapeScore;
     @JsonProperty
     String matchedId;
     @JsonProperty
@@ -31,12 +25,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     String matchedImageName;
     @JsonProperty
     String matchedImageType;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Integer matchedImageVolumeSize;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
-    Double matchedImageShapeScore;
 
     @JsonIgnore
     public int getMatchingPixels() {
@@ -81,16 +69,25 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     }
 
     @JsonIgnore
-    public Double getNormalizedGapScore() {
+    public Double getNormalizedGradientAreaGapScore() {
         String normalizedGapScore = getAttr("NormalizedGapScore");
         return StringUtils.isBlank(normalizedGapScore) ? null : Double.parseDouble(normalizedGapScore);
     }
 
-    public void setNormalizedGapScore(Double normalizedGapScore) {
-        if (normalizedGapScore != null) {
+    public void setNormalizedGradientAreaGapScore(Double normalizedGapScore) {
+        if (normalizedGapScore != null && normalizedGapScore > 0) {
             addAttr("NormalizedGapScore", normalizedGapScore.toString());
         } else {
             removeAttr("NormalizedGapScore");
+        }
+    }
+
+    public Double getNormalizedScore() {
+        Double normalizedGapScore = getNormalizedGradientAreaGapScore();
+        if (normalizedGapScore == null) {
+            return normalizedGapScore;
+        } else {
+            return getMatchingPixelsPct() * 100;
         }
     }
 }

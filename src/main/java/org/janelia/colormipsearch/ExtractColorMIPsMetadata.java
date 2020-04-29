@@ -463,8 +463,6 @@ public class ExtractColorMIPsMetadata {
                                 gen.writeStringField("cdmPath", cdmip.filepath);
                                 gen.writeStringField("imageURL", cdmip.imageUrl);
                                 gen.writeStringField("thumbnailURL", cdmip.thumbnailUrl);
-                                gen.writeNumberField("volumeSize", cdmip.volumeSize);
-                                gen.writeNumberField("shapeScore", cdmip.shapeScore);
                                 gen.writeObjectField("attrs", cdmip.attrs);
                                 gen.writeEndObject();
                             } catch (IOException e) {
@@ -521,17 +519,6 @@ public class ExtractColorMIPsMetadata {
                         ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                         cdmipMetadata.copyTo(segmentMIPMetadata);
                         String fn = StringUtils.replacePattern(sifn.substring(scIndex + slideCode.length()), "\\.\\D*$", "");
-                        // find the 3D volume size
-                        int segmentedImageFeaturesSeparator = fn.indexOf("__");
-                        if (segmentedImageFeaturesSeparator != -1) {
-                            // extract volume size and shape score from the file name - OL0045B_20140116_19_D6_f_c2__002_062022_0.03502.tif
-                            String toMatch = fn.substring(segmentedImageFeaturesSeparator + 2);
-                            Matcher m = segmentedImageFeaturesPattern.matcher(toMatch);
-                            if (m.find()) {
-                                segmentMIPMetadata.volumeSize = Integer.parseInt(m.group(2));
-                                segmentMIPMetadata.shapeScore = Double.parseDouble(m.group(3));
-                            }
-                        }
                         segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
                         segmentMIPMetadata.type = type;
                         segmentMIPMetadata.segmentFilepath = p;

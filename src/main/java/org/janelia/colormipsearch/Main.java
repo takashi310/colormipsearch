@@ -191,36 +191,26 @@ public class Main {
         }
     }
 
-    enum SortingType {
-        USE_MATCHING_SLICES_ONLY,
-        WITH_GRADIENT_AREA_GAP
-    }
+    @Parameters(commandDescription = "Combine color depth search results")
+    private static class CombineResultsArgs {
+        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be sorted")
+        private List<String> resultsDirs;
 
-    @Parameters(commandDescription = "Sort color depth search results")
-    private static class SortResultsArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be sorted")
-        private String resultsDir;
-
-        @Parameter(names = {"--resultsFile", "-rf"}, description = "File containing results to be sorted")
-        private String resultsFile;
-
-        @Parameter(names = {"--sortingType", "-st"}, description = "Sorting type")
-        private SortingType sortingType = SortingType.WITH_GRADIENT_AREA_GAP;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
+        private List<String> resultsFiles;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        SortResultsArgs(CommonArgs commonArgs) {
+        CombineResultsArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
         Path getOutputDir() {
-            if (StringUtils.isBlank(resultsDir) && StringUtils.isBlank(commonArgs.outputDir)) {
-                return null;
-            } else if (StringUtils.isBlank(resultsDir)) {
+            if (StringUtils.isNotBlank(commonArgs.outputDir)) {
                 return Paths.get(commonArgs.outputDir);
             } else {
-                return Paths.get(resultsDir);
+                return null;
             }
         }
     }
@@ -256,15 +246,16 @@ public class Main {
         CommonArgs commonArgs = new CommonArgs();
         JsonMIPsSearchArgs jsonMIPsSearchArgs = new JsonMIPsSearchArgs(commonArgs);
         LocalMIPFilesSearchArgs localMIPFilesSearchArgs = new LocalMIPFilesSearchArgs(commonArgs);
-        SortResultsArgs sortResultsArgs = new SortResultsArgs(commonArgs);
+        CombineResultsArgs combineResultsArgs = new CombineResultsArgs(commonArgs);
         GradientScoreResultsArgs gradientScoreResultsArgs = new GradientScoreResultsArgs(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
                 .addCommand("searchFromJSON", jsonMIPsSearchArgs)
                 .addCommand("searchLocalFiles", localMIPFilesSearchArgs)
-                .addCommand("sortResults", sortResultsArgs)
+                .addCommand("combineResults", combineResultsArgs)
                 .addCommand("gradientScore", gradientScoreResultsArgs)
+                .addCommand("initGradientScores", combineResultsArgs)
                 .build();
 
         try {
@@ -305,20 +296,29 @@ public class Main {
             case "gradientScore":
                 if (gradientScoreResultsArgs.resultsDir == null && gradientScoreResultsArgs.resultsFile == null) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(sb);
+                    cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);
                 }
                 createOutputDirs(gradientScoreResultsArgs.getOutputDir());
                 calculateGradientAreaScore(gradientScoreResultsArgs);
                 break;
-            case "sortResults":
-                if (StringUtils.isBlank(sortResultsArgs.resultsDir) && StringUtils.isBlank(sortResultsArgs.resultsFile)) {
+            case "combineResults":
+                if (CollectionUtils.isEmpty(combineResultsArgs.resultsDirs) && CollectionUtils.isEmpty(combineResultsArgs.resultsFiles)) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(sb);
+                    cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);
                 }
-                createOutputDirs(sortResultsArgs.getOutputDir());
-                sortResults(sortResultsArgs);
+                createOutputDirs(combineResultsArgs.getOutputDir());
+                combineResults(combineResultsArgs);
+                break;
+            case "initGradientScores":
+                if (CollectionUtils.isEmpty(combineResultsArgs.resultsDirs) && CollectionUtils.isEmpty(combineResultsArgs.resultsFiles)) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    System.exit(1);
+                }
+                createOutputDirs(combineResultsArgs.getOutputDir());
+                setGradientScores(combineResultsArgs);
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");
@@ -611,42 +611,94 @@ public class Main {
         }
     }
 
-    private static void sortResults(SortResultsArgs args) {
-        if (StringUtils.isNotBlank(args.resultsFile)) {
-            sortResultsFile(args.resultsFile, args.sortingType, args.getOutputDir());
-        } else if (StringUtils.isNotBlank(args.resultsDir)) {
-            try {
-                Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
-                        .forEach(p -> sortResultsFile(p.toString(), args.sortingType, args.getOutputDir()));
-            } catch (IOException e) {
-                LOG.error("Error listing {}", args.resultsDir, e);
-            }
+    private static void combineResults(CombineResultsArgs args) {
+        List<String> resultFileNames;
+        if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
+            resultFileNames = args.resultsFiles;
+        } else if (CollectionUtils.isNotEmpty(args.resultsDirs)) {
+            resultFileNames = args.resultsDirs.stream()
+                    .flatMap(rd -> {
+                        try {
+                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile());
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .map(p -> p.toString())
+                    .collect(Collectors.toList());
+        } else {
+            resultFileNames = Collections.emptyList();
         }
+        combineResultFiles(resultFileNames, args.getOutputDir());
     }
 
-    private static void sortResultsFile(String inputResultsFilename, SortingType sortingType, Path outputDir) {
+    private static void combineResultFiles(List<String> inputResultsFilenames, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            LOG.info("Reading {}", inputResultsFilename);
-            File inputResultsFile = new File(inputResultsFilename);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = mapper.readValue(inputResultsFile, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
-            });
-            if (CollectionUtils.isEmpty(resultsFileContent.results)) {
-                LOG.error("No color depth search results found in {}", inputResultsFile);
-                return;
-            }
-            LOG.info("Read {} entries from {}", resultsFileContent.results.size(), inputResultsFilename);
-            sortCDSResults(resultsFileContent);
-            writeCDSResultsToJSONFile(resultsFileContent, getOutputFile(outputDir, inputResultsFile), mapper);
-        } catch (IOException e) {
-            LOG.error("Error reading {}", inputResultsFilename, e);
-            throw new UncheckedIOException(e);
+        // files that have the same file name (but coming from different directories)
+        // will be combined in a single result file.
+        Map<String, List<String>> resultFilesToCombinedTogether = inputResultsFilenames.stream()
+                .collect(Collectors.groupingBy(fn -> Paths.get(fn).getFileName().toString(), Collectors.toList()));
+
+        resultFilesToCombinedTogether.forEach((fn, resultList) -> {
+            LOG.info("Combine results for {}", fn);
+            List<ColorMIPSearchResultMetadata> combinedResults = resultList.stream()
+                    .map(cdsFn -> new File(cdsFn))
+                    .map(cdsFile -> {
+                        LOG.info("Reading {} -> {}", fn, cdsFile);
+                        return readCDSResultsFromJSONFile(cdsFile , mapper);
+                    })
+                    .flatMap(cdsResults -> cdsResults.results.stream())
+                    .collect(Collectors.toList());
+            sortCDSResults(combinedResults);
+            writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
+        });
+    }
+
+    private static void setGradientScores(CombineResultsArgs args) {
+        List<String> resultFileNames;
+        if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
+            resultFileNames = args.resultsFiles;
+        } else if (CollectionUtils.isNotEmpty(args.resultsDirs)) {
+            resultFileNames = args.resultsDirs.stream()
+                    .flatMap(rd -> {
+                        try {
+                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile());
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .map(p -> p.toString())
+                    .collect(Collectors.toList());
+        } else {
+            resultFileNames = Collections.emptyList();
         }
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        EM2LMAreaGapCalculator emlmAreaGapCalculator = new EM2LMAreaGapCalculator(0, 0, false);
+
+        resultFileNames.stream().parallel().forEach((fn) -> {
+            LOG.info("Set gradient score results for {}", fn);
+            File cdsFile = new File(fn);
+            Results<List<ColorMIPSearchResultMetadata>> cdsResults = readCDSResultsFromJSONFile(cdsFile , mapper);
+            Double maxPctPixelScore = cdsResults.results.stream()
+                    .map(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
+                    .max(Double::compare)
+                    .orElse(0.);
+            LOG.info("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
+            cdsResults.results
+                    .forEach(csr -> {
+                        csr.setNormalizedGradientAreaGapScore(emlmAreaGapCalculator.calculateAreaGapScore(
+                                0, 0, csr.getMatchingPixelsPct(), maxPctPixelScore)
+                        );
+                    });
+            sortCDSResults(cdsResults.results);
+            writeCDSResultsToJSONFile(cdsResults, getOutputFile(args.getOutputDir(), new File(fn)), mapper);
+        });
     }
 
     private static void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        EM2LMAreaGapCalculator gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
+        EM2LMAreaGapCalculator emlmAreaGapCalculator = new EM2LMAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
         Executor executor = createCDSExecutor(args);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -654,7 +706,7 @@ public class Main {
         if (args.resultsFile != null) {
             File cdsResultsFile = new File(args.resultsFile.input);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                    gradientBasedScoreAdjuster,
+                    emlmAreaGapCalculator,
                     cdsResultsFile,
                     args.gradientPath,
                     args.zgapPath,
@@ -670,7 +722,7 @@ public class Main {
                 int length = args.resultsDir.length;
                 List<String> resultFileNames = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
                         .skip(from)
-                        .map(p -> p.toString())
+                        .map(Path::toString)
                         .collect(Collectors.toList());
                 List<String> filesToProcess;
                 if (length > 0 && length < resultFileNames.size()) {
@@ -684,7 +736,7 @@ public class Main {
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
                                 Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                                        gradientBasedScoreAdjuster,
+                                        emlmAreaGapCalculator,
                                         f,
                                         args.gradientPath,
                                         args.zgapPath,
@@ -738,7 +790,7 @@ public class Main {
         // wait for all results to complete
         CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
         LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-        sortCDSResults(resultsFileContent);
+        sortCDSResults(resultsFileContent.results);
         LOG.info("Finished sorting by gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
         return resultsFileContent;
     }
@@ -839,7 +891,7 @@ public class Main {
                 .thenApply(vr -> {
                     LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMIP);
                     Double maxPctPixelScore = selectedCDSResultsForInputMIP.stream()
-                            .map(csr -> csr.getMatchingPixelsPct())
+                            .map(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
                             .max(Double::compare)
                             .orElse(null);
                     LOG.info("Max pixel percentage score for the {} selected matches of entry# {} ({}) -> {}",
@@ -853,43 +905,38 @@ public class Main {
                     LOG.info("Max area gap for the {} selected matches of entry# {} ({}) -> {}",
                             selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxAreaGap);
                     // set the normalized area gap values
-                    if (maxAreaGap > 0) {
+                    if (maxAreaGap >= 0 && maxPctPixelScore != null) {
                         selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
                                 .forEach(csr -> {
-                                    double normAreaGapScore = ((double) csr.getGradientAreaGap() / maxAreaGap) * 2.5;
-                                    if (normAreaGapScore > 1) {
-                                        csr.setNormalizedGapScore(1.);
-                                    } else {
-                                        csr.setNormalizedGapScore(Math.max(normAreaGapScore, 0.002));
-                                    }
-                                    if (maxPctPixelScore != null) {
-                                        double normalizedGapScore = (csr.getMatchingPixelsPct() / maxPctPixelScore) / csr.getNormalizedGapScore() * 100.;
-                                        csr.setNormalizedGapScore(normalizedGapScore);
-                                    }
+                                    csr.setNormalizedGradientAreaGapScore(emlmAreaGapCalculator.calculateAreaGapScore(
+                                            csr.getGradientAreaGap(),
+                                            maxAreaGap,
+                                            csr.getMatchingPixelsPct(),
+                                            maxPctPixelScore));
                                 });
                     };
                     return selectedCDSResultsForInputMIP;
                 });
     }
 
-    private static void sortCDSResults(Results<List<ColorMIPSearchResultMetadata>> cdsResults) {
+    private static void sortCDSResults(List<ColorMIPSearchResultMetadata> cdsResults) {
         Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
-            if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
-                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGapScore)
+            if (csr1.getNormalizedGradientAreaGapScore() != null && csr2.getNormalizedGradientAreaGapScore() != null) {
+                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGradientAreaGapScore)
                         .compare(csr1, csr2)
                         ;
-            } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
+            } else if (csr1.getNormalizedGradientAreaGapScore() == null && csr2.getNormalizedGradientAreaGapScore() == null) {
                 return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
                         .compare(csr1, csr2)
                         ;
-            } else if (csr1.getNormalizedGapScore() == null) {
+            } else if (csr1.getNormalizedGradientAreaGapScore() == null) {
                 // null gap scores should be at the beginning
                 return -1;
             } else {
                 return 1;
             }
         };
-        cdsResults.results.sort(csrComp.reversed());
+        cdsResults.sort(csrComp.reversed());
     }
 
     private static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {

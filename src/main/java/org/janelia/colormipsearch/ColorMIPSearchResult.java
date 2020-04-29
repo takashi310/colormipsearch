@@ -17,16 +17,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 class ColorMIPSearchResult implements Serializable {
 
-    static class AreaGap {
-        final long value;
-        final boolean mirrorHasBetterMatch;
-
-        AreaGap(long value, boolean mirrorHasBetterMatch) {
-            this.value = value;
-            this.mirrorHasBetterMatch = mirrorHasBetterMatch;
-        }
-    }
-
     private final MIPInfo maskMIP;
     private final MIPInfo libraryMIP;
     private final int matchingPixels;
@@ -117,16 +107,12 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.imageArchivePath = libraryMIP.archivePath;
         srMetadata.imageType = libraryMIP.type;
         srMetadata.imageName = libraryMIP.imagePath;
-        srMetadata.imageVolumeSize = libraryMIP.volumeSize;
-        srMetadata.imageShapeScore = libraryMIP.shapeScore;
 
         srMetadata.matchedId = getMaskId();
         srMetadata.matchedPublishedName = maskMIP.publishedName;
         srMetadata.matchedImageArchivePath = maskMIP.archivePath;
         srMetadata.matchedImageName = maskMIP.imagePath;
         srMetadata.matchedImageType = maskMIP.type;
-        srMetadata.matchedImageVolumeSize  = maskMIP.volumeSize;
-        srMetadata.matchedImageShapeScore = maskMIP.shapeScore;
         srMetadata.attrs.putAll(maskMIP.attrs);
         srMetadata.addAttr("Library", maskMIP.libraryName);
         srMetadata.setMatchingPixels(matchingPixels);
@@ -145,16 +131,12 @@ class ColorMIPSearchResult implements Serializable {
         srMetadata.imageArchivePath = maskMIP.archivePath;
         srMetadata.imageName = maskMIP.imagePath;
         srMetadata.imageType = maskMIP.type;
-        srMetadata.imageVolumeSize  = maskMIP.volumeSize;
-        srMetadata.imageShapeScore = maskMIP.shapeScore;
 
         srMetadata.matchedId = getLibraryId();
         srMetadata.matchedPublishedName = libraryMIP.publishedName;
         srMetadata.matchedImageArchivePath = libraryMIP.archivePath;
         srMetadata.matchedImageName = libraryMIP.imagePath;
         srMetadata.matchedImageType = libraryMIP.type;
-        srMetadata.matchedImageVolumeSize  = libraryMIP.volumeSize;
-        srMetadata.matchedImageShapeScore = libraryMIP.shapeScore;
         srMetadata.attrs.putAll(libraryMIP.attrs);
         srMetadata.addAttr("Library", libraryMIP.libraryName);
         srMetadata.setMatchingPixels(matchingPixels);

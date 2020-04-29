@@ -68,6 +68,17 @@ class EM2LMAreaGapCalculator {
         return gradientAreaCalculatorForMask.apply(maskImage);
     }
 
+    double calculateAreaGapScore(double gradientAreaGap, double maxAreaGap, double pixelMatchScore, double maxPixelMatchScore) {
+        double areaGapScore;
+        if (gradientAreaGap == 0 || maxAreaGap == 0) {
+            areaGapScore = 0.;
+        } else {
+            areaGapScore = gradientAreaGap / maxAreaGap;
+        }
+        double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
+        return pixelMatchScore == 0 || maxPixelMatchScore == 0 ? 0 : pixelMatchScore / maxPixelMatchScore / normAreaGapScore * 100;
+    }
+
     long calculateGradientAreaAdjustment(MIPImage image1, MIPImage imageGradient1, MIPImage image2, MIPImage imageGradient2) {
         // in this case we always calculate the ZGap image
         if (imageGradient1 != null) {

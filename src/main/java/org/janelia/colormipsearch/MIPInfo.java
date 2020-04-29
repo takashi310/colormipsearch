@@ -39,10 +39,6 @@ class MIPInfo implements Serializable {
     String imageURL;
     @JsonProperty
     String thumbnailURL;
-    @JsonProperty
-    int volumeSize;
-    @JsonProperty
-    double shapeScore;
     @JsonProperty("attrs")
     Map<String, String> attrs = new LinkedHashMap<>();
 

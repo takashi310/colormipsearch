@@ -13,8 +13,6 @@ class ColorDepthMetadata extends MetadataAttrs {
     String type;
     String segmentedDataBasePath;
     String segmentFilepath;
-    int volumeSize;
-    double shapeScore;
 
     void copyTo(ColorDepthMetadata that) {
         super.copyTo(that);
