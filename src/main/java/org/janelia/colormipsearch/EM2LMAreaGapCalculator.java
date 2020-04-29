@@ -141,12 +141,12 @@ class EM2LMAreaGapCalculator {
                         : negativeRadiusDilation.applyTo(inputImage);
 
                 long areaGap = gapCalculator.apply(inputImage, inputGradientImage, inputZGapImage, gradientAreaComputeContext);
-                LOG.trace("Finished gradient area gap for {} with {}, {} in {}ms",
-                        inputMIP, inputGradientMIP, inputZGapMIP, System.currentTimeMillis()-gaStartTime);
+                LOG.trace("Finished gradient area gap for {} with {}, {} = {} in {}ms",
+                        inputMIP, inputGradientMIP, inputZGapMIP, areaGap, System.currentTimeMillis()-gaStartTime);
                 if (mirrorMask) {
                     long mirrorAreaGap = gapCalculator.apply(inputImage, inputGradientImage, inputZGapImage, gradientAreaComputeContext.horizontalMirror());
-                    LOG.trace("Finished mirrored gradient area gap for {} with {}, {} in {}ms",
-                            inputMIP, inputGradientMIP, inputZGapMIP, System.currentTimeMillis()-gaStartTime);
+                    LOG.trace("Finished mirrored gradient area gap for {} with {}, {} = {} in {}ms",
+                            inputMIP, inputGradientMIP, inputZGapMIP, mirrorAreaGap, System.currentTimeMillis()-gaStartTime);
                     if (mirrorAreaGap < areaGap) {
                         return mirrorAreaGap;
                     }
