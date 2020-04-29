@@ -88,7 +88,7 @@ class EM2LMAreaGapCalculator {
                             inputGradientImage,
                             (p1, p2) -> p1 * p2),
                     gradientAreaComputeContext.pattern,
-                    inputZGapImage.mapi(gradientAreaComputeContext.negativeRadiusImageTransformation),
+                    inputZGapImage, // !!!!.mapi(gradientAreaComputeContext.negativeRadiusImageTransformation),
                     GradientAreaGapUtils.PIXEL_GAP_OP
             );
             LImage overExpressedRegions = LImageUtils.combine2(
