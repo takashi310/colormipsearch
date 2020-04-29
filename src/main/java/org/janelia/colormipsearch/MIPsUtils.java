@@ -101,7 +101,7 @@ class MIPsUtils {
             transformedMIPPaths = Collections.singletonList(transformedMIPPath.resolve(transformedMIPFilename));
         } else {
             int nComponents = mipParentPath.getNameCount();
-            transformedMIPPaths = IntStream.range(1, nComponents)
+            transformedMIPPaths = IntStream.rangeClosed(1, nComponents)
                     .map(i -> nComponents - 1)
                     .mapToObj(i -> mipParentPath.getName(i).toString() + transformationLookupSuffix)
                     .reduce(new ArrayList<String>(),
