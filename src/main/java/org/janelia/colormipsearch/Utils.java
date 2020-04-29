@@ -1,9 +1,14 @@
 package org.janelia.colormipsearch;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -31,6 +36,29 @@ public class Utils {
                         .reduce((first, second) -> second)
                         .orElse(r1)).getLeft()
                 ;
+    }
+
+    static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
+                                                          Function<T, String> groupingCriteria,
+                                                          Function<T, Double> scoreExtractor,
+                                                          int topResults) {
+        Comparator<T> csrComparison = Comparator.comparing(scoreExtractor);
+        List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = l.stream()
+                .collect(Collectors.groupingBy(
+                        val -> StringUtils.defaultIfBlank(groupingCriteria.apply(val), "UNKNOWN"),
+                        Collectors.toList()))
+                .entrySet().stream()
+                .map(e -> {
+                    T maxValue = Collections.max(e.getValue(), csrComparison);
+                    return new ScoredEntry<>(e.getKey(), scoreExtractor.apply(maxValue), e.getValue());
+                })
+                .sorted((se1, se2) -> Double.compare(se2.score, se1.score)) // sort in reverse order
+                .collect(Collectors.toList());
+        if (topResults > 0 && bestResultsForSpecifiedCriteria.size() > topResults) {
+            return bestResultsForSpecifiedCriteria.subList(0, topResults);
+        } else {
+            return bestResultsForSpecifiedCriteria;
+        }
     }
 
 }

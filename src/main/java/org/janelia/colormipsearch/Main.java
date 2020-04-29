@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
@@ -34,6 +35,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,6 +201,9 @@ public class Main {
         @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
         private List<String> resultsFiles;
 
+        @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
+        private boolean cleanup = false;
+
         @ParametersDelegate
         final CommonArgs commonArgs;
 
@@ -223,8 +228,11 @@ public class Main {
         @Parameter(names = {"--resultsFile", "-rf"}, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
         private ListArg resultsFile;
 
-        @Parameter(names = {"--topResults"}, description = "If set only calculate the gradient score for the top specified color depth search results")
-        private int processTopResults;
+        @Parameter(names = {"--topPublishedNameMatches"}, description = "If set only calculate the gradient score for the top specified color depth search results")
+        private int topPublishedNameMatches;
+
+        @Parameter(names = {"--topPublishedSampleMatches"}, description = "If set select the top sample matches per line to use for gradient score")
+        private int topPublishedSampleMatches = 1;
 
         GradientScoreResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -629,10 +637,10 @@ public class Main {
         } else {
             resultFileNames = Collections.emptyList();
         }
-        combineResultFiles(resultFileNames, args.getOutputDir());
+        combineResultFiles(resultFileNames, args.cleanup, args.getOutputDir());
     }
 
-    private static void combineResultFiles(List<String> inputResultsFilenames, Path outputDir) {
+    private static void combineResultFiles(List<String> inputResultsFilenames, boolean cleanup, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // files that have the same file name (but coming from different directories)
@@ -649,6 +657,7 @@ public class Main {
                         return readCDSResultsFromJSONFile(cdsFile , mapper);
                     })
                     .flatMap(cdsResults -> cdsResults.results.stream())
+                    .map(cds -> cleanup ? ColorMIPSearchResultMetadata.create(cds) : cds)
                     .collect(Collectors.toList());
             sortCDSResults(combinedResults);
             writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
@@ -711,7 +720,8 @@ public class Main {
                     args.gradientPath,
                     args.zgapPath,
                     StringUtils.defaultString(args.zgapSuffix, ""),
-                    args.processTopResults,
+                    args.topPublishedNameMatches,
+                    args.topPublishedSampleMatches,
                     mapper,
                     executor
             );
@@ -741,7 +751,8 @@ public class Main {
                                         args.gradientPath,
                                         args.zgapPath,
                                         StringUtils.defaultString(args.zgapSuffix, ""),
-                                        args.processTopResults,
+                                        args.topPublishedNameMatches,
+                                        args.topPublishedSampleMatches,
                                         mapper,
                                         executor
                                 );
@@ -761,7 +772,8 @@ public class Main {
             String gradientsLocation,
             String zgapsLocation,
             String zgapsSuffix,
-            int topResultsToProcess,
+            int topPublishedNameMatches,
+            int topPublishedSampleMatches,
             ObjectMapper mapper,
             Executor executor) {
         Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = readCDSResultsFromJSONFile(inputResultsFile, mapper);
@@ -769,7 +781,7 @@ public class Main {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return resultsFileContent;
         }
-        Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topResultsToProcess);
+        Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topPublishedNameMatches, topPublishedSampleMatches);
         LOG.info("Read {} entries ({} distinct IDs) from {}", resultsFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
 
         long startTime = System.currentTimeMillis();
@@ -795,7 +807,7 @@ public class Main {
         return resultsFileContent;
     }
 
-    private static Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int n) {
+    private static Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int topPublishedNames, int topSamples) {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
                 .collect(Collectors.groupingBy(csr -> {
@@ -808,30 +820,27 @@ public class Main {
                 }, Collectors.collectingAndThen(
                         Collectors.toList(),
                         resultsForAnId -> {
-                            List<ColorMIPSearchResultMetadata> bestMatches = pickBestMatches(resultsForAnId, n);
+                            List<ColorMIPSearchResultMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(resultsForAnId, topPublishedNames, topSamples);
                             LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
                             return bestMatches;
                         })));
     }
 
-    private static List<ColorMIPSearchResultMetadata> pickBestMatches(List<ColorMIPSearchResultMetadata> cdsResults, int n) {
-        Comparator<ColorMIPSearchResultMetadata> csrComparison = Comparator.comparing(ColorMIPSearchResultMetadata::getMatchingPixels);
-        Collection<ColorMIPSearchResultMetadata> bestCdsResultsForEachMatchMatchName = cdsResults.stream()
-                .collect(Collectors.groupingBy(
-                        csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                r -> r.stream().max(csrComparison)
-                                        .orElse(null))))
-                .values();
-        List<ColorMIPSearchResultMetadata> sortedBestResults = bestCdsResultsForEachMatchMatchName.stream()
-                .sorted(csrComparison.reversed())
+    private static List<ColorMIPSearchResultMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchResultMetadata> cdsResults, int topPublishedNames, int topSamples) {
+        List<ScoredEntry<List<ColorMIPSearchResultMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
+                cdsResults,
+                csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)), // pick best results by line
+                ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                topPublishedNames);
+
+        return topResultsByPublishedName.stream()
+                .flatMap(se -> Utils.pickBestMatches(
+                        se.entry,
+                        csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
+                        ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                        topSamples).stream())
+                .flatMap(se -> se.entry.stream())
                 .collect(Collectors.toList());
-        if (n > 0 && n < sortedBestResults.size()) {
-            return sortedBestResults.subList(0, n);
-        } else {
-            return sortedBestResults;
-        }
     }
 
     private static String extractPublishingNameCandidateFromImageName(String imageName) {

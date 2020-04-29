@@ -3,6 +3,7 @@ package org.janelia.colormipsearch;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +13,7 @@ abstract class MetadataAttrs {
     String id;
     @JsonProperty
     String publishedName;
+    @JsonIgnore
     Boolean publishedToStaging;
     @JsonProperty("image_path")
     String imageUrl;

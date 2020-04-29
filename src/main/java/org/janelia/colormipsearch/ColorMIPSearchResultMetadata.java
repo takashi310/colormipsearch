@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,11 +9,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
+    static ColorMIPSearchResultMetadata create(ColorMIPSearchResultMetadata from) {
+        ColorMIPSearchResultMetadata cdsCopy = new ColorMIPSearchResultMetadata();
+        from.copyTo(cdsCopy);
+        cdsCopy.matchedId = from.matchedId;
+        cdsCopy.matchedImageName = StringUtils.isNotBlank(from.matchedImageName) ? new File(from.matchedImageName).getName() : null;
+        return cdsCopy;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageArchivePath;
     @JsonProperty
     String imageName;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageType;
     @JsonProperty
@@ -90,4 +101,5 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
             return getMatchingPixelsPct() * 100;
         }
     }
+
 }
