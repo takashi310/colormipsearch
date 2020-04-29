@@ -101,16 +101,17 @@ class MIPsUtils {
             transformedMIPPaths = Collections.singletonList(transformedMIPPath.resolve(transformedMIPFilename));
         } else {
             int nComponents = mipParentPath.getNameCount();
-            transformedMIPPaths = IntStream.rangeClosed(1, nComponents)
-                    .map(i -> nComponents - 1)
+            transformedMIPPaths = IntStream.range(0, nComponents)
+                    .map(i -> nComponents - i - 1)
                     .mapToObj(i -> mipParentPath.getName(i).toString() + transformationLookupSuffix)
                     .reduce(new ArrayList<String>(),
                             (a, e) -> {
                                 if (a.isEmpty()) {
+                                    a.add("");
                                     a.add(e);
                                 } else {
                                     String lastElement = a.get(a.size() - 1);
-                                    a.add(lastElement + "/" + e);
+                                    a.add(e + "/" + lastElement);
                                 }
                                 return a;
                             },
