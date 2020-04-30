@@ -19,7 +19,8 @@ public class UtilsTest {
                     testData,
                     csr -> csr.matchedPublishedName,
                     ColorMIPSearchResultMetadata::getMatchingPixelsPct,
-                    i).stream()
+                    i,
+                    -1).stream()
                     .flatMap(se -> se.entry.stream())
                     .collect(Collectors.toList());
             assertEquals(3 * i, selectedEntries.size());
@@ -36,15 +37,42 @@ public class UtilsTest {
                         testData,
                         csr -> csr.matchedPublishedName,
                         ColorMIPSearchResultMetadata::getMatchingPixelsPct,
-                        i).stream()
+                        i,
+                        -1).stream()
                         .flatMap(se -> Utils.pickBestMatches(
                                 se.entry,
                                 csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
                                 ColorMIPSearchResultMetadata::getMatchingPixelsPct,
-                                topSubResults).stream())
+                                topSubResults,
+                                -1).stream())
                         .flatMap(se -> se.entry.stream())
                         .collect(Collectors.toList());
                 assertEquals(i * si, selectedEntries.size());
+            }
+        }
+    }
+
+    @Test
+    public void pickBestResultsWithLimitedSubResults() {
+        List<ColorMIPSearchResultMetadata> testData = createTestData();
+        for (int i = 1; i <= 3; i++) {
+            for (int si = 1; si <= 3; si++) {
+                int topSubResults = si;
+                List<ColorMIPSearchResultMetadata> selectedEntries = Utils.pickBestMatches(
+                        testData,
+                        csr -> csr.matchedPublishedName,
+                        ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                        i,
+                        1).stream()
+                        .flatMap(se -> Utils.pickBestMatches(
+                                se.entry,
+                                csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
+                                ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                                topSubResults,
+                                -1).stream())
+                        .flatMap(se -> se.entry.stream())
+                        .collect(Collectors.toList());
+                assertEquals(i, selectedEntries.size());
             }
         }
     }

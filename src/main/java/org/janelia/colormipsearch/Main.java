@@ -831,14 +831,16 @@ public class Main {
                 cdsResults,
                 csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)), // pick best results by line
                 ColorMIPSearchResultMetadata::getMatchingPixelsPct,
-                topPublishedNames);
+                topPublishedNames,
+                -1);
 
         return topResultsByPublishedName.stream()
                 .flatMap(se -> Utils.pickBestMatches(
                         se.entry,
                         csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
                         ColorMIPSearchResultMetadata::getMatchingPixelsPct,
-                        topSamples).stream())
+                        topSamples,
+                        1).stream())
                 .flatMap(se -> se.entry.stream())
                 .collect(Collectors.toList());
     }

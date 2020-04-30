@@ -41,12 +41,20 @@ public class Utils {
     static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
                                                           Function<T, String> groupingCriteria,
                                                           Function<T, Double> scoreExtractor,
-                                                          int topResults) {
+                                                          int topResults,
+                                                          int limitSubResults) {
         Comparator<T> csrComparison = Comparator.comparing(scoreExtractor);
         List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = l.stream()
                 .collect(Collectors.groupingBy(
                         val -> StringUtils.defaultIfBlank(groupingCriteria.apply(val), "UNKNOWN"),
-                        Collectors.toList()))
+                        Collectors.collectingAndThen(Collectors.toList(), r -> {
+                            r.sort(csrComparison.reversed());
+                            if (limitSubResults > 0 && limitSubResults < r.size()) {
+                                return r.subList(0, limitSubResults);
+                            } else {
+                                return r;
+                            }
+                        })))
                 .entrySet().stream()
                 .map(e -> {
                     T maxValue = Collections.max(e.getValue(), csrComparison);
