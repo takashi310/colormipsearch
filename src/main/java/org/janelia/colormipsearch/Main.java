@@ -700,7 +700,7 @@ public class Main {
                     .map(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
                     .max(Double::compare)
                     .orElse(0.);
-            LOG.info("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
+            LOG.debug("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
             cdsResults.results
                     .forEach(csr -> {
                         csr.setNormalizedGradientAreaGapScore(emlmAreaGapCalculator.calculateAreaGapScore(
