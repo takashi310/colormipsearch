@@ -93,12 +93,27 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
         }
     }
 
+    @JsonIgnore
+    public Double getArtificialShapeScore() {
+        String artificialShapeScore = getAttr("ArtificialShapeScore");
+        return StringUtils.isBlank(artificialShapeScore) ? null : Double.parseDouble(artificialShapeScore);
+    }
+
+    public void setArtificialShapeScore(Double artificialGapScore) {
+        if (artificialGapScore != null && artificialGapScore > 0) {
+            addAttr("ArtificialShapeScore", artificialGapScore.toString());
+        } else {
+            removeAttr("ArtificialShapeScore");
+        }
+    }
+
     public Double getNormalizedScore() {
         Double normalizedGapScore = getNormalizedGradientAreaGapScore();
         if (normalizedGapScore != null) {
             return normalizedGapScore;
         } else {
-            return getMatchingPixelsPct() * 100;
+            Double artificialGapScore = getArtificialShapeScore();
+            return artificialGapScore != null ? artificialGapScore : getMatchingPixelsPct() * 100;
         }
     }
 
