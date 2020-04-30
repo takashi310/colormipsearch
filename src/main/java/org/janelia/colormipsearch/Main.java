@@ -205,6 +205,9 @@ public class Main {
         @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
         private List<String> resultsFiles;
 
+        @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
+        Double pctPositivePixels = 0.0;
+
         @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
         private boolean cleanup = false;
 
@@ -643,10 +646,10 @@ public class Main {
         } else {
             resultFileNames = Collections.emptyList();
         }
-        combineResultFiles(resultFileNames, args.cleanup, args.getOutputDir());
+        combineResultFiles(resultFileNames, args.pctPositivePixels, args.cleanup, args.getOutputDir());
     }
 
-    private static void combineResultFiles(List<String> inputResultsFilenames, boolean cleanup, Path outputDir) {
+    private static void combineResultFiles(List<String> inputResultsFilenames, double pctPositivePixels, boolean cleanup, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // files that have the same file name (but coming from different directories)
@@ -663,7 +666,8 @@ public class Main {
                         return readCDSResultsFromJSONFile(cdsFile , mapper);
                     })
                     .flatMap(cdsResults -> cdsResults.results.stream())
-                    .map(cds -> cleanup ? ColorMIPSearchResultMetadata.create(cds) : cds)
+                    .filter(cdsr -> cdsr.getMatchingPixelsPct() > pctPositivePixels)
+                    .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
                     .collect(Collectors.toList());
             sortCDSResults(combinedResults);
             writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
@@ -701,14 +705,16 @@ public class Main {
                     .max(Double::compare)
                     .orElse(0.);
             LOG.debug("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
-            cdsResults.results
-                    .forEach(csr -> {
+            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.results.stream()
+                    .filter(csr -> csr.getMatchingPixelsPct() > args.pctPositivePixels)
+                    .peek(csr -> {
                         csr.setNormalizedGradientAreaGapScore(emlmAreaGapCalculator.calculateAreaGapScore(
                                 0, 0, csr.getMatchingPixelsPct(), maxPctPixelScore)
                         );
-                    });
-            sortCDSResults(cdsResults.results);
-            writeCDSResultsToJSONFile(cdsResults, getOutputFile(args.getOutputDir(), new File(fn)), mapper);
+                    })
+                    .collect(Collectors.toList());
+            sortCDSResults(cdsResultsWithNormalizedScore);
+            writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), getOutputFile(args.getOutputDir(), new File(fn)), mapper);
         });
     }
 
