@@ -50,6 +50,10 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static class MainArgs {
+        @Parameter(names = "--cacheSize", description = "Max cache size")
+        private long cacheSize = 200000L;
+        @Parameter(names = "--cacheExpirationInMin", description = "Cache expiration in minutes")
+        private long cacheExpirationInMin = 60;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
     }
@@ -291,7 +295,9 @@ public class Main {
             JCommander.getConsole().println(sb.toString());
             System.exit(1);
         }
-
+        // initialize the cache
+        CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInMin);
+        // invoke the appropriate command
         switch (cmdline.getParsedCommand()) {
             case "searchFromJSON":
                 createOutputDirs(jsonMIPsSearchArgs.getPerLibraryDir(), jsonMIPsSearchArgs.getPerMaskDir());

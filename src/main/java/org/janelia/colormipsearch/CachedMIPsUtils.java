@@ -13,23 +13,27 @@ import org.slf4j.LoggerFactory;
 class CachedMIPsUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CachedMIPsUtils.class);
 
-    private static final LoadingCache<MIPInfo, MIPImage> MIP_IMAGES_CACHE = CacheBuilder.newBuilder()
-            .maximumSize(200000L)
-            .expireAfterAccess(Duration.ofMinutes(20))
-            .concurrencyLevel(16)
-            .build(new CacheLoader<MIPInfo, MIPImage>() {
-                @Override
-                public MIPImage load(MIPInfo mipInfo) {
-                    return MIPsUtils.loadMIP(mipInfo);
-                }
-            });
+    private static LoadingCache<MIPInfo, MIPImage> mipsImagesCache;
+
+    static void initializeCache(long maxSize, long expirationInMinutes) {
+        mipsImagesCache = CacheBuilder.newBuilder()
+                .concurrencyLevel(16)
+                .maximumSize(maxSize)
+                .expireAfterAccess(Duration.ofMinutes(expirationInMinutes))
+                .build(new CacheLoader<MIPInfo, MIPImage>() {
+                    @Override
+                    public MIPImage load(MIPInfo mipInfo) {
+                        return MIPsUtils.loadMIP(mipInfo);
+                    }
+                });
+    }
 
     static MIPImage loadMIP(MIPInfo mipInfo) {
         try {
             if (mipInfo == null || !mipInfo.exists()) {
                 return null;
             } else {
-                return MIP_IMAGES_CACHE.get(mipInfo);
+                return mipsImagesCache == null ? MIPsUtils.loadMIP(mipInfo) : mipsImagesCache.get(mipInfo);
             }
         } catch (ExecutionException e) {
             LOG.error("Error loading {}", mipInfo, e);
