@@ -24,7 +24,7 @@ else
   app_memory="180"
 fi
 
-java -Xmx${app_memory}G -Xms${app_memory}G \
+cmd="java -Xmx${app_memory}G -Xms${app_memory}G \
     -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     searchFromJSON \
     --maskThreshold 20 \
@@ -35,4 +35,7 @@ java -Xmx${app_memory}G -Xms${app_memory}G \
     --mirrorMask \
     --libraryPartitionSize 200 \
     --cdsConcurrency 0 \
-    $*
+    $*"
+
+echo "Running: ${cmd}"
+($cmd)
