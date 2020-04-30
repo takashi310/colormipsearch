@@ -95,7 +95,7 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
 
     public Double getNormalizedScore() {
         Double normalizedGapScore = getNormalizedGradientAreaGapScore();
-        if (normalizedGapScore == null) {
+        if (normalizedGapScore != null) {
             return normalizedGapScore;
         } else {
             return getMatchingPixelsPct() * 100;
