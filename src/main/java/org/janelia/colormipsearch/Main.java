@@ -663,7 +663,7 @@ public class Main {
                         return readCDSResultsFromJSONFile(cdsFile , mapper);
                     })
                     .flatMap(cdsResults -> cdsResults.results.stream())
-                    .filter(cdsr -> cdsr.getMatchingPixelsPct() > pctPositivePixels)
+                    .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
                     .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
                     .collect(Collectors.toList());
             sortCDSResults(combinedResults);
@@ -703,7 +703,7 @@ public class Main {
                     .orElse(0.);
             LOG.debug("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
             List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.results.stream()
-                    .filter(csr -> csr.getMatchingPixelsPct() > args.pctPositivePixels)
+                    .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
                     .peek(csr -> {
                         csr.setArtificialShapeScore(emlmAreaGapCalculator.calculateAreaGapScore(
                                 0, 0, csr.getMatchingPixelsPct(), maxPctPixelScore)
