@@ -941,15 +941,15 @@ public class Main {
 
     private static void sortCDSResults(List<ColorMIPSearchResultMetadata> cdsResults) {
         Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
-            if (csr1.getNormalizedGradientAreaGapScore() != null && csr2.getNormalizedGradientAreaGapScore() != null) {
-                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedGradientAreaGapScore)
+            if (csr1.getNormalizedScore() != null && csr2.getNormalizedScore() != null) {
+                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedScore)
                         .compare(csr1, csr2)
                         ;
-            } else if (csr1.getNormalizedGradientAreaGapScore() == null && csr2.getNormalizedGradientAreaGapScore() == null) {
+            } else if (csr1.getNormalizedScore() == null && csr2.getNormalizedScore() == null) {
                 return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
                         .compare(csr1, csr2)
                         ;
-            } else if (csr1.getNormalizedGradientAreaGapScore() == null) {
+            } else if (csr1.getNormalizedScore() == null) {
                 // null gap scores should be at the beginning
                 return -1;
             } else {
