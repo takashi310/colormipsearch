@@ -654,21 +654,24 @@ public class Main {
         Map<String, List<String>> resultFilesToCombinedTogether = inputResultsFilenames.stream()
                 .collect(Collectors.groupingBy(fn -> Paths.get(fn).getFileName().toString(), Collectors.toList()));
 
-        resultFilesToCombinedTogether.forEach((fn, resultList) -> {
-            LOG.info("Combine results for {}", fn);
-            List<ColorMIPSearchResultMetadata> combinedResults = resultList.stream()
-                    .map(cdsFn -> new File(cdsFn))
-                    .map(cdsFile -> {
-                        LOG.info("Reading {} -> {}", fn, cdsFile);
-                        return readCDSResultsFromJSONFile(cdsFile , mapper);
-                    })
-                    .flatMap(cdsResults -> cdsResults.results.stream())
-                    .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
-                    .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
-                    .collect(Collectors.toList());
-            sortCDSResults(combinedResults);
-            writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
-        });
+        resultFilesToCombinedTogether.entrySet().stream().parallel()
+                .forEach(e -> {
+                    String fn = e.getKey();
+                    List<String> resultList = e.getValue();
+                    LOG.info("Combine results for {}", fn);
+                    List<ColorMIPSearchResultMetadata> combinedResults = resultList.stream()
+                            .map(cdsFn -> new File(cdsFn))
+                            .map(cdsFile -> {
+                                LOG.info("Reading {} -> {}", fn, cdsFile);
+                                return readCDSResultsFromJSONFile(cdsFile, mapper);
+                            })
+                            .flatMap(cdsResults -> cdsResults.results.stream())
+                            .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
+                            .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
+                            .collect(Collectors.toList());
+                    sortCDSResults(combinedResults);
+                    writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
+                });
     }
 
     private static void setGradientScores(CombineResultsArgs args) {
