@@ -67,15 +67,17 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
 
     @JsonIgnore
     public long getGradientAreaGap() {
-        String gradientAreaGap = getAttr("Gradient Area Gap");
+        String gradientAreaGap = StringUtils.defaultIfBlank(
+                getAttr("GradientAreaGap"),
+                getAttr("Gradient Area Gap"));
         return StringUtils.isBlank(gradientAreaGap) ? -1L : Long.parseLong(gradientAreaGap);
     }
 
     public void setGradientAreaGap(long gradientAreaGap) {
         if (gradientAreaGap >= 0L) {
-            addAttr("Gradient Area Gap", String.valueOf(gradientAreaGap));
+            addAttr("GradientAreaGap", String.valueOf(gradientAreaGap));
         } else {
-            removeAttr("Gradient Area Gap");
+            removeAttr("GradientAreaGap");
         }
     }
 
@@ -114,6 +116,17 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
         } else {
             Double artificialGapScore = getArtificialShapeScore();
             return artificialGapScore != null ? artificialGapScore : getMatchingPixelsPct() * 100;
+        }
+    }
+
+    @Override
+    String mapAttr(String attrName) {
+        if (StringUtils.equalsIgnoreCase(attrName, "Published Name")) {
+            return "PublishedName";
+        } else if (StringUtils.equalsIgnoreCase(attrName, "Gradient Area Gap")) {
+            return "GradientAreaGap";
+        } else {
+            return attrName;
         }
     }
 

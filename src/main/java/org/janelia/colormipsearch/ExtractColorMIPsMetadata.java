@@ -202,7 +202,7 @@ public class ExtractColorMIPsMetadata {
             cdMetadata.publishedName = cdmip.sample.publishingName;
             cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
-            cdMetadata.addAttr("Published Name", cdmip.sample.publishingName);
+            cdMetadata.addAttr("PublishedName", cdmip.sample.publishingName);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
             cdMetadata.addAttr("Genotype", cdmip.sample.genotype);
             cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);

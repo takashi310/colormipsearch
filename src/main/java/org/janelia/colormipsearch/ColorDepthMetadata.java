@@ -2,6 +2,8 @@ package org.janelia.colormipsearch;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.StringUtils;
+
 class ColorDepthMetadata extends MetadataAttrs {
     @JsonProperty
     String internalName;
@@ -24,4 +26,12 @@ class ColorDepthMetadata extends MetadataAttrs {
         that.segmentFilepath = this.segmentFilepath;
     }
 
+    @Override
+    String mapAttr(String attrName) {
+        if (StringUtils.equalsIgnoreCase(attrName, "Published Name")) {
+            return "PublishedName";
+        } else {
+            return attrName;
+        }
+    }
 }
