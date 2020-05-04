@@ -20,20 +20,25 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageArchivePath;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageName;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String imageType;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedId;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedPublishedName;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedImageArchivePath;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedImageName;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String matchedImageType;
 
