@@ -199,10 +199,9 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
         if (cdmip.sample != null) {
             cdMetadata.publishedToStaging = cdmip.sample.publishedToStaging;
-            cdMetadata.publishedName = cdmip.sample.publishingName;
+            cdMetadata.setPublishedName(cdmip.sample.publishingName);
             cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
-            cdMetadata.addAttr("PublishedName", cdmip.sample.publishingName);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
             cdMetadata.addAttr("Genotype", cdmip.sample.genotype);
             cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);
@@ -288,7 +287,7 @@ public class ExtractColorMIPsMetadata {
         } else {
             lineID = line.substring(piSeparator + 1);
         }
-        cdMetadata.publishedName = StringUtils.defaultIfBlank(lineID, "Unknown");
+        cdMetadata.setPublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
         cdMetadata.addAttr("Line", line);
         String slideCode = mipNameComponents.size() > 1 ? mipNameComponents.get(1) : null;
         cdMetadata.addAttr("Slide Code", slideCode);

@@ -121,9 +121,7 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
 
     @Override
     String mapAttr(String attrName) {
-        if (StringUtils.equalsIgnoreCase(attrName, "Published Name")) {
-            return "PublishedName";
-        } else if (StringUtils.equalsIgnoreCase(attrName, "Gradient Area Gap")) {
+        if (StringUtils.equalsIgnoreCase(attrName, "Gradient Area Gap")) {
             return "GradientAreaGap";
         } else {
             return attrName;

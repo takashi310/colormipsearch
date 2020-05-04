@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +17,16 @@ class ColorDepthMetadata extends MetadataAttrs {
     String segmentedDataBasePath;
     String segmentFilepath;
 
+    @JsonIgnore
+    String getPublishedName() {
+        return getAttr("Published Name");
+    }
+
+    void setPublishedName(String publishedName) {
+        this.publishedName = publishedName;
+        addAttr("Published Name", publishedName);
+    }
+
     void copyTo(ColorDepthMetadata that) {
         super.copyTo(that);
         that.internalName = this.internalName;
@@ -26,12 +37,4 @@ class ColorDepthMetadata extends MetadataAttrs {
         that.segmentFilepath = this.segmentFilepath;
     }
 
-    @Override
-    String mapAttr(String attrName) {
-        if (StringUtils.equalsIgnoreCase(attrName, "Published Name")) {
-            return "PublishedName";
-        } else {
-            return attrName;
-        }
-    }
 }
