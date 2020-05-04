@@ -32,6 +32,8 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     String sampleRef;
     @JsonProperty
+    String sourceImageRef;
+    @JsonProperty
     CDMIPSample sample;
 
     String findLibrary() {

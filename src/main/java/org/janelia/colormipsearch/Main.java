@@ -674,8 +674,17 @@ public class Main {
                             .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
                             .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
                             .collect(Collectors.toList());
-                    sortCDSResults(combinedResults);
-                    writeCDSResultsToJSONFile(new Results<>(combinedResults), getOutputFile(outputDir, new File(fn)), mapper);
+                    List<ColorMIPSearchResultMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
+                            combinedResults,
+                            csr -> csr.matchedId,
+                            ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                            -1,
+                            1)
+                            .stream()
+                            .flatMap(se -> se.entry.stream()).collect(Collectors.toList());
+
+                    sortCDSResults(combinedResultsWithNoDuplicates);
+                    writeCDSResultsToJSONFile(new Results<>(combinedResultsWithNoDuplicates), getOutputFile(outputDir, new File(fn)), mapper);
                 });
     }
 

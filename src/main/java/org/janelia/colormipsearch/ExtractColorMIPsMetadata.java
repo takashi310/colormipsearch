@@ -197,9 +197,10 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.imageUrl = cdmip.publicImageUrl;
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
+        cdMetadata.sourceImageRef = cdmip.sourceImageRef;
         if (cdmip.sample != null) {
             cdMetadata.publishedToStaging = cdmip.sample.publishedToStaging;
-            cdMetadata.setPublishedName(cdmip.sample.publishingName);
+            cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
             cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
@@ -287,7 +288,7 @@ public class ExtractColorMIPsMetadata {
         } else {
             lineID = line.substring(piSeparator + 1);
         }
-        cdMetadata.setPublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
+        cdMetadata.setLMLinePublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
         cdMetadata.addAttr("Line", line);
         String slideCode = mipNameComponents.size() > 1 ? mipNameComponents.get(1) : null;
         cdMetadata.addAttr("Slide Code", slideCode);
@@ -302,8 +303,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.imageUrl = cdmip.publicImageUrl;
         cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
-        cdMetadata.publishedName = extractEMSkeletonIdFromName(cdmip.name);
-        cdMetadata.addAttr("Body Id", extractEMSkeletonIdFromName(cdmip.name));
+        cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         return cdMetadata;
     }

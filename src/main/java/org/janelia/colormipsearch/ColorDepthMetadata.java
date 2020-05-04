@@ -1,30 +1,37 @@
 package org.janelia.colormipsearch;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.apache.commons.lang3.StringUtils;
 
 class ColorDepthMetadata extends MetadataAttrs {
     @JsonProperty
     String internalName;
     @JsonProperty
     String line;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String sampleRef;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty
+    String sourceImageRef;
     String filepath;
     String type;
     String segmentedDataBasePath;
     String segmentFilepath;
 
     @JsonIgnore
-    String getPublishedName() {
-        return getAttr("Published Name");
+    void setEMSkeletonPublishedName(String publishedName) {
+        this.publishedName = publishedName;
+        addAttr("Body Id", publishedName);
+        addAttr("PublishedName", publishedName);
     }
 
-    void setPublishedName(String publishedName) {
+    @JsonIgnore
+    void setLMLinePublishedName(String publishedName) {
         this.publishedName = publishedName;
         addAttr("Published Name", publishedName);
+        addAttr("PublishedName", publishedName);
     }
 
     void copyTo(ColorDepthMetadata that) {
