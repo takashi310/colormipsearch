@@ -663,8 +663,13 @@ public class Main {
                             .map(cdsFn -> new File(cdsFn))
                             .map(cdsFile -> {
                                 LOG.info("Reading {} -> {}", fn, cdsFile);
-                                return readCDSResultsFromJSONFile(cdsFile, mapper);
+                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = readCDSResultsFromJSONFile(cdsFile, mapper);
+                                if (cdsResults.results == null) {
+                                    LOG.warn("Results file {} is empty", cdsFile);
+                                }
+                                return cdsResults;
                             })
+                            .filter(cdsResults -> CollectionUtils.isNotEmpty(cdsResults.results))
                             .flatMap(cdsResults -> cdsResults.results.stream())
                             .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
                             .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
