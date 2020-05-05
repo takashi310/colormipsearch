@@ -45,7 +45,9 @@ abstract class MetadataAttrs {
         that.imageUrl = this.imageUrl;
         that.thumbnailUrl = this.thumbnailUrl;
         that.libraryName = this.libraryName;
-        this.attrs.forEach((k, v) -> that.attrs.put(mapAttr(k), v));
+        this.attrs.forEach((k, v) -> {
+            that.addAttr(mapAttr(k), v);
+        });
     }
 
     String mapAttr(String attrName) {

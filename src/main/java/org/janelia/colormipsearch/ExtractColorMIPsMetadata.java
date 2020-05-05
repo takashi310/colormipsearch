@@ -204,7 +204,6 @@ public class ExtractColorMIPsMetadata {
             cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
-            cdMetadata.addAttr("Genotype", cdmip.sample.genotype);
             cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);
         } else {
             populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
