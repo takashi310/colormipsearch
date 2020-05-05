@@ -450,19 +450,7 @@ public class ExtractColorMIPsMetadata {
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
                         .forEach(cdmip -> {
                             try {
-                                Path imageFilepath = Paths.get(cdmip.segmentFilepath != null ? cdmip.segmentFilepath : cdmip.filepath);
-                                gen.writeStartObject();
-                                gen.writeStringField("id", cdmip.id);
-                                gen.writeStringField("libraryName", cdmip.libraryName);
-                                gen.writeStringField("publishedName", cdmip.publishedName);
-                                gen.writeStringField("type", cdmip.type);
-                                gen.writeStringField("archivePath", cdmip.segmentedDataBasePath);
-                                gen.writeStringField("imagePath", imageFilepath.toString());
-                                gen.writeStringField("cdmPath", cdmip.filepath);
-                                gen.writeStringField("imageURL", cdmip.imageUrl);
-                                gen.writeStringField("thumbnailURL", cdmip.thumbnailUrl);
-                                gen.writeObjectField("attrs", cdmip.attrs);
-                                gen.writeEndObject();
+                                gen.writeObject(cdmip.asMIPInfo());
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);
                             }

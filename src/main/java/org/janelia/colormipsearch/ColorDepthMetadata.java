@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang.StringUtils;
+
 class ColorDepthMetadata extends MetadataAttrs {
     @JsonProperty
     String internalName;
@@ -44,4 +46,32 @@ class ColorDepthMetadata extends MetadataAttrs {
         that.segmentFilepath = this.segmentFilepath;
     }
 
+    MIPInfo asMIPInfo() {
+        MIPInfo mipInfo = new MIPInfo();
+        mipInfo.id = id;
+        mipInfo.libraryName = libraryName;
+        mipInfo.publishedName = publishedName;
+        mipInfo.type = type;
+        mipInfo.archivePath = segmentedDataBasePath;
+        mipInfo.imagePath = StringUtils.defaultIfBlank(segmentFilepath, filepath);
+        mipInfo.cdmPath = filepath;
+        mipInfo.imageURL = imageUrl;
+        mipInfo.thumbnailURL = thumbnailUrl;
+        mipInfo.sourceImageRefId = extractIdFromRef(sourceImageRef);
+        attrs.forEach((k, v) -> mipInfo.attrs.put(k, v));
+        return mipInfo;
+    }
+
+    private String extractIdFromRef(String ref) {
+        if (StringUtils.isBlank(ref)) {
+            return null;
+        } else {
+            int idseparator = ref.indexOf('#');
+            if (idseparator == -1) {
+                return null; // not a valid stringified reference
+            } else {
+                return StringUtils.defaultIfBlank(ref.substring(idseparator + 1), null);
+            }
+        }
+    }
 }
