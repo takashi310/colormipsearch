@@ -57,7 +57,7 @@ class ColorDepthMetadata extends MetadataAttrs {
         mipInfo.cdmPath = filepath;
         mipInfo.imageURL = imageUrl;
         mipInfo.thumbnailURL = thumbnailUrl;
-        mipInfo.sourceImageRefId = extractIdFromRef(sourceImageRef);
+        mipInfo.relatedImageRefId = extractIdFromRef(sourceImageRef);
         attrs.forEach((k, v) -> mipInfo.attrs.put(k, v));
         return mipInfo;
     }

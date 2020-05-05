@@ -34,6 +34,7 @@ public class Main {
         CombineResultsCmd combineResultsCmd = new CombineResultsCmd(commonArgs);
         SetFakeGradientScoresCmd fakeGradientScoresCmd = new SetFakeGradientScoresCmd(commonArgs);
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
+        ReplaceURLsCommand replaceURLsCmd = new ReplaceURLsCommand(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
@@ -42,6 +43,7 @@ public class Main {
                 .addCommand("combineResults", combineResultsCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
                 .addCommand("initGradientScores", fakeGradientScoresCmd.getArgs())
+                .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
                 .build();
 
         try {
@@ -109,6 +111,15 @@ public class Main {
                 }
                 CmdUtils.createOutputDirs(fakeGradientScoresCmd.getArgs().getOutputDir());
                 fakeGradientScoresCmd.execute();
+                break;
+            case "replaceImageURLs":
+                if (!replaceURLsCmd.getArgs().validate()) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    System.exit(1);
+                }
+                CmdUtils.createOutputDirs(replaceURLsCmd.getArgs().getOutputDir());
+                replaceURLsCmd.execute();
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");

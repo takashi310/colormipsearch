@@ -7,16 +7,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,5 +111,28 @@ class CmdUtils {
         }
     }
 
+    static List<MIPInfo> readMIPsFromJSON(String mipsFilename, int offset, int length, Set<String> filter) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            LOG.info("Reading {}", mipsFilename);
+            List<MIPInfo> content = mapper.readValue(new File(mipsFilename), new TypeReference<List<MIPInfo>>() {
+            });
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = offset > 0 ? offset : 0;
+                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsFilename, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.publishedName.toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.id)))
+                        .collect(Collectors.toList());
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsFilename, e);
+            throw new UncheckedIOException(e);
+        }
+    }
 
 }

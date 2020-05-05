@@ -27,10 +27,10 @@ class CombineResultsCmd {
 
     @Parameters(commandDescription = "Combine color depth search results")
     static class CombineResultsArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be sorted")
+        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be combined")
         List<String> resultsDirs;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be combined")
         List<String> resultsFiles;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")

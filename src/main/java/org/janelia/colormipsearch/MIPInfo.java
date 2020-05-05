@@ -40,7 +40,7 @@ class MIPInfo implements Serializable {
     @JsonProperty
     String thumbnailURL;
     @JsonProperty
-    String sourceImageRefId;
+    String relatedImageRefId;
     @JsonProperty("attrs")
     Map<String, String> attrs = new LinkedHashMap<>();
 

@@ -79,11 +79,11 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
         try {
             List<MIPInfo> librariesMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> readMIPsFromJSON(libraryInput, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
+                    .flatMap(libraryInput -> CmdUtils.readMIPsFromJSON(libraryInput.input, libraryInput.offset,  libraryInput.length, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             List<MIPInfo> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> readMIPsFromJSON(masksInput, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
+                    .flatMap(masksInput -> CmdUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
@@ -104,30 +104,5 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
             colorMIPSearch.terminate();
         }
     }
-
-    private List<MIPInfo> readMIPsFromJSON(ListArg mipsArg, Set<String> filter) {
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            LOG.info("Reading {}", mipsArg);
-            List<MIPInfo> content = mapper.readValue(new File(mipsArg.input), new TypeReference<List<MIPInfo>>() {
-            });
-            if (CollectionUtils.isEmpty(filter)) {
-                int from = mipsArg.offset > 0 ? mipsArg.offset : 0;
-                int to = mipsArg.length > 0 ? Math.min(from + mipsArg.length, content.size()) : content.size();
-                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsArg, from, to);
-                return content.subList(from, to);
-            } else {
-                LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream()
-                        .filter(mip -> filter.contains(mip.publishedName.toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.id)))
-                        .collect(Collectors.toList());
-            }
-        } catch (IOException e) {
-            LOG.error("Error reading {}", mipsArg, e);
-            throw new UncheckedIOException(e);
-        }
-    }
-
 
 }
