@@ -13,7 +13,6 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
         ColorMIPSearchResultMetadata cdsCopy = new ColorMIPSearchResultMetadata();
         from.copyTo(cdsCopy);
         cdsCopy.matchedId = from.matchedId;
-        cdsCopy.matchedImageName = StringUtils.isNotBlank(from.matchedImageName) ? new File(from.matchedImageName).getName() : null;
         return cdsCopy;
     }
 

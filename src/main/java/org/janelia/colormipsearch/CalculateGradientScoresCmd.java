@@ -25,7 +25,7 @@ import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CalculateGradientScoresCmd {
+class CalculateGradientScoresCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
 
     @Parameters(commandDescription = "Calculate gradient area score for the results")
