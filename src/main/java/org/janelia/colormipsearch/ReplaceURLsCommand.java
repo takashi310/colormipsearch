@@ -43,6 +43,13 @@ public class ReplaceURLsCommand {
         @Parameter(names = {"--input-files"}, variableArity = true, description = "JSON file whose image URLs have to be changed")
         List<String> inputFiles;
 
+        @Parameter(names = {"--result-id-field"}, required = true,
+                description = "Result ID field name; for MIPs this is 'id' for results is 'matchedId'")
+        String resultIDField;
+
+        @Parameter(names = "-cleanup", description = "Remove fields not necessary in productiom", arity = 0)
+        private boolean cleanup = false;
+
         @ParametersDelegate
         final CommonArgs commonArgs;
 
@@ -104,10 +111,15 @@ public class ReplaceURLsCommand {
         } else {
             inputFileNames = Collections.emptyList();
         }
-        replaceMIPsURLs(inputFileNames, indexedSourceMIPs, indexedTargetMIPs, args.getOutputDir());
+        replaceMIPsURLs(inputFileNames, args.resultIDField, indexedSourceMIPs, indexedTargetMIPs, args.cleanup, args.getOutputDir());
     }
 
-    private void replaceMIPsURLs(List<String> inputFileNames, Map<String, MIPInfo> indexedSourceMIPs, Map<String, MIPInfo> indexedTargetMIPs, Path outputDir) {
+    private void replaceMIPsURLs(List<String> inputFileNames,
+                                 String resultIdFieldName,
+                                 Map<String, MIPInfo> indexedSourceMIPs,
+                                 Map<String, MIPInfo> indexedTargetMIPs,
+                                 boolean cleanup,
+                                 Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -116,10 +128,14 @@ public class ReplaceURLsCommand {
                     File f = new File(fn);
                     Results<List<Map<String, Object>>> content = readJSONFile(f, mapper);
                     content.results.forEach(e -> {
-                        String id = (String) e.get("id");
+                        String id = (String) e.get(resultIdFieldName);
                         String imageURL = (String) e.get("image_path");
                         String thumbnailURL = (String) e.get("thumbnail_path");
 
+                        if (cleanup) {
+                            // clean up fields that should not be in prod
+                            cleanResultFields(e);
+                        }
                         MIPInfo targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
                             LOG.warn("No target URLs found for {}", id);
@@ -146,7 +162,7 @@ public class ReplaceURLsCommand {
                 });
     }
 
-    Results<List<Map<String, Object>>> readJSONFile(File f, ObjectMapper mapper) {
+    private Results<List<Map<String, Object>>> readJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", f);
             return mapper.readValue(f, new TypeReference<Results<List<Map<String, Object>>>>() {
@@ -157,7 +173,7 @@ public class ReplaceURLsCommand {
         }
     }
 
-    void writeJSONFile(Results<List<Map<String, Object>>> content, File f, ObjectMapper mapper) {
+    private void writeJSONFile(Results<List<Map<String, Object>>> content, File f, ObjectMapper mapper) {
         try {
             if (f == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, content);
@@ -169,6 +185,11 @@ public class ReplaceURLsCommand {
             LOG.error("Error writing json file {}", f, e);
             throw new UncheckedIOException(e);
         }
+    }
+
+    private void cleanResultFields(Map<String, Object> resultEntry) {
+        resultEntry.remove("internalName");
+        resultEntry.remove("line");
     }
 
 }
