@@ -120,13 +120,13 @@ public class ReplaceURLsCommand {
                         String imageURL = (String) e.get("image_path");
                         String thumbnailURL = (String) e.get("thumbnail_path");
 
-                        MIPInfo targetMIP = indexedTargetMIPs.get("id");
+                        MIPInfo targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
                             LOG.warn("No target URLs found for {}", id);
                         } else if (StringUtils.isBlank(targetMIP.imageURL) || StringUtils.isBlank(targetMIP.thumbnailURL)) {
                             LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.imageURL, targetMIP.thumbnailURL);
                         } else {
-                            MIPInfo srcMIP = indexedSourceMIPs.get("id");
+                            MIPInfo srcMIP = indexedSourceMIPs.get(id);
                             if (srcMIP == null) {
                                 LOG.warn("No source URLS found for {} for validation", id);
                             } else {
