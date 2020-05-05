@@ -102,6 +102,12 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
         private String outputDir;
 
+        @Parameter(names = {"--skeletons-directory", "-emdir"}, description = "Em skeletons sub-directory")
+        private String skeletonsOutput = "by_body";
+
+        @Parameter(names = {"--lines-directory", "-lmdir"}, description = "LM lines sub-directory")
+        private String linesOutput = "by_line";
+
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         private boolean includeMIPsWithNoPublishedURL;
 
@@ -146,18 +152,12 @@ public class ExtractColorMIPsMetadata {
         this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
-    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, boolean includeMIPsWithoutPublishingName, String outputDir) {
+    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, boolean includeMIPsWithoutPublishingName, Path outputPath) {
         // get color depth mips from JACS for the specified alignmentSpace and library
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
 
-        Path outputPath;
-        if (isEmLibrary(libraryArg.input)) {
-            outputPath = Paths.get(outputDir, "by_body");
-        } else {
-            outputPath = Paths.get(outputDir, "by_line");
-        }
         try {
             Files.createDirectories(outputPath);
         } catch (IOException e) {
@@ -716,7 +716,13 @@ public class ExtractColorMIPsMetadata {
         args.libraries.forEach(library -> {
             switch (cmdline.getParsedCommand()) {
                 case "groupMIPS":
-                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.datasets, args.includeMIPsWithNoPublishedURL, args.includeMIPsWithoutPublisingName, args.outputDir);
+                    Path outputPath;
+                    if (cdmipMetadataExtractor.isEmLibrary(library.input)) {
+                        outputPath = Paths.get(args.outputDir, args.skeletonsOutput);
+                    } else {
+                        outputPath = Paths.get(args.outputDir, args.linesOutput);
+                    }
+                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.datasets, args.includeMIPsWithNoPublishedURL, args.includeMIPsWithoutPublisingName, outputPath);
                     break;
                 case "prepareCDSArgs":
                     cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.includeMIPsWithNoPublishedURL, args.includeMIPsWithoutPublisingName, args.segmentedMIPsBaseDir, args.sSegmentedImageHandling, args.outputDir);
