@@ -114,15 +114,41 @@ public class ReplaceURLsCommand {
         inputFileNames.stream().parallel()
                 .forEach(fn -> {
                     File f = new File(fn);
-                    Map<String, Object> content = readJSONFile(f, mapper);
+                    Results<List<Map<String, Object>>> content = readJSONFile(f, mapper);
+                    content.results.forEach(e -> {
+                        String id = (String) e.get("id");
+                        String imageURL = (String) e.get("image_path");
+                        String thumbnailURL = (String) e.get("thumbnail_path");
+
+                        MIPInfo targetMIP = indexedTargetMIPs.get("id");
+                        if (targetMIP == null) {
+                            LOG.warn("No target URLs found for {}", id);
+                        } else if (StringUtils.isBlank(targetMIP.imageURL) || StringUtils.isBlank(targetMIP.thumbnailURL)) {
+                            LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.imageURL, targetMIP.thumbnailURL);
+                        } else {
+                            MIPInfo srcMIP = indexedSourceMIPs.get("id");
+                            if (srcMIP == null) {
+                                LOG.warn("No source URLS found for {} for validation", id);
+                            } else {
+                                if (!StringUtils.equals(imageURL, srcMIP.imageURL)) {
+                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.imageURL, imageURL);
+                                }
+                                if (!StringUtils.equals(thumbnailURL, srcMIP.thumbnailURL)) {
+                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.thumbnailURL, thumbnailURL);
+                                }
+                            }
+                            e.put("image_path", targetMIP.imageURL);
+                            e.put("thumbnail_path", targetMIP.thumbnailURL);
+                        }
+                    });
                     writeJSONFile(content, CmdUtils.getOutputFile(outputDir, f), mapper);
                 });
     }
 
-    Map<String, Object> readJSONFile(File f, ObjectMapper mapper) {
+    Results<List<Map<String, Object>>> readJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", f);
-            return mapper.readValue(f, new TypeReference<Map<String, Object>>() {
+            return mapper.readValue(f, new TypeReference<Results<List<Map<String, Object>>>>() {
             });
         } catch (IOException e) {
             LOG.error("Error reading json file {}", f, e);
@@ -130,7 +156,7 @@ public class ReplaceURLsCommand {
         }
     }
 
-    void writeJSONFile(Map<String, Object> content, File f, ObjectMapper mapper) {
+    void writeJSONFile(Results<List<Map<String, Object>>> content, File f, ObjectMapper mapper) {
         try {
             if (f == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, content);
