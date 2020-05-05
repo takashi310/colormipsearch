@@ -77,6 +77,26 @@ public class UtilsTest {
         }
     }
 
+    @Test
+    public void eliminateDuplicateResults() {
+        List<ColorMIPSearchResultMetadata> testData = ImmutableList.<ColorMIPSearchResultMetadata>builder()
+                .add(createCSRWithMatchedIds("1", "10", "i1.1", "i10", 10.0))
+                .add(createCSRWithMatchedIds("1", "10", "i1.2", "i10", 10.0))
+                .add(createCSRWithMatchedIds("1", "20", "i1.1", "i20", 10.0))
+                .add(createCSRWithMatchedIds("1", "30", "i1.1", "i30", 10.0))
+                .add(createCSRWithMatchedIds("1", "30", "i1.2", "i30", 10.0))
+                .build();
+        List<ColorMIPSearchResultMetadata> resultsWithNoDuplicates = Utils.pickBestMatches(
+                testData,
+                csr -> csr.matchedId,
+                ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                -1,
+                1)
+                .stream()
+                .flatMap(se -> se.entry.stream()).collect(Collectors.toList());
+        assertEquals(3, resultsWithNoDuplicates.size());
+    }
+
     private List<ColorMIPSearchResultMetadata> createTestData() {
         return ImmutableList.<ColorMIPSearchResultMetadata>builder()
                 .add(createCSR("l1", "s1.1", 1.))
@@ -98,4 +118,15 @@ public class UtilsTest {
         csr.setMatchingPixelsPct(score);
         return csr;
     }
+
+    ColorMIPSearchResultMetadata createCSRWithMatchedIds(String id, String matchedId, String imageName, String matchedImageName, Double score) {
+        ColorMIPSearchResultMetadata csr = new ColorMIPSearchResultMetadata();
+        csr.id = id;
+        csr.imageName = imageName;
+        csr.matchedId = matchedId;
+        csr.matchedImageName = matchedImageName;
+        csr.setMatchingPixelsPct(score);
+        return csr;
+    }
+
 }
