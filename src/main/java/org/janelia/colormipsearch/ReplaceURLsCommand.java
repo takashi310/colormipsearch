@@ -132,13 +132,14 @@ public class ReplaceURLsCommand {
                             } else {
                                 if (!StringUtils.equals(imageURL, srcMIP.imageURL)) {
                                     LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.imageURL, imageURL);
-                                }
-                                if (!StringUtils.equals(thumbnailURL, srcMIP.thumbnailURL)) {
+                                } else if (!StringUtils.equals(thumbnailURL, srcMIP.thumbnailURL)) {
                                     LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.thumbnailURL, thumbnailURL);
+                                } else {
+                                    // in order to change the URLs everything must match
+                                    e.put("image_path", targetMIP.imageURL);
+                                    e.put("thumbnail_path", targetMIP.thumbnailURL);
                                 }
                             }
-                            e.put("image_path", targetMIP.imageURL);
-                            e.put("thumbnail_path", targetMIP.thumbnailURL);
                         }
                     });
                     writeJSONFile(content, CmdUtils.getOutputFile(outputDir, f), mapper);
