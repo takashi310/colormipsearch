@@ -1,18 +1,19 @@
 package org.janelia.colormipsearch;
 
-import java.util.List;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 
 public class ReplaceURLsCommand {
 
-    @Parameters(commandDescription = "Replace image URLs")
+    @Parameters(commandDescription = "Replace image URLs from the source MIPs to the URLs from the target MIPs")
     private static class ReplaceURLsArgs {
-        @Parameter(names = {"--images", "-i"}, required = true,
-                description = "Comma-delimited list of directories containing images to search")
-        private String imagesFilename;
+        @Parameter(names = {"--source-mips", "-src"}, required = true,
+                description = "File containing the MIPS whose image URLs will change")
+        private String sourceMIPsFilename;
+        @Parameter(names = {"--target-mips", "-target"}, required = true,
+                description = "File containing the MIPS with the image URLs")
+        private String targetMIPsFilename;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
