@@ -420,7 +420,7 @@ public class ExtractColorMIPsMetadata {
             return;
         }
         try {
-            Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)[-_][mf]_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+            Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)[-_][mf]?_([a-zA-Z0-9]+_)?ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
             Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
