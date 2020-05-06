@@ -121,7 +121,7 @@ class CombineResultsCmd {
                     List<ColorMIPSearchResultMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,
                             csr -> csr.matchedId,
-                            ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                            csr -> (double) csr.getMatchingPixels(),
                             -1,
                             1)
                             .stream()

@@ -73,7 +73,7 @@ class CmdUtils {
                         .compare(csr1, csr2)
                         ;
             } else if (csr1.getNormalizedScore() == null && csr2.getNormalizedScore() == null) {
-                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
+                return Comparator.comparingInt(ColorMIPSearchResultMetadata::getMatchingPixels)
                         .compare(csr1, csr2)
                         ;
             } else if (csr1.getNormalizedScore() == null) {

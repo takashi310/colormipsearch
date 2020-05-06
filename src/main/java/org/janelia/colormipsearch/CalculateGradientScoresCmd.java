@@ -203,7 +203,7 @@ class CalculateGradientScoresCmd {
         List<ScoredEntry<List<ColorMIPSearchResultMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
                 cdsResults,
                 csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)), // pick best results by line
-                ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                csr -> (double) csr.getMatchingPixels(),
                 topPublishedNames,
                 -1);
 
@@ -211,7 +211,7 @@ class CalculateGradientScoresCmd {
                 .flatMap(se -> Utils.pickBestMatches(
                         se.entry,
                         csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
-                        ColorMIPSearchResultMetadata::getMatchingPixelsPct,
+                        csr -> (double) csr.getMatchingPixels(),
                         topSamples,
                         1).stream())
                 .flatMap(se -> se.entry.stream())
