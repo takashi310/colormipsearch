@@ -32,7 +32,7 @@ public class Main {
         ColorDepthSearchJSONInputCmd jsonMIPsSearchCmd = new ColorDepthSearchJSONInputCmd(commonArgs);
         ColorDepthSearchLocalMIPsCmd localMIPFilesSearchCmd = new ColorDepthSearchLocalMIPsCmd(commonArgs);
         CombineResultsCmd combineResultsCmd = new CombineResultsCmd(commonArgs);
-        SetFakeGradientScoresCmd fakeGradientScoresCmd = new SetFakeGradientScoresCmd(commonArgs);
+        NormalizeGradientScoresCmd fakeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
         ReplaceURLsCommand replaceURLsCmd = new ReplaceURLsCommand(commonArgs);
 

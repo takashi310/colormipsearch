@@ -21,15 +21,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SetFakeGradientScoresCmd {
-    private static final Logger LOG = LoggerFactory.getLogger(SetFakeGradientScoresCmd.class);
+class NormalizeGradientScoresCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(NormalizeGradientScoresCmd.class);
 
-    @Parameters(commandDescription = "Combine color depth search results")
-    static class SetGradientScoresArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be sorted")
+    @Parameters(commandDescription = "Normalize gradient score for the search results - " +
+            "if the area gap is not available consider it as if there was a perfect shape match, i.e., areagap = 0")
+    static class NormalizeGradientScoresArgs {
+        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be normalized")
         List<String> resultsDirs;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be normalized")
         List<String> resultsFiles;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
@@ -41,7 +42,7 @@ class SetFakeGradientScoresCmd {
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        SetGradientScoresArgs(CommonArgs commonArgs) {
+        NormalizeGradientScoresArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
@@ -54,13 +55,13 @@ class SetFakeGradientScoresCmd {
         }
     }
 
-    private final SetGradientScoresArgs args;
+    private final NormalizeGradientScoresArgs args;
 
-    SetFakeGradientScoresCmd(CommonArgs commonArgs) {
-        args =  new SetGradientScoresArgs(commonArgs);
+    NormalizeGradientScoresCmd(CommonArgs commonArgs) {
+        args =  new NormalizeGradientScoresArgs(commonArgs);
     }
 
-    SetGradientScoresArgs getArgs() {
+    NormalizeGradientScoresArgs getArgs() {
         return args;
     }
 
@@ -68,7 +69,7 @@ class SetFakeGradientScoresCmd {
         setGradientScores(args);
     }
 
-    private static void setGradientScores(SetGradientScoresArgs args) {
+    private static void setGradientScores(NormalizeGradientScoresArgs args) {
         List<String> resultFileNames;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             resultFileNames = args.resultsFiles;
@@ -94,17 +95,28 @@ class SetFakeGradientScoresCmd {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(cdsFile , mapper);
-            Integer maxPixelMatch = cdsResults.results.stream()
+            Long maxAreaGap = cdsResults.results.stream()
+                    .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
+                    .max(Long::compare)
+                    .orElse(-1L);
+            Integer maxMatchingPixels = cdsResults.results.stream()
                     .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                     .max(Integer::compare)
                     .orElse(0);
-            LOG.debug("Max pixel match for {}  -> {}", fn, maxPixelMatch);
+            LOG.debug("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
             List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.results.stream()
                     .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
                     .peek(csr -> {
-                        csr.setArtificialShapeScore(GradientAreaGapUtils.calculateAreaGapScore(
-                                0, 0, csr.getMatchingPixels(), maxPixelMatch)
-                        );
+                        long areaGap = csr.getGradientAreaGap();
+                        if (areaGap >= 0) {
+                            csr.setNormalizedGradientAreaGapScore(GradientAreaGapUtils.calculateAreaGapScore(
+                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), maxMatchingPixels)
+                            );
+                        } else {
+                            csr.setArtificialShapeScore(GradientAreaGapUtils.calculateAreaGapScore(
+                                    0, Math.max(maxAreaGap, 0), csr.getMatchingPixels(), maxMatchingPixels)
+                            );
+                        }
                     })
                     .collect(Collectors.toList());
             CmdUtils.sortCDSResults(cdsResultsWithNormalizedScore);

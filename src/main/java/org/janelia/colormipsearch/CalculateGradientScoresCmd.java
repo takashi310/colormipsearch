@@ -233,7 +233,6 @@ class CalculateGradientScoresCmd {
                                                                                                           EM2LMAreaGapCalculator emlmAreaGapCalculator,
                                                                                                           Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP);
-        long startTimeForCurrentEntry = System.currentTimeMillis();
         CompletableFuture<TriFunction<MIPImage, MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load image {}", inputMIP);
             MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
