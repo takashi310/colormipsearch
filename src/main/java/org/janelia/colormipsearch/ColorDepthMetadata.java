@@ -7,10 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
 class ColorDepthMetadata extends MetadataAttrs {
-    @JsonProperty
-    String internalName;
-    @JsonProperty
-    String line;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String sampleRef;
@@ -38,8 +34,6 @@ class ColorDepthMetadata extends MetadataAttrs {
 
     void copyTo(ColorDepthMetadata that) {
         super.copyTo(that);
-        that.internalName = this.internalName;
-        that.line = this.line;
         that.sampleRef = this.sampleRef;
         that.filepath = this.filepath;
         that.segmentedDataBasePath = this.segmentedDataBasePath;

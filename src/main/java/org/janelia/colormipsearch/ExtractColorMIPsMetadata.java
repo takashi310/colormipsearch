@@ -175,12 +175,7 @@ public class ExtractColorMIPsMetadata {
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
                     .collect(Collectors.groupingBy(
                             cdmip -> cdmip.publishedName,
-                            Collectors.collectingAndThen(
-                                    Collectors.toList(),
-                                    l -> {
-                                        l.sort(Comparator.comparing(cdm -> cdm.internalName));
-                                        return l;
-                                    })));
+                            Collectors.toList()));
             // write the results to the output
             resultsByLineOrSkeleton
                     .forEach((lineOrSkeletonName, results) -> writeColorDepthMetadata(outputPath.resolve(lineOrSkeletonName + ".json"), results))
@@ -191,7 +186,6 @@ public class ExtractColorMIPsMetadata {
     private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.id = cdmip.id;
-        cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
         cdMetadata.filepath = cdmip.filepath;
@@ -201,7 +195,6 @@ public class ExtractColorMIPsMetadata {
         if (cdmip.sample != null) {
             cdMetadata.publishedToStaging = cdmip.sample.publishedToStaging;
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
-            cdMetadata.line = cdmip.sample.line;
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
             cdMetadata.addAttr("Mounting Protocol", cdmip.sample.mountingProtocol);
@@ -296,7 +289,6 @@ public class ExtractColorMIPsMetadata {
     private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.id = cdmip.id;
-        cdMetadata.internalName = cdmip.name;
         cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.libraryName = cdmip.findLibrary();
         cdMetadata.filepath = cdmip.filepath;
