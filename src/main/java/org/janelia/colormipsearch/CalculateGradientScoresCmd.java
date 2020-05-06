@@ -203,7 +203,7 @@ class CalculateGradientScoresCmd {
         List<ScoredEntry<List<ColorMIPSearchResultMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
                 cdsResults,
                 csr -> StringUtils.defaultIfBlank(csr.matchedPublishedName, extractPublishingNameCandidateFromImageName(csr.matchedImageName)), // pick best results by line
-                csr -> (double) csr.getMatchingPixels(),
+                ColorMIPSearchResultMetadata::getMatchingPixels,
                 topPublishedNames,
                 -1);
 
@@ -211,7 +211,7 @@ class CalculateGradientScoresCmd {
                 .flatMap(se -> Utils.pickBestMatches(
                         se.entry,
                         csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
-                        csr -> (double) csr.getMatchingPixels(),
+                        ColorMIPSearchResultMetadata::getMatchingPixels,
                         topSamples,
                         1).stream())
                 .flatMap(se -> se.entry.stream())
@@ -274,12 +274,12 @@ class CalculateGradientScoresCmd {
         return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(vr -> {
                     LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMIP);
-                    Double maxPctPixelScore = selectedCDSResultsForInputMIP.stream()
-                            .map(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
-                            .max(Double::compare)
-                            .orElse(null);
+                    Integer maxMatchingPixels = selectedCDSResultsForInputMIP.stream()
+                            .map(ColorMIPSearchResultMetadata::getMatchingPixels)
+                            .max(Integer::compare)
+                            .orElse(0);
                     LOG.info("Max pixel percentage score for the {} selected matches of entry# {} ({}) -> {}",
-                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxPctPixelScore);
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxMatchingPixels);
                     List<Long> areaGaps = areaGapComputations.stream()
                             .map(areaGapComputation -> areaGapComputation.join())
                             .collect(Collectors.toList());
@@ -289,14 +289,14 @@ class CalculateGradientScoresCmd {
                     LOG.info("Max area gap for the {} selected matches of entry# {} ({}) -> {}",
                             selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxAreaGap);
                     // set the normalized area gap values
-                    if (maxAreaGap >= 0 && maxPctPixelScore != null) {
+                    if (maxAreaGap >= 0 && maxMatchingPixels > 0) {
                         selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
                                 .forEach(csr -> {
-                                    csr.setNormalizedGradientAreaGapScore(emlmAreaGapCalculator.calculateAreaGapScore(
+                                    csr.setNormalizedGradientAreaGapScore(GradientAreaGapUtils.calculateAreaGapScore(
                                             csr.getGradientAreaGap(),
                                             maxAreaGap,
-                                            csr.getMatchingPixelsPct(),
-                                            maxPctPixelScore));
+                                            csr.getMatchingPixels(),
+                                            maxMatchingPixels));
                                 });
                     }
                     ;

@@ -208,4 +208,15 @@ public class GradientAreaGapUtils {
         return sliceNumber;
     }
 
+    static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, long maxPixelMatch) {
+        double areaGapScore;
+        if (gradientAreaGap == 0 || maxAreaGap == 0) {
+            areaGapScore = 0.;
+        } else {
+            areaGapScore = (double) gradientAreaGap / maxAreaGap;
+        }
+        double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
+        return pixelMatch == 0 || maxPixelMatch == 0 ? 0 : (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
+    }
+
 }

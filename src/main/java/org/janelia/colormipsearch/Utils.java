@@ -40,10 +40,10 @@ public class Utils {
 
     static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
                                                           Function<T, String> groupingCriteria,
-                                                          Function<T, Double> scoreExtractor,
+                                                          Function<T, Number> scoreExtractor,
                                                           int topResults,
                                                           int limitSubResults) {
-        Comparator<T> csrComparison = Comparator.comparing(scoreExtractor);
+        Comparator<T> csrComparison = Comparator.comparing(scoreExtractor.andThen(n -> n.doubleValue()));
         List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = l.stream()
                 .collect(Collectors.groupingBy(
                         val -> StringUtils.defaultIfBlank(groupingCriteria.apply(val), "UNKNOWN"),
@@ -60,7 +60,7 @@ public class Utils {
                     T maxValue = Collections.max(e.getValue(), csrComparison);
                     return new ScoredEntry<>(e.getKey(), scoreExtractor.apply(maxValue), e.getValue());
                 })
-                .sorted((se1, se2) -> Double.compare(se2.score, se1.score)) // sort in reverse order
+                .sorted((se1, se2) -> Double.compare(se2.score.doubleValue(), se1.score.doubleValue())) // sort in reverse order
                 .collect(Collectors.toList());
         if (topResults > 0 && bestResultsForSpecifiedCriteria.size() > topResults) {
             return bestResultsForSpecifiedCriteria.subList(0, topResults);

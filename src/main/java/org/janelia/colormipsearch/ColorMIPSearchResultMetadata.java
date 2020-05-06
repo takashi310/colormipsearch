@@ -119,7 +119,7 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
             return normalizedGapScore;
         } else {
             Double artificialGapScore = getArtificialShapeScore();
-            return artificialGapScore != null ? artificialGapScore : getMatchingPixelsPct() * 100;
+            return artificialGapScore != null ? artificialGapScore : getMatchingPixels();
         }
     }
 

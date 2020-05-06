@@ -94,16 +94,16 @@ class SetFakeGradientScoresCmd {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(cdsFile , mapper);
-            Double maxPctPixelScore = cdsResults.results.stream()
-                    .map(ColorMIPSearchResultMetadata::getMatchingPixelsPct)
-                    .max(Double::compare)
-                    .orElse(0.);
-            LOG.debug("Max pixel percentage score for {}  -> {}", fn, maxPctPixelScore);
+            Integer maxPixelMatch = cdsResults.results.stream()
+                    .map(ColorMIPSearchResultMetadata::getMatchingPixels)
+                    .max(Integer::compare)
+                    .orElse(0);
+            LOG.debug("Max pixel match for {}  -> {}", fn, maxPixelMatch);
             List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.results.stream()
                     .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
                     .peek(csr -> {
-                        csr.setArtificialShapeScore(emlmAreaGapCalculator.calculateAreaGapScore(
-                                0, 0, csr.getMatchingPixelsPct(), maxPctPixelScore)
+                        csr.setArtificialShapeScore(GradientAreaGapUtils.calculateAreaGapScore(
+                                0, 0, csr.getMatchingPixels(), maxPixelMatch)
                         );
                     })
                     .collect(Collectors.toList());
