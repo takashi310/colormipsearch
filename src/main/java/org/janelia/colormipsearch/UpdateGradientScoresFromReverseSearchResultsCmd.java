@@ -96,7 +96,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         }
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        LOG.info("Start reading reverse results from {}", args.reverseResultsDir);
         Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> indexedReverseResults = readAllJSONResultsFromDir(args.reverseResultsDir, mapper);
+        LOG.info("Finished reading {} reverse results from {}", indexedReverseResults.size(), args.reverseResultsDir);
         Path outputDir = args.getOutputDir();
         resultFileNames.stream().parallel()
                 .map(File::new)
@@ -122,6 +124,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     private Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> readAllJSONResultsFromDir(String resultsDir, ObjectMapper mapper) {
         try {
             return Files.find(Paths.get(resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                    .parallel()
                     .map(p -> CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper))
                     .filter(cdsResults -> cdsResults.results != null)
                     .flatMap(cdsResults -> cdsResults.results.stream())
