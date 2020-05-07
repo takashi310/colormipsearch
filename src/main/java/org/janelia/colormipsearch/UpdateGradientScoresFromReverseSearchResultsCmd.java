@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,7 +27,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
-    static class GradientScoreResultsArgs extends AbstractArgs {
+    static class GradientScoreResultsArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be calculated")
         private String resultsDir;
 
@@ -36,8 +37,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         @Parameter(names = {"--reverseResultsDir", "-revd"}, description = "Reverse results directory to be calculated")
         private String reverseResultsDir;
 
+        @ParametersDelegate
+        final CommonArgs commonArgs;
+
         GradientScoreResultsArgs(CommonArgs commonArgs) {
-            super(commonArgs);
+            this.commonArgs = commonArgs;
         }
 
         String getResultsDir() {
