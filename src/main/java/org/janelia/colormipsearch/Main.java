@@ -43,7 +43,7 @@ public class Main {
                 .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
                 .addCommand("combineResults", combineResultsCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
-                .addCommand("initGradientScores", normalizeGradientScoresCmd.getArgs())
+                .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
                 .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
                 .build();
