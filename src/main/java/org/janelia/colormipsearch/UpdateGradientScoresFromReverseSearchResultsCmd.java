@@ -104,8 +104,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                     Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
                     if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                         Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
-                        LOG.info("Reading reverse results from {}:{}", args.reverseResultsDir, matchedIds);
+                        LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                         Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
+                        LOG.info("Finished reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                         cdsResults.results
                                 .forEach(csr -> {
                                     ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
