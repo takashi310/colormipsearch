@@ -32,9 +32,10 @@ public class Main {
         ColorDepthSearchJSONInputCmd jsonMIPsSearchCmd = new ColorDepthSearchJSONInputCmd(commonArgs);
         ColorDepthSearchLocalMIPsCmd localMIPFilesSearchCmd = new ColorDepthSearchLocalMIPsCmd(commonArgs);
         CombineResultsCmd combineResultsCmd = new CombineResultsCmd(commonArgs);
-        NormalizeGradientScoresCmd fakeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
+        NormalizeGradientScoresCmd normalizeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
         ReplaceURLsCommand replaceURLsCmd = new ReplaceURLsCommand(commonArgs);
+        UpdateGradientScoresFromReverseSearchResultsCmd updateGradientScoresFromReverseSearchResultsCmd = new UpdateGradientScoresFromReverseSearchResultsCmd(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
@@ -42,8 +43,9 @@ public class Main {
                 .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
                 .addCommand("combineResults", combineResultsCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
-                .addCommand("initGradientScores", fakeGradientScoresCmd.getArgs())
+                .addCommand("initGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
+                .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
                 .build();
 
         try {
@@ -102,15 +104,15 @@ public class Main {
                 CmdUtils.createOutputDirs(combineResultsCmd.getArgs().getOutputDir());
                 combineResultsCmd.execute();
                 break;
-            case "initGradientScores":
-                if (CollectionUtils.isEmpty(fakeGradientScoresCmd.getArgs().resultsDirs) &&
-                        CollectionUtils.isEmpty(fakeGradientScoresCmd.getArgs().resultsFiles)) {
+            case "normalizeGradientScores":
+                if (CollectionUtils.isEmpty(normalizeGradientScoresCmd.getArgs().resultsDirs) &&
+                        CollectionUtils.isEmpty(normalizeGradientScoresCmd.getArgs().resultsFiles)) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
                     cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);
                 }
-                CmdUtils.createOutputDirs(fakeGradientScoresCmd.getArgs().getOutputDir());
-                fakeGradientScoresCmd.execute();
+                CmdUtils.createOutputDirs(normalizeGradientScoresCmd.getArgs().getOutputDir());
+                normalizeGradientScoresCmd.execute();
                 break;
             case "replaceImageURLs":
                 if (!replaceURLsCmd.getArgs().validate()) {
@@ -120,6 +122,15 @@ public class Main {
                 }
                 CmdUtils.createOutputDirs(replaceURLsCmd.getArgs().getOutputDir());
                 replaceURLsCmd.execute();
+                break;
+            case "gradientScoresFromMatchedResults":
+                if (!updateGradientScoresFromReverseSearchResultsCmd.getArgs().validate()) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    System.exit(1);
+                }
+                CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
+                updateGradientScoresFromReverseSearchResultsCmd.execute();
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");

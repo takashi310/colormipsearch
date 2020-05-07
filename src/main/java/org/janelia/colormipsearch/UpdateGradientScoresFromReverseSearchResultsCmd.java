@@ -2,26 +2,22 @@ package org.janelia.colormipsearch;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +30,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be calculated")
         private String resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, converter = ListArg.ListArgConverter.class, description = "File containing results to be calculated")
-        private String resultsFile;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be calculated")
+        private List<String> resultsFiles;
 
         @Parameter(names = {"--reverseResultsDir", "-revd"}, description = "Reverse results directory to be calculated")
         private String reverseResultsDir;
@@ -48,8 +44,12 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             return resultsDir;
         }
 
-        String getResultsFile() {
-            return resultsFile;
+        List<String> getResultsFiles() {
+            return resultsFiles;
+        }
+
+        boolean validate() {
+            return StringUtils.isNotBlank(resultsDir) || CollectionUtils.isNotEmpty(resultsFiles);
         }
 
         Path getOutputDir() {
@@ -72,15 +72,65 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     void execute() {
-        calculateGradientAreaScore(args);
+        updateGradientAreaScores(args);
     }
 
-    private void calculateGradientAreaScore(GradientScoreResultsArgs args) {
+    private void updateGradientAreaScores(GradientScoreResultsArgs args) {
+        List<String> resultFileNames;
+        if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
+            resultFileNames = args.resultsFiles;
+        } else if (StringUtils.isNotEmpty(args.resultsDir)) {
+            try {
+                resultFileNames = Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                        .map(p -> p.toString())
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } else {
+            resultFileNames = Collections.emptyList();
+        }
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Map<String, Map<String, ColorMIPSearchResultMetadata>> indexedReverseResults = readAllJSONResultsFromDir(args.reverseResultsDir, mapper);
         Path outputDir = args.getOutputDir();
+        resultFileNames.stream().parallel()
+                .map(fn -> new File(fn))
+                .forEach(f -> {
+                    Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
+                    cdsResults.results
+                            .forEach(csr -> {
+                                ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, indexedReverseResults);
+                                if (reverseCsr == null) {
+                                    LOG.warn("No matching result found for {}", csr);
+                                } else {
+                                    csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
+                                    csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
+                                }
+                            });
+                    CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                });
+
     }
 
+    private Map<String, Map<String, ColorMIPSearchResultMetadata>> readAllJSONResultsFromDir(String resultsDir, ObjectMapper mapper) {
+        try {
+            return Files.find(Paths.get(resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                    .map(p -> CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper))
+                    .filter(cdsResults -> cdsResults.results != null)
+                    .flatMap(cdsResults -> cdsResults.results.stream())
+                    .collect(Collectors.groupingBy(csr -> csr.id, Collectors.toMap(csr -> csr.matchedId, csr -> csr)));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
-
+    private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, Map<String, ColorMIPSearchResultMetadata>> allReverseResultsById) {
+        Map<String, ColorMIPSearchResultMetadata> matches = allReverseResultsById.get(result.matchedId);
+        if (matches != null) {
+            return matches.get(result.id);
+        } else {
+            return null;
+        }
+    }
 }
