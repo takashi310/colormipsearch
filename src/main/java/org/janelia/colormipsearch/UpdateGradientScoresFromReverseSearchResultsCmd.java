@@ -142,7 +142,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(String resultsDir, Set<String> matchIds, ObjectMapper mapper) {
-        return matchIds.stream()
+        return matchIds.stream().parallel()
                 .map(matchId -> new File(resultsDir, matchId + ".json"))
                 .filter(f -> f.exists())
                 .map(f -> getMatchResults(f))
