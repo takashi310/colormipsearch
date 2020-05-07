@@ -57,7 +57,7 @@ class CmdUtils {
 
     static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
         try {
-            LOG.info("Reading {}", f);
+            LOG.debug("Reading {}", f);
             return mapper.readValue(f, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
             });
         } catch (IOException e) {
