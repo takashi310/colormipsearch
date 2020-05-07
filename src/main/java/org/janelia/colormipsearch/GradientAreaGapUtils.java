@@ -214,11 +214,11 @@ public class GradientAreaGapUtils {
             return 0;
         } else {
             if (gradientAreaGap < 0) {
-                areaGapScore = 0.05 * pixelMatch / pixelMatchPct; // 5% of pixel match
+                areaGapScore = 0.05; // 5%
             } else if (gradientAreaGap == 0) {
-                areaGapScore = 20; // make it small
+                areaGapScore = 0.002; // make it small
             } else {
-                areaGapScore = gradientAreaGap;
+                areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
             }
             return (double) pixelMatch / areaGapScore * 100;
         }
