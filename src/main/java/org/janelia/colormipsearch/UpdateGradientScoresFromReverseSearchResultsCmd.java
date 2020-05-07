@@ -96,10 +96,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         }
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Map<String, Map<String, ColorMIPSearchResultMetadata>> indexedReverseResults = readAllJSONResultsFromDir(args.reverseResultsDir, mapper);
+        Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> indexedReverseResults = readAllJSONResultsFromDir(args.reverseResultsDir, mapper);
         Path outputDir = args.getOutputDir();
         resultFileNames.stream().parallel()
-                .map(fn -> new File(fn))
+                .map(File::new)
                 .forEach(f -> {
                     Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
                     cdsResults.results
@@ -114,25 +114,24 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                             });
                     CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                 });
-
     }
 
-    private Map<String, Map<String, ColorMIPSearchResultMetadata>> readAllJSONResultsFromDir(String resultsDir, ObjectMapper mapper) {
+    private Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> readAllJSONResultsFromDir(String resultsDir, ObjectMapper mapper) {
         try {
             return Files.find(Paths.get(resultsDir), 1, (p, fa) -> fa.isRegularFile())
                     .map(p -> CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper))
                     .filter(cdsResults -> cdsResults.results != null)
                     .flatMap(cdsResults -> cdsResults.results.stream())
-                    .collect(Collectors.groupingBy(csr -> csr.id, Collectors.toMap(csr -> csr.matchedId, csr -> csr)));
+                    .collect(Collectors.groupingBy(csr -> csr.id, Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList())));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, Map<String, ColorMIPSearchResultMetadata>> allReverseResultsById) {
-        Map<String, ColorMIPSearchResultMetadata> matches = allReverseResultsById.get(result.matchedId);
+    private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> allReverseResultsById) {
+        Map<String, List<ColorMIPSearchResultMetadata>> matches = allReverseResultsById.get(result.matchedId);
         if (matches != null) {
-            return matches.get(result.id);
+            return matches.get(result.id).get(0);
         } else {
             return null;
         }
