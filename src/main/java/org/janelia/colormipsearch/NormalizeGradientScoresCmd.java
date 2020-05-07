@@ -89,8 +89,6 @@ class NormalizeGradientScoresCmd {
         }
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        EM2LMAreaGapCalculator emlmAreaGapCalculator = new EM2LMAreaGapCalculator(0, 0, false);
-
         resultFileNames.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
@@ -99,6 +97,7 @@ class NormalizeGradientScoresCmd {
                     .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
                     .max(Long::compare)
                     .orElse(-1L);
+            LOG.debug("Max area gap for {}  -> {}", fn, maxAreaGap);
             Integer maxMatchingPixels = cdsResults.results.stream()
                     .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                     .max(Integer::compare)

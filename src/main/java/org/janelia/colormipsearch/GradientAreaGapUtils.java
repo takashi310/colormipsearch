@@ -210,13 +210,14 @@ public class GradientAreaGapUtils {
 
     static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, long maxPixelMatch) {
         double areaGapScore;
-        if (gradientAreaGap == 0 || maxAreaGap == 0) {
-            areaGapScore = 0.;
+        if (gradientAreaGap < 0) {
+            areaGapScore = 0.05 * pixelMatch; // 5% of pixel match
+        } else if (gradientAreaGap == 0) {
+            areaGapScore = 2; // make it small
         } else {
-            areaGapScore = (double) gradientAreaGap / maxAreaGap;
+            areaGapScore = gradientAreaGap;
         }
-        double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
-        return pixelMatch == 0 || maxPixelMatch == 0 ? 0 : (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
+        return pixelMatch == 0 ? 0 : (double)pixelMatch / areaGapScore * 100;
     }
 
 }
