@@ -97,7 +97,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         LOG.info("Start reading reverse results from {}", args.reverseResultsDir);
-        Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> indexedReverseResults = readAllJSONResultsFromDir(args.reverseResultsDir, mapper);
+        Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> indexedReverseResults = readAllJSONResultsFromDirAndIndexByMatchId(args.reverseResultsDir, mapper);
         LOG.info("Finished reading {} reverse results from {}", indexedReverseResults.size(), args.reverseResultsDir);
         Path outputDir = args.getOutputDir();
         resultFileNames.stream().parallel()
@@ -121,23 +121,23 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 });
     }
 
-    private Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> readAllJSONResultsFromDir(String resultsDir, ObjectMapper mapper) {
+    private Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> readAllJSONResultsFromDirAndIndexByMatchId(String resultsDir, ObjectMapper mapper) {
         try {
             return Files.find(Paths.get(resultsDir), 1, (p, fa) -> fa.isRegularFile())
                     .parallel()
                     .map(p -> CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper))
                     .filter(cdsResults -> cdsResults.results != null)
                     .flatMap(cdsResults -> cdsResults.results.stream())
-                    .collect(Collectors.groupingBy(csr -> csr.id, Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList())));
+                    .collect(Collectors.groupingBy(csr -> csr.matchedId, Collectors.groupingBy(csr -> csr.id, Collectors.toList())));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, Map<String, List<ColorMIPSearchResultMetadata>>> allReverseResultsById) {
-        Map<String, List<ColorMIPSearchResultMetadata>> matches = allReverseResultsById.get(result.matchedId);
+        Map<String, List<ColorMIPSearchResultMetadata>> matches = allReverseResultsById.get(result.id);
         if (matches != null) {
-            return matches.get(result.id).get(0);
+            return matches.get(result.matchedId).get(0);
         } else {
             return null;
         }
