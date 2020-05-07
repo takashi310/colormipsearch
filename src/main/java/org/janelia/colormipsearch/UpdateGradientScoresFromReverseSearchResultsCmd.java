@@ -102,17 +102,20 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 .map(File::new)
                 .forEach(f -> {
                     Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
-                    cdsResults.results
-                            .forEach(csr -> {
-                                ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, indexedReverseResults);
-                                if (reverseCsr == null) {
-                                    LOG.warn("No matching result found for {}", csr);
-                                } else {
-                                    csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
-                                    csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
-                                }
-                            });
-                    CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                    if (CollectionUtils.isNotEmpty(cdsResults.results)) {
+                        cdsResults.results
+                                .forEach(csr -> {
+                                    ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, indexedReverseResults);
+                                    if (reverseCsr == null) {
+                                        LOG.warn("No matching result found for {}", csr);
+                                    } else {
+                                        csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
+                                        csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
+                                    }
+                                });
+                        CmdUtils.sortCDSResults(cdsResults.results);
+                        CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                    }
                 });
     }
 
