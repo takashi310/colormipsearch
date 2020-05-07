@@ -115,12 +115,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         resultFileNames.stream().parallel()
                 .map(File::new)
                 .forEach(f -> {
+                    long startTime = System.currentTimeMillis();
                     Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
                     if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                         Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
                         LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                         Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
-                        LOG.info("Finished reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
+                        LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
+                                matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis()-startTime);
                         cdsResults.results.stream()
                                 .forEach(csr -> {
                                     ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
@@ -131,6 +133,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                         csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
                                     }
                                 });
+                        LOG.info("Finished updating {} results from {} in {}ms",
+                                cdsResults.results.size(), f, System.currentTimeMillis()-startTime);
                         CmdUtils.sortCDSResults(cdsResults.results);
                         CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                     }
