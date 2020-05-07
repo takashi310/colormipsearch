@@ -210,14 +210,18 @@ public class GradientAreaGapUtils {
 
     static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         double areaGapScore;
-        if (gradientAreaGap < 0) {
-            areaGapScore = 0.05 * pixelMatch / pixelMatchPct; // 5% of pixel match
-        } else if (gradientAreaGap == 0) {
-            areaGapScore = 2; // make it small
+        if (pixelMatch == 0 || pixelMatchPct == 0) {
+            return 0;
         } else {
-            areaGapScore = gradientAreaGap;
+            if (gradientAreaGap < 0) {
+                areaGapScore = 0.05 * pixelMatch / pixelMatchPct; // 5% of pixel match
+            } else if (gradientAreaGap == 0) {
+                areaGapScore = 20; // make it small
+            } else {
+                areaGapScore = gradientAreaGap;
+            }
+            return (double) pixelMatch / areaGapScore * 100;
         }
-        return pixelMatch == 0 ? 0 : (double)pixelMatch / areaGapScore * 100;
     }
 
 }
