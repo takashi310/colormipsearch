@@ -208,10 +208,10 @@ public class GradientAreaGapUtils {
         return sliceNumber;
     }
 
-    static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, long maxPixelMatch) {
+    static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         double areaGapScore;
         if (gradientAreaGap < 0) {
-            areaGapScore = 0.05 * pixelMatch; // 5% of pixel match
+            areaGapScore = 0.05 * pixelMatch / pixelMatchPct; // 5% of pixel match
         } else if (gradientAreaGap == 0) {
             areaGapScore = 2; // make it small
         } else {

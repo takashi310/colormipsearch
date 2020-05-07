@@ -109,11 +109,11 @@ class NormalizeGradientScoresCmd {
                         long areaGap = csr.getGradientAreaGap();
                         if (areaGap >= 0) {
                             csr.setNormalizedGradientAreaGapScore(GradientAreaGapUtils.calculateAreaGapScore(
-                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), maxMatchingPixels)
+                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels)
                             );
                         } else {
                             csr.setArtificialShapeScore(GradientAreaGapUtils.calculateAreaGapScore(
-                                    0, Math.max(maxAreaGap, 0), csr.getMatchingPixels(), maxMatchingPixels)
+                                    0, Math.max(maxAreaGap, 0), csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels)
                             );
                         }
                     })

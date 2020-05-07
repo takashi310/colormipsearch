@@ -295,6 +295,7 @@ class CalculateGradientScoresCmd {
                                             csr.getGradientAreaGap(),
                                             maxAreaGap,
                                             csr.getMatchingPixels(),
+                                            csr.getMatchingPixelsPct(),
                                             maxMatchingPixels));
                                 });
                     }
