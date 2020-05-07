@@ -107,14 +107,13 @@ class NormalizeGradientScoresCmd {
                     .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
                     .peek(csr -> {
                         long areaGap = csr.getGradientAreaGap();
+                        double normalizedGapScore = GradientAreaGapUtils.calculateAreaGapScore(
+                                csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels
+                        );
                         if (areaGap >= 0) {
-                            csr.setNormalizedGradientAreaGapScore(GradientAreaGapUtils.calculateAreaGapScore(
-                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels)
-                            );
+                            csr.setNormalizedGradientAreaGapScore(normalizedGapScore);
                         } else {
-                            csr.setArtificialShapeScore(GradientAreaGapUtils.calculateAreaGapScore(
-                                    0, Math.max(maxAreaGap, 0), csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels)
-                            );
+                            csr.setArtificialShapeScore(normalizedGapScore);
                         }
                     })
                     .collect(Collectors.toList());
