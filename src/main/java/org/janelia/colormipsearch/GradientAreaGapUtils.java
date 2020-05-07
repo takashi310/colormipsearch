@@ -214,7 +214,7 @@ public class GradientAreaGapUtils {
             return 0;
         } else {
             if (gradientAreaGap < 0) {
-                areaGapScore = 0.05; // 5%
+                areaGapScore = 3 * pixelMatchPct; // 3 times larger than pixel match ratio
             } else if (gradientAreaGap == 0) {
                 areaGapScore = 0.002; // make it small
             } else {
