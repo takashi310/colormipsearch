@@ -111,8 +111,8 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         private boolean includeMIPsWithNoPublishedURL;
 
-        @Parameter(names = "--include-mips-without-publishing-name", description = "Include MIPs without publishing name", arity = 0)
-        private boolean includeMIPsWithoutPublisingName;
+        @Parameter(names = "--include-mips-without-publishing-name", description = "Include MIPs without publishing name")
+        private int includeMIPsWithoutPublisingName = 0;
 
         @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
                 "0 - lookup segmented images but if none is found include the original, 0x1 - include the original MIP but only if a segmented image exists, 0x2 - include only segmented image if it exists")
@@ -152,7 +152,7 @@ public class ExtractColorMIPsMetadata {
         this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
-    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, boolean includeMIPsWithoutPublishingName, Path outputPath) {
+    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, int missingPublishingHandling, Path outputPath) {
         // get color depth mips from JACS for the specified alignmentSpace and library
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
@@ -170,7 +170,7 @@ public class ExtractColorMIPsMetadata {
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
-                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(includeMIPsWithoutPublishingName, cdmip)))
+                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                     .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
                     .collect(Collectors.groupingBy(
@@ -259,10 +259,23 @@ public class ExtractColorMIPsMetadata {
         return !StringUtils.equalsIgnoreCase(NO_CONSENSUS, cdmip.sample.line);
     }
 
-    private boolean hasPublishedName(boolean ignorePublishingName,  ColorDepthMIP cdmip) {
+    private boolean hasPublishedName(int missingPublishingHandling,  ColorDepthMIP cdmip) {
         String publishingName = cdmip.sample.publishingName;
-        return ignorePublishingName ||
-                cdmip.sample.publishedToStaging && StringUtils.isNotBlank(publishingName) && !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName);
+        if (cdmip.sample.publishedToStaging && StringUtils.isNotBlank(publishingName) && !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName)) {
+            return true;
+        } else {
+            if (missingPublishingHandling == 0) {
+                return false;
+            } else {
+                // missingPublishingHandling values:
+                //      0x1 - ignore missing name
+                //      0x2 - ignore missing published flag
+                return (StringUtils.isNotBlank(publishingName) &&
+                        !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName) || (missingPublishingHandling & 0x1) != 0) &&
+                        (cdmip.sample.publishedToStaging || (missingPublishingHandling & 0x2) != 0);
+
+            }
+        }
     }
 
     private boolean hasPublishedImageURL(ColorDepthMIP cdmip) {
@@ -394,7 +407,7 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, boolean includeMIPsWithoutPublishingName, String segmentedMIPsBaseDir, int segmentedImageHandling, String outputDir) {
+    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, int missingPublishingHandling, String segmentedMIPsBaseDir, int segmentedImageHandling, String outputDir) {
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
@@ -437,7 +450,7 @@ public class ExtractColorMIPsMetadata {
                             }
                         })
                         .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
-                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(includeMIPsWithoutPublishingName, cdmip)))
+                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                         .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
                         .forEach(cdmip -> {
