@@ -220,7 +220,7 @@ public class GradientAreaGapUtils {
             } else {
                 areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
             }
-            return (double) pixelMatch / areaGapScore * 100;
+            return (double) pixelMatch / areaGapScore;
         }
     }
 
