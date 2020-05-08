@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -23,6 +24,7 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -158,7 +160,13 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private List<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
         try {
-            return mapper.readTree(f).findValues("results").stream()
+            JsonNode results = mapper.readTree(f).findValue("results");
+            if (results == null || !results.isArray()) {
+                LOG.error("Results field not found in {} or is not an array", f);
+                return Collections.emptyList();
+            }
+            ArrayNode resultsArray = (ArrayNode) results;
+            return StreamSupport.stream(resultsArray.spliterator(), false)
                     .filter(n -> {
                         JsonNode matchedIdNode = n.findValue("matchedId");
                         if (matchedIdNode == null) {
