@@ -174,10 +174,13 @@ class CalculateGradientScoresCmd {
                         .collect(Collectors.toList());
         // wait for all results to complete
         CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
-        LOG.info("Finished gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-        CmdUtils.sortCDSResults(resultsFileContent.results);
-        LOG.info("Finished sorting by gradient area score for {} entries from {} in {}s", gradientAreaGapComputations.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-        return resultsFileContent;
+        List<ColorMIPSearchResultMetadata> srWithGradScores = gradientAreaGapComputations.stream()
+                .flatMap(gac -> gac.join().stream())
+                .collect(Collectors.toList());
+        LOG.info("Finished gradient area score for {} entries from {} in {}s", srWithGradScores.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        CmdUtils.sortCDSResults(srWithGradScores);
+        LOG.info("Finished sorting by gradient area score for {} entries from {} in {}s", srWithGradScores.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        return new Results<>(srWithGradScores);
     }
 
     private Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int topPublishedNames, int topSamples) {
