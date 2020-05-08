@@ -236,6 +236,9 @@ public class GradientAreaGapUtils {
                 return pixelMatch;
             }
             double areaGapScore;
+            if (gradientAreaGap < 0) {
+                return 0;
+            }
             if (gradientAreaGap == 0) {
                 areaGapScore = 0.;
             } else {
