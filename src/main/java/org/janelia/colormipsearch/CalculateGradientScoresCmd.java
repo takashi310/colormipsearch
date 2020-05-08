@@ -177,9 +177,11 @@ class CalculateGradientScoresCmd {
         List<ColorMIPSearchResultMetadata> srWithGradScores = gradientAreaGapComputations.stream()
                 .flatMap(gac -> gac.join().stream())
                 .collect(Collectors.toList());
-        LOG.info("Finished gradient area score for {} entries from {} in {}s", srWithGradScores.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s",
+                srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
         CmdUtils.sortCDSResults(srWithGradScores);
-        LOG.info("Finished sorting by gradient area score for {} entries from {} in {}s", srWithGradScores.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s",
+                srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
         return new Results<>(srWithGradScores);
     }
 
