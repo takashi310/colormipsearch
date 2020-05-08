@@ -6,10 +6,13 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,21 +79,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
-    private final LoadingCache<File, byte[]> reverseResultsCache;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
         this.args = new GradientScoreResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.reverseResultsCache = CacheBuilder.newBuilder()
-                .maximumSize(50000)
-                .concurrencyLevel(16)
-                .build(new CacheLoader<File, byte[]>() {
-                    @Override
-                    public byte[] load(File matchIdResultsFile) throws Exception {
-                        return Files.readAllBytes(matchIdResultsFile.toPath());
-                    }
-                });
     }
 
     GradientScoreResultsArgs getArgs() {
@@ -111,7 +104,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 int length = args.resultsDir.length;
                 List<String> filenamesList = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
                         .skip(from)
-                        .map(p -> p.toString())
+                        .map(Path::toString)
                         .collect(Collectors.toList());
                 if (length > 0 && length < filenamesList.size()) {
                     filesToProcess = filenamesList.subList(0, length);
@@ -125,6 +118,32 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
+        Map<String, byte[]> reverseResultsCache = new ConcurrentHashMap<>();
+        try {
+            LOG.info("Read reverse results directory {}", args.reverseResultsDir);
+            Files.find(Paths.get(args.reverseResultsDir), 1, (p, fa) -> fa.isRegularFile()).parallel()
+                    .forEach(p -> {
+                        try {
+                            byte[] content = Files.readAllBytes(p);
+                            String fn = p.getFileName().toString();
+                            int extseparator = fn.lastIndexOf('.');
+                            String id;
+                            if (extseparator != -1) {
+                                id = fn.substring(0, extseparator);
+                            } else {
+                                id = fn;
+                            }
+                            reverseResultsCache.put(id, content);
+                        } catch (IOException e) {
+                            LOG.error("Error reading {}", p);
+                        }
+                    });
+            LOG.info("Finished reading reverse {} results from {}", reverseResultsCache.size(), args.reverseResultsDir);
+        } catch (IOException e) {
+            LOG.error("Error reading {}", args.reverseResultsDir);
+            throw new UncheckedIOException(e);
+        }
+
         Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
@@ -137,7 +156,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                     Set<String> ids = cdsResults.results.stream().map(csr -> csr.id).collect(Collectors.toSet());
                                     Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(ids, matchedIds, args.reverseResultsDir, mapper);
+                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(ids, matchedIds, reverseResultsCache);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsResults.results.stream()
@@ -160,20 +179,21 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 });
     }
 
-    private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, String resultsDir, ObjectMapper mapper) {
+    private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, Map<String, byte[]> reverseResults) {
         return matchIds.stream().parallel()
-                .map(matchId -> new File(resultsDir, matchId + ".json"))
-                .filter(f -> f.exists())
-                .flatMap(f -> streamMatchResults(f, ids))
+                .flatMap(matchId -> streamMatchResults(matchId, reverseResults.get(matchId), ids))
                 .filter(csr -> csr.getGradientAreaGap() != -1)
                 .collect(Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList()));
     }
 
-    private Stream<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
+    private Stream<ColorMIPSearchResultMetadata> streamMatchResults(String matchId, byte[] content, Set<String> ids) {
         try {
-            JsonNode results = mapper.readTree(reverseResultsCache.get(f)).findValue("results");
+            if (content == null) {
+                return Stream.of();
+            }
+            JsonNode results = mapper.readTree(content).findValue("results");
             if (results == null || !results.isArray()) {
-                LOG.error("Results field not found in {} or is not an array", f);
+                LOG.error("Results field not found in {} or is not an array", matchId);
                 return Stream.of();
             }
             ArrayNode resultsArray = (ArrayNode) results;
@@ -197,7 +217,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                     .filter(csr -> csr != null)
                     ;
         } catch (Exception e) {
-            LOG.error("Error reading {}", f, e);
+            LOG.error("Error reading {}", matchId, e);
             return Stream.of();
         }
     }
