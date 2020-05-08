@@ -33,14 +33,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
     static class GradientScoreResultsArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, description = "Results directory to be calculated")
-        private String resultsDir;
+        @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
+                description = "Results directory for which the gradients need to be set")
+        private ListArg resultsDir;
 
         @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be calculated")
         private List<String> resultsFiles;
 
         @Parameter(names = {"--reverseResultsDir", "-revd"}, description = "Reverse results directory to be calculated")
         private String reverseResultsDir;
+
+        @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
+        int processingPartitionSize = 100;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -49,16 +53,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             this.commonArgs = commonArgs;
         }
 
-        String getResultsDir() {
-            return resultsDir;
-        }
-
-        List<String> getResultsFiles() {
-            return resultsFiles;
-        }
-
         boolean validate() {
-            return StringUtils.isNotBlank(resultsDir) || CollectionUtils.isNotEmpty(resultsFiles);
+            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
         }
 
         Path getOutputDir() {
@@ -97,47 +93,60 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     private void updateGradientAreaScores(GradientScoreResultsArgs args) {
-        List<String> resultFileNames;
+        List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            resultFileNames = args.resultsFiles;
-        } else if (StringUtils.isNotEmpty(args.resultsDir)) {
+            filesToProcess = args.resultsFiles;
+        } else if (args.resultsDir != null) {
             try {
-                resultFileNames = Files.find(Paths.get(args.resultsDir), 1, (p, fa) -> fa.isRegularFile())
+                int from = Math.max(args.resultsDir.offset, 0);
+                int length = args.resultsDir.length;
+                List<String> filenamesList = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
+                        .skip(from)
                         .map(p -> p.toString())
                         .collect(Collectors.toList());
+                if (length > 0 && length < filenamesList.size()) {
+                    filesToProcess = filenamesList.subList(0, length);
+                } else {
+                    filesToProcess = filenamesList;
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         } else {
-            resultFileNames = Collections.emptyList();
+            filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        resultFileNames.stream().parallel()
-                .map(File::new)
-                .forEach(f -> {
-                    long startTime = System.currentTimeMillis();
-                    Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
-                    if (CollectionUtils.isNotEmpty(cdsResults.results)) {
-                        Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
-                        LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-                        Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
-                        LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
-                                matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis()-startTime);
-                        cdsResults.results.stream()
-                                .forEach(csr -> {
-                                    ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
-                                    if (reverseCsr == null) {
-                                        LOG.warn("No matching result found for {}", csr);
-                                    } else {
-                                        csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
-                                        csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
-                                    }
-                                });
-                        LOG.info("Finished updating {} results from {} in {}ms",
-                                cdsResults.results.size(), f, System.currentTimeMillis()-startTime);
-                        CmdUtils.sortCDSResults(cdsResults.results);
-                        CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
-                    }
+        Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(fileList -> {
+                    long startProcessingPartitionTime = System.currentTimeMillis();
+                    fileList.stream()
+                            .map(File::new)
+                            .forEach(f -> {
+                                long startTime = System.currentTimeMillis();
+                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
+                                if (CollectionUtils.isNotEmpty(cdsResults.results)) {
+                                    Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
+                                    LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
+                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
+                                    LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
+                                            matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis()-startTime);
+                                    cdsResults.results.stream()
+                                            .forEach(csr -> {
+                                                ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
+                                                if (reverseCsr == null) {
+                                                    LOG.warn("No matching result found for {}", csr);
+                                                } else {
+                                                    csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
+                                                    csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
+                                                }
+                                            });
+                                    LOG.info("Finished updating {} results from {} in {}ms",
+                                            cdsResults.results.size(), f, System.currentTimeMillis()-startTime);
+                                    CmdUtils.sortCDSResults(cdsResults.results);
+                                    CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                                }
+                            });
+                    LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.);
                 });
     }
 
