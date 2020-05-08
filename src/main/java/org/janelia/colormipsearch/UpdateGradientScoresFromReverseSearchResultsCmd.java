@@ -68,21 +68,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
-    private final LoadingCache<File, Results<List<ColorMIPSearchResultMetadata>>> reverseResultsCache;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
         this.args = new GradientScoreResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.reverseResultsCache = CacheBuilder.newBuilder()
-                .maximumSize(50000)
-                .concurrencyLevel(16)
-                .build(new CacheLoader<File, Results<List<ColorMIPSearchResultMetadata>>>() {
-                    @Override
-                    public Results<List<ColorMIPSearchResultMetadata>> load(File matchIdResultsFile) {
-                        return CmdUtils.readCDSResultsFromJSONFile(matchIdResultsFile, mapper);
-                    }
-                });
     }
 
     GradientScoreResultsArgs getArgs() {
@@ -130,7 +120,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                                     Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
-                                            matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis()-startTime);
+                                            matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsResults.results.stream()
                                             .forEach(csr -> {
                                                 ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
@@ -142,7 +132,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                                 }
                                             });
                                     LOG.info("Finished updating {} results from {} in {}ms",
-                                            cdsResults.results.size(), f, System.currentTimeMillis()-startTime);
+                                            cdsResults.results.size(), f, System.currentTimeMillis() - startTime);
                                     CmdUtils.sortCDSResults(cdsResults.results);
                                     CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                                 }
@@ -163,11 +153,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     private Results<List<ColorMIPSearchResultMetadata>> getMatchResults(File f) {
-        try {
-            return reverseResultsCache.get(f);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
+        return CmdUtils.readCDSResultsFromJSONFile(f, mapper);
     }
 
     private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, List<ColorMIPSearchResultMetadata>> indexedResults) {
