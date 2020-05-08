@@ -151,12 +151,12 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         return matchIds.stream().parallel()
                 .map(matchId -> new File(resultsDir, matchId + ".json"))
                 .filter(f -> f.exists())
-                .flatMap(f -> streamMatchResults(f, ids))
+                .flatMap(f -> streamMatchResults(f, ids).stream())
                 .filter(csr -> csr.getGradientAreaGap() != -1)
                 .collect(Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList()));
     }
 
-    private Stream<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
+    private List<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
         try {
             return mapper.readTree(f).findValues("results").stream()
                     .filter(n -> {
@@ -171,15 +171,16 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                         try {
                             return mapper.treeToValue(n, ColorMIPSearchResultMetadata.class);
                         } catch (JsonProcessingException e) {
-                            e.printStackTrace();
+                            LOG.error("Error converting node {} to search result", n, e);
                             return null;
                         }
                     })
                     .filter(csr -> csr != null)
+                    .collect(Collectors.toList())
                     ;
         } catch (IOException e) {
             LOG.error("Error reading {}", f, e);
-            return Stream.of();
+            return Collections.emptyList();
         }
     }
 
