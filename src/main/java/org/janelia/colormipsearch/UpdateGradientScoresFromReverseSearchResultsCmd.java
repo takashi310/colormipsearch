@@ -135,7 +135,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                             .forEach(csr -> {
                                                 ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
                                                 if (reverseCsr == null) {
-                                                    LOG.warn("No matching result found for {}", csr);
+                                                    LOG.debug("No matching result found for {}", csr);
                                                 } else {
                                                     csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
                                                     csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
