@@ -64,16 +64,16 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             this.commonArgs = commonArgs;
         }
 
-        boolean validate() {
-            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
-        }
-
         Path getOutputDir() {
             if (StringUtils.isNotBlank(commonArgs.outputDir)) {
                 return Paths.get(commonArgs.outputDir);
             } else {
                 return null;
             }
+        }
+
+        boolean validate() {
+            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
         }
     }
 

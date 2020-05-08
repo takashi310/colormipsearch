@@ -22,10 +22,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class CombineResultsCmd {
-    private static final Logger LOG = LoggerFactory.getLogger(CombineResultsCmd.class);
+class MergeResultsCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(MergeResultsCmd.class);
 
-    @Parameters(commandDescription = "Combine color depth search results")
+    @Parameters(commandDescription = "Merge color depth search results")
     static class CombineResultsArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be combined")
         List<String> resultsDirs;
@@ -57,7 +57,7 @@ class CombineResultsCmd {
 
     private final CombineResultsArgs args;
 
-    CombineResultsCmd(CommonArgs commonArgs) {
+    MergeResultsCmd(CommonArgs commonArgs) {
         args =  new CombineResultsArgs(commonArgs);
     }
 

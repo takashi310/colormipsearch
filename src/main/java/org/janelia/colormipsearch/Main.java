@@ -31,7 +31,7 @@ public class Main {
         CommonArgs commonArgs = new CommonArgs();
         ColorDepthSearchJSONInputCmd jsonMIPsSearchCmd = new ColorDepthSearchJSONInputCmd(commonArgs);
         ColorDepthSearchLocalMIPsCmd localMIPFilesSearchCmd = new ColorDepthSearchLocalMIPsCmd(commonArgs);
-        CombineResultsCmd combineResultsCmd = new CombineResultsCmd(commonArgs);
+        MergeResultsCmd mergeResultsCmd = new MergeResultsCmd(commonArgs);
         NormalizeGradientScoresCmd normalizeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
         ReplaceURLsCommand replaceURLsCmd = new ReplaceURLsCommand(commonArgs);
@@ -41,7 +41,7 @@ public class Main {
                 .addObject(mainArgs)
                 .addCommand("searchFromJSON", jsonMIPsSearchCmd.getArgs())
                 .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
-                .addCommand("combineResults", combineResultsCmd.getArgs())
+                .addCommand("mergeResults", mergeResultsCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
                 .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
@@ -94,19 +94,18 @@ public class Main {
                 CmdUtils.createOutputDirs(calculateGradientScoresCmd.getArgs().getOutputDir());
                 calculateGradientScoresCmd.execute();
                 break;
-            case "combineResults":
-                if (CollectionUtils.isEmpty(combineResultsCmd.getArgs().resultsDirs) &&
-                        CollectionUtils.isEmpty(combineResultsCmd.getArgs().resultsFiles)) {
+            case "mergeResults":
+                if (CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsDirs) &&
+                        CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsFiles)) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
                     cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);
                 }
-                CmdUtils.createOutputDirs(combineResultsCmd.getArgs().getOutputDir());
-                combineResultsCmd.execute();
+                CmdUtils.createOutputDirs(mergeResultsCmd.getArgs().getOutputDir());
+                mergeResultsCmd.execute();
                 break;
             case "normalizeGradientScores":
-                if (CollectionUtils.isEmpty(normalizeGradientScoresCmd.getArgs().resultsDirs) &&
-                        CollectionUtils.isEmpty(normalizeGradientScoresCmd.getArgs().resultsFiles)) {
+                if (!normalizeGradientScoresCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
                     cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);

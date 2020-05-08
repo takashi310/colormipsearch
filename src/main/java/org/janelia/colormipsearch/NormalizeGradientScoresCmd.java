@@ -27,14 +27,16 @@ class NormalizeGradientScoresCmd {
     @Parameters(commandDescription = "Normalize gradient score for the search results - " +
             "if the area gap is not available consider it as if there was a perfect shape match, i.e., areagap = 0")
     static class NormalizeGradientScoresArgs {
-        @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be normalized")
-        List<String> resultsDirs;
+        @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
+                description = "Results directory for which scores will be normalized")
+        private ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be normalized")
-        List<String> resultsFiles;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true,
+                description = "Files for which results will be normalized")
+        private List<String> resultsFiles;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
-        Double pctPositivePixels = 0.0;
+        private Double pctPositivePixels = 0.0;
 
         @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
         private boolean cleanup = false;
@@ -53,12 +55,19 @@ class NormalizeGradientScoresCmd {
                 return null;
             }
         }
+
+        boolean validate() {
+            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+        }
     }
 
     private final NormalizeGradientScoresArgs args;
+    private final ObjectMapper mapper;
 
     NormalizeGradientScoresCmd(CommonArgs commonArgs) {
         args =  new NormalizeGradientScoresArgs(commonArgs);
+        this.mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     NormalizeGradientScoresArgs getArgs() {
@@ -69,27 +78,30 @@ class NormalizeGradientScoresCmd {
         setGradientScores(args);
     }
 
-    private static void setGradientScores(NormalizeGradientScoresArgs args) {
-        List<String> resultFileNames;
+    private void setGradientScores(NormalizeGradientScoresArgs args) {
+        List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            resultFileNames = args.resultsFiles;
-        } else if (CollectionUtils.isNotEmpty(args.resultsDirs)) {
-            resultFileNames = args.resultsDirs.stream()
-                    .flatMap(rd -> {
-                        try {
-                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile());
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    })
-                    .map(p -> p.toString())
-                    .collect(Collectors.toList());
+            filesToProcess = args.resultsFiles;
+        } else if (args.resultsDir != null) {
+            try {
+                int from = Math.max(args.resultsDir.offset, 0);
+                int length = args.resultsDir.length;
+                List<String> filenamesList = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
+                        .skip(from)
+                        .map(Path::toString)
+                        .collect(Collectors.toList());
+                if (length > 0 && length < filenamesList.size()) {
+                    filesToProcess = filenamesList.subList(0, length);
+                } else {
+                    filesToProcess = filenamesList;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         } else {
-            resultFileNames = Collections.emptyList();
+            filesToProcess = Collections.emptyList();
         }
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        resultFileNames.stream().parallel().forEach((fn) -> {
+        filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(cdsFile , mapper);
@@ -121,6 +133,5 @@ class NormalizeGradientScoresCmd {
             CmdUtils.writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)), mapper);
         });
     }
-
 
 }

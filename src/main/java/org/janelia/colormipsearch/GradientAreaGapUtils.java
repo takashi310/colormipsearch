@@ -209,10 +209,14 @@ public class GradientAreaGapUtils {
     }
 
     static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        double areaGapScore;
+        return calculateAreaGapScore2(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
+    }
+
+    static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         if (pixelMatch == 0 || pixelMatchPct == 0) {
             return 0;
         } else {
+            double areaGapScore;
             if (gradientAreaGap < 0) {
                 areaGapScore = 3 * pixelMatchPct; // 3 times larger than pixel match ratio
             } else if (gradientAreaGap == 0) {
@@ -221,6 +225,24 @@ public class GradientAreaGapUtils {
                 areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
             }
             return (double) pixelMatch / areaGapScore;
+        }
+    }
+
+    static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+        if (pixelMatch == 0 || pixelMatchPct == 0) {
+            return 0;
+        } else {
+            if (maxAreaGap <= 0) {
+                return pixelMatch;
+            }
+            double areaGapScore;
+            if (gradientAreaGap == 0) {
+                areaGapScore = 0.;
+            } else {
+                areaGapScore = (double) gradientAreaGap / maxAreaGap;
+            }
+            double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
+            return (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
         }
     }
 
