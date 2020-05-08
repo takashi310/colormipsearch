@@ -31,6 +31,7 @@ import com.google.common.cache.LoadingCache;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.json4s.jackson.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,11 +76,21 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
+    private final LoadingCache<File, JsonNode> reverseResultsCache;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
         this.args = new GradientScoreResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.reverseResultsCache = CacheBuilder.newBuilder()
+                .maximumSize(50000)
+                .concurrencyLevel(16)
+                .build(new CacheLoader<File, JsonNode>() {
+                    @Override
+                    public JsonNode load(File matchIdResultsFile) throws Exception {
+                        return mapper.readTree(matchIdResultsFile);
+                    }
+                });
     }
 
     GradientScoreResultsArgs getArgs() {
@@ -160,7 +171,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private Stream<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
         try {
-            JsonNode results = mapper.readTree(f).findValue("results");
+            JsonNode results = reverseResultsCache.get(f).findValue("results");
             if (results == null || !results.isArray()) {
                 LOG.error("Results field not found in {} or is not an array", f);
                 return Stream.of();
@@ -185,7 +196,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                     })
                     .filter(csr -> csr != null)
                     ;
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.error("Error reading {}", f, e);
             return Stream.of();
         }
