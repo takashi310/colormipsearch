@@ -157,6 +157,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 .map(f -> getMatchResults(f))
                 .filter(cdsResults -> cdsResults.results != null)
                 .flatMap(cdsResults -> cdsResults.results.stream())
+                .filter(csr -> csr.getGradientAreaGap() != -1)
                 .collect(Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList()));
     }
 
