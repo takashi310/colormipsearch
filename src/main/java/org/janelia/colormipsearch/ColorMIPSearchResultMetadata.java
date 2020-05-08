@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 class ColorMIPSearchResultMetadata extends MetadataAttrs {
     static ColorMIPSearchResultMetadata create(ColorMIPSearchResultMetadata from) {
@@ -121,6 +122,14 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
             Double artificialGapScore = getArtificialShapeScore();
             return artificialGapScore != null ? artificialGapScore : getMatchingPixels();
         }
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("matchedId", matchedId)
+                .append("matchedPublishedName", matchedPublishedName)
+                .toString();
     }
 
     @Override
