@@ -68,20 +68,21 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
-//    private final LoadingCache<File, Results<List<ColorMIPSearchResultMetadata>>> reverseResultsCache;
+    private final LoadingCache<File, Results<List<ColorMIPSearchResultMetadata>>> reverseResultsCache;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
         this.args = new GradientScoreResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//        this.reverseResultsCache = CacheBuilder.newBuilder()
-//                .maximumSize(50000)
-//                .build(new CacheLoader<File, Results<List<ColorMIPSearchResultMetadata>>>() {
-//                    @Override
-//                    public Results<List<ColorMIPSearchResultMetadata>> load(File matchIdResultsFile) {
-//                        return CmdUtils.readCDSResultsFromJSONFile(matchIdResultsFile, mapper);
-//                    }
-//                });
+        this.reverseResultsCache = CacheBuilder.newBuilder()
+                .maximumSize(50000)
+                .concurrencyLevel(16)
+                .build(new CacheLoader<File, Results<List<ColorMIPSearchResultMetadata>>>() {
+                    @Override
+                    public Results<List<ColorMIPSearchResultMetadata>> load(File matchIdResultsFile) {
+                        return CmdUtils.readCDSResultsFromJSONFile(matchIdResultsFile, mapper);
+                    }
+                });
     }
 
     GradientScoreResultsArgs getArgs() {
@@ -162,13 +163,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     private Results<List<ColorMIPSearchResultMetadata>> getMatchResults(File f) {
-        return CmdUtils.readCDSResultsFromJSONFile(f, mapper);
-//
-//        try {
-//            return reverseResultsCache.get(f);
-//        } catch (ExecutionException e) {
-//            throw new IllegalStateException(e);
-//        }
+        try {
+            return reverseResultsCache.get(f);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, List<ColorMIPSearchResultMetadata>> indexedResults) {
