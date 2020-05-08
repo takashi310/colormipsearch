@@ -12,11 +12,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -116,9 +121,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                 long startTime = System.currentTimeMillis();
                                 Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
                                 if (CollectionUtils.isNotEmpty(cdsResults.results)) {
+                                    Set<String> ids = cdsResults.results.stream().map(csr -> csr.id).collect(Collectors.toSet());
                                     Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(args.reverseResultsDir, matchedIds, mapper);
+                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(ids, matchedIds, args.reverseResultsDir, mapper);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsResults.results.stream()
@@ -141,19 +147,40 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 });
     }
 
-    private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(String resultsDir, Set<String> matchIds, ObjectMapper mapper) {
+    private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, String resultsDir, ObjectMapper mapper) {
         return matchIds.stream().parallel()
                 .map(matchId -> new File(resultsDir, matchId + ".json"))
                 .filter(f -> f.exists())
-                .map(f -> getMatchResults(f))
-                .filter(cdsResults -> cdsResults.results != null)
-                .flatMap(cdsResults -> cdsResults.results.stream())
+                .flatMap(f -> streamMatchResults(f, ids))
                 .filter(csr -> csr.getGradientAreaGap() != -1)
                 .collect(Collectors.groupingBy(csr -> csr.matchedId, Collectors.toList()));
     }
 
-    private Results<List<ColorMIPSearchResultMetadata>> getMatchResults(File f) {
-        return CmdUtils.readCDSResultsFromJSONFile(f, mapper);
+    private Stream<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
+        try {
+            return mapper.readTree(f).findValues("results").stream()
+                    .filter(n -> {
+                        JsonNode matchedIdNode = n.findValue("matchedId");
+                        if (matchedIdNode == null) {
+                            return false;
+                        } else {
+                            return ids.contains(matchedIdNode.asText());
+                        }
+                    })
+                    .map(n -> {
+                        try {
+                            return mapper.treeToValue(n, ColorMIPSearchResultMetadata.class);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    })
+                    .filter(csr -> csr != null)
+                    ;
+        } catch (IOException e) {
+            LOG.error("Error reading {}", f, e);
+            return Stream.of();
+        }
     }
 
     private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, List<ColorMIPSearchResultMetadata>> indexedResults) {
