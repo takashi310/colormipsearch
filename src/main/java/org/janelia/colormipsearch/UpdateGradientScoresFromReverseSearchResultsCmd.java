@@ -76,7 +76,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
-    private final LoadingCache<File, JsonNode> reverseResultsCache;
+    private final LoadingCache<File, byte[]> reverseResultsCache;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
         this.args = new GradientScoreResultsArgs(commonArgs);
@@ -85,10 +85,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
         this.reverseResultsCache = CacheBuilder.newBuilder()
                 .maximumSize(50000)
                 .concurrencyLevel(16)
-                .build(new CacheLoader<File, JsonNode>() {
+                .build(new CacheLoader<File, byte[]>() {
                     @Override
-                    public JsonNode load(File matchIdResultsFile) throws Exception {
-                        return mapper.readTree(matchIdResultsFile);
+                    public byte[] load(File matchIdResultsFile) throws Exception {
+                        return Files.readAllBytes(matchIdResultsFile.toPath());
                     }
                 });
     }
@@ -171,7 +171,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
 
     private Stream<ColorMIPSearchResultMetadata> streamMatchResults(File f, Set<String> ids) {
         try {
-            JsonNode results = reverseResultsCache.get(f).findValue("results");
+            JsonNode results = mapper.readTree(reverseResultsCache.get(f)).findValue("results");
             if (results == null || !results.isArray()) {
                 LOG.error("Results field not found in {} or is not an array", f);
                 return Stream.of();
