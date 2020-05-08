@@ -131,7 +131,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                         } else {
                             id = fn;
                         }
-                        reverseResultsCache.put(id, CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper).results);
+                        reverseResultsCache.put(id,
+                                CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper).results.stream()
+                                        .filter(r -> r.getGradientAreaGap() != -1).collect(Collectors.toList()));
                     });
             LOG.info("Finished reading reverse {} results from {}", reverseResultsCache.size(), args.reverseResultsDir);
         } catch (IOException e) {
