@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 class CalculateGradientScoresCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
+    private static final long _1M = 1024 * 1024;
 
     @Parameters(commandDescription = "Calculate gradient area score for the results")
     static class GradientScoreResultsArgs extends AbstractArgs {
@@ -131,9 +132,10 @@ class CalculateGradientScoresCmd {
                                 );
                                 CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                             });
-                            LOG.info("Finished a batch of {} in {}s, used memory: {}M",
+                            LOG.info("Finished a batch of {} in {}s, memory (total/used): {}M/{}M",
                                     fileList.size(), (System.currentTimeMillis() - startTime) / 1000.,
-                                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024));
+                                    (Runtime.getRuntime().totalMemory() / _1M),
+                                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M);
                         });
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
