@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch;
 
+import java.util.function.Supplier;
+
 import org.janelia.colormipsearch.imageprocessing.TriFunction;
 
 public class GradientAreaGapUtils {
@@ -13,9 +15,11 @@ public class GradientAreaGapUtils {
         BLUE
     }
 
-    static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, patternPix, dilatedPix) -> {
-        if (dilatedPix != -16777216) {
-            if (patternPix != -16777216) {
+    static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, patternPixSupplier, dilatedPixSupplier) -> {
+        int patternPix = patternPixSupplier.get();
+        if (patternPix != -16777216) {
+            int dilatedPix = dilatedPixSupplier.get();
+            if (dilatedPix != -16777216) {
                 int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
                 if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
                     // negative score value
@@ -24,6 +28,7 @@ public class GradientAreaGapUtils {
                 }
             }
         }
+        int gradScorePix = gradScorePixSupplier.get();
         return gradScorePix > 3 ? gradScorePix : 0;
     };
 

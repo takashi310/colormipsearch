@@ -86,7 +86,7 @@ class EM2LMAreaGapCalculator {
                     LImageUtils.combine2(
                             gradientAreaComputeContext.patternRegions,
                             inputGradientImage,
-                            (p1, p2) -> p1 * p2),
+                            (p1s, p2s) -> p1s.get() * p2s.get()),
                     gradientAreaComputeContext.pattern,
                     inputZGapImage.mapi(gradientAreaComputeContext.negativeRadiusImageTransformation),
                     GradientAreaGapUtils.PIXEL_GAP_OP
@@ -94,10 +94,12 @@ class EM2LMAreaGapCalculator {
             LImage overExpressedRegions = LImageUtils.combine2(
                     gradientAreaComputeContext.overExpressedRegions,
                     labelsClearing.applyTo(inputImage),
-                    (p1, p2) -> {
+                    (p1s, p2s) -> {
+                        int p1 = p1s.get();
                         if (p1 == 0) {
                             return 0;
                         } else {
+                            int p2 = p2s.get();
                             int r2 = (p2 >>> 16) & 0xff;
                             int g2 = (p2 >>> 8) & 0xff;
                             int b2 = p2 & 0xff;
@@ -161,7 +163,7 @@ class EM2LMAreaGapCalculator {
         LImage overExpressedRegionsInPatternImage = LImageUtils.combine2(
                 LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)),
                 LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)),
-                (p1, p2) -> p2 != -16777216 ? -16777216 : p1
+                (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get()
         );
         return new GradientAreaComputeContext(
                 patternImage,
