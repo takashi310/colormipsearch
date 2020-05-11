@@ -257,7 +257,7 @@ public class GradientAreaGapUtils {
             if (gradientAreaGap < 0) {
                 shapeMatchScore =  maxAreaGap > 0 ? 1 : 0;
             } else {
-                shapeMatchScore = 1 - gradientAreaGap * pixelMatchPct / pixelMatch; // area gap / masksize where masksize = pixelMatch/pixelPct
+                shapeMatchScore = 1 - 2.5 * gradientAreaGap * pixelMatchPct / pixelMatch; // area gap / masksize where masksize = pixelMatch/pixelPct
             }
             return (double) pixelMatch * shapeMatchScore;
         }
