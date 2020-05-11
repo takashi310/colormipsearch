@@ -161,8 +161,8 @@ class EM2LMAreaGapCalculator {
     private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
         LImage patternImage = LImageUtils.create(patternImageArray);
         LImage overExpressedRegionsInPatternImage = LImageUtils.combine2(
-                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)),
-                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)),
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)).reduce(),
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)).reduce(),
                 (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get()
         );
         return new GradientAreaComputeContext(
