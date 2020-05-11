@@ -209,7 +209,7 @@ public class GradientAreaGapUtils {
     }
 
     static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        return calculateAreaGapScore2(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
+        return calculateAreaGapScore3(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
     }
 
     static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
@@ -246,6 +246,20 @@ public class GradientAreaGapUtils {
             }
             double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
             return (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
+        }
+    }
+
+    static double calculateAreaGapScore3(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+        if (pixelMatch == 0 || pixelMatchPct == 0) {
+            return 0;
+        } else {
+            double shapeMatchScore;
+            if (gradientAreaGap < 0) {
+                shapeMatchScore =  maxAreaGap > 0 ? 1 : 0;
+            } else {
+                shapeMatchScore = 1 - gradientAreaGap * pixelMatchPct / pixelMatch; // area gap / masksize where masksize = pixelMatch/pixelPct
+            }
+            return (double) pixelMatch * shapeMatchScore;
         }
     }
 
