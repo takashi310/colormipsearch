@@ -214,26 +214,10 @@ public class GradientAreaGapUtils {
     }
 
     static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        return calculateAreaGapScore3(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
+        return calculateAreaGapScore1(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
     }
 
     static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchPct == 0) {
-            return 0;
-        } else {
-            double areaGapScore;
-            if (gradientAreaGap < 0) {
-                areaGapScore = 3 * pixelMatchPct; // 3 times larger than pixel match ratio
-            } else if (gradientAreaGap == 0) {
-                areaGapScore = 0.002; // make it small
-            } else {
-                areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
-            }
-            return (double) pixelMatch / areaGapScore;
-        }
-    }
-
-    static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         if (pixelMatch == 0 || pixelMatchPct == 0) {
             return 0;
         } else {
@@ -251,6 +235,22 @@ public class GradientAreaGapUtils {
             }
             double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
             return (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
+        }
+    }
+
+    static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+        if (pixelMatch == 0 || pixelMatchPct == 0) {
+            return 0;
+        } else {
+            double areaGapScore;
+            if (gradientAreaGap < 0) {
+                areaGapScore = 3 * pixelMatchPct; // 3 times larger than pixel match ratio
+            } else if (gradientAreaGap == 0) {
+                areaGapScore = 0.002; // make it small
+            } else {
+                areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
+            }
+            return (double) pixelMatch / areaGapScore;
         }
     }
 
