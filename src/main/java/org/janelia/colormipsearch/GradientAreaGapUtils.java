@@ -259,7 +259,7 @@ public class GradientAreaGapUtils {
             } else {
                 shapeMatchScore = 1 - gradientAreaGap * pixelMatchPct / pixelMatch; // area gap / masksize where masksize = pixelMatch/pixelPct
             }
-            return (double) pixelMatch * shapeMatchScore / 2.5;
+            return (double) pixelMatch * shapeMatchScore / 2.5 * 100;
         }
     }
 
