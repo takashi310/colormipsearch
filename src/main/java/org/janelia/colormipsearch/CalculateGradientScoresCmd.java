@@ -131,7 +131,9 @@ class CalculateGradientScoresCmd {
                                 );
                                 CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                             });
-                            LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startTime) / 1000.);
+                            LOG.info("Finished a batch of {} in {}s, used memory: {}M",
+                                    fileList.size(), (System.currentTimeMillis() - startTime) / 1000.,
+                                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024*1024));
                         });
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
