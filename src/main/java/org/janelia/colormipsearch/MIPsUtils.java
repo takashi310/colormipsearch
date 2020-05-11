@@ -6,10 +6,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
@@ -95,10 +97,13 @@ class MIPsUtils {
     @Nullable
     private static MIPInfo getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
         Path mipParentPath = mipPath.getParent();
-        String transformedMIPFilename = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", ".png");
+        String mipFilenameWithoutExtension = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", "");
         List<Path> transformedMIPPaths;
         if (mipParentPath == null) {
-            transformedMIPPaths = Collections.singletonList(transformedMIPPath.resolve(transformedMIPFilename));
+            transformedMIPPaths = Arrays.asList(
+                    transformedMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
+                    transformedMIPPath.resolve(mipFilenameWithoutExtension + ".tif")
+            );
         } else {
             int nComponents = mipParentPath.getNameCount();
             transformedMIPPaths = IntStream.range(0, nComponents)
@@ -120,7 +125,9 @@ class MIPsUtils {
                                 return a1;
                             })
                     .stream()
-                    .map(p -> transformedMIPPath.resolve(p).resolve(transformedMIPFilename))
+                    .flatMap(p -> Stream.of(
+                            transformedMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
+                            transformedMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
                     .collect(Collectors.toList());
         }
         Path transformedMIPImagePath = transformedMIPPaths.stream().filter(p -> Files.exists(p)).filter(p -> Files.isRegularFile(p)).findFirst().orElse(null);
