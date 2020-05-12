@@ -68,7 +68,7 @@ java \
     -l flylight_split_gal4_published \
     --segmented-image-handling 0 \
     -od local/testData/mips \
-    -lmdir ss_split_lines
+    -lmdir split_gal4_lines
 ```
 
 ####Generate LM MCFO MIPs:
@@ -377,7 +377,7 @@ aws s3 cp \
     s3://janelia-neuronbridge-data-prod/metadata/by_line --recursive
 # upload SplitGal4 lines
 aws s3 cp \
-    local/testData/mips/ss_split_lines \
+    local/testData/mips/split_gal4_lines \
     s3://janelia-neuronbridge-data-prod/metadata/by_line --recursive
 # upload EM skeletons
 aws s3 cp \
