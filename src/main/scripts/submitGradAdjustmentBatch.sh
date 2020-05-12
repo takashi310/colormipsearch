@@ -1,27 +1,97 @@
 #!/bin/bash
 
 LIB_SUB_DIR=flyem_hemibrain
-ORIGINAL_RESULTS_DIR=/nrs/scicompsoft/goinac/em-lm-cds/em-mcfo-cdsresults
-FINAL_RESULTS_DIR=local/testData/cdsresults.ga
+CDSRESULTS_DIR=local/testData/cdsresults
+GACDSRESULTS_DIR=local/testData/cdsresults.ga
 
-export CDGA_INPUT_DIR=${ORIGINAL_RESULTS_DIR}/${LIB_SUB_DIR}
-export CDGA_OUTPUT_DIR=${FINAL_RESULTS_DIR}/${LIB_SUB_DIR}
+export CDGA_INPUT_DIR=${CDSRESULTS_DIR}/${LIB_SUB_DIR}
+export CDGA_OUTPUT_DIR=${GACDSRESULTS_DIR}/${LIB_SUB_DIR}
 export CDGA_GRADIENTS_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
 export CDGA_ZGAP_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
+export CDGA_ZGAP_SUFFIX=_20pxRGBMAX
 
+export LOG_FILE=
+
+export START_FILE_INDEX=0
 export TOTAL_FILES=50
 export FILES_PER_JOB=50
-export LIB_PARTITION_SIZE=100
-export TOTAL_JOBS=$((TOTAL_FILES / FILES_PER_JOB))
+export PROCESSING_PARTITION_SIZE=5
+export TOTAL_JOBS=$(((TOTAL_FILES - START_FILE_INDEX)/ FILES_PER_JOB))
 
 export CORES_RESOURCE=20
-export TOP_RESULTS=300
+export TOP_RESULTS=500
 export SAMPLES_PER_LINE=0
 export MEM_RESOURCE=300
 
-for ((LSB_JOBINDEX=1; LSB_JOBINDEX<=$TOTAL_JOBS; LSB_JOBINDEX++)) ; do
-    local/scripts/submitGradAdjustmentJobs.sh $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR $LSB_JOBINDEX
-done
+function runGradAdjustment {
+    CDGA_INPUT_PARAM=$1
+    shift
 
-#bsub -n ${CORES_RESOURCE} -J CDGA[1-${TOTAL_JOBS}] -P emlm \
-#    local/scripts/submitGradAdjustmentJobs.sh $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR
+    CDGA_OUTPUT_PARAM=$1
+    shift
+
+    NEGATIVE_RADIUS=20
+    MASK_THRESHOLD=20
+
+    MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
+    CDGA_ZGAP_SUFFIX=${CDGA_ZGAP_SUFFIX:_20pxRGBMAX}
+    CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
+    CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
+
+    if [ -f ${LOGFILE} ] ; then
+        LOG_OPTS="-Dlog4j.configuration=file://${LOGFILE}"
+    else
+        LOG_OPTS=""
+    fi
+
+    cmd="java ${MEM_OPTS} ${LOG_OPTS} \
+        -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+        gradientScore \
+        --maskThreshold ${MASK_THRESHOLD} \
+        --negativeRadius ${NEGATIVE_RADIUS} \
+        --mirrorMask \
+        --topPublishedNameMatches ${TOP_RESULTS} \
+        --topPublishedSampleMatches ${SAMPLES_PER_LINE} \
+        --libraryPartitionSize ${PROCESSING_PARTITION_SIZE} \
+        ${CDGA_GRAD_OPTS} \
+        ${CDGA_ZGAP_OPTS} \
+        -rd ${CDGA_INPUT_PARAM} \
+        -od ${CDGA_OUTPUT_PARAM} \
+        $*"
+
+    echo "Running: ${cmd}"
+    ($cmd)
+
+}
+
+function submitGradAdjustmentJobs {
+    CDGA_INPUT_DIR=${CDGA_INPUT_DIR:-$1}
+    CDGA_OUTPUT_DIR=${CDGA_OUTPUT_DIR:-$2}
+    LSB_JOBINDEX=${LSB_JOBINDEX:-$3}
+
+    JOB_INDEX=$((LSB_JOBINDEX - 1))
+    JOB_START_FILE_INDEX=$((JOB_INDEX * FILES_PER_JOB + START_FILE_INDEX))
+
+    echo "Gradient Adjustment Job $LSB_JOBINDEX: $INPUT_INDEX"
+
+    runGradAdjustment \
+      "${CDGA_INPUT_DIR}:${JOB_START_FILE_INDEX}:${FILES_PER_JOB}" \
+      "${CDGA_OUTPUT_DIR}" > ga_${LSB_JOBINDEX}_${JOB_START_FILE_INDEX}_${FILES_PER_JOB}.log
+}
+
+function localRun {
+    for ((LSB_JOBINDEX=1; LSB_JOBINDEX<=$TOTAL_JOBS; LSB_JOBINDEX++)) ; do
+        submitGradAdjustmentJobs $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR $LSB_JOBINDEX
+    done
+}
+
+function gridRun {
+    # this is tricky and has not been tested yet because we have to run a function from this file
+    bsub -n ${CORES_RESOURCE} -J CDGA[1-${TOTAL_JOBS}] -P emlm \
+        bin/bash -rcfile submitGradAdjustmentBatch.sh -i -c "submitGradAdjustmentJobs $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR"
+}
+
+echo "Total jobs: ${TOTAL_JOBS}"
+
+# to run locally use localRun
+# to run on the grid use gridRun
