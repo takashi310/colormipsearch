@@ -6,11 +6,6 @@ shift
 CDGA_OUTPUT_PARAM=$1
 shift
 
-CD_GRADIENTS_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
-#_Segmented_PackBits_forPublicRelease_gradient.zip
-CD_ZGAP_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
-#_Segmented_PackBits_forPublicRelease_20pxRGBMAX.zip
-
 MEM_RESOURCE=$((${MEM_RESOURCE:=180}))
 TOP_RESULTS=$((${TOP_RESULTS:=100}))
 SAMPLES_PER_LINE=$((${SAMPLES_PER_LINE:=1}))
@@ -22,8 +17,9 @@ MASK_THRESHOLD=20
 DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
 LOG_OPTS="-Dlog4j.configuration=file://$PWD/local/log4j.properties"
-CD_GRAD_OPTS="-gp ${CD_GRADIENTS_LOCATION}"
-CD_ZGAP_OPTS="-zgp ${CD_ZGAP_LOCATION} --zgapSuffix _20pxRGBMAX"
+CDGA_ZGAP_SUFFIX=${CDGA_ZGAP_SUFFIX:_20pxRGBMAX}
+CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
+CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
 
 cmd="java ${DEBUG_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
     -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
@@ -35,8 +31,8 @@ cmd="java ${DEBUG_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
     --topPublishedNameMatches ${TOP_RESULTS} \
     --topPublishedSampleMatches ${SAMPLES_PER_LINE} \
     --libraryPartitionSize ${LIB_PARTITION_SIZE} \
-    ${CD_GRAD_OPTS} \
-    ${CD_ZGAP_OPTS} \
+    ${CDGA_GRAD_OPTS} \
+    ${CDGA_ZGAP_OPTS} \
     -rd ${CDGA_INPUT_PARAM} \
     -od ${CDGA_OUTPUT_PARAM} \
     $*"

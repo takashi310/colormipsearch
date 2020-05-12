@@ -6,6 +6,8 @@ FINAL_RESULTS_DIR=local/testData/cdsresults.ga
 
 export CDGA_INPUT_DIR=${ORIGINAL_RESULTS_DIR}/${LIB_SUB_DIR}
 export CDGA_OUTPUT_DIR=${FINAL_RESULTS_DIR}/${LIB_SUB_DIR}
+export CDGA_GRADIENTS_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
+export CDGA_ZGAP_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO
 
 export TOTAL_FILES=50
 export FILES_PER_JOB=50
