@@ -140,7 +140,7 @@ class EM2LMAreaGapCalculator {
                 LImage inputGradientImage = LImageUtils.create(inputGradientMIP.imageArray);
                 LImage inputZGapImage = inputZGapMIP != null
                         ? LImageUtils.create(inputZGapMIP.imageArray)
-                        : negativeRadiusDilation.applyTo(inputImage);
+                        : negativeRadiusDilation.applyTo(inputImage).reduce(); // eval immediately
 
                 long areaGap = gapCalculator.apply(inputImage, inputGradientImage, inputZGapImage, gradientAreaComputeContext);
                 LOG.trace("Finished gradient area gap for {} with {}, {} = {} in {}ms",
@@ -161,14 +161,14 @@ class EM2LMAreaGapCalculator {
     private GradientAreaComputeContext prepareContextForCalculatingGradientAreaGap(ImageArray patternImageArray) {
         LImage patternImage = LImageUtils.create(patternImageArray);
         LImage overExpressedRegionsInPatternImage = LImageUtils.combine2(
-                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)).reduce(),
-                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)).reduce(),
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(60)).reduce(), // eval immediately
+                LImageUtils.create(patternImageArray).mapi(ImageTransformation.maxFilter(20)).reduce(), // eval immediately
                 (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get()
         );
         return new GradientAreaComputeContext(
                 patternImage,
                 toSignalTransformation.applyTo(patternImage),
-                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage).reduce(),
+                toSignalTransformation.applyTo(overExpressedRegionsInPatternImage),
                 ImageTransformation.horizontalMirror()
         );
     }
