@@ -13,7 +13,6 @@ either with Spark or on the local host or on the cluster by using bsub.
 
 ## Run
 
-
 ### Perform color depth search for one mask and one image only
 ```
 java  -Xmx120G -Xms120G -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
@@ -46,14 +45,6 @@ java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     -rf local/testData/results/qq.json \
     -gp local/testData/flylight_40xMCFO_gradient_20px.zip \
     -rd local/testData/results.withscore
-```
-
-### Sorting the results
-```
-java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
-    sortResults \
-    -rf local/testData/results.withscore/qq.json \
-    -rd local/testData/results.sorted
 ```
 
 ## Generating EM - LM precomputed color depth search
@@ -269,3 +260,143 @@ java -Xms480G -Xmx480G \
 When we search EM matches we want to see both Spligal4 matches and MCFO matches,
 therefore the flyem-vs-mcfo and flyem-vs-sgal4 will have to be merged in a single 
 directory.
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    mergeResults \
+    -rd \
+    local/testData/cdsresults.ga/flyem_hemibrain-vs-gen1_mcfo \
+    local/testData/cdsresults.ga/flyem_hemibrain-vs-sgal4 \
+    -od local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight
+```
+
+#### Step 5': Replace image URLs
+
+This step requires a JSON file that contains the new image URLs 
+that will replace the ones that are set in the JSON created from 
+'flylight_gen1_mcfo_published' library. The new URLs for example could
+come from the MIPs generated with a different gamma value. There are 
+two sets of JSON files that will have to have the imageURLs update:
+ * the MCFO lines will have to be changed to reference the new URLs
+ * the EM to MCFO color depth search results reference the image of 
+ the MCFO MIP that matches the EM MIP entry, so these will have to be updated
+ to reference the new URL.
+
+```bash
+java \
+    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
+    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    prepareCDSArgs \
+    --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
+    --authorization "Bearer tokenvalue" \
+    -l flylight_gen1_mcfo_case_1_gamma1_4 \
+    -od local/testData/cdsresults \
+    $*
+```
+
+Update image URLs for the lines:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    replaceImageURLs \
+    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
+    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    --input-dirs local/testData/mips/gen1_mcfo_lines \
+    --result-id-field id \
+    -od local/testData/mips.gamma1.4/gen1_mcfo_lines
+```
+
+Update image URLs for the color depth results:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    replaceImageURLs \
+    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
+    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
+    --result-id-field matchedId  \
+    -od local/testData/updateURLS/cdsresults/flyem_hemibrain
+```
+
+#### Step 6: Normalize and rank results:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    normalizeGradientScores \
+    -rd local/testData/updateURLS/cdsresults/flyem_hemibrain-vs-flylight \
+    --pctPositivePixels 2.0 \
+    -cleanup \
+    -od local/testData/cdsresults.normalized/flyem_hemibrain-vs-flylight
+```
+
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    normalizeGradientScores \
+    -rd local/testData/cdsresults.ga/flylight_split_gal4_published \
+    --pctPositivePixels 2.0 \
+    -cleanup \
+    -od local/testData/cdsresults.normalized/flylight_split_gal4_published
+```
+
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    normalizeGradientScores \
+    -rd local/testData/cdsresults.ga/flylight_gen1_mcfo_published \
+    --pctPositivePixels 2.0 \
+    -cleanup \
+    -od local/testData/cdsresults.normalized/flylight_gen1_mcfo_published
+```
+
+#### Step 7: Upload to AWS S3
+
+This step requires aws-cli installed on the host from which we upload the
+data to S3.
+
+Upload MIPs
+
+```bash
+# generate publishedNames.txt
+find . local/testData/mips \
+    -type f \
+    -name "*.json" \
+    -printf "%f\n" > publishedNames.txt
+aws s3 cp publishedNames.txt s3://janelia-neuronbridge-data-prod/publishedNames.txt
+
+# create and upload data version file
+echo 1.0.0 > local/testData/DATA_VERSION
+
+aws s3 cp \
+    local/testData/DATA_VERSION \
+    s3://janelia-neuronbridge-data-prod/metadata/cdsresults/DATA_VERSION
+
+# upload MCFO lines
+aws s3 cp \
+    local/testData/mips.gamma1.4/gen1_mcfo_lines \
+    s3://janelia-neuronbridge-data-prod/metadata/by_line --recursive
+# upload SplitGal4 lines
+aws s3 cp \
+    local/testData/mips/ss_split_lines \
+    s3://janelia-neuronbridge-data-prod/metadata/by_line --recursive
+# upload EM skeletons
+aws s3 cp \
+    local/testData/mips/em_bodies \
+    s3://janelia-neuronbridge-data-prod/metadata/by_body --recursive
+```
+
+Upload Results
+
+```bash
+aws s3 cp \
+    local/testData/cdsresults.normalized/flyem_hemibrain-vs-flylight \
+    s3://janelia-neuronbridge-data-prod/metadata/cdsresults --recursive
+
+aws s3 cp \
+    local/testData/cdsresults.normalized/flylight_split_gal4_published \
+    s3://janelia-neuronbridge-data-prod/metadata/cdsresults --recursive
+
+aws s3 cp \
+    local/testData/cdsresults.normalized/flylight_gen1_mcfo_published \
+    s3://janelia-neuronbridge-data-prod/metadata/cdsresults --recursive
+```

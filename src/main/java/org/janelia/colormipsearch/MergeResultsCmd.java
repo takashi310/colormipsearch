@@ -26,7 +26,7 @@ class MergeResultsCmd {
     private static final Logger LOG = LoggerFactory.getLogger(MergeResultsCmd.class);
 
     @Parameters(commandDescription = "Merge color depth search results")
-    static class CombineResultsArgs {
+    static class MergeResultsArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be combined")
         List<String> resultsDirs;
 
@@ -42,7 +42,7 @@ class MergeResultsCmd {
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        CombineResultsArgs(CommonArgs commonArgs) {
+        MergeResultsArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
@@ -55,13 +55,13 @@ class MergeResultsCmd {
         }
     }
 
-    private final CombineResultsArgs args;
+    private final MergeResultsArgs args;
 
     MergeResultsCmd(CommonArgs commonArgs) {
-        args =  new CombineResultsArgs(commonArgs);
+        args =  new MergeResultsArgs(commonArgs);
     }
 
-    CombineResultsArgs getArgs() {
+    MergeResultsArgs getArgs() {
         return args;
     }
 
@@ -69,7 +69,7 @@ class MergeResultsCmd {
         combineResults(args);
     }
 
-    private void combineResults(CombineResultsArgs args) {
+    private void combineResults(MergeResultsArgs args) {
         List<String> resultFileNames;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             resultFileNames = args.resultsFiles;
