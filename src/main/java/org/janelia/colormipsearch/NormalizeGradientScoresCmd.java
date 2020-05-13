@@ -65,7 +65,7 @@ class NormalizeGradientScoresCmd {
     private final ObjectMapper mapper;
 
     NormalizeGradientScoresCmd(CommonArgs commonArgs) {
-        args =  new NormalizeGradientScoresArgs(commonArgs);
+        args = new NormalizeGradientScoresArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -104,7 +104,7 @@ class NormalizeGradientScoresCmd {
         filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
-            Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(cdsFile , mapper);
+            Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
             Long maxAreaGap = cdsResults.results.stream()
                     .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
                     .max(Long::compare)
@@ -129,8 +129,8 @@ class NormalizeGradientScoresCmd {
                         }
                     })
                     .collect(Collectors.toList());
-            CmdUtils.sortCDSResults(cdsResultsWithNormalizedScore);
-            CmdUtils.writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)), mapper);
+            ColorMIPSearchResultUtils.sortCDSResults(cdsResultsWithNormalizedScore);
+            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)), mapper);
         });
     }
 

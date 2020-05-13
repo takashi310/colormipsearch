@@ -107,7 +107,7 @@ class MergeResultsCmd {
                             .map(cdsFn -> new File(cdsFn))
                             .map(cdsFile -> {
                                 LOG.info("Reading {} -> {}", fn, cdsFile);
-                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
                                 if (cdsResults.results == null) {
                                     LOG.warn("Results file {} is empty", cdsFile);
                                 }
@@ -127,8 +127,8 @@ class MergeResultsCmd {
                             .stream()
                             .flatMap(se -> se.entry.stream()).collect(Collectors.toList());
 
-                    CmdUtils.sortCDSResults(combinedResultsWithNoDuplicates);
-                    CmdUtils.writeCDSResultsToJSONFile(new Results<>(combinedResultsWithNoDuplicates), CmdUtils.getOutputFile(outputDir, new File(fn)), mapper);
+                    ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
+                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(combinedResultsWithNoDuplicates), CmdUtils.getOutputFile(outputDir, new File(fn)), mapper);
                 });
     }
 

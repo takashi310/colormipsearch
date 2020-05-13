@@ -6,35 +6,22 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json4s.jackson.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,9 +118,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                         } else {
                             id = fn;
                         }
-                        reverseResultsCache.put(id,
-                                CmdUtils.readCDSResultsFromJSONFile(p.toFile(), mapper).results.stream()
-                                        .filter(r -> r.getGradientAreaGap() != -1).collect(Collectors.toList()));
+                        reverseResultsCache.put(
+                                id,
+                                ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(
+                                        p.toFile(), mapper).results.stream().filter(r -> r.getGradientAreaGap() != -1).collect(Collectors.toList())
+                        );
                     });
             LOG.info("Finished reading reverse {} results from {}", reverseResultsCache.size(), args.reverseResultsDir);
         } catch (IOException e) {
@@ -148,7 +137,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                             .map(File::new)
                             .forEach(f -> {
                                 long startTime = System.currentTimeMillis();
-                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = CmdUtils.readCDSResultsFromJSONFile(f, mapper);
+                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(f, mapper);
                                 if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                                     Set<String> ids = cdsResults.results.stream().map(csr -> csr.id).collect(Collectors.toSet());
                                     Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.matchedId).collect(Collectors.toSet());
@@ -168,8 +157,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                             });
                                     LOG.info("Finished updating {} results from {} in {}ms",
                                             cdsResults.results.size(), f, System.currentTimeMillis() - startTime);
-                                    CmdUtils.sortCDSResults(cdsResults.results);
-                                    CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                                    ColorMIPSearchResultUtils.sortCDSResults(cdsResults.results);
+                                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                                 }
                             });
                     LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.);

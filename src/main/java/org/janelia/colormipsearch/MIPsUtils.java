@@ -28,7 +28,6 @@ import ij.ImagePlus;
 import ij.io.Opener;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,9 +215,7 @@ class MIPsUtils {
         }
     }
 
-    static List<MIPInfo> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter) {
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    static List<MIPInfo> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", mipsJSONFilename);
             List<MIPInfo> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPInfo>>() {

@@ -86,11 +86,14 @@ public class ReplaceURLsCommand {
     }
 
     private void replaceMIPsURLs(ReplaceURLsArgs args) {
-        Map<String, MIPInfo> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet())
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        Map<String, MIPInfo> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.relatedImageRefId, mipInfo.id), Function.identity()));
 
-        Map<String, MIPInfo> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet())
+        Map<String, MIPInfo> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.relatedImageRefId, mipInfo.id), Function.identity()));
 

@@ -99,7 +99,7 @@ class CalculateGradientScoresCmd {
                     mapper,
                     executor
             );
-            CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, cdsResultsFile), mapper);
+            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, cdsResultsFile), mapper);
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);
@@ -130,7 +130,7 @@ class CalculateGradientScoresCmd {
                                         mapper,
                                         executor
                                 );
-                                CmdUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                                ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
                             });
                             LOG.info("Finished a batch of {} in {}s, used {}M of memory out of {}M",
                                     fileList.size(),
@@ -154,7 +154,7 @@ class CalculateGradientScoresCmd {
             int topPublishedSampleMatches,
             ObjectMapper mapper,
             Executor executor) {
-        Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = CmdUtils.readCDSResultsFromJSONFile(inputResultsFile, mapper);
+        Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(resultsFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return resultsFileContent;
@@ -184,7 +184,7 @@ class CalculateGradientScoresCmd {
                 .collect(Collectors.toList());
         LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s",
                 srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
-        CmdUtils.sortCDSResults(srWithGradScores);
+        ColorMIPSearchResultUtils.sortCDSResults(srWithGradScores);
         LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s",
                 srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
         return new Results<>(srWithGradScores);
