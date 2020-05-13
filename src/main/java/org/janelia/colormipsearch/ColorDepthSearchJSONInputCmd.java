@@ -79,11 +79,11 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
         try {
             List<MIPInfo> librariesMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> CmdUtils.readMIPsFromJSON(libraryInput.input, libraryInput.offset,  libraryInput.length, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
+                    .flatMap(libraryInput -> MIPsUtils.readMIPsFromJSON(libraryInput.input, libraryInput.offset,  libraryInput.length, args.filterAsLowerCase(args.libraryMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             List<MIPInfo> masksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> CmdUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
+                    .flatMap(masksInput -> MIPsUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter)).stream())
                     .collect(Collectors.toList());
 
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {

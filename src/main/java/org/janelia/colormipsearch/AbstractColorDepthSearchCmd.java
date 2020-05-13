@@ -29,22 +29,4 @@ class AbstractColorDepthSearchCmd {
         }
     }
 
-    boolean isImageFile(String fname) {
-        int extseparator = fname.lastIndexOf('.');
-        if (extseparator == -1) {
-            return false;
-        }
-        String fext = fname.substring(extseparator + 1);
-        switch (fext.toLowerCase()) {
-            case "jpg":
-            case "jpeg":
-            case "png":
-            case "tif":
-            case "tiff":
-                return true;
-            default:
-                return false;
-        }
-    }
-
 }

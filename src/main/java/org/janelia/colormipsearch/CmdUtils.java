@@ -111,28 +111,4 @@ class CmdUtils {
         }
     }
 
-    static List<MIPInfo> readMIPsFromJSON(String mipsFilename, int offset, int length, Set<String> filter) {
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            LOG.info("Reading {}", mipsFilename);
-            List<MIPInfo> content = mapper.readValue(new File(mipsFilename), new TypeReference<List<MIPInfo>>() {
-            });
-            if (CollectionUtils.isEmpty(filter)) {
-                int from = offset > 0 ? offset : 0;
-                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
-                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsFilename, from, to);
-                return content.subList(from, to);
-            } else {
-                LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream()
-                        .filter(mip -> filter.contains(mip.publishedName.toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.id)))
-                        .collect(Collectors.toList());
-            }
-        } catch (IOException e) {
-            LOG.error("Error reading {}", mipsFilename, e);
-            throw new UncheckedIOException(e);
-        }
-    }
-
 }

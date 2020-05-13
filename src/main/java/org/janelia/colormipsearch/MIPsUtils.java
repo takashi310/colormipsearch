@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,15 +11,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.zip.ZipFile;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ij.ImagePlus;
 import ij.io.Opener;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
@@ -34,6 +43,11 @@ class MIPsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
 
+    /**
+     * Load a MIP image from its MIPInfo
+     * @param mip
+     * @return
+     */
     @Nullable
     static MIPImage loadMIP(@Nullable MIPInfo mip) {
         long startTime = System.currentTimeMillis();
@@ -140,6 +154,92 @@ class MIPsUtils {
         }
     }
 
+    static List<MIPInfo> readMIPsFromLocalFiles(String mipsLocation, int offset, int length, Set<String> mipsFilter) {
+        Path mipsInputPath = Paths.get(mipsLocation);
+        if (Files.isDirectory(mipsInputPath)) {
+            // read mips from the specified folder
+            int from = offset > 0 ? offset : 0;
+            try {
+                List<MIPInfo> mips = Files.find(mipsInputPath, 1, (p, fa) -> fa.isRegularFile())
+                        .filter(p -> isImageFile(p))
+                        .filter(p -> {
+                            if (CollectionUtils.isEmpty(mipsFilter)) {
+                                return true;
+                            } else {
+                                String fname = p.getFileName().toString();
+                                int separatorIndex = StringUtils.indexOf(fname, '_');
+                                if (separatorIndex == -1) {
+                                    return true;
+                                } else {
+                                    return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                                }
+                            }
+                        })
+                        .skip(from)
+                        .map(p -> {
+                            String fname = p.getFileName().toString();
+                            int extIndex = fname.lastIndexOf('.');
+                            MIPInfo mipInfo = new MIPInfo();
+                            mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
+                            mipInfo.imagePath = mipsInputPath.toString();
+                            return mipInfo;
+                        })
+                        .collect(Collectors.toList());
+                if (length > 0 && length < mips.size()) {
+                    return mips.subList(0, length);
+                } else {
+                    return mips;
+                }
+            } catch (IOException e) {
+                LOG.error("Error reading content of {}", mipsLocation, e);
+                return Collections.emptyList();
+            }
+        } else if (Files.isRegularFile(mipsInputPath)) {
+            // check if the input is an archive (right now only zip is supported)
+            if (StringUtils.endsWithIgnoreCase(mipsLocation, ".zip")) {
+                // read mips from zip
+                return readMIPsFromZipArchive(mipsLocation, mipsFilter, offset, length);
+            } else if (isImageFile(mipsInputPath)) {
+                // treat the file as a single image file
+                String fname = mipsInputPath.getFileName().toString();
+                int extIndex = fname.lastIndexOf('.');
+                MIPInfo mipInfo = new MIPInfo();
+                mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
+                mipInfo.imagePath = mipsInputPath.toString();
+                return Collections.singletonList(mipInfo);
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            LOG.warn("Cannot traverse links for {}", mipsLocation);
+            return Collections.emptyList();
+        }
+    }
+
+    static List<MIPInfo> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter) {
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            LOG.info("Reading {}", mipsJSONFilename);
+            List<MIPInfo> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPInfo>>() {
+            });
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = offset > 0 ? offset : 0;
+                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsJSONFilename, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.publishedName.toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.id)))
+                        .collect(Collectors.toList());
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsJSONFilename, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @Nullable
     private static MIPInfo getTransformedMIPInfoFromZipEntry(String transformedMIPLocation, String mipEntryName, String transformationLookupSuffix) {
         String transformedMIPFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
@@ -177,6 +277,80 @@ class MIPsUtils {
 
         LOG.warn("Image format unknown: {}", filepath);
         return ImageFormat.UNKNOWN;
+    }
+
+    private static boolean isImageFile(Path p) {
+        return isImageFile(p.getFileName().toString());
+    }
+
+    private static boolean isImageFile(String fname) {
+        int extseparator = fname.lastIndexOf('.');
+        if (extseparator == -1) {
+            return false;
+        }
+        String fext = fname.substring(extseparator + 1);
+        switch (fext.toLowerCase()) {
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "tif":
+            case "tiff":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static List<MIPInfo> readMIPsFromZipArchive(String mipsArchive, Set<String> mipsFilter, int offset, int length) {
+        ZipFile archiveFile;
+        try {
+            archiveFile = new ZipFile(mipsArchive);
+        } catch (IOException e) {
+            LOG.error("Error opening the archive stream for {}", mipsArchive, e);
+            return Collections.emptyList();
+        }
+        try {
+            int from = offset > 0 ? offset : 0;
+            List<MIPInfo> mips = archiveFile.stream()
+                    .filter(ze -> isImageFile(ze.getName()))
+                    .filter(ze -> {
+                        if (CollectionUtils.isEmpty(mipsFilter)) {
+                            return true;
+                        } else {
+                            String fname = Paths.get(ze.getName()).getFileName().toString();
+                            int separatorIndex = StringUtils.indexOf(fname, '_');
+                            if (separatorIndex == -1) {
+                                return true;
+                            } else {
+                                return mipsFilter.contains(StringUtils.substring(fname, 0, separatorIndex).toLowerCase());
+                            }
+                        }
+                    })
+                    .skip(from)
+                    .map(ze -> {
+                        String fname = Paths.get(ze.getName()).getFileName().toString();
+                        int extIndex = fname.lastIndexOf('.');
+                        MIPInfo mipInfo = new MIPInfo();
+                        mipInfo.id = extIndex == -1 ? fname : fname.substring(0, extIndex);
+                        mipInfo.type = "zipEntry";
+                        mipInfo.archivePath = mipsArchive;
+                        mipInfo.cdmPath = ze.getName();
+                        mipInfo.imagePath = ze.getName();
+                        return mipInfo;
+                    })
+                    .collect(Collectors.toList());
+            if (length > 0 && length < mips.size()) {
+                return mips.subList(0, length);
+            } else {
+                return mips;
+            }
+        } finally {
+            try {
+                archiveFile.close();
+            } catch (IOException ignore) {
+            }
+        }
+
     }
 
     private static ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
