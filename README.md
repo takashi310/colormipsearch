@@ -188,7 +188,7 @@ java -Xmx180G -Xms180G \
     --pctPositivePixels 1 \
     --mirrorMask \
     --libraryPartitionSize 4000 \
-    --perMaskSubdir flyem_hemibrain-vs-sgal4 \
+    --perMaskSubdir flyem_hemibrain-vs-split_gal4 \
     --perLibrarySubdir flylight_split_gal4_published \
     -od local/testData/cdsresults
 ```
@@ -226,8 +226,8 @@ java -Xmx240G -Xms240G \
     --libraryPartitionSize 5 \
     -gp /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_gradient \
     -zgp /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_20pxRGB --zgapSuffix _20pxRGB \
-    -rd local/testData/cdsresults/flyem_hemibrain-vs-sgal4:1400:100 \
-    -od local/testData/cdsresults.ga/flyem_hemibrain-vs-sgal4
+    -rd local/testData/cdsresults/flyem_hemibrain-vs-split_gal4:1400:100 \
+    -od local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4
 ```
 
 #### Step 4: Update the gradient score for the LM -> EM color depths search results
@@ -250,7 +250,7 @@ java -Xms480G -Xmx480G \
     -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     gradientScoresFromMatchedResults \
     -rd local/testData/cdsresults/flylight_split_gal4_published \
-    -revd local/testData/cdsresults.ga/flyem_hemibrain-vs-sgal4 \
+    -revd local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4 \
     -od local/testData/cdsresults.ga/flylight_split_gal4_published \
     -ps 500
 ```
@@ -266,7 +266,7 @@ java \
     mergeResults \
     -rd \
     local/testData/cdsresults.ga/flyem_hemibrain-vs-gen1_mcfo \
-    local/testData/cdsresults.ga/flyem_hemibrain-vs-sgal4 \
+    local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4 \
     -od local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight
 ```
 
