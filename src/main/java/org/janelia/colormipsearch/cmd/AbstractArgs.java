@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +11,7 @@ import com.beust.jcommander.ParametersDelegate;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cmd.CommonArgs;
 
 class AbstractArgs {
     @Parameter(names = "--app")
@@ -39,6 +40,9 @@ class AbstractArgs {
 
     @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location")
     String gradientPath;
+
+    @Parameter(names = {"--gradientSuffix"}, description = "Gradient suffix")
+    String gradientSuffix = "_gradient";
 
     @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location")
     String zgapPath;

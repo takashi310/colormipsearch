@@ -13,10 +13,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ColorMIPSearchResultUtils {
+public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
 
-    static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
+    public static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.debug("Reading {}", f);
             return mapper.readValue(f, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
@@ -27,7 +27,7 @@ class ColorMIPSearchResultUtils {
         }
     }
 
-    static void sortCDSResults(List<ColorMIPSearchResultMetadata> cdsResults) {
+    public static void sortCDSResults(List<ColorMIPSearchResultMetadata> cdsResults) {
         Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
             if (csr1.getNormalizedScore() != null && csr2.getNormalizedScore() != null) {
                 return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedScore)
@@ -47,7 +47,7 @@ class ColorMIPSearchResultUtils {
         cdsResults.sort(csrComp.reversed());
     }
 
-    static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchResultMetadata>> cdsResults, File f, ObjectMapper mapper) {
+    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchResultMetadata>> cdsResults, File f, ObjectMapper mapper) {
         try {
             if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                 if (f == null) {

@@ -2,10 +2,6 @@ package org.janelia.colormipsearch;
 
 import java.io.Serializable;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Preconditions;
-
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -15,7 +11,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-class ColorMIPSearchResult implements Serializable {
+public class ColorMIPSearchResult implements Serializable {
 
     private final MIPInfo maskMIP;
     private final MIPInfo libraryMIP;
@@ -35,15 +31,15 @@ class ColorMIPSearchResult implements Serializable {
         this.gradientAreaGap = -1;
     }
 
-    String getLibraryId() {
-        return libraryMIP.id;
+    public String getLibraryId() {
+        return libraryMIP.getId();
     }
 
-    String getMaskId() {
-        return maskMIP.id;
+    public String getMaskId() {
+        return maskMIP.getId();
     }
 
-    int getMatchingPixels() {
+    public int getMatchingPixels() {
         return matchingPixels;
     }
 
@@ -97,48 +93,48 @@ class ColorMIPSearchResult implements Serializable {
                 .toString();
     }
 
-    ColorMIPSearchResultMetadata perLibraryMetadata() {
+    public ColorMIPSearchResultMetadata perLibraryMetadata() {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-        srMetadata.id = getLibraryId();
-        srMetadata.libraryName = libraryMIP.libraryName;
-        srMetadata.publishedName = libraryMIP.publishedName;
-        srMetadata.imageUrl = maskMIP.imageURL;
-        srMetadata.thumbnailUrl = maskMIP.thumbnailURL;
-        srMetadata.imageArchivePath = libraryMIP.archivePath;
-        srMetadata.imageType = libraryMIP.type;
-        srMetadata.imageName = libraryMIP.imagePath;
+        srMetadata.setId(getLibraryId());
+        srMetadata.setLibraryName(libraryMIP.getLibraryName());
+        srMetadata.setPublishedName(libraryMIP.getPublishedName());
+        srMetadata.setImageUrl(maskMIP.getImageURL());
+        srMetadata.setThumbnailUrl(maskMIP.getThumbnailURL());
+        srMetadata.setImageArchivePath(libraryMIP.getArchivePath());
+        srMetadata.setImageType(libraryMIP.getType());
+        srMetadata.setImageName(libraryMIP.getImagePath());
 
-        srMetadata.matchedId = getMaskId();
-        srMetadata.matchedPublishedName = maskMIP.publishedName;
-        srMetadata.matchedImageArchivePath = maskMIP.archivePath;
-        srMetadata.matchedImageName = maskMIP.imagePath;
-        srMetadata.matchedImageType = maskMIP.type;
-        srMetadata.attrs.putAll(maskMIP.attrs);
-        srMetadata.addAttr("Library", maskMIP.libraryName);
+        srMetadata.setMatchedId(getMaskId());
+        srMetadata.setMatchedPublishedName(maskMIP.getPublishedName());
+        srMetadata.setMatchedImageArchivePath(maskMIP.getArchivePath());
+        srMetadata.setMatchedImageName(maskMIP.getImagePath());
+        srMetadata.setMatchedImageType(maskMIP.getType());
+        maskMIP.iterateAttrs(srMetadata::addAttr);
+        srMetadata.addAttr("Library", maskMIP.getLibraryName());
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
     }
 
-    ColorMIPSearchResultMetadata perMaskMetadata() {
+    public ColorMIPSearchResultMetadata perMaskMetadata() {
         ColorMIPSearchResultMetadata srMetadata = new ColorMIPSearchResultMetadata();
-        srMetadata.id = getMaskId();
-        srMetadata.libraryName = maskMIP.libraryName;
-        srMetadata.publishedName = maskMIP.publishedName;
-        srMetadata.imageUrl = libraryMIP.imageURL;
-        srMetadata.thumbnailUrl = libraryMIP.thumbnailURL;
-        srMetadata.imageArchivePath = maskMIP.archivePath;
-        srMetadata.imageName = maskMIP.imagePath;
-        srMetadata.imageType = maskMIP.type;
+        srMetadata.setId(getMaskId());
+        srMetadata.setLibraryName(maskMIP.getLibraryName());
+        srMetadata.setPublishedName(maskMIP.getPublishedName());
+        srMetadata.setImageUrl(libraryMIP.getImageURL());
+        srMetadata.setThumbnailUrl(libraryMIP.getThumbnailURL());
+        srMetadata.setImageArchivePath(maskMIP.getArchivePath());
+        srMetadata.setImageName(maskMIP.getImagePath());
+        srMetadata.setImageType(maskMIP.getType());
 
-        srMetadata.matchedId = getLibraryId();
-        srMetadata.matchedPublishedName = libraryMIP.publishedName;
-        srMetadata.matchedImageArchivePath = libraryMIP.archivePath;
-        srMetadata.matchedImageName = libraryMIP.imagePath;
-        srMetadata.matchedImageType = libraryMIP.type;
-        srMetadata.attrs.putAll(libraryMIP.attrs);
-        srMetadata.addAttr("Library", libraryMIP.libraryName);
+        srMetadata.setMatchedId(getLibraryId());
+        srMetadata.setMatchedPublishedName(libraryMIP.getPublishedName());
+        srMetadata.setMatchedImageArchivePath(libraryMIP.getArchivePath());
+        srMetadata.setMatchedImageName(libraryMIP.getImagePath());
+        srMetadata.setMatchedImageType(libraryMIP.getType());
+        libraryMIP.iterateAttrs(srMetadata::addAttr); // add all attributes from libraryMIP
+        srMetadata.addAttr("Library", libraryMIP.getLibraryName());
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingPixelsPct(matchingPixelsPct);
         srMetadata.setGradientAreaGap(gradientAreaGap);

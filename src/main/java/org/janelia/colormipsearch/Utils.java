@@ -14,7 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 
-    static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
+    public static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
         BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
             List<T> currentPartition;
             if (partitionResult.getRight().size() == partitionSize) {
@@ -38,7 +38,7 @@ public class Utils {
                 ;
     }
 
-    static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
+    public static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
                                                           Function<T, String> groupingCriteria,
                                                           Function<T, Number> scoreExtractor,
                                                           int topResults,
@@ -60,7 +60,7 @@ public class Utils {
                     T maxValue = Collections.max(e.getValue(), csrComparison);
                     return new ScoredEntry<>(e.getKey(), scoreExtractor.apply(maxValue), e.getValue());
                 })
-                .sorted((se1, se2) -> Double.compare(se2.score.doubleValue(), se1.score.doubleValue())) // sort in reverse order
+                .sorted((se1, se2) -> Double.compare(se2.getScore().doubleValue(), se1.getScore().doubleValue())) // sort in reverse order
                 .collect(Collectors.toList());
         if (topResults > 0 && bestResultsForSpecifiedCriteria.size() > topResults) {
             return bestResultsForSpecifiedCriteria.subList(0, topResults);

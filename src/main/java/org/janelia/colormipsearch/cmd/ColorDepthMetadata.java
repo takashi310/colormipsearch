@@ -1,10 +1,12 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MetadataAttrs;
 
 class ColorDepthMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -20,14 +22,14 @@ class ColorDepthMetadata extends MetadataAttrs {
 
     @JsonIgnore
     void setEMSkeletonPublishedName(String publishedName) {
-        this.publishedName = publishedName;
+        this.setPublishedName(publishedName);
         addAttr("Body Id", publishedName);
         addAttr("PublishedName", publishedName);
     }
 
     @JsonIgnore
     void setLMLinePublishedName(String publishedName) {
-        this.publishedName = publishedName;
+        this.setPublishedName(publishedName);
         addAttr("Published Name", publishedName);
         addAttr("PublishedName", publishedName);
     }
@@ -42,17 +44,17 @@ class ColorDepthMetadata extends MetadataAttrs {
 
     MIPInfo asMIPInfo() {
         MIPInfo mipInfo = new MIPInfo();
-        mipInfo.id = id;
-        mipInfo.libraryName = libraryName;
-        mipInfo.publishedName = publishedName;
-        mipInfo.type = type;
-        mipInfo.archivePath = segmentedDataBasePath;
-        mipInfo.imagePath = StringUtils.defaultIfBlank(segmentFilepath, filepath);
-        mipInfo.cdmPath = filepath;
-        mipInfo.imageURL = imageUrl;
-        mipInfo.thumbnailURL = thumbnailUrl;
-        mipInfo.relatedImageRefId = extractIdFromRef(sourceImageRef);
-        attrs.forEach((k, v) -> mipInfo.attrs.put(k, v));
+        mipInfo.setId(getId());
+        mipInfo.setLibraryName(getLibraryName());
+        mipInfo.setPublishedName(getPublishedName());
+        mipInfo.setType(type);
+        mipInfo.setArchivePath(segmentedDataBasePath);
+        mipInfo.setImagePath(StringUtils.defaultIfBlank(segmentFilepath, filepath));
+        mipInfo.setCdmPath(filepath);
+        mipInfo.setImageURL(getImageUrl());
+        mipInfo.setThumbnailURL(getThumbnailUrl());
+        mipInfo.setRelatedImageRefId(extractIdFromRef(sourceImageRef));
+        iterateAttrs((k, v) -> mipInfo.addAttr(k, v));
         return mipInfo;
     }
 

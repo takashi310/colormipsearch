@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch;
 
-import java.io.File;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,38 +7,102 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class ColorMIPSearchResultMetadata extends MetadataAttrs {
-    static ColorMIPSearchResultMetadata create(ColorMIPSearchResultMetadata from) {
+public class ColorMIPSearchResultMetadata extends MetadataAttrs {
+    public static ColorMIPSearchResultMetadata create(ColorMIPSearchResultMetadata from) {
         ColorMIPSearchResultMetadata cdsCopy = new ColorMIPSearchResultMetadata();
         from.copyTo(cdsCopy);
         cdsCopy.matchedId = from.matchedId;
         return cdsCopy;
     }
 
+    private String imageArchivePath;
+    private String imageName;
+    private String imageType;
+    private String matchedId;
+    private String matchedPublishedName;
+    private String matchedImageArchivePath;
+    private String matchedImageName;
+    private String matchedImageType;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String imageArchivePath;
+    public String getImageArchivePath() {
+        return imageArchivePath;
+    }
+
+    public void setImageArchivePath(String imageArchivePath) {
+        this.imageArchivePath = imageArchivePath;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String imageName;
+    public String getImageName() {
+        return imageName;
+    }
+
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String imageType;
+    public String getImageType() {
+        return imageType;
+    }
+
+    public void setImageType(String imageType) {
+        this.imageType = imageType;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String matchedId;
+    public String getMatchedId() {
+        return matchedId;
+    }
+
+    public void setMatchedId(String matchedId) {
+        this.matchedId = matchedId;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String matchedPublishedName;
+    public String getMatchedPublishedName() {
+        return matchedPublishedName;
+    }
+
+    public void setMatchedPublishedName(String matchedPublishedName) {
+        this.matchedPublishedName = matchedPublishedName;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String matchedImageArchivePath;
+    public String getMatchedImageArchivePath() {
+        return matchedImageArchivePath;
+    }
+
+    public void setMatchedImageArchivePath(String matchedImageArchivePath) {
+        this.matchedImageArchivePath = matchedImageArchivePath;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String matchedImageName;
+    public String getMatchedImageName() {
+        return matchedImageName;
+    }
+
+    public void setMatchedImageName(String matchedImageName) {
+        this.matchedImageName = matchedImageName;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String matchedImageType;
+    public String getMatchedImageType() {
+        return matchedImageType;
+    }
+
+    public void setMatchedImageType(String matchedImageType) {
+        this.matchedImageType = matchedImageType;
+    }
 
     @JsonIgnore
     public int getMatchingPixels() {
@@ -122,6 +184,11 @@ class ColorMIPSearchResultMetadata extends MetadataAttrs {
             Double artificialGapScore = getArtificialShapeScore();
             return artificialGapScore != null ? artificialGapScore : getMatchingPixels();
         }
+    }
+
+    public boolean matches(ColorMIPSearchResultMetadata that) {
+        return this.getId() != null && this.getId().equals(that.matchedId) &&
+                this.matchedId != null && this.matchedId.equals(that.getId());
     }
 
     @Override

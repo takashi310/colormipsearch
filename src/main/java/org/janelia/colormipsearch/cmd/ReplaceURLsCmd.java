@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,11 +21,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MIPsUtils;
+import org.janelia.colormipsearch.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReplaceURLsCommand {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplaceURLsCommand.class);
+public class ReplaceURLsCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(ReplaceURLsCmd.class);
 
     @Parameters(commandDescription = "Replace image URLs from the source MIPs to the URLs from the target MIPs")
     static class ReplaceURLsArgs {
@@ -73,7 +76,7 @@ public class ReplaceURLsCommand {
 
     private final ReplaceURLsArgs args;
 
-    ReplaceURLsCommand(CommonArgs commonArgs) {
+    ReplaceURLsCmd(CommonArgs commonArgs) {
         args =  new ReplaceURLsArgs(commonArgs);
     }
 
@@ -91,11 +94,11 @@ public class ReplaceURLsCommand {
 
         Map<String, MIPInfo> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
-                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.relatedImageRefId, mipInfo.id), Function.identity()));
+                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()), Function.identity()));
 
         Map<String, MIPInfo> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
-                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.relatedImageRefId, mipInfo.id), Function.identity()));
+                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()), Function.identity()));
 
         List<String> inputFileNames;
         if (CollectionUtils.isNotEmpty(args.inputFiles)) {
@@ -142,21 +145,21 @@ public class ReplaceURLsCommand {
                         MIPInfo targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
                             LOG.warn("No target URLs found for {}", id);
-                        } else if (StringUtils.isBlank(targetMIP.imageURL) || StringUtils.isBlank(targetMIP.thumbnailURL)) {
-                            LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.imageURL, targetMIP.thumbnailURL);
+                        } else if (StringUtils.isBlank(targetMIP.getImageURL()) || StringUtils.isBlank(targetMIP.getThumbnailURL())) {
+                            LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.getImageURL(), targetMIP.getThumbnailURL());
                         } else {
                             MIPInfo srcMIP = indexedSourceMIPs.get(id);
                             if (srcMIP == null) {
                                 LOG.warn("No source URLS found for {} for validation", id);
                             } else {
-                                if (!StringUtils.equals(imageURL, srcMIP.imageURL)) {
-                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.imageURL, imageURL);
-                                } else if (!StringUtils.equals(thumbnailURL, srcMIP.thumbnailURL)) {
-                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.thumbnailURL, thumbnailURL);
+                                if (!StringUtils.equals(imageURL, srcMIP.getImageURL())) {
+                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
+                                } else if (!StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
+                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.getThumbnailURL(), thumbnailURL);
                                 } else {
                                     // in order to change the URLs everything must match
-                                    e.put("image_path", targetMIP.imageURL);
-                                    e.put("thumbnail_path", targetMIP.thumbnailURL);
+                                    e.put("image_path", targetMIP.getImageURL());
+                                    e.put("thumbnail_path", targetMIP.getThumbnailURL());
                                 }
                             }
                         }

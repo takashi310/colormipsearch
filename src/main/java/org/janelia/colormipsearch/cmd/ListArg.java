@@ -1,10 +1,9 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.util.List;
 
 import com.beust.jcommander.IStringConverter;
-import com.beust.jcommander.SubParameter;
 import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.StringUtils;

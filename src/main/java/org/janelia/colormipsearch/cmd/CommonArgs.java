@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import com.beust.jcommander.Parameter;
 

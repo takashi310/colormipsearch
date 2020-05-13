@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -20,31 +21,119 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class MIPInfo implements Serializable {
-    @JsonProperty
-    String id;
-    @JsonProperty
-    String type = "file"; // this can be file or zip
-    @JsonProperty
-    String libraryName;
-    @JsonProperty
-    String publishedName;
-    @JsonProperty
-    String imagePath;
-    @JsonProperty
-    String cdmPath;
-    @JsonProperty
-    String archivePath;
-    @JsonProperty
-    String imageURL;
-    @JsonProperty
-    String thumbnailURL;
-    @JsonProperty
-    String relatedImageRefId;
+public class MIPInfo implements Serializable {
+    private String id;
+    private String type = "file"; // this can be file or zip
+    private String libraryName;
+    private String publishedName;
+    private String imagePath;
+    private String cdmPath;
+    private String archivePath;
+    private String imageURL;
+    private String thumbnailURL;
+    private String relatedImageRefId;
     @JsonProperty("attrs")
-    Map<String, String> attrs = new LinkedHashMap<>();
+    private Map<String, String> attrs = new LinkedHashMap<>();
 
-    MIPInfo() {
+    public MIPInfo() {
+    }
+
+    @JsonProperty
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @JsonProperty
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    @JsonProperty
+    public String getLibraryName() {
+        return libraryName;
+    }
+
+    public void setLibraryName(String libraryName) {
+        this.libraryName = libraryName;
+    }
+
+    @JsonProperty
+    public String getPublishedName() {
+        return publishedName;
+    }
+
+    public void setPublishedName(String publishedName) {
+        this.publishedName = publishedName;
+    }
+
+    @JsonProperty
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    @JsonProperty
+    public String getCdmPath() {
+        return cdmPath;
+    }
+
+    public void setCdmPath(String cdmPath) {
+        this.cdmPath = cdmPath;
+    }
+
+    @JsonProperty
+    public String getArchivePath() {
+        return archivePath;
+    }
+
+    public void setArchivePath(String archivePath) {
+        this.archivePath = archivePath;
+    }
+
+    @JsonProperty
+    public String getImageURL() {
+        return imageURL;
+    }
+
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
+    }
+
+    @JsonProperty
+    public String getThumbnailURL() {
+        return thumbnailURL;
+    }
+
+    public void setThumbnailURL(String thumbnailURL) {
+        this.thumbnailURL = thumbnailURL;
+    }
+
+    @JsonProperty
+    public String getRelatedImageRefId() {
+        return relatedImageRefId;
+    }
+
+    public void setRelatedImageRefId(String relatedImageRefId) {
+        this.relatedImageRefId = relatedImageRefId;
+    }
+
+    public void addAttr(String name, String value) {
+        attrs.put(name, value);
+    }
+
+    public void iterateAttrs(BiConsumer<String, String> attrConsumer) {
+        this.attrs.forEach(attrConsumer);
     }
 
     @Override

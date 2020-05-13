@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import net.jodah.failsafe.Failsafe;
+import org.janelia.colormipsearch.ColorMIPSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,10 +13,8 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,9 +170,9 @@ public class ExtractColorMIPsMetadata {
                     .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
                     .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                     .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
-                    .filter(cdmip -> StringUtils.isNotBlank(cdmip.publishedName))
+                    .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .collect(Collectors.groupingBy(
-                            cdmip -> cdmip.publishedName,
+                            cdmip -> cdmip.getPublishedName(),
                             Collectors.toList()));
             // write the results to the output
             resultsByLineOrSkeleton
@@ -185,15 +183,15 @@ public class ExtractColorMIPsMetadata {
 
     private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.id = cdmip.id;
+        cdMetadata.setId(cdmip.id);
         cdMetadata.sampleRef = cdmip.sampleRef;
-        cdMetadata.libraryName = cdmip.findLibrary();
+        cdMetadata.setLibraryName(cdmip.findLibrary());
         cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.imageUrl = cdmip.publicImageUrl;
-        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
+        cdMetadata.setImageUrl(cdmip.publicImageUrl);
+        cdMetadata.setThumbnailUrl(cdmip.publicThumbnailUrl);
         cdMetadata.sourceImageRef = cdmip.sourceImageRef;
         if (cdmip.sample != null) {
-            cdMetadata.publishedToStaging = cdmip.sample.publishedToStaging;
+            cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
             cdMetadata.addAttr("Slide Code", cdmip.sample.slideCode);
             cdMetadata.addAttr("Gender", cdmip.sample.gender);
@@ -301,12 +299,12 @@ public class ExtractColorMIPsMetadata {
 
     private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.id = cdmip.id;
+        cdMetadata.setId(cdmip.id);
         cdMetadata.sampleRef = cdmip.sampleRef;
-        cdMetadata.libraryName = cdmip.findLibrary();
+        cdMetadata.setLibraryName(cdmip.findLibrary());
         cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.imageUrl = cdmip.publicImageUrl;
-        cdMetadata.thumbnailUrl = cdmip.publicThumbnailUrl;
+        cdMetadata.setImageUrl(cdmip.publicImageUrl);
+        cdMetadata.setThumbnailUrl(cdmip.publicThumbnailUrl);
         cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.addAttr("Library", cdmip.findLibrary());
         return cdMetadata;

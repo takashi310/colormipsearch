@@ -19,30 +19,31 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-class LocalColorMIPSearch extends ColorMIPSearch {
+public class LocalColorMIPSearch extends ColorMIPSearch {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
 
     private final Executor cdsExecutor;
     private final int libraryPartitionSize;
 
-    LocalColorMIPSearch(String gradientMasksPath,
-                        Integer dataThreshold,
-                        Integer maskThreshold,
-                        Double pixColorFluctuation,
-                        Integer xyShift,
-                        int negativeRadius,
-                        boolean mirrorMask,
-                        Double pctPositivePixels,
-                        int libraryPartitionSize,
-                        Executor cdsExecutor) {
-        super(gradientMasksPath, dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels);
+    public LocalColorMIPSearch(Integer dataThreshold,
+                               Integer maskThreshold,
+                               Double pixColorFluctuation,
+                               Integer xyShift,
+                               int negativeRadius,
+                               boolean mirrorMask,
+                               Double pctPositivePixels,
+                               int libraryPartitionSize,
+                               String gradientMasksPath,
+                               String gradientMasksSuffix,
+                               Executor cdsExecutor) {
+        super(dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels, gradientMasksPath, gradientMasksSuffix);
         this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
         this.cdsExecutor = cdsExecutor;
     }
 
     @Override
-    List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
+    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -82,8 +83,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
                                     ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
                                     if (sr.isMatch() && StringUtils.isNotBlank(gradientMasksPath)) {
                                         // try to load gradients
-                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(libraryMIP, gradientMasksPath, GradientAreaGapUtils.GRADIENT_LOCATION_SUFFIX));
-                                        MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(maskMIP, gradientMasksPath, GradientAreaGapUtils.GRADIENT_LOCATION_SUFFIX));
+                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(libraryMIP, gradientMasksPath, gradientMasksSuffix));
+                                        MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(maskMIP, gradientMasksPath, gradientMasksSuffix));
                                         applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
                                     } else if (sr.isError()) {
                                         LOG.warn("Errors encountered comparing {} with {}", libraryMIP, maskMIP);
@@ -103,4 +104,8 @@ class LocalColorMIPSearch extends ColorMIPSearch {
         return cdsComputations;
     }
 
+    @Override
+    public void terminate() {
+        // nothing to do here
+    }
 }

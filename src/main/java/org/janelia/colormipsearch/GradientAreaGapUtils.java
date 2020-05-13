@@ -6,7 +6,6 @@ import org.janelia.colormipsearch.imageprocessing.TriFunction;
 
 public class GradientAreaGapUtils {
 
-    static final String GRADIENT_LOCATION_SUFFIX = "_gradient";
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private enum Color {
         BLACK,
@@ -213,7 +212,7 @@ public class GradientAreaGapUtils {
         return sliceNumber;
     }
 
-    static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+    public static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         return calculateAreaGapScore1(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
     }
 

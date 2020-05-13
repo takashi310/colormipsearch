@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.collections4.CollectionUtils;
+import org.janelia.colormipsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

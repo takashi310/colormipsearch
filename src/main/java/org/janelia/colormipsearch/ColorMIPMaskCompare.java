@@ -7,26 +7,26 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
 class ColorMIPMaskCompare {
 
-    ImageArray m_query;
-    ImageArray m_negquery;
-    int[] m_mask;
-    int[] m_negmask;
-    int[][] m_tarmasklist;
-    int[][] m_tarmasklist_mirror;
-    int[][] m_tarnegmasklist;
-    int[][] m_tarnegmasklist_mirror;
-    int m_th;
-    double m_pixfludub;
+    private ImageArray m_query;
+    private ImageArray m_negquery;
+    private int[] m_mask;
+    private int[] m_negmask;
+    private int[][] m_tarmasklist;
+    private int[][] m_tarmasklist_mirror;
+    private int[][] m_tarnegmasklist;
+    private int[][] m_tarnegmasklist_mirror;
+    private int m_th;
+    private double m_pixfludub;
 
-    boolean m_mirror;
-    boolean m_mirrorneg;
-    int m_xyshift;
+    private boolean m_mirror;
+    private boolean m_mirrorneg;
+    private int m_xyshift;
 
-    int m_width;
-    int m_height;
+    private int m_width;
+    private int m_height;
 
-    int m_maskpos_st;
-    int m_maskpos_ed;
+    private int m_maskpos_st;
+    private int m_maskpos_ed;
 
     static class Output {
         int matchingPixNum;
@@ -38,7 +38,7 @@ class ColorMIPMaskCompare {
         }
     }
 
-    //Advanced Search
+    // Advanced Search
     ColorMIPMaskCompare(ImageArray query, int mask_th, boolean mirror_mask,
                         ImageArray negquery, int negmask_th,
                         boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {

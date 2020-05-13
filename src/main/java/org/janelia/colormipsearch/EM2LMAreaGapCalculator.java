@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This can be used to adjust the score for an EM mask against an LM (segmented) library
  */
-class EM2LMAreaGapCalculator {
+public class EM2LMAreaGapCalculator {
 
     private static class GradientAreaComputeContext {
         private static final ImageTransformation MIRROR_IMAGE = ImageTransformation.horizontalMirror();
@@ -51,7 +51,7 @@ class EM2LMAreaGapCalculator {
     private final QuadFunction<LImage, LImage, LImage, GradientAreaComputeContext, Long> gapCalculator;
     private final Function<MIPImage, TriFunction<MIPImage, MIPImage, MIPImage, Long>> gradientAreaCalculatorForMask;
 
-    EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
+    public EM2LMAreaGapCalculator(int maskThreshold, int negativeRadius, boolean mirrorMask) {
         this.labelsClearing = ImageProcessing.create(
                 ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85));
         this.negativeRadiusDilation = labelsClearing
@@ -64,7 +64,7 @@ class EM2LMAreaGapCalculator {
         this.gradientAreaCalculatorForMask = createGradientAreaCalculatorForMask(mirrorMask);
     }
 
-    TriFunction<MIPImage, MIPImage, MIPImage, Long> getGradientAreaCalculator(MIPImage maskImage) {
+    public TriFunction<MIPImage, MIPImage, MIPImage, Long> getGradientAreaCalculator(MIPImage maskImage) {
         return gradientAreaCalculatorForMask.apply(maskImage);
     }
 

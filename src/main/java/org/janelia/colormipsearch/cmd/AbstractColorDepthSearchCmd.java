@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.janelia.colormipsearch.ColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +18,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.GradientAreaGapUtils;
+import org.janelia.colormipsearch.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

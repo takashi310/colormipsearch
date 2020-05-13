@@ -1,10 +1,11 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class Main {
         MergeResultsCmd mergeResultsCmd = new MergeResultsCmd(commonArgs);
         NormalizeGradientScoresCmd normalizeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
-        ReplaceURLsCommand replaceURLsCmd = new ReplaceURLsCommand(commonArgs);
+        ReplaceURLsCmd replaceURLsCmd = new ReplaceURLsCmd(commonArgs);
         UpdateGradientScoresFromReverseSearchResultsCmd updateGradientScoresFromReverseSearchResultsCmd = new UpdateGradientScoresFromReverseSearchResultsCmd(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()

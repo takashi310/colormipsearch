@@ -172,7 +172,7 @@
                     </descriptorRefs>
                     <archive>
                       <manifest>
-                        <mainClass>org.janelia.colormipsearch.Main</mainClass>
+                        <mainClass>org.janelia.colormipsearch.cmd.Main</mainClass>
                       </manifest>
                     </archive>
                 </configuration>

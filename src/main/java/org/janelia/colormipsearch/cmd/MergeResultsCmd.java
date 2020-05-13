@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +19,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.Results;
+import org.janelia.colormipsearch.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,12 +124,12 @@ class MergeResultsCmd {
                             .collect(Collectors.toList());
                     List<ColorMIPSearchResultMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,
-                            csr -> csr.matchedId,
+                            csr -> csr.getMatchedId(),
                             csr -> (double) csr.getMatchingPixels(),
                             -1,
                             1)
                             .stream()
-                            .flatMap(se -> se.entry.stream()).collect(Collectors.toList());
+                            .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
 
                     ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
                     ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(combinedResultsWithNoDuplicates), CmdUtils.getOutputFile(outputDir, new File(fn)), mapper);

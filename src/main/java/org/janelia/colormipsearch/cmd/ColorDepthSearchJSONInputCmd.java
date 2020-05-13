@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmd;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +9,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.LocalColorMIPSearch;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MIPsUtils;
+import org.janelia.colormipsearch.SparkColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,11 +61,10 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         ColorMIPSearch colorMIPSearch;
         if (args.useSpark()) {
             colorMIPSearch = new SparkColorMIPSearch(
-                    args.appName, args.gradientPath, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels
-            );
+                    args.appName, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.gradientPath, args.gradientSuffix
+                    );
         } else {
             colorMIPSearch = new LocalColorMIPSearch(
-                    args.gradientPath,
                     args.dataThreshold,
                     args.maskThreshold,
                     args.pixColorFluctuation,
@@ -68,6 +73,8 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                     args.mirrorMask,
                     args.pctPositivePixels,
                     args.libraryPartitionSize,
+                    args.gradientPath,
+                    args.gradientSuffix,
                     CmdUtils.createCDSExecutor(args));
         }
 

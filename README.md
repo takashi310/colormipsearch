@@ -61,7 +61,7 @@ but it is important for line or body lookup.
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     groupMIPS \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -75,7 +75,7 @@ java \
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     groupMIPS \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -89,7 +89,7 @@ java \
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     groupMIPS \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -109,7 +109,7 @@ Prepare MCFO input:
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     prepareCDSArgs \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -123,7 +123,7 @@ Prepare SplitGal4 input:
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     prepareCDSArgs \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -137,7 +137,7 @@ Prepare EM input:
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     prepareCDSArgs \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -285,7 +285,7 @@ two sets of JSON files that will have to have the imageURLs update:
 ```bash
 java \
     -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.ExtractColorMIPsMetadata \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
     prepareCDSArgs \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
