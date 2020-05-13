@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+LSB_JOBINDEX=$((${LSB_JOBINDEX:-$1}))
+JOB_INDEX=$((LSB_JOBINDEX - 1))
+LIBRARY_INDEX=$((JOB_INDEX / JOBS_FOR_MASKS))
+MASK_INDEX=$((JOB_INDEX % JOBS_FOR_MASKS))
+
+echo "Run Job ($LSB_JOBINDEX, ${MASK_INDEX}, ${LIBRARY_INDEX})"
+${SCRIPT_DIR}/runCDSJob.sh ${MASK_INDEX} ${LIBRARY_INDEX} > cds_${LSB_JOBINDEX}.log
