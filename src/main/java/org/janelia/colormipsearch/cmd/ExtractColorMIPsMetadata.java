@@ -13,9 +13,11 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -78,6 +80,9 @@ public class ExtractColorMIPsMetadata {
     private static class Args {
         @Parameter(names = {"--jacsURL", "--dataServiceURL"}, description = "JACS data service base URL", required = true)
         private String dataServiceURL;
+
+        @Parameter(names = {"--configURL"}, description = "Config URL that contains the library name mapping")
+        private String libraryMappingURL = "http://config.int.janelia.org/config/cdm_libraries";
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         private String authorization;
@@ -150,11 +155,49 @@ public class ExtractColorMIPsMetadata {
         this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
-    private void writeColorDepthMetadata(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, int missingPublishingHandling, Path outputPath) {
+    private Map<String, String> retrieveLibraryNameMapping(String configURL) {
+        Response response = createHttpClient().target(configURL).request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
+        }
+        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
+        Object configEntry = configJSON.get("config");
+        if (!(configEntry instanceof Map)) {
+            LOG.error("Config entry from {} is null or it's not a map", configJSON);
+            throw new IllegalStateException("Config entry not found");
+        }
+        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
+        cdmLibraryNamesMapping.putAll((Map<String, String>)configEntry);
+        LOG.info("Using {} for mapping library names");
+        return cdmLibraryNamesMapping;
+    }
+
+    private void writeColorDepthMetadata(String alignmentSpace,
+                                         ListArg libraryArg,
+                                         List<String> datasets,
+                                         Map<String, String> libraryNamesMapping,
+                                         boolean includeMIPsWithNoImageURL,
+                                         int missingPublishingHandling,
+                                         Path outputPath) {
         // get color depth mips from JACS for the specified alignmentSpace and library
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
+
+        Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> {
+            String internalLibraryName = cmip.findLibrary(libraryArg.input);
+            if (StringUtils.isBlank(internalLibraryName)) {
+                return null;
+            } else {
+                String displayLibraryName = libraryNamesMapping.get(internalLibraryName);
+                if (StringUtils.isBlank(displayLibraryName)) {
+                    LOG.warn("No name mapping found {}", internalLibraryName);
+                    return null;
+                } else {
+                    return displayLibraryName;
+                }
+            }
+        };
 
         try {
             Files.createDirectories(outputPath);
@@ -168,8 +211,8 @@ public class ExtractColorMIPsMetadata {
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
-                    .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
-                    .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
+                    .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
+                    .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .collect(Collectors.groupingBy(
                             cdmip -> cdmip.getPublishedName(),
@@ -181,11 +224,12 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip) {
+    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
         cdMetadata.sampleRef = cdmip.sampleRef;
-        cdMetadata.setLibraryName(cdmip.findLibrary());
+        cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageUrl(cdmip.publicImageUrl);
         cdMetadata.setThumbnailUrl(cdmip.publicThumbnailUrl);
@@ -202,7 +246,7 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Anatomical Area", cdmip.anatomicalArea);
         cdMetadata.addAttr("Alignment Space", cdmip.alignmentSpace);
         cdMetadata.addAttr("Objective", cdmip.objective);
-        cdMetadata.addAttr("Library", cdmip.findLibrary());
+        cdMetadata.addAttr("Library", libraryName);
         cdMetadata.addAttr("Channel", cdmip.channelNumber);
         return cdMetadata;
     }
@@ -243,10 +287,6 @@ public class ExtractColorMIPsMetadata {
 
     private boolean isEmLibrary(String lname) {
         return StringUtils.equalsIgnoreCase(EM_LIBRARY, lname);
-    }
-
-    private boolean isEmSkeleton(ColorDepthMIP cdmip) {
-        return isEmLibrary(cdmip.findLibrary());
     }
 
     private boolean hasSample(ColorDepthMIP cdmip) {
@@ -297,16 +337,17 @@ public class ExtractColorMIPsMetadata {
         cdMetadata.addAttr("Slide Code", slideCode);
     }
 
-    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip) {
+    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
         cdMetadata.sampleRef = cdmip.sampleRef;
-        cdMetadata.setLibraryName(cdmip.findLibrary());
+        cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageUrl(cdmip.publicImageUrl);
         cdMetadata.setThumbnailUrl(cdmip.publicThumbnailUrl);
         cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
-        cdMetadata.addAttr("Library", cdmip.findLibrary());
+        cdMetadata.addAttr("Library", libraryName);
         return cdMetadata;
     }
 
@@ -405,12 +446,34 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private void prepareColorDepthSearchArgs(String alignmentSpace, ListArg libraryArg, List<String> datasets, boolean includeMIPsWithNoImageURL, int missingPublishingHandling, String segmentedMIPsBaseDir, int segmentedImageHandling, String outputDir) {
+    private void prepareColorDepthSearchArgs(String alignmentSpace,
+                                             ListArg libraryArg,
+                                             List<String> datasets,
+                                             Map<String, String> libraryNamesMapping,
+                                             boolean includeMIPsWithNoImageURL,
+                                             int missingPublishingHandling,
+                                             String segmentedMIPsBaseDir,
+                                             int segmentedImageHandling,
+                                             Path outputPath) {
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
 
-        Path outputPath = Paths.get(outputDir);
+        Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> {
+            String internalLibraryName = cmip.findLibrary(libraryArg.input);
+            if (StringUtils.isBlank(internalLibraryName)) {
+                return null;
+            } else {
+                String displayLibraryName = libraryNamesMapping.get(internalLibraryName);
+                if (StringUtils.isBlank(displayLibraryName)) {
+                    LOG.warn("No name mapping found {}", internalLibraryName);
+                    return null;
+                } else {
+                    return displayLibraryName;
+                }
+            }
+        };
+
         try {
             Files.createDirectories(outputPath);
         } catch (IOException e) {
@@ -448,8 +511,8 @@ public class ExtractColorMIPsMetadata {
                             }
                         })
                         .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
-                        .filter(cdmip -> isEmSkeleton(cdmip) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
-                        .map(cdmip -> isEmSkeleton(cdmip) ? asEMBodyMetadata(cdmip) : asLMLineMetadata(cdmip))
+                        .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
+                        .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
                         .forEach(cdmip -> {
                             try {
@@ -703,6 +766,7 @@ public class ExtractColorMIPsMetadata {
         }
 
         ExtractColorMIPsMetadata cdmipMetadataExtractor = new ExtractColorMIPsMetadata(args.dataServiceURL, args.authorization);
+        Map<String, String> libraryNameMapping = cdmipMetadataExtractor.retrieveLibraryNameMapping(args.libraryMappingURL);
         args.libraries.forEach(library -> {
             switch (cmdline.getParsedCommand()) {
                 case "groupMIPS":
@@ -712,10 +776,28 @@ public class ExtractColorMIPsMetadata {
                     } else {
                         outputPath = Paths.get(args.outputDir, args.linesOutput);
                     }
-                    cdmipMetadataExtractor.writeColorDepthMetadata(args.alignmentSpace, library, args.datasets, args.includeMIPsWithNoPublishedURL, args.includeMIPsWithoutPublisingName, outputPath);
+                    cdmipMetadataExtractor.writeColorDepthMetadata(
+                            args.alignmentSpace,
+                            library,
+                            args.datasets,
+                            libraryNameMapping,
+                            args.includeMIPsWithNoPublishedURL,
+                            args.includeMIPsWithoutPublisingName,
+                            outputPath
+                    );
                     break;
                 case "prepareCDSArgs":
-                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(args.alignmentSpace, library, args.datasets, args.includeMIPsWithNoPublishedURL, args.includeMIPsWithoutPublisingName, args.segmentedMIPsBaseDir, args.sSegmentedImageHandling, args.outputDir);
+                    cdmipMetadataExtractor.prepareColorDepthSearchArgs(
+                            args.alignmentSpace,
+                            library,
+                            args.datasets,
+                            libraryNameMapping,
+                            args.includeMIPsWithNoPublishedURL,
+                            args.includeMIPsWithoutPublisingName,
+                            args.segmentedMIPsBaseDir,
+                            args.sSegmentedImageHandling,
+                            Paths.get(args.outputDir)
+                    );
                     break;
             }
         });

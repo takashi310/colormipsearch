@@ -2,10 +2,12 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 class ColorDepthMIP implements Serializable {
@@ -28,7 +30,7 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     String publicThumbnailUrl;
     @JsonProperty
-    List<String> libraries;
+    Set<String> libraries;
     @JsonProperty
     String sampleRef;
     @JsonProperty
@@ -36,11 +38,11 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     CDMIPSample sample;
 
-    String findLibrary() {
+    String findLibrary(String libraryName) {
         if (CollectionUtils.isEmpty(libraries)) {
             return null;
         } else {
-            return libraries.stream().findFirst().orElse(null);
+            return libraries.stream().filter(StringUtils::isBlank).filter(l -> l.equals(libraryName)).findFirst().orElse(null);
         }
     }
 
