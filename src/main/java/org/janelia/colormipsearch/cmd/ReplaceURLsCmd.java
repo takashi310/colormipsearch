@@ -181,7 +181,7 @@ public class ReplaceURLsCmd {
                                     // source is the same so it's OK to update
                                     e.put("thumbnail_path", targetMIP.getThumbnailURL());
                                 } else {
-                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
+                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.getThumbnailURL(), thumbnailURL);
                                 }
                             }
                         }
