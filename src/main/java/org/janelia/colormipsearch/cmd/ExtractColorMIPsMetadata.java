@@ -114,7 +114,10 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         private boolean includeMIPsWithNoPublishedURL;
 
-        @Parameter(names = "--include-mips-without-publishing-name", description = "Include MIPs without publishing name")
+        @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flaf for include MIPs without publishing name: " +
+                "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
+                "0x1 - the mip is included even if publishing name is not set; " +
+                "0x2 - the mip is included even if publishedToStaging is not set")
         private int includeMIPsWithoutPublisingName = 0;
 
         @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
@@ -168,7 +171,7 @@ public class ExtractColorMIPsMetadata {
         }
         Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
         cdmLibraryNamesMapping.putAll((Map<String, String>)configEntry);
-        LOG.info("Using {} for mapping library names");
+        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
         return cdmLibraryNamesMapping;
     }
 

@@ -42,7 +42,10 @@ class ColorDepthMIP implements Serializable {
         if (CollectionUtils.isEmpty(libraries)) {
             return null;
         } else {
-            return libraries.stream().filter(StringUtils::isBlank).filter(l -> l.equals(libraryName)).findFirst().orElse(null);
+            return libraries.stream()
+                    .filter(StringUtils::isNotBlank)
+                    .filter(l -> l.equals(libraryName))
+                    .findFirst().orElse(null);
         }
     }
 
