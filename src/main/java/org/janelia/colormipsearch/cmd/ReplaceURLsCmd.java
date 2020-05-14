@@ -94,11 +94,20 @@ public class ReplaceURLsCmd {
 
         Map<String, MIPInfo> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
-                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()), Function.identity()));
+                .collect(Collectors.groupingBy(
+                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                r -> r.get(0))));
 
         Map<String, MIPInfo> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
-                .collect(Collectors.toMap(mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()), Function.identity()));
+                .collect(Collectors.groupingBy(
+                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                r -> r.get(0)
+                        )));
 
         List<String> inputFileNames;
         if (CollectionUtils.isNotEmpty(args.inputFiles)) {
