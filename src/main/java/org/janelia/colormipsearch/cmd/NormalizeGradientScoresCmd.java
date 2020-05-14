@@ -22,6 +22,7 @@ import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
 import org.janelia.colormipsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.Results;
+import org.janelia.colormipsearch.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,19 +109,33 @@ class NormalizeGradientScoresCmd {
         filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
-            Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
-            Long maxAreaGap = cdsResults.results.stream()
+            Results<List<ColorMIPSearchResultMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+            List<ColorMIPSearchResultMetadata> cdsResults;
+            if (args.cleanup) {
+                cdsResults = Utils.pickBestMatches(
+                        resultsFromJSONFile.results,
+                        csr -> csr.getMatchedId(),
+                        csr -> (double) csr.getMatchingPixels(),
+                        -1,
+                        1)
+                        .stream()
+                        .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
+            } else {
+                cdsResults = resultsFromJSONFile.results;
+            }
+            Long maxAreaGap = cdsResults.stream()
                     .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
                     .max(Long::compare)
                     .orElse(-1L);
             LOG.debug("Max area gap for {}  -> {}", fn, maxAreaGap);
-            Integer maxMatchingPixels = cdsResults.results.stream()
+            Integer maxMatchingPixels = cdsResults.stream()
                     .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                     .max(Integer::compare)
                     .orElse(0);
             LOG.debug("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
-            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.results.stream()
+            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.stream()
                     .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
+                    .map(csr -> args.cleanup ? ColorMIPSearchResultMetadata.create(csr) : csr)
                     .peek(csr -> {
                         long areaGap = csr.getGradientAreaGap();
                         double normalizedGapScore = GradientAreaGapUtils.calculateAreaGapScore(

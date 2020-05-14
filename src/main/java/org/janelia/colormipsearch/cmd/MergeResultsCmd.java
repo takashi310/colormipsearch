@@ -70,10 +70,10 @@ class MergeResultsCmd {
     }
 
     void execute() {
-        combineResults(args);
+        mergeResults(args);
     }
 
-    private void combineResults(MergeResultsArgs args) {
+    private void mergeResults(MergeResultsArgs args) {
         List<String> resultFileNames;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             resultFileNames = args.resultsFiles;
@@ -91,10 +91,10 @@ class MergeResultsCmd {
         } else {
             resultFileNames = Collections.emptyList();
         }
-        combineResultFiles(resultFileNames, args.pctPositivePixels, args.cleanup, args.getOutputDir());
+        mergeResultFiles(resultFileNames, args.pctPositivePixels, args.cleanup, args.getOutputDir());
     }
 
-    private void combineResultFiles(List<String> inputResultsFilenames, double pctPositivePixels, boolean cleanup, Path outputDir) {
+    private void mergeResultFiles(List<String> inputResultsFilenames, double pctPositivePixels, boolean cleanup, Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // files that have the same file name (but coming from different directories)

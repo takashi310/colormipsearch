@@ -39,10 +39,10 @@ public class Utils {
     }
 
     public static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
-                                                          Function<T, String> groupingCriteria,
-                                                          Function<T, Number> scoreExtractor,
-                                                          int topResults,
-                                                          int limitSubResults) {
+                                                                 Function<T, String> groupingCriteria,
+                                                                 Function<T, Number> scoreExtractor,
+                                                                 int topResults,
+                                                                 int limitSubResults) {
         Comparator<T> csrComparison = Comparator.comparing(scoreExtractor.andThen(n -> n.doubleValue()));
         List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = l.stream()
                 .collect(Collectors.groupingBy(
