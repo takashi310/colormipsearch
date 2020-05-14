@@ -161,14 +161,27 @@ public class ReplaceURLsCmd {
                             if (srcMIP == null) {
                                 LOG.warn("No source URLS found for {} for validation", id);
                             } else {
-                                if (!StringUtils.equals(imageURL, srcMIP.getImageURL())) {
-                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
-                                } else if (!StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
-                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.getThumbnailURL(), thumbnailURL);
-                                } else {
-                                    // in order to change the URLs everything must match
+                                // update image URL
+                                if (StringUtils.isBlank(srcMIP.getImageURL())) {
+                                    // the URL is not set in the source so set it
+                                    LOG.info("Setting the URL for {} because it was not set in the source", id);
                                     e.put("image_path", targetMIP.getImageURL());
+                                } else if (StringUtils.equals(imageURL, srcMIP.getImageURL())) {
+                                    // source is the same so it's OK to update
+                                    e.put("image_path", targetMIP.getImageURL());
+                                } else {
+                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
+                                }
+                                // update thumnail URL
+                                if (StringUtils.isBlank(srcMIP.getThumbnailURL())) {
+                                    // the URL is not set in the source so set it
+                                    LOG.info("Setting thumbnail URL for {} because it was not set in the source", id);
                                     e.put("thumbnail_path", targetMIP.getThumbnailURL());
+                                } else if (StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
+                                    // source is the same so it's OK to update
+                                    e.put("thumbnail_path", targetMIP.getThumbnailURL());
+                                } else {
+                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
                                 }
                             }
                         }

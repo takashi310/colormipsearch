@@ -31,30 +31,29 @@ export PER_MASKS_RESULTS_SUBDIR=flyem_hemibrain-vs-flylight_split_gal4_published
 export PER_LIBRARY_RESULTS_SUBDIR=flylight_split_gal4_published
 
 function localRun {
-    if [[ $# < 2 ]] ; then
-	echo "gridRun <from> <to>"
-        exit 1
+    if [[ $# -lt 2 ]] ; then
+      echo "localRun <from> <to>"
+            exit 1
     fi
     from=$1
-    njobs=$2
-    for ((LSB_JOBINDEX=${from}; LSB_JOBINDEX<=${njobs}; LSB_JOBINDEX++)) ; do
-        ${SCRIPT_DIR}/submitCDSJobs.sh $LSB_JOBINDEX
+    to=$2
+    for ((LSB_JOBINDEX=${from}; LSB_JOBINDEX<=${to}; LSB_JOBINDEX++)) ; do
+        ${SCRIPT_DIR}/submitCDSJob.sh $LSB_JOBINDEX
     done
 }
 
 function gridRun {
-    if [[ $# < 2 ]] ; then
-	echo "gridRun <from> <to>"
-        exit 1
+    if [[ $# -lt 2 ]] ; then
+      echo "gridRun <from> <to>"
+            exit 1
     fi
     from=$1
     to=$2
     # this is tricky and has not been tested yet because we have to run a function from this file
-    bsub -n ${CORES_RESOURCE} -J CDS[${from}-${to}] -P emlm ${SCRIPT_DIR}/submitCDSJobs.sh
+    bsub -n ${CORES_RESOURCE} -J CDS[${from}-${to}] -P emlm ${SCRIPT_DIR}/submitCDSJob.sh
 }
 
 echo "Total jobs: $TOTAL_JOBS"
 
 # to run locally use localRun <from> <to>
 # to run on the grid use gridRun <from> <to>
-gridRun 

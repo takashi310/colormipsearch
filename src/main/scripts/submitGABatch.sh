@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
 LIB_SUB_DIR=flyem_hemibrain
 CDSRESULTS_DIR=local/testData/cdsresults
 GACDSRESULTS_DIR=local/testData/cdsresults.ga
@@ -80,18 +82,29 @@ function submitGradAdjustmentJobs {
 }
 
 function localRun {
-    for ((LSB_JOBINDEX=1; LSB_JOBINDEX<=$TOTAL_JOBS; LSB_JOBINDEX++)) ; do
-        submitGradAdjustmentJobs $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR $LSB_JOBINDEX
+    if [[ $# -lt 2 ]] ; then
+      echo "localRun <from> <to>"
+            exit 1
+    fi
+    from=$1
+    to=$2
+    for ((LSB_JOBINDEX=${from}; LSB_JOBINDEX<=${to}; LSB_JOBINDEX++)) ; do
+        ${SCRIPT_DIR}/submitGAJob.sh ${CDGA_INPUT_DIR} ${CDGA_OUTPUT_DIR} ${LSB_JOBINDEX}
     done
 }
 
 function gridRun {
-    # this is tricky and has not been tested yet because we have to run a function from this file
+    if [[ $# -lt 2 ]] ; then
+      echo "gridRun <from> <to>"
+            exit 1
+    fi
+    from=$1
+    to=$2
     bsub -n ${CORES_RESOURCE} -J CDGA[1-${TOTAL_JOBS}] -P emlm \
-        bin/bash -rcfile submitGradAdjustmentBatch.sh -i -c "submitGradAdjustmentJobs $CDGA_INPUT_DIR $CDGA_OUTPUT_DIR"
+        ${SCRIPT_DIR}/submitGAJob.sh ${CDGA_INPUT_DIR} ${CDGA_OUTPUT_DIR}
 }
 
 echo "Total jobs: ${TOTAL_JOBS}"
 
-# to run locally use localRun
-# to run on the grid use gridRun
+# to run locally use localRun <from> <to>
+# to run on the grid use gridRun <from> <to>
