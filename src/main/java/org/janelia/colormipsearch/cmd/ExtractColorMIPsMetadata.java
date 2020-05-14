@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -78,16 +79,17 @@ public class ExtractColorMIPsMetadata {
     }
 
     private static class Args {
-        @Parameter(names = {"--jacsURL", "--dataServiceURL"}, description = "JACS data service base URL", required = true)
+        @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
+                description = "JACS data service base URL", required = true)
         private String dataServiceURL;
 
-        @Parameter(names = {"--configURL"}, description = "Config URL that contains the library name mapping")
+        @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
         private String libraryMappingURL = "http://config.int.janelia.org/config/cdm_libraries";
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         private String authorization;
 
-        @Parameter(names = {"--alignmentSpace", "-as"}, description = "Alignment space")
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
         private String alignmentSpace = "JRC2018_Unisex_20x_HR";
 
         @Parameter(names = {"--libraries", "-l"},
@@ -95,6 +97,12 @@ public class ExtractColorMIPsMetadata {
                         "The format is <libraryName>[:<offset>[:<length>]]",
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         private List<ListArg> libraries;
+
+        @Parameter(names = "--included-libraries", variableArity = true, description = "If set, MIPs should also be in all these libraries")
+        private Set<String> includedLibraries;
+
+        @Parameter(names = "--excluded-libraries", variableArity = true, description = "If set, MIPs should not be part of any of these libraries")
+        private Set<String> excludedLibraries;
 
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         private List<String> datasets;
@@ -178,6 +186,8 @@ public class ExtractColorMIPsMetadata {
     private void writeColorDepthMetadata(String alignmentSpace,
                                          ListArg libraryArg,
                                          List<String> datasets,
+                                         Set<String> includedLibraries,
+                                         Set<String> excludedLibraries,
                                          Map<String, String> libraryNamesMapping,
                                          boolean includeMIPsWithNoImageURL,
                                          int missingPublishingHandling,
@@ -214,6 +224,7 @@ public class ExtractColorMIPsMetadata {
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
+                    .filter(cdmip -> checkMIPLibraries(cdmip, includedLibraries, excludedLibraries))
                     .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                     .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
@@ -285,6 +296,20 @@ public class ExtractColorMIPsMetadata {
         } else {
             return mipChannel == segmentImageChannel;
         }
+    }
+
+    private boolean checkMIPLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {
+        if (CollectionUtils.isNotEmpty(includedLibraries)) {
+            if (!cdmip.libraries.containsAll(includedLibraries)) {
+                return false;
+            }
+        }
+        if (CollectionUtils.isNotEmpty(excludedLibraries)) {
+            return cdmip.libraries.stream()
+                    .filter(l -> excludedLibraries.contains(l))
+                    .count() == 0;
+        }
+        return true;
     }
 
     private boolean isEmLibrary(String lname) {
@@ -450,6 +475,8 @@ public class ExtractColorMIPsMetadata {
     private void prepareColorDepthSearchArgs(String alignmentSpace,
                                              ListArg libraryArg,
                                              List<String> datasets,
+                                             Set<String> includedLibraries,
+                                             Set<String> excludedLibraries,
                                              Map<String, String> libraryNamesMapping,
                                              boolean includeMIPsWithNoImageURL,
                                              int missingPublishingHandling,
@@ -512,6 +539,7 @@ public class ExtractColorMIPsMetadata {
                             }
                         })
                         .filter(cdmip -> includeMIPsWithNoImageURL || hasPublishedImageURL(cdmip))
+                        .filter(cdmip -> checkMIPLibraries(cdmip, includedLibraries, excludedLibraries))
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
@@ -781,6 +809,8 @@ public class ExtractColorMIPsMetadata {
                             args.alignmentSpace,
                             library,
                             args.datasets,
+                            args.includedLibraries,
+                            args.excludedLibraries,
                             libraryNameMapping,
                             args.includeMIPsWithNoPublishedURL,
                             args.includeMIPsWithoutPublisingName,
@@ -792,6 +822,8 @@ public class ExtractColorMIPsMetadata {
                             args.alignmentSpace,
                             library,
                             args.datasets,
+                            args.includedLibraries,
+                            args.excludedLibraries,
                             libraryNameMapping,
                             args.includeMIPsWithNoPublishedURL,
                             args.includeMIPsWithoutPublisingName,
