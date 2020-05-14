@@ -11,9 +11,6 @@ import org.janelia.colormipsearch.MetadataAttrs;
 class ColorDepthMetadata extends MetadataAttrs {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
-    String sampleRef;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty
     String sourceImageRef;
     String filepath;
     String type;
@@ -36,7 +33,6 @@ class ColorDepthMetadata extends MetadataAttrs {
 
     void copyTo(ColorDepthMetadata that) {
         super.copyTo(that);
-        that.sampleRef = this.sampleRef;
         that.filepath = this.filepath;
         that.segmentedDataBasePath = this.segmentedDataBasePath;
         that.segmentFilepath = this.segmentFilepath;

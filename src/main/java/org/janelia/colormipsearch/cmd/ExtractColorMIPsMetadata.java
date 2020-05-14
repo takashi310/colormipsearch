@@ -231,7 +231,6 @@ public class ExtractColorMIPsMetadata {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
-        cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageUrl(cdmip.publicImageUrl);
@@ -344,7 +343,6 @@ public class ExtractColorMIPsMetadata {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
-        cdMetadata.sampleRef = cdmip.sampleRef;
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageUrl(cdmip.publicImageUrl);
