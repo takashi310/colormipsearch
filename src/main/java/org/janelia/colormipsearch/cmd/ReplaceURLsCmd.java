@@ -146,7 +146,6 @@ public class ReplaceURLsCmd {
                         String id = (String) e.get(resultIdFieldName);
                         String imageURL = (String) e.get("image_path");
                         String thumbnailURL = (String) e.get("thumbnail_path");
-
                         if (cleanup) {
                             // clean up fields that should not be in prod
                             cleanResultFields(e);
@@ -162,7 +161,7 @@ public class ReplaceURLsCmd {
                                 LOG.warn("No source URLS found for {} for validation", id);
                             } else {
                                 // update image URL
-                                if (StringUtils.isBlank(srcMIP.getImageURL())) {
+                                if (StringUtils.isBlank(imageURL)) {
                                     // the URL is not set in the source so set it
                                     LOG.info("Setting the URL for {} because it was not set in the source", id);
                                     e.put("image_path", targetMIP.getImageURL());
@@ -173,7 +172,7 @@ public class ReplaceURLsCmd {
                                     LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
                                 }
                                 // update thumnail URL
-                                if (StringUtils.isBlank(srcMIP.getThumbnailURL())) {
+                                if (StringUtils.isBlank(thumbnailURL)) {
                                     // the URL is not set in the source so set it
                                     LOG.info("Setting thumbnail URL for {} because it was not set in the source", id);
                                     e.put("thumbnail_path", targetMIP.getThumbnailURL());
