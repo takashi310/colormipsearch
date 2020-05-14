@@ -163,7 +163,7 @@ public class ReplaceURLsCmd {
                                 // update image URL
                                 if (StringUtils.isBlank(imageURL)) {
                                     // the URL is not set in the source so set it
-                                    LOG.info("Setting the URL for {} because it was not set in the source", id);
+                                    LOG.debug("Setting the URL for {} because it was not set in the source", id);
                                     e.put("image_path", targetMIP.getImageURL());
                                 } else if (StringUtils.equals(imageURL, srcMIP.getImageURL())) {
                                     // source is the same so it's OK to update
@@ -174,7 +174,7 @@ public class ReplaceURLsCmd {
                                 // update thumnail URL
                                 if (StringUtils.isBlank(thumbnailURL)) {
                                     // the URL is not set in the source so set it
-                                    LOG.info("Setting thumbnail URL for {} because it was not set in the source", id);
+                                    LOG.debug("Setting thumbnail URL for {} because it was not set in the source", id);
                                     e.put("thumbnail_path", targetMIP.getThumbnailURL());
                                 } else if (StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
                                     // source is the same so it's OK to update
