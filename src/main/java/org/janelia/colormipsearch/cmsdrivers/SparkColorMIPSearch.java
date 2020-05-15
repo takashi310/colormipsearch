@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmsdrivers;
 
 import java.io.File;
 import java.util.List;
@@ -10,6 +10,11 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.janelia.colormipsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.MIPImage;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -19,23 +24,16 @@ import scala.Tuple2;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class SparkColorMIPSearch extends ColorMIPSearch {
+public class SparkColorMIPSearch implements ColorMIPSearchDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
+    private final ColorMIPSearch colorMIPSearch;
     private transient final JavaSparkContext sparkContext;
 
     public SparkColorMIPSearch(String appName,
-                               Integer dataThreshold,
-                               Integer maskThreshold,
-                               Double pixColorFluctuation,
-                               Integer xyShift,
-                               int negativeRadius,
-                               boolean mirrorMask,
-                               Double pctPositivePixels,
-                               String gradientMasksPath,
-                               String gradientMasksSuffix) {
-        super(dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels, gradientMasksPath, gradientMasksSuffix);
+                               ColorMIPSearch colorMIPSearch) {
+        this.colorMIPSearch = colorMIPSearch;
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
@@ -46,12 +44,9 @@ public class SparkColorMIPSearch extends ColorMIPSearch {
         long nlibraries = libraryMIPS.size();
         long nmasks = maskMIPS.size();
 
-        JavaRDD<Tuple2<MIPImage, MIPImage>> librariesRDD = sparkContext.parallelize(libraryMIPS)
+        JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
                 .filter(mip -> new File(mip.getImagePath()).exists())
-                .map(mip -> new Tuple2<>(
-                        MIPsUtils.loadMIP(mip),
-                        MIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(mip, gradientMasksPath, gradientMasksSuffix))))
-                ;
+                .map(mip -> MIPsUtils.loadMIP(mip));
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
         JavaRDD<MIPInfo> masksRDD = sparkContext.parallelize(maskMIPS)
@@ -59,7 +54,7 @@ public class SparkColorMIPSearch extends ColorMIPSearch {
                 ;
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<Tuple2<MIPImage, MIPImage>, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<MIPImage, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
         JavaPairRDD<MIPInfo, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
@@ -67,14 +62,10 @@ public class SparkColorMIPSearch extends ColorMIPSearch {
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
                             MIPImage maskMIP = MIPsUtils.loadMIP(mls._1);
-                            MIPImage gradientMask = MIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(mls._1, gradientMasksPath, gradientMasksSuffix));
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(lmPair -> {
-                                        ColorMIPSearchResult sr = runImageComparison(lmPair._1._1, maskMIP);
-                                        return applyGradientAreaAdjustment(sr, lmPair._1._1, lmPair._1._2, maskMIP, gradientMask);
-                                    })
+                                    .map(lmPair -> colorMIPSearch.runImageComparison(lmPair._1, maskMIP))
                                     .filter(srByMask ->srByMask.isMatch() || srByMask.isError())
-                                    .sorted(getColorMIPSearchComparator())
+                                    .sorted(colorMIPSearch.getColorMIPSearchComparator())
                                     .collect(Collectors.toList())
                                     ;
                             return new Tuple2<>(mls._1, srsByMask);
@@ -82,7 +73,7 @@ public class SparkColorMIPSearch extends ColorMIPSearch {
                         .iterator())
                 .mapToPair(p -> p)
                 ;
-        LOG.info("Created RDD search results fpr  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
+        LOG.info("Created RDD search results for  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
         // write results for each mask
         return allSearchResultsPartitionedByMaskMIP.flatMapToPair(srByMask -> srByMask._2.stream().map(sr -> new Tuple2<>(srByMask._1, sr)).iterator())

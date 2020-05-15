@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch;
+package org.janelia.colormipsearch.cmsdrivers;
 
 import java.util.Collection;
 import java.util.List;
@@ -10,7 +10,13 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.CachedMIPsUtils;
+import org.janelia.colormipsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.MIPImage;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MIPsUtils;
+import org.janelia.colormipsearch.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,25 +25,18 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class LocalColorMIPSearch extends ColorMIPSearch {
+public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
 
+    private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
     private final int libraryPartitionSize;
 
-    public LocalColorMIPSearch(Integer dataThreshold,
-                               Integer maskThreshold,
-                               Double pixColorFluctuation,
-                               Integer xyShift,
-                               int negativeRadius,
-                               boolean mirrorMask,
-                               Double pctPositivePixels,
+    public LocalColorMIPSearch(ColorMIPSearch colorMIPSearch,
                                int libraryPartitionSize,
-                               String gradientMasksPath,
-                               String gradientMasksSuffix,
                                Executor cdsExecutor) {
-        super(dataThreshold, maskThreshold, pixColorFluctuation, xyShift, negativeRadius, mirrorMask, pctPositivePixels, gradientMasksPath, gradientMasksSuffix);
+        this.colorMIPSearch = colorMIPSearch;
         this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
         this.cdsExecutor = cdsExecutor;
     }
@@ -80,13 +79,8 @@ public class LocalColorMIPSearch extends ColorMIPSearch {
                         List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
                                 .map(libraryMIP -> {
                                     MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
-                                    ColorMIPSearchResult sr = runImageComparison(libraryImage, maskImage);
-                                    if (sr.isMatch() && StringUtils.isNotBlank(gradientMasksPath)) {
-                                        // try to load gradients
-                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(libraryMIP, gradientMasksPath, gradientMasksSuffix));
-                                        MIPImage maskGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(maskMIP, gradientMasksPath, gradientMasksSuffix));
-                                        applyGradientAreaAdjustment(sr, libraryImage, libraryGradientImage, maskImage, maskGradientImage);
-                                    } else if (sr.isError()) {
+                                    ColorMIPSearchResult sr = colorMIPSearch.runImageComparison(libraryImage, maskImage);
+                                    if (sr.isError()) {
                                         LOG.warn("Errors encountered comparing {} with {}", libraryMIP, maskMIP);
                                     }
                                     return sr;

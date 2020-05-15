@@ -11,10 +11,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.ColorMIPSearchResult;
-import org.janelia.colormipsearch.LocalColorMIPSearch;
+import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
+import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.MIPInfo;
 import org.janelia.colormipsearch.MIPsUtils;
-import org.janelia.colormipsearch.SparkColorMIPSearch;
+import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,24 +71,18 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     }
 
     private void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
-        ColorMIPSearch colorMIPSearch;
+        ColorMIPSearchDriver colorMIPSearchDriver;
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
+                args.dataThreshold,
+                args.maskThreshold,
+                args.pixColorFluctuation,
+                args.xyShift,
+                args.mirrorMask,
+                args.pctPositivePixels);
         if (args.useSpark()) {
-            colorMIPSearch = new SparkColorMIPSearch(
-                    args.appName, args.dataThreshold, args.maskThreshold, args.pixColorFluctuation, args.xyShift, args.negativeRadius, args.mirrorMask, args.pctPositivePixels, args.gradientPath, args.gradientSuffix
-                    );
+            colorMIPSearchDriver = new SparkColorMIPSearch(args.appName, colorMIPSearch);
         } else {
-            colorMIPSearch = new LocalColorMIPSearch(
-                    args.dataThreshold,
-                    args.maskThreshold,
-                    args.pixColorFluctuation,
-                    args.xyShift,
-                    args.negativeRadius,
-                    args.mirrorMask,
-                    args.pctPositivePixels,
-                    args.libraryPartitionSize,
-                    args.gradientPath,
-                    args.gradientSuffix,
-                    CmdUtils.createCDSExecutor(args));
+            colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
         }
 
         try {
@@ -136,12 +131,12 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                         .map(ListArg::listArgName)
                         .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
                 saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskNames + "-inputs-" + inputNames + "-cdsParameters.json");
-                List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
+                List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
                 new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
                 new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
             }
         } finally {
-            colorMIPSearch.terminate();
+            colorMIPSearchDriver.terminate();
         }
     }
 

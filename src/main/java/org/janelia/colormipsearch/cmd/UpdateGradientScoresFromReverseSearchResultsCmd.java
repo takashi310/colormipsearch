@@ -82,10 +82,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     void execute() {
-        updateGradientAreaScores(args);
+        updateGradientScores(args);
     }
 
-    private void updateGradientAreaScores(GradientScoreResultsArgs args) {
+    private void updateGradientScores(GradientScoreResultsArgs args) {
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             filesToProcess = args.resultsFiles;

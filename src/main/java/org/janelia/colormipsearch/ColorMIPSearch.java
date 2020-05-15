@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public abstract class ColorMIPSearch implements Serializable {
+public class ColorMIPSearch implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearch.class);
 
@@ -24,48 +24,33 @@ public abstract class ColorMIPSearch implements Serializable {
     private final boolean mirrorMask;
     private final Double pixColorFluctuation;
     private final Double pctPositivePixels;
-    private final int negativeRadius;
-    private final EM2LMAreaGapCalculator gradientBasedScoreAdjuster;
-    final String gradientMasksPath;
-    final String gradientMasksSuffix;
 
-    ColorMIPSearch(Integer dataThreshold,
-                   Integer maskThreshold,
-                   Double pixColorFluctuation,
-                   Integer xyShift,
-                   int negativeRadius,
-                   boolean mirrorMask,
-                   Double pctPositivePixels,
-                   String gradientMasksPath,
-                   String gradientMasksSuffix) {
+    public ColorMIPSearch(Integer dataThreshold,
+                          Integer maskThreshold,
+                          Double pixColorFluctuation,
+                          Integer xyShift,
+                          boolean mirrorMask,
+                          Double pctPositivePixels) {
         this.dataThreshold = dataThreshold;
         this.maskThreshold = maskThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
         this.pctPositivePixels = pctPositivePixels;
-        this.negativeRadius = negativeRadius;
-        this.gradientMasksPath = gradientMasksPath;
-        this.gradientMasksSuffix = gradientMasksSuffix;
-        this.gradientBasedScoreAdjuster = new EM2LMAreaGapCalculator(maskThreshold, negativeRadius, mirrorMask);
     }
 
     public Map<String, String> getCDSParameters() {
         Map<String, String> cdsParams = new LinkedHashMap<>();
-        cdsParams.put("gradientMasksPath", gradientMasksPath);
         cdsParams.put("dataThreshold", dataThreshold != null ? dataThreshold.toString() : null);
         cdsParams.put("maskThreshold", maskThreshold != null ? maskThreshold.toString() : null);
         cdsParams.put("xyShift", xyShift != null ? xyShift.toString() : null);
         cdsParams.put("mirrorMask", String.valueOf(mirrorMask));
         cdsParams.put("pixColorFluctuation", pixColorFluctuation != null ? pixColorFluctuation.toString() : null);
         cdsParams.put("pctPositivePixels", pctPositivePixels != null ? pctPositivePixels.toString() : null);
-        cdsParams.put("negativeRadius", String.valueOf(negativeRadius));
         return cdsParams;
     }
 
-    public abstract List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS);
-
-    ColorMIPSearchResult runImageComparison(MIPImage libraryMIPImage, MIPImage maskMIPImage) {
+    public ColorMIPSearchResult runImageComparison(MIPImage libraryMIPImage, MIPImage maskMIPImage) {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare library file {} with mask {}", libraryMIPImage,  maskMIPImage);
@@ -102,17 +87,8 @@ public abstract class ColorMIPSearch implements Serializable {
         }
     }
 
-    ColorMIPSearchResult applyGradientAreaAdjustment(ColorMIPSearchResult sr, MIPImage libraryMIPImage, MIPImage libraryGradientImage, MIPImage patternMIPImage, MIPImage patternGradientImage) {
-        if (sr.isMatch()) {
-            return sr.applyGradientAreaGap(gradientBasedScoreAdjuster.calculateGradientAreaAdjustment(libraryMIPImage, libraryGradientImage, patternMIPImage, patternGradientImage));
-        } else {
-            return sr;
-        }
-    }
-
-    Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
+    public Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingPixels).reversed();
     }
 
-    abstract public void terminate();
 }

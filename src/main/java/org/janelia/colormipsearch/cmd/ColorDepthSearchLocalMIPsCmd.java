@@ -6,8 +6,10 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.ColorMIPSearchResult;
-import org.janelia.colormipsearch.LocalColorMIPSearch;
+import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
+import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.MIPInfo;
 import org.janelia.colormipsearch.MIPsUtils;
 import org.slf4j.Logger;
@@ -44,18 +46,14 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     }
 
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
-        LocalColorMIPSearch colorMIPSearch = new LocalColorMIPSearch(
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
                 args.dataThreshold,
                 args.maskThreshold,
                 args.pixColorFluctuation,
                 args.xyShift,
-                args.negativeRadius,
                 args.mirrorMask,
-                args.pctPositivePixels,
-                args.libraryPartitionSize,
-                args.gradientPath,
-                args.gradientSuffix,
-                CmdUtils.createCDSExecutor(args));
+                args.pctPositivePixels);
+        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
         try {
             List<MIPInfo> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
                     args.libraryMIPsLocation.input, args.libraryMIPsLocation.offset, args.libraryMIPsLocation.length, args.filterAsLowerCase(args.libraryMIPsFilter)
@@ -69,14 +67,14 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                 String inputName = args.libraryMIPsLocation.listArgName();
                 String maskName = args.maskMIPsLocation.listArgName();
                 saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskName + "-inputs-" + inputName + "-cdsParameters.json");
-                List<ColorMIPSearchResult> cdsResults = colorMIPSearch.findAllColorDepthMatches(masksMips, librariesMips);
+                List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
                 new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
                 if (StringUtils.isNotBlank(args.perLibrarySubdir)) {
                     new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
                 }
             }
         } finally {
-            colorMIPSearch.terminate();
+            colorMIPSearchDriver.terminate();
         }
     }
 

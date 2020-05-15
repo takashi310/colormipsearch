@@ -48,7 +48,7 @@ public class MIPsUtils {
      * @return
      */
     @Nullable
-    static MIPImage loadMIP(@Nullable MIPInfo mip) {
+    public static MIPImage loadMIP(@Nullable MIPInfo mip) {
         long startTime = System.currentTimeMillis();
         if (mip == null) {
             return null;

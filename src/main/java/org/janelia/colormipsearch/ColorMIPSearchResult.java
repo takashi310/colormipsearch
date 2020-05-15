@@ -43,11 +43,11 @@ public class ColorMIPSearchResult implements Serializable {
         return matchingPixels;
     }
 
-    boolean isMatch() {
+    public boolean isMatch() {
         return isMatch;
     }
 
-    boolean isError() {
+    public boolean isError() {
         return isError;
     }
 

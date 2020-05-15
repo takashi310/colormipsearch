@@ -24,7 +24,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.CachedMIPsUtils;
 import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
 import org.janelia.colormipsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.EM2LMAreaGapCalculator;
+import org.janelia.colormipsearch.EM2LMGradientAreaGapCalculator;
 import org.janelia.colormipsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.MIPImage;
 import org.janelia.colormipsearch.MIPInfo;
@@ -92,7 +92,7 @@ class CalculateGradientScoresCmd {
     }
 
     private void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        EM2LMAreaGapCalculator emlmAreaGapCalculator = new EM2LMAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
+        EM2LMGradientAreaGapCalculator emlmAreaGapCalculator = new EM2LMGradientAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
         Executor executor = CmdUtils.createCDSExecutor(args);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -158,7 +158,7 @@ class CalculateGradientScoresCmd {
     }
 
     private Results<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForResultsFile(
-            EM2LMAreaGapCalculator emlmAreaGapCalculator,
+            EM2LMGradientAreaGapCalculator emlmAreaGapCalculator,
             File inputResultsFile,
             String gradientsLocation,
             String gradientSuffix,
@@ -256,7 +256,7 @@ class CalculateGradientScoresCmd {
                                                                                                           String gradientSuffix,
                                                                                                           String zgapsLocation,
                                                                                                           String zgapsSuffix,
-                                                                                                          EM2LMAreaGapCalculator emlmAreaGapCalculator,
+                                                                                                          EM2LMGradientAreaGapCalculator emlmAreaGapCalculator,
                                                                                                           Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP);
         CompletableFuture<TriFunction<MIPImage, MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
