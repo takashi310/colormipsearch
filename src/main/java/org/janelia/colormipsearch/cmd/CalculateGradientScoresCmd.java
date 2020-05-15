@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,7 +25,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.CachedMIPsUtils;
 import org.janelia.colormipsearch.ColorMIPSearchResultMetadata;
 import org.janelia.colormipsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.EM2LMGradientAreaGapCalculator;
+import org.janelia.colormipsearch.MaskGradientAreaGapCalculator;
 import org.janelia.colormipsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.MIPImage;
 import org.janelia.colormipsearch.MIPInfo;
@@ -32,7 +33,6 @@ import org.janelia.colormipsearch.MIPsUtils;
 import org.janelia.colormipsearch.Results;
 import org.janelia.colormipsearch.ScoredEntry;
 import org.janelia.colormipsearch.Utils;
-import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +92,10 @@ class CalculateGradientScoresCmd {
     }
 
     private void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        EM2LMGradientAreaGapCalculator emlmAreaGapCalculator = new EM2LMGradientAreaGapCalculator(args.maskThreshold, args.negativeRadius, args.mirrorMask);
+        Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider =
+                MaskGradientAreaGapCalculator.createMaskGradientAreaGapCalculatorProvider(
+                        args.maskThreshold, args.negativeRadius, args.mirrorMask
+                );
         Executor executor = CmdUtils.createCDSExecutor(args);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -100,7 +103,7 @@ class CalculateGradientScoresCmd {
         if (args.resultsFile != null) {
             File cdsResultsFile = new File(args.resultsFile.input);
             Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                    emlmAreaGapCalculator,
+                    maskAreaGapCalculatorProvider,
                     cdsResultsFile,
                     args.gradientPath,
                     args.gradientSuffix,
@@ -132,7 +135,7 @@ class CalculateGradientScoresCmd {
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
                                 Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                                        emlmAreaGapCalculator,
+                                        maskAreaGapCalculatorProvider,
                                         f,
                                         args.gradientPath,
                                         args.gradientSuffix,
@@ -158,7 +161,7 @@ class CalculateGradientScoresCmd {
     }
 
     private Results<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForResultsFile(
-            EM2LMGradientAreaGapCalculator emlmAreaGapCalculator,
+            Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider,
             File inputResultsFile,
             String gradientsLocation,
             String gradientSuffix,
@@ -189,7 +192,7 @@ class CalculateGradientScoresCmd {
                                 gradientSuffix,
                                 zgapsLocation,
                                 zgapsSuffix,
-                                emlmAreaGapCalculator,
+                                maskAreaGapCalculatorProvider,
                                 executor))
                         .collect(Collectors.toList());
         // wait for all results to complete
@@ -250,19 +253,19 @@ class CalculateGradientScoresCmd {
     }
 
     private CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,
-                                                                                                          MIPInfo inputMIP,
+                                                                                                          MIPInfo inputMaskMIP,
                                                                                                           List<ColorMIPSearchResultMetadata> selectedCDSResultsForInputMIP,
                                                                                                           String gradientsLocation,
                                                                                                           String gradientSuffix,
                                                                                                           String zgapsLocation,
                                                                                                           String zgapsSuffix,
-                                                                                                          EM2LMGradientAreaGapCalculator emlmAreaGapCalculator,
+                                                                                                          Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider,
                                                                                                           Executor executor) {
-        LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP);
-        CompletableFuture<TriFunction<MIPImage, MIPImage, MIPImage, Long>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
-            LOG.info("Load image {}", inputMIP);
-            MIPImage inputImage = CachedMIPsUtils.loadMIP(inputMIP);
-            return emlmAreaGapCalculator.getGradientAreaCalculator(inputImage);
+        LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
+        CompletableFuture<MaskGradientAreaGapCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
+            LOG.info("Load input mask {}", inputMaskMIP);
+            MIPImage inputMaskImage = CachedMIPsUtils.loadMIP(inputMaskMIP);
+            return maskAreaGapCalculatorProvider.apply(inputMaskImage);
         }, executor);
         List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
                 IntStream.range(0, Integer.MAX_VALUE).boxed(),
@@ -278,15 +281,15 @@ class CalculateGradientScoresCmd {
                     MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, gradientsLocation, gradientSuffix));
                     MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
                     LOG.debug("Loaded images for calculating area gap for {}:{} ({} vs {}) in {}ms",
-                            resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
+                            resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     long areaGap;
                     if (matchedImage != null && matchedGradientImage != null) {
                         // only calculate the area gap if the gradient exist
                         LOG.debug("Calculate area gap for {}:{} ({}:{})",
-                                resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP);
-                        areaGap = gradientGapCalculator.apply(matchedImage, matchedGradientImage, matchedZGapImage);
+                                resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP);
+                        areaGap = gradientGapCalculator.calculateMaskAreaGap(matchedImage, matchedGradientImage, matchedZGapImage);
                         LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",
-                                resultIDIndex, indexedCsr.getLeft(), inputMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
+                                resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     } else {
                         // in this case we could assume the grdients are available for the input and
                         // we could group the results by matched ID but for now we simply do not do it because it's too inefficient.
@@ -298,13 +301,13 @@ class CalculateGradientScoresCmd {
                 .collect(Collectors.toList());
         return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(vr -> {
-                    LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMIP);
+                    LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMaskMIP);
                     Integer maxMatchingPixels = selectedCDSResultsForInputMIP.stream()
                             .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                             .max(Integer::compare)
                             .orElse(0);
                     LOG.info("Max pixel percentage score for the {} selected matches of entry# {} ({}) -> {}",
-                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxMatchingPixels);
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxMatchingPixels);
                     List<Long> areaGaps = areaGapComputations.stream()
                             .map(areaGapComputation -> areaGapComputation.join())
                             .collect(Collectors.toList());
@@ -312,7 +315,7 @@ class CalculateGradientScoresCmd {
                             .max(Long::compare)
                             .orElse(-1L);
                     LOG.info("Max area gap for the {} selected matches of entry# {} ({}) -> {}",
-                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMIP, maxAreaGap);
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxAreaGap);
                     // set the normalized area gap values
                     if (maxAreaGap >= 0 && maxMatchingPixels > 0) {
                         selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)

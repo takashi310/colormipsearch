@@ -119,7 +119,7 @@ public class ImageOperationsTest {
 
         ImageArray signalImage = ImageProcessing.create()
                 .toGray16()
-                .toSignal()
+                .toSignalRegions()
                 .applyTo(testMIP)
                 .toImageArray()
                 ;

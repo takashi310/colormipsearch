@@ -50,8 +50,8 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.horizontalMirror()));
     }
 
-    public ImageProcessing toSignal() {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignal()));
+    public ImageProcessing toSignalRegions() {
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignalRegions()));
     }
 
     public ImageProcessing thenExtend(ImageTransformation f) {
