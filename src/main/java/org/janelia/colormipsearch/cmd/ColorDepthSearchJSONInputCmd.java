@@ -27,9 +27,21 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                 description = "Comma-delimited list of JSON configs containing images to search")
         private List<ListArg> librariesInputs;
 
+        @Parameter(names = {"--images-index"}, description = "Input image file(s) start index")
+        private long librariesStartIndex;
+
+        @Parameter(names = {"--images-length"}, description = "Input image file(s) length")
+        private int librariesLength;
+
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
         private List<ListArg> masksInputs;
+
+        @Parameter(names = {"--masks-index"}, description = "Mask file(s) start index")
+        private long masksStartIndex;
+
+        @Parameter(names = {"--masks-length"}, description = "Mask file(s) length")
+        private int masksLength;
 
         @Parameter(names = "-useSpark", description = "Perform the search in the current process", arity = 0)
         private boolean useSpark = false;
@@ -82,13 +94,37 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
             ObjectMapper mapper = new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            List<MIPInfo> librariesMips = args.librariesInputs.stream()
-                    .flatMap(libraryInput -> MIPsUtils.readMIPsFromJSON(libraryInput.input, libraryInput.offset,  libraryInput.length, args.filterAsLowerCase(args.libraryMIPsFilter), mapper).stream())
+            long librariesStartIndex = args.librariesStartIndex > 0 ? args.librariesStartIndex : 0;
+            int librariesLength = args.librariesLength > 0 ? args.librariesLength : 0;
+            List<MIPInfo> inputLibrariesMips = args.librariesInputs.stream()
+                    .flatMap(libraryInput -> MIPsUtils.readMIPsFromJSON(
+                            libraryInput.input,
+                            libraryInput.offset,
+                            libraryInput.length,
+                            args.filterAsLowerCase(args.libraryMIPsFilter), mapper).stream())
+                    .skip(librariesStartIndex)
                     .collect(Collectors.toList());
 
-            List<MIPInfo> masksMips = args.masksInputs.stream()
+            List<MIPInfo> librariesMips;
+            if (librariesLength > 0 && librariesLength < inputLibrariesMips.size()) {
+                librariesMips = inputLibrariesMips.subList(0, librariesLength);
+            } else {
+                librariesMips = inputLibrariesMips;
+            }
+
+            long masksStartIndex = args.masksStartIndex > 0 ? args.masksStartIndex : 0;
+            int masksLength = args.masksLength > 0 ? args.masksLength : 0;
+            List<MIPInfo> inputMasksMips = args.masksInputs.stream()
                     .flatMap(masksInput -> MIPsUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter), mapper).stream())
+                    .skip(masksStartIndex)
                     .collect(Collectors.toList());
+
+            List<MIPInfo> masksMips;
+            if (masksLength > 0 && masksLength < inputMasksMips.size()) {
+                masksMips = inputMasksMips.subList(0, masksLength);
+            } else {
+                masksMips = inputMasksMips;
+            }
 
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
