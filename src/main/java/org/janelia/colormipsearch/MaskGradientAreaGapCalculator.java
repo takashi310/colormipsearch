@@ -16,9 +16,9 @@ public class MaskGradientAreaGapCalculator {
 
     private static final Logger LOG = LoggerFactory.getLogger(MaskGradientAreaGapCalculator.class);
 
-    public static Function<MIPImage, MaskGradientAreaGapCalculator> createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
-                                                                                                                int negativeRadius,
-                                                                                                                boolean mirrorMask) {
+    public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
+                                                                                                    int negativeRadius,
+                                                                                                    boolean mirrorMask) {
         ImageProcessing clearLabels = ImageProcessing.create(
                 ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85));
         ImageProcessing signalRegions = ImageProcessing.create()

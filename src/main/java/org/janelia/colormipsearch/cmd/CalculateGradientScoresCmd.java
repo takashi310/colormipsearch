@@ -30,6 +30,7 @@ import org.janelia.colormipsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.MIPImage;
 import org.janelia.colormipsearch.MIPInfo;
 import org.janelia.colormipsearch.MIPsUtils;
+import org.janelia.colormipsearch.MaskGradientAreaGapCalculatorProvider;
 import org.janelia.colormipsearch.Results;
 import org.janelia.colormipsearch.ScoredEntry;
 import org.janelia.colormipsearch.Utils;
@@ -92,7 +93,7 @@ class CalculateGradientScoresCmd {
     }
 
     private void calculateGradientAreaScore(GradientScoreResultsArgs args) {
-        Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider =
+        MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider =
                 MaskGradientAreaGapCalculator.createMaskGradientAreaGapCalculatorProvider(
                         args.maskThreshold, args.negativeRadius, args.mirrorMask
                 );
@@ -161,7 +162,7 @@ class CalculateGradientScoresCmd {
     }
 
     private Results<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForResultsFile(
-            Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider,
+            MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
             File inputResultsFile,
             String gradientsLocation,
             String gradientSuffix,
@@ -259,13 +260,13 @@ class CalculateGradientScoresCmd {
                                                                                                           String gradientSuffix,
                                                                                                           String zgapsLocation,
                                                                                                           String zgapsSuffix,
-                                                                                                          Function<MIPImage, MaskGradientAreaGapCalculator> maskAreaGapCalculatorProvider,
+                                                                                                          MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
                                                                                                           Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
         CompletableFuture<MaskGradientAreaGapCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load input mask {}", inputMaskMIP);
             MIPImage inputMaskImage = CachedMIPsUtils.loadMIP(inputMaskMIP);
-            return maskAreaGapCalculatorProvider.apply(inputMaskImage);
+            return maskAreaGapCalculatorProvider.createMaskGradientAreaGapCalculator(inputMaskImage);
         }, executor);
         List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
                 IntStream.range(0, Integer.MAX_VALUE).boxed(),
