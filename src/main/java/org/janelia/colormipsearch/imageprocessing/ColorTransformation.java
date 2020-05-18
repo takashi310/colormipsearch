@@ -33,7 +33,23 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
             return val;
     }
 
-    private static int rgbToGray(int rgb, float maxGrayValue) {
+    private static int rgbToGrayNoGammaCorrection(int rgb, float maxGrayValue) {
+        if (rgb == -16777216) {
+            return 0;
+        } else {
+            int r = (rgb >> 16) & 0xFF;
+            int g = (rgb >> 8) & 0xFF;
+            int b = (rgb & 0xFF);
+
+            double rw = 1 / 3.;
+            double gw = 1 / 3.;
+            double bw = 1 / 3.;
+
+            return (int) ((maxGrayValue / 255) * (r*rw + g*gw + b*bw + 0.5));
+        }
+    }
+
+    private static int rgbToGrayWithGammaCorrection(int rgb, float maxGrayValue) {
         if (rgb == -16777216) {
             return 0;
         } else {
@@ -48,7 +64,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
 
             // Calculate luminance:
             float lum = 0.2126f * rr + 0.7152f * gg + 0.0722f * bb;
-            // Gamma compand and rescale to byte range:
+            // Gamma comp and rescale to byte range:
             return (int) (maxGrayValue * Math.pow(lum, 1.0 / 2.2));
         }
     }
@@ -57,13 +73,15 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         return (int) (gray / oldMax * newMax);
     }
 
-    static ColorTransformation toGray8() {
+    static ColorTransformation toGray8(boolean withGammaCorrection) {
         return new ColorTransformation(pt -> ImageType.GRAY8) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return rgbToGray(pv, 255);
+                        return withGammaCorrection
+                                ? ColorTransformation.rgbToGrayWithGammaCorrection(pv, 255)
+                                : ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
                     case GRAY8:
                         return pv;
                     case GRAY16:
@@ -80,7 +98,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return rgbToGray(pv, 65535);
+                        return ColorTransformation.rgbToGrayNoGammaCorrection(pv, 65535);
                     case GRAY8:
                         return scaleGray(pv, 255, 65535);
                     case GRAY16:
@@ -112,7 +130,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     static ColorTransformation toBinary8(int threshold) {
-        return ColorTransformation.toGray8().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
+        return ColorTransformation.toGray8(false).thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
     }
 
     public static ColorTransformation toSignalRegions() {

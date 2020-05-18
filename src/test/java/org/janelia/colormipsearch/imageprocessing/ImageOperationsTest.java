@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.imageprocessing;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
+import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,8 +34,7 @@ public class ImageOperationsTest {
     public void maxFilterThenHorizontalMirroringForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .thenExtend(ImageTransformation.maxFilter(10))
-                .thenExtend(ImageTransformation.horizontalMirror())
-                ;
+                .thenExtend(ImageTransformation.horizontalMirror());
 
         for (int i = 1; i < 6; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
@@ -54,8 +54,7 @@ public class ImageOperationsTest {
     public void horizontalMirrorThenMaxFilterForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .thenExtend(ImageTransformation.horizontalMirror())
-                .thenExtend(ImageTransformation.maxFilter(10))
-                ;
+                .thenExtend(ImageTransformation.maxFilter(10));
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
@@ -81,8 +80,7 @@ public class ImageOperationsTest {
                 .toBinary8(50)
                 .maxFilter(10)
                 .applyTo(testMIP)
-                .toImageArray()
-                ;
+                .toImageArray();
 
         RankFilters maxFilter = new RankFilters();
         ImageProcessor asByteProcessor = testImage.getProcessor().convertToByte(true);
@@ -95,6 +93,24 @@ public class ImageOperationsTest {
     }
 
     @Test
+    public void convertToGray8() {
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
+
+        ImageArray testMIP = new ImageArray(testImage);
+
+        ImageConverter ic = new ImageConverter(testImage);
+        ic.convertToGray8();
+
+        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray8(false)).toImageArray();
+        ImageProcessor convertedImageProcessor = testImage.getProcessor();
+
+        for (int i = 0; i < convertedImageProcessor.getPixelCount(); i++) {
+            // if the value is > 0 compare with 255 otherwise with 0 since our test image is binary
+            Assert.assertEquals(convertedImageProcessor.get(i), grayImage.get(i));
+        }
+    }
+
+    @Test
     public void mirrorHorizontally() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
@@ -103,8 +119,7 @@ public class ImageOperationsTest {
         ImageArray mirroredImage = ImageProcessing.create()
                 .horizontalMirror()
                 .applyTo(testMIP)
-                .toImageArray()
-                ;
+                .toImageArray();
 
         testImage.getProcessor().flipHorizontal();
 
@@ -121,8 +136,7 @@ public class ImageOperationsTest {
                 .toGray16()
                 .toSignalRegions()
                 .applyTo(testMIP)
-                .toImageArray()
-                ;
+                .toImageArray();
 
         ImageProcessor asShortProcessor = testImage.getProcessor().convertToShortProcessor(true);
 
@@ -142,8 +156,7 @@ public class ImageOperationsTest {
                 .mask(250)
                 .maxFilter(10)
                 .applyTo(testMIP)
-                .toImageArray()
-                ;
+                .toImageArray();
 
         Assert.assertNotNull(maskedImage);
     }
