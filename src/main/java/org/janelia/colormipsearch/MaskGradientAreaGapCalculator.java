@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch;
 
-import java.util.function.Function;
-
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
