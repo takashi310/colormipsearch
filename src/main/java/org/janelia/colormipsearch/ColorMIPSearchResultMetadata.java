@@ -204,6 +204,8 @@ public class ColorMIPSearchResultMetadata extends MetadataAttrs {
     String mapAttr(String attrName) {
         if (StringUtils.equalsIgnoreCase(attrName, "Gradient Area Gap")) {
             return "GradientAreaGap";
+        } else if (StringUtils.equalsIgnoreCase(attrName, "Genotype")) {
+            return null;
         } else {
             return attrName;
         }

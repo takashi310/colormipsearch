@@ -75,7 +75,7 @@ public abstract class MetadataAttrs {
     }
 
     public void addAttr(String attribute, String value) {
-        if (StringUtils.isNotBlank(value)) {
+        if (StringUtils.isNotBlank(attribute) && StringUtils.isNotBlank(value)) {
             attrs.put(attribute, value);
         }
     }
