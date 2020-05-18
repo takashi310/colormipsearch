@@ -30,8 +30,8 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.fmap(ColorTransformation.mask(threshold)));
     }
 
-    public ImageProcessing toGray16() {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16()));
+    public ImageProcessing toGray16(boolean withGammaCorrection) {
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16(withGammaCorrection)));
     }
 
     public ImageProcessing toBinary8(int threshold) {
@@ -50,8 +50,8 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.horizontalMirror()));
     }
 
-    public ImageProcessing toSignalRegions() {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignalRegions()));
+    public ImageProcessing toSignalRegions(int threshold) {
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignalRegions(threshold)));
     }
 
     public ImageProcessing thenExtend(ImageTransformation f) {

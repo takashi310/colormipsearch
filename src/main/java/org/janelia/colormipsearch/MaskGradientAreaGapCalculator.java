@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch;
 
+import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
@@ -13,15 +14,13 @@ import org.slf4j.LoggerFactory;
 public class MaskGradientAreaGapCalculator {
 
     private static final Logger LOG = LoggerFactory.getLogger(MaskGradientAreaGapCalculator.class);
+    private static final int GAP_THRESHOLD = 3;
 
     public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
                                                                                                     int negativeRadius,
                                                                                                     boolean mirrorMask) {
         ImageProcessing clearLabels = ImageProcessing.create(
                 ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85));
-        ImageProcessing signalRegions = ImageProcessing.create()
-                .toGray16()
-                .toSignalRegions();
         ImageProcessing negativeRadiusDilation = clearLabels.mask(maskThreshold).maxFilter(negativeRadius);
         return (MIPImage maskMIPImage) -> {
             long startTime = System.currentTimeMillis();
@@ -29,12 +28,12 @@ public class MaskGradientAreaGapCalculator {
             LImage overExpressedRegionsInPatternImage = LImageUtils.lazyCombine2(
                     maskImage.mapi(ImageTransformation.maxFilter(60)).reduce(), // eval immediately
                     maskImage.mapi(ImageTransformation.maxFilter(20)).reduce(), // eval immediately
-                    (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get()
+                    (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get() // mask pixels from the 60x image if they are present in the 20x image
             );
             MaskGradientAreaGapCalculator maskGradientAreaGapCalculator = new MaskGradientAreaGapCalculator(
                     maskImage,
-                    signalRegions.applyTo(maskImage),
-                    signalRegions.applyTo(overExpressedRegionsInPatternImage),
+                    maskImage.map(ColorTransformation.toGray16(false)).map(ColorTransformation.toSignalRegions(2)),
+                    overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16(false)).map(ColorTransformation.toSignalRegions(0)),
                     maskThreshold,
                     mirrorMask,
                     clearLabels,
@@ -124,7 +123,7 @@ public class MaskGradientAreaGapCalculator {
                         }
                     }
                 });
-        long gradientAreaGap = gaps.fold(0L, (p, s) -> s + p);
+        long gradientAreaGap = gaps.fold(0L, (p, s) -> p > GAP_THRESHOLD ? s + p : s);
         long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> s + p);
         long areaGapScore = gradientAreaGap + tooMuchExpression / 2;
         LOG.trace("Area gap score {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);

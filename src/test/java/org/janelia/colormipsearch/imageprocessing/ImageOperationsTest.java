@@ -93,7 +93,7 @@ public class ImageOperationsTest {
     }
 
     @Test
-    public void convertToGray8() {
+    public void convertToGray8WithNoGammaCorrection() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
         ImageArray testMIP = new ImageArray(testImage);
@@ -102,6 +102,24 @@ public class ImageOperationsTest {
         ic.convertToGray8();
 
         ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray8(false)).toImageArray();
+        ImageProcessor convertedImageProcessor = testImage.getProcessor();
+
+        for (int i = 0; i < convertedImageProcessor.getPixelCount(); i++) {
+            // if the value is > 0 compare with 255 otherwise with 0 since our test image is binary
+            Assert.assertEquals(convertedImageProcessor.get(i), grayImage.get(i));
+        }
+    }
+
+    @Test
+    public void convertToGray16WithNoGammaCorrection() {
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
+
+        ImageArray testMIP = new ImageArray(testImage);
+
+        ImageConverter ic = new ImageConverter(testImage);
+        ic.convertToGray16();
+
+        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray16(false)).toImageArray();
         ImageProcessor convertedImageProcessor = testImage.getProcessor();
 
         for (int i = 0; i < convertedImageProcessor.getPixelCount(); i++) {
@@ -133,8 +151,8 @@ public class ImageOperationsTest {
         ImageArray testMIP = new ImageArray(testImage);
 
         ImageArray signalImage = ImageProcessing.create()
-                .toGray16()
-                .toSignalRegions()
+                .toGray16(false)
+                .toSignalRegions(0)
                 .applyTo(testMIP)
                 .toImageArray();
 

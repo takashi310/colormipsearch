@@ -92,13 +92,15 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         };
     }
 
-    public static ColorTransformation toGray16() {
+    public static ColorTransformation toGray16(boolean withGammaCorrection) {
         return new ColorTransformation(pt -> ImageType.GRAY16) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return ColorTransformation.rgbToGrayNoGammaCorrection(pv, 65535);
+                        return withGammaCorrection
+                            ? ColorTransformation.rgbToGrayWithGammaCorrection(pv, 255)
+                            : ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
                     case GRAY8:
                         return scaleGray(pv, 255, 65535);
                     case GRAY16:
@@ -126,26 +128,24 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     static ColorTransformation toBinary16(int threshold) {
-        return ColorTransformation.toGray16().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary16(pv, threshold));
+        return ColorTransformation.toGray16(false).thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary16(pv, threshold));
     }
 
     static ColorTransformation toBinary8(int threshold) {
         return ColorTransformation.toGray8(false).thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
     }
 
-    public static ColorTransformation toSignalRegions() {
+    public static ColorTransformation toSignalRegions(int threshold) {
         return new ColorTransformation(pt -> pt) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        int r = ((pv >> 16) & 0xFF) > 0 ? 1 : 0;
-                        int g = ((pv >> 8) & 0xFF) > 0 ? 1 : 0;
-                        int b = (pv & 0xFF) > 0 ? 1 : 0;
-                        return r > 0 || g > 0 || b > 0 ? (r << 16) | (g << 8) | b : -16777216;
+                        int grayPixelValue = ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
+                        return grayPixelValue > threshold ? 1 : 0;
                     case GRAY8:
                     case GRAY16:
-                        return pv > 0 ? 1 : 0;
+                        return pv > threshold ? 1 : 0;
                 }
                 throw new IllegalStateException("Cannot convert image type " + pt + " to signal");
             }
