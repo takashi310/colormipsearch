@@ -123,17 +123,17 @@ class NormalizeGradientScoresCmd {
             } else {
                 cdsResults = resultsFromJSONFile.results;
             }
-            Long maxAreaGap = cdsResults.stream()
+            Long maxAreaGap = cdsResults.stream().parallel()
                     .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
                     .max(Long::compare)
                     .orElse(-1L);
             LOG.debug("Max area gap for {}  -> {}", fn, maxAreaGap);
-            Integer maxMatchingPixels = cdsResults.stream()
+            Integer maxMatchingPixels = cdsResults.stream().parallel()
                     .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                     .max(Integer::compare)
                     .orElse(0);
             LOG.debug("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
-            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.stream()
+            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.stream().parallel()
                     .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
                     .map(csr -> args.cleanup ? ColorMIPSearchResultMetadata.create(csr) : csr)
                     .peek(csr -> {
