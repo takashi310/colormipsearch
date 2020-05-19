@@ -110,10 +110,6 @@ public class ExtractColorMIPsMetadata {
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         private List<String> datasets;
 
-        @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
-                description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
-        private List<ListArg> excludedMIPs;
-
         @Parameter(names = {"--segmented-mips-base-dir"}, description = "The base directory for segmented MIPS")
         private String segmentedMIPsBaseDir;
 
@@ -157,6 +153,13 @@ public class ExtractColorMIPsMetadata {
     private static class PrepareColorDepthSearchArgs {
         @ParametersDelegate
         private final Args argsDelegate;
+
+        @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
+                description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
+        private List<ListArg> excludedMIPs;
+
+        @Parameter(names = {"--output-filename"}, description = "Output file name")
+        private String outputFileName;
 
         PrepareColorDepthSearchArgs(Args argsDelegate) {
             this.argsDelegate = argsDelegate;
@@ -490,7 +493,8 @@ public class ExtractColorMIPsMetadata {
                                              int missingPublishingHandling,
                                              String segmentedMIPsBaseDir,
                                              int segmentedImageHandling,
-                                             Path outputPath) {
+                                             Path outputPath,
+                                             String outputFileName) {
         int cdmsCount = countColorDepthMips(alignmentSpace, libraryArg.input, datasets);
         LOG.info("Found {} entities in library {} with alignment space {}{}", cdmsCount, libraryArg.input, alignmentSpace, CollectionUtils.isNotEmpty(datasets) ? " for datasets " + datasets : "");
         int to = libraryArg.length > 0 ? Math.min(libraryArg.offset + libraryArg.length, cdmsCount) : cdmsCount;
@@ -519,10 +523,11 @@ public class ExtractColorMIPsMetadata {
         FileOutputStream outputStream;
         try {
             String outputName;
+            String outputBasename = StringUtils.defaultIfBlank(outputFileName, libraryArg.input);
             if (libraryArg.offset > 0 || libraryArg.length > 0) {
-                outputName = libraryArg.input + "-" + libraryArg.offset + "-" + to + ".json";
+                outputName = outputBasename + "-" + libraryArg.offset + "-" + to + ".json";
             } else {
-                outputName = libraryArg.input + ".json";
+                outputName = outputBasename + ".json";
             }
             outputStream = new FileOutputStream(outputPath.resolve(outputName).toFile());
         } catch (FileNotFoundException e) {
@@ -776,10 +781,12 @@ public class ExtractColorMIPsMetadata {
     public static void main(String[] argv) {
         MainArgs mainArgs = new MainArgs();
         Args args = new Args();
+        GroupCDMIPArgs groupCDMIPArgs = new GroupCDMIPArgs(args);
+        PrepareColorDepthSearchArgs prepareColorDepthSearchArgs = new PrepareColorDepthSearchArgs(args);
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
-                .addCommand("groupMIPS", new GroupCDMIPArgs(args))
-                .addCommand("prepareCDSArgs", new PrepareColorDepthSearchArgs(args))
+                .addCommand("groupMIPS", groupCDMIPArgs)
+                .addCommand("prepareCDSArgs", prepareColorDepthSearchArgs)
                 .build();
 
         try {
@@ -808,8 +815,8 @@ public class ExtractColorMIPsMetadata {
         Map<String, String> libraryNameMapping = cdmipMetadataExtractor.retrieveLibraryNameMapping(args.libraryMappingURL);
 
         Set<MIPInfo> excludedMips;
-        if (args.excludedMIPs != null) {
-            excludedMips = args.excludedMIPs.stream()
+        if (prepareColorDepthSearchArgs.excludedMIPs != null) {
+            excludedMips = prepareColorDepthSearchArgs.excludedMIPs.stream()
                     .flatMap(mipsInput -> MIPsUtils.readMIPsFromJSON(
                             mipsInput.input,
                             mipsInput.offset,
@@ -855,7 +862,8 @@ public class ExtractColorMIPsMetadata {
                             args.includeMIPsWithoutPublisingName,
                             args.segmentedMIPsBaseDir,
                             args.sSegmentedImageHandling,
-                            Paths.get(args.outputDir)
+                            Paths.get(args.outputDir),
+                            prepareColorDepthSearchArgs.outputFileName
                     );
                     break;
             }
