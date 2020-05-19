@@ -7,16 +7,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -49,8 +54,11 @@ public class ReplaceURLsCmd {
                 description = "Result ID field name; for MIPs this is 'id' for results is 'matchedId'")
         String resultIDField;
 
-        @Parameter(names = "-cleanup", description = "Remove fields not necessary in productiom", arity = 0)
-        private boolean cleanup = false;
+        @Parameter(names = {"--image-url-field"}, description = "Image URL field")
+        String imageURLField = "image_path";
+
+        @Parameter(names = {"--thumbnail-url-field"}, description = "Thumbnail URL field")
+        String thumbnailURLField = "thumbnail_path";
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -125,14 +133,22 @@ public class ReplaceURLsCmd {
         } else {
             inputFileNames = Collections.emptyList();
         }
-        replaceMIPsURLs(inputFileNames, args.resultIDField, indexedSourceMIPs, indexedTargetMIPs, args.cleanup, args.getOutputDir());
+        replaceMIPsURLs(
+                inputFileNames,
+                args.resultIDField,
+                args.imageURLField,
+                args.thumbnailURLField,
+                indexedSourceMIPs,
+                indexedTargetMIPs,
+                args.getOutputDir());
     }
 
     private void replaceMIPsURLs(List<String> inputFileNames,
                                  String resultIdFieldName,
+                                 String imageURLFieldName,
+                                 String thumbnailURLFieldName,
                                  Map<String, MIPInfo> indexedSourceMIPs,
                                  Map<String, MIPInfo> indexedTargetMIPs,
-                                 boolean cleanup,
                                  Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -140,15 +156,14 @@ public class ReplaceURLsCmd {
         inputFileNames.stream().parallel()
                 .forEach(fn -> {
                     File f = new File(fn);
-                    Results<List<Map<String, Object>>> content = readJSONFile(f, mapper);
-                    content.results.forEach(e -> {
-                        String id = (String) e.get(resultIdFieldName);
-                        String imageURL = (String) e.get("image_path");
-                        String thumbnailURL = (String) e.get("thumbnail_path");
-                        if (cleanup) {
-                            // clean up fields that should not be in prod
-                            cleanResultFields(e);
+                    JsonNode jsonContent = readJSONFile(f, mapper);
+                    streamJSONNodes(jsonContent).forEach(jsonNode -> {
+                        String id = getFieldValue(jsonNode, resultIdFieldName);
+                        if (id == null) {
+                            return; // No <id> field found
                         }
+                        String imageURL = getFieldValue(jsonNode, imageURLFieldName);
+                        String thumbnailURL = getFieldValue(jsonNode, thumbnailURLFieldName);
                         MIPInfo targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
                             LOG.warn("No target URLs found for {}", id);
@@ -163,10 +178,10 @@ public class ReplaceURLsCmd {
                                 if (StringUtils.isBlank(imageURL)) {
                                     // the URL is not set in the source so set it
                                     LOG.debug("Setting the URL for {} because it was not set in the source", id);
-                                    e.put("image_path", targetMIP.getImageURL());
+                                    jsonNode.put(imageURLFieldName, targetMIP.getImageURL());
                                 } else if (StringUtils.equals(imageURL, srcMIP.getImageURL())) {
                                     // source is the same so it's OK to update
-                                    e.put("image_path", targetMIP.getImageURL());
+                                    jsonNode.put(imageURLFieldName, targetMIP.getImageURL());
                                 } else {
                                     LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
                                 }
@@ -174,32 +189,31 @@ public class ReplaceURLsCmd {
                                 if (StringUtils.isBlank(thumbnailURL)) {
                                     // the URL is not set in the source so set it
                                     LOG.debug("Setting thumbnail URL for {} because it was not set in the source", id);
-                                    e.put("thumbnail_path", targetMIP.getThumbnailURL());
+                                    jsonNode.put(thumbnailURLFieldName, targetMIP.getThumbnailURL());
                                 } else if (StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
                                     // source is the same so it's OK to update
-                                    e.put("thumbnail_path", targetMIP.getThumbnailURL());
+                                    jsonNode.put(thumbnailURLFieldName, targetMIP.getThumbnailURL());
                                 } else {
                                     LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.getThumbnailURL(), thumbnailURL);
                                 }
                             }
                         }
                     });
-                    writeJSONFile(content, CmdUtils.getOutputFile(outputDir, f), mapper);
+                    writeJSONFile(jsonContent, CmdUtils.getOutputFile(outputDir, f), mapper);
                 });
     }
 
-    private Results<List<Map<String, Object>>> readJSONFile(File f, ObjectMapper mapper) {
+    private JsonNode readJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", f);
-            return mapper.readValue(f, new TypeReference<Results<List<Map<String, Object>>>>() {
-            });
+            return mapper.readTree(f);
         } catch (IOException e) {
             LOG.error("Error reading json file {}", f, e);
             throw new UncheckedIOException(e);
         }
     }
 
-    private void writeJSONFile(Results<List<Map<String, Object>>> content, File f, ObjectMapper mapper) {
+    private void writeJSONFile(JsonNode content, File f, ObjectMapper mapper) {
         try {
             if (f == null) {
                 mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, content);
@@ -213,9 +227,24 @@ public class ReplaceURLsCmd {
         }
     }
 
-    private void cleanResultFields(Map<String, Object> resultEntry) {
-        resultEntry.remove("internalName");
-        resultEntry.remove("line");
+    private Stream<ObjectNode> streamJSONNodes(JsonNode jsonContent) {
+        if (jsonContent.isArray()) {
+            return StreamSupport.stream(jsonContent.spliterator(), false)
+                    .map(jsonNode -> (ObjectNode) jsonNode);
+        } else {
+            return jsonContent.findValues("results").stream()
+                    .map(jsonNode -> (ObjectNode) jsonNode);
+        }
+    }
+
+    private String getFieldValue(ObjectNode node, String fieldName) {
+        String value;
+        JsonNode fieldNode = node.get(fieldName);
+        if (fieldNode != null) {
+            return fieldNode.textValue();
+        } else {
+            return null;
+        }
     }
 
 }
