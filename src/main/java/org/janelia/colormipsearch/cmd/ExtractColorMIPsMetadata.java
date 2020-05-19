@@ -818,6 +818,7 @@ public class ExtractColorMIPsMetadata {
 
         Set<MIPInfo> excludedMips;
         if (prepareColorDepthSearchArgs.excludedMIPs != null) {
+            LOG.info("Read mips to be excluded from the output");
             excludedMips = prepareColorDepthSearchArgs.excludedMIPs.stream()
                     .flatMap(mipsInput -> MIPsUtils.readMIPsFromJSON(
                             mipsInput.input,
@@ -826,6 +827,7 @@ public class ExtractColorMIPsMetadata {
                             Collections.emptySet(),
                             cdmipMetadataExtractor.mapper).stream())
                     .collect(Collectors.toSet());
+            LOG.info("Found {} mips to be excluded from the output", excludedMips.size());
         } else {
             excludedMips = Collections.emptySet();
         }
