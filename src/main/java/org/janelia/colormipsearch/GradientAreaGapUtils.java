@@ -6,7 +6,7 @@ import org.janelia.colormipsearch.imageprocessing.TriFunction;
 
 public class GradientAreaGapUtils {
 
-    private static final int DEFAULT_COLOR_FLUX = 40; // 5um
+    private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private enum Color {
         BLACK,
         RED,
@@ -14,12 +14,12 @@ public class GradientAreaGapUtils {
         BLUE
     }
 
-    static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, patternPixSupplier, dilatedPixSupplier) -> {
-        int patternPix = patternPixSupplier.get();
-        if (patternPix != -16777216) {
+    static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, maskPixSupplier, dilatedPixSupplier) -> {
+        int maskPix = maskPixSupplier.get();
+        if (maskPix != -16777216) {
             int dilatedPix = dilatedPixSupplier.get();
             if (dilatedPix != -16777216) {
-                int pxGapSlice = calculateSliceGap(patternPix, dilatedPix);
+                int pxGapSlice = calculateSliceGap(maskPix, dilatedPix);
                 if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
                     // negative score value
                     return pxGapSlice - DEFAULT_COLOR_FLUX;
