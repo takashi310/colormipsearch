@@ -538,11 +538,11 @@ public class ExtractColorMIPsMetadata {
         try {
             Pair<String, Map<String, List<String>>> segmentedImages;
             if (isEmLibrary(libraryArg.input)) {
-                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
-                segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
-            } else {
                 Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)_.*");
                 segmentedImages = getSegmentedImages(skeletonRegExPattern, segmentedMIPsBaseDir);
+            } else {
+                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+                segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
             }
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
@@ -635,15 +635,15 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern slideCodeRegExPattern, String segmentedMIPsBaseDir) {
+    private Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern indexingFieldRegExPattern, String segmentedMIPsBaseDir) {
         if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
             return ImmutablePair.of("", Collections.emptyMap());
         } else {
             Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
             if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(slideCodeRegExPattern, segmentdMIPsBasePath));
+                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldRegExPattern, segmentdMIPsBasePath));
             } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(slideCodeRegExPattern, segmentdMIPsBasePath.toFile()));
+                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldRegExPattern, segmentdMIPsBasePath.toFile()));
             } else {
                 return ImmutablePair.of("file", Collections.emptyMap());
             }
