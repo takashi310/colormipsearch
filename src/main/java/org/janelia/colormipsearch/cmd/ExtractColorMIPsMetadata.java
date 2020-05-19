@@ -654,7 +654,7 @@ public class ExtractColorMIPsMetadata {
         try {
             return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
-                    .map(p -> p.toString())
+                    .map(p -> p.getFileName().toString())
                     .collect(Collectors.groupingBy(entryName -> {
                         Matcher m = indexingFieldRegExPattern.matcher(entryName);
                         if (m.find()) {
