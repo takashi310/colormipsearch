@@ -47,6 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +56,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
+import org.janelia.colormipsearch.MIPInfo;
+import org.janelia.colormipsearch.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +109,10 @@ public class ExtractColorMIPsMetadata {
 
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         private List<String> datasets;
+
+        @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
+                description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
+        private List<ListArg> excludedMIPs;
 
         @Parameter(names = {"--segmented-mips-base-dir"}, description = "The base directory for segmented MIPS")
         private String segmentedMIPsBaseDir;
@@ -477,6 +484,7 @@ public class ExtractColorMIPsMetadata {
                                              List<String> datasets,
                                              Set<String> includedLibraries,
                                              Set<String> excludedLibraries,
+                                             Set<MIPInfo> excludedMIPs,
                                              Map<String, String> libraryNamesMapping,
                                              boolean includeMIPsWithNoImageURL,
                                              int missingPublishingHandling,
@@ -543,9 +551,11 @@ public class ExtractColorMIPsMetadata {
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(missingPublishingHandling, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, segmentedMIPsBaseDir, segmentedImages, segmentedImageHandling).stream())
+                        .map(cdmip -> cdmip.asMIPInfo())
+                        .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .forEach(cdmip -> {
                             try {
-                                gen.writeObject(cdmip.asMIPInfo());
+                                gen.writeObject(cdmip);
                             } catch (IOException e) {
                                 LOG.error("Error writing entry for {}", cdmip, e);
                             }
@@ -796,6 +806,21 @@ public class ExtractColorMIPsMetadata {
 
         ExtractColorMIPsMetadata cdmipMetadataExtractor = new ExtractColorMIPsMetadata(args.dataServiceURL, args.authorization);
         Map<String, String> libraryNameMapping = cdmipMetadataExtractor.retrieveLibraryNameMapping(args.libraryMappingURL);
+
+        Set<MIPInfo> excludedMips;
+        if (args.excludedMIPs != null) {
+            excludedMips = args.excludedMIPs.stream()
+                    .flatMap(mipsInput -> MIPsUtils.readMIPsFromJSON(
+                            mipsInput.input,
+                            mipsInput.offset,
+                            mipsInput.length,
+                            Collections.emptySet(),
+                            cdmipMetadataExtractor.mapper).stream())
+                    .collect(Collectors.toSet());
+        } else {
+            excludedMips = Collections.emptySet();
+        }
+
         args.libraries.forEach(library -> {
             switch (cmdline.getParsedCommand()) {
                 case "groupMIPS":
@@ -824,6 +849,7 @@ public class ExtractColorMIPsMetadata {
                             args.datasets,
                             args.includedLibraries,
                             args.excludedLibraries,
+                            excludedMips,
                             libraryNameMapping,
                             args.includeMIPsWithNoPublishedURL,
                             args.includeMIPsWithoutPublisingName,
