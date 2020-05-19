@@ -650,18 +650,18 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
-    private Map<String, List<String>> getSegmentedImagesFromDir(Pattern slideCodeRegExPattern, Path segmentedMIPsBasePath) {
+    private Map<String, List<String>> getSegmentedImagesFromDir(Pattern indexingFieldRegExPattern, Path segmentedMIPsBasePath) {
         try {
             return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.toString())
                     .collect(Collectors.groupingBy(entryName -> {
-                        Matcher m = slideCodeRegExPattern.matcher(entryName);
+                        Matcher m = indexingFieldRegExPattern.matcher(entryName);
                         if (m.find()) {
                             return m.group(1);
                         } else {
-                            LOG.warn("Slide code not found in {}", entryName);
-                            throw new IllegalArgumentException("Slide code not found in " + entryName);
+                            LOG.warn("Indexing field not found in {} using {}", entryName, indexingFieldRegExPattern);
+                            throw new IllegalArgumentException("Indexing field code not found in " + entryName);
                         }
                     }));
         } catch (IOException e) {
