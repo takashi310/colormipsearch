@@ -71,7 +71,6 @@ public class ExtractColorMIPsMetadata {
     private static final int MAX_SEGMENTED_DATA_DEPTH = 5;
 
     // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
-    private static final String EM_LIBRARY = "flyem_hemibrain";
     private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
@@ -324,7 +323,7 @@ public class ExtractColorMIPsMetadata {
     }
 
     private boolean isEmLibrary(String lname) {
-        return StringUtils.equalsIgnoreCase(EM_LIBRARY, lname);
+        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
     private boolean hasSample(ColorDepthMIP cdmip) {

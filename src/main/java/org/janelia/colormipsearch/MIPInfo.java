@@ -171,11 +171,6 @@ public class MIPInfo implements Serializable {
                 .toString();
     }
 
-    boolean isEmSkelotonMIP() {
-        return libraryName != null && StringUtils.containsIgnoreCase(libraryName, "flyem") && StringUtils.containsIgnoreCase(libraryName, "hemibrain") ||
-                cdmPath != null && (StringUtils.containsIgnoreCase(cdmPath, "flyem") || StringUtils.containsIgnoreCase(cdmPath, "hemi"));
-    }
-
     public boolean exists() {
         if (StringUtils.equalsIgnoreCase("zipEntry", type)) {
             ZipFile archiveFile;
