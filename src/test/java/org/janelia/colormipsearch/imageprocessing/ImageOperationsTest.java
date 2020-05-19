@@ -12,7 +12,6 @@ public class ImageOperationsTest {
 
     @Test
     public void maxFilterForRGBImage() {
-
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .maxFilter(10);
 
@@ -27,7 +26,6 @@ public class ImageOperationsTest {
 
             Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
         }
-
     }
 
     @Test
@@ -67,7 +65,6 @@ public class ImageOperationsTest {
 
             Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
         }
-
     }
 
     @Test
