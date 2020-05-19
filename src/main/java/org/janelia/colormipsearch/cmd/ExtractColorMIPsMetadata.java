@@ -47,7 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -537,8 +536,14 @@ public class ExtractColorMIPsMetadata {
             return;
         }
         try {
-            Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
-            Pair<String, Map<String, List<String>>> segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
+            Pair<String, Map<String, List<String>>> segmentedImages;
+            if (isEmLibrary(libraryArg.input)) {
+                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+                segmentedImages = getSegmentedImages(slideCodeRegExPattern, segmentedMIPsBaseDir);
+            } else {
+                Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)_.*");
+                segmentedImages = getSegmentedImages(skeletonRegExPattern, segmentedMIPsBaseDir);
+            }
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
             gen.useDefaultPrettyPrinter();
@@ -596,26 +601,31 @@ public class ExtractColorMIPsMetadata {
     }
 
     private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages) {
-        String slideCode = cdmipMetadata.getAttr("Slide Code");
-        if (segmentedImages.get(slideCode) == null) {
+        String indexingField;
+        if (isEmLibrary(cdmipMetadata.getLibraryName())) {
+            indexingField = cdmipMetadata.getAttr("Body Id");
+        } else {
+            indexingField = cdmipMetadata.getAttr("Slide Code");
+        }
+        if (segmentedImages.get(indexingField) == null) {
             return Collections.emptyList();
         } else {
-            return segmentedImages.get(slideCode).stream()
+            return segmentedImages.get(indexingField).stream()
                     .filter(p -> {
                         String fn = Paths.get(p).getFileName().toString();
-                        Preconditions.checkArgument(fn.contains(slideCode));
+                        Preconditions.checkArgument(fn.contains(indexingField));
                         int channelFromMip = getChannel(cdmipMetadata);
-                        int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(slideCode, ""));
+                        int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(indexingField, ""));
                         LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                         return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
                     })
                     .map(p -> {
                         String sifn = Paths.get(p).getFileName().toString();
-                        int scIndex = sifn.indexOf(slideCode);
+                        int scIndex = sifn.indexOf(indexingField);
                         Preconditions.checkArgument(scIndex != -1);
                         ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                         cdmipMetadata.copyTo(segmentMIPMetadata);
-                        String fn = StringUtils.replacePattern(sifn.substring(scIndex + slideCode.length()), "\\.\\D*$", "");
+                        String fn = StringUtils.replacePattern(sifn.substring(scIndex + indexingField.length()), "\\.\\D*$", "");
                         segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
                         segmentMIPMetadata.type = type;
                         segmentMIPMetadata.segmentFilepath = p;
