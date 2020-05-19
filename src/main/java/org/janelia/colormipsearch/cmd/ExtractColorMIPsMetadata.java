@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -601,23 +602,31 @@ public class ExtractColorMIPsMetadata {
 
     private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages) {
         String indexingField;
+        Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
             indexingField = cdmipMetadata.getAttr("Body Id");
+            segmentedImageMatcher = p -> {
+                String fn = StringUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
+                Preconditions.checkArgument(fn.contains(indexingField));
+                String cmFN = StringUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
+                return fn.contains(cmFN);
+            };
         } else {
             indexingField = cdmipMetadata.getAttr("Slide Code");
+            segmentedImageMatcher = p -> {
+                String fn = Paths.get(p).getFileName().toString();
+                Preconditions.checkArgument(fn.contains(indexingField));
+                int channelFromMip = getChannel(cdmipMetadata);
+                int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(indexingField, ""));
+                LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
+                return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
+            };
         }
         if (segmentedImages.get(indexingField) == null) {
             return Collections.emptyList();
         } else {
             return segmentedImages.get(indexingField).stream()
-                    .filter(p -> {
-                        String fn = Paths.get(p).getFileName().toString();
-                        Preconditions.checkArgument(fn.contains(indexingField));
-                        int channelFromMip = getChannel(cdmipMetadata);
-                        int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(indexingField, ""));
-                        LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
-                        return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
-                    })
+                    .filter(segmentedImageMatcher)
                     .map(p -> {
                         String sifn = Paths.get(p).getFileName().toString();
                         int scIndex = sifn.indexOf(indexingField);
