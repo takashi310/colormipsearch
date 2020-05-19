@@ -173,7 +173,9 @@ public class ExtractColorMIPsMetadata {
     private ExtractColorMIPsMetadata(String serverURL, String credentials) {
         this.serverEndpoint = createHttpClient().target(serverURL);
         this.credentials = credentials;
-        this.mapper = new ObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        this.mapper = new ObjectMapper()
+                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     private Map<String, String> retrieveLibraryNameMapping(String configURL) {
