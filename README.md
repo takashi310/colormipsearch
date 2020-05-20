@@ -47,6 +47,10 @@ java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     -rd local/testData/results.withscore
 ```
 
+## Pre-computed color depth search results
+
+A more detailed description can be found in [PrecomputedData.md](PrecomputedData.md).
+
 ## Generating EM - LM precomputed color depth search
 
 This section shows the steps and the commands used for generating 
