@@ -25,7 +25,7 @@ public class MaskGradientAreaGapCalculator {
         return (MIPImage maskMIPImage) -> {
             long startTime = System.currentTimeMillis();
             LImage maskImage = LImageUtils.create(maskMIPImage.imageArray);
-            LImage overExpressedRegionsInPatternImage = LImageUtils.lazyCombine2(
+            LImage maskForRegionsWithTooMuchExpression = LImageUtils.lazyCombine2(
                     maskImage.mapi(ImageTransformation.maxFilter(60)).reduce(), // eval immediately
                     maskImage.mapi(ImageTransformation.maxFilter(20)).reduce(), // eval immediately
                     (p1s, p2s) -> p2s.get() != -16777216 ? -16777216 : p1s.get() // mask pixels from the 60x image if they are present in the 20x image
@@ -33,7 +33,7 @@ public class MaskGradientAreaGapCalculator {
             MaskGradientAreaGapCalculator maskGradientAreaGapCalculator = new MaskGradientAreaGapCalculator(
                     maskImage,
                     maskImage.map(ColorTransformation.toGray16(false)).map(ColorTransformation.toSignalRegions(2)),
-                    overExpressedRegionsInPatternImage.map(ColorTransformation.toGray16(false)).map(ColorTransformation.toSignalRegions(0)),
+                    maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16(false)).map(ColorTransformation.toSignalRegions(0)),
                     maskThreshold,
                     mirrorMask,
                     clearLabels,
@@ -46,23 +46,23 @@ public class MaskGradientAreaGapCalculator {
     }
 
     private final LImage mask;
-    private final LImage maskRegions; // pix(x,y) = 1 if pattern.pix(x,y) is set
-    private final LImage overExpressedRegionsInMask; // pix(x,y) = 1 if there's too much expression surrounding x,y
+    private final LImage maskIntensityValues;
+    private final LImage maskForUnwantedExpression; // pix(x,y) = 1 if there's too much expression surrounding x,y
     private int maskThreshold;
     private final boolean withMaskMirroring;
     private final ImageProcessing labelsClearing;
     private final ImageProcessing negativeRadiusDilation;
 
     private MaskGradientAreaGapCalculator(LImage mask,
-                                          LImage maskRegions,
-                                          LImage overExpressedRegionsInMask,
+                                          LImage maskIntensityValues,
+                                          LImage maskForUnwantedExpression,
                                           int maskThreshold,
                                           boolean withMaskMirroring,
                                           ImageProcessing labelsClearing,
                                           ImageProcessing negativeRadiusDilation) {
         this.mask = mask;
-        this.maskRegions = maskRegions;
-        this.overExpressedRegionsInMask = overExpressedRegionsInMask;
+        this.maskIntensityValues = maskIntensityValues;
+        this.maskForUnwantedExpression = maskForUnwantedExpression;
         this.maskThreshold = maskThreshold;
         this.withMaskMirroring = withMaskMirroring;
         this.labelsClearing = labelsClearing;
@@ -97,7 +97,7 @@ public class MaskGradientAreaGapCalculator {
         long startTime = System.currentTimeMillis();
         LImage gaps = LImageUtils.lazyCombine3(
                 LImageUtils.combine2(
-                        maskRegions.mapi(maskTransformation),
+                        maskIntensityValues.mapi(maskTransformation),
                         inputGradientImage,
                         (p1, p2) -> p1 * p2),
                 mask.mapi(maskTransformation),
@@ -105,7 +105,7 @@ public class MaskGradientAreaGapCalculator {
                 GradientAreaGapUtils.PIXEL_GAP_OP
         );
         LImage overExpressedRegions = LImageUtils.lazyCombine2(
-                overExpressedRegionsInMask.mapi(maskTransformation),
+                maskForUnwantedExpression.mapi(maskTransformation),
                 labelsClearing.applyTo(inputImage),
                 (p1s, p2s) -> {
                     int p1 = p1s.get();
