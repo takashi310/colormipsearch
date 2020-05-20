@@ -299,6 +299,16 @@ public class ExtractColorMIPsMetadata {
         }
     }
 
+    private String extractObjectiveFromSegmentedImageName(String imageName) {
+        Pattern regExPattern = Pattern.compile("_([0-9]+x)_", Pattern.CASE_INSENSITIVE);
+        Matcher objectiveMatcher = regExPattern.matcher(imageName);
+        if (objectiveMatcher.find()) {
+            return objectiveMatcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
     private boolean matchMIPChannelWithSegmentedImageChannel(int mipChannel, int segmentImageChannel) {
         if (mipChannel == -1 && segmentImageChannel == -1) {
             return true;
@@ -310,6 +320,20 @@ public class ExtractColorMIPsMetadata {
             return true;
         } else {
             return mipChannel == segmentImageChannel;
+        }
+    }
+
+    private boolean matchMIPObjectiveWithSegmentedImageObjective(String mipObjective, String segmentImageObjective) {
+        if (StringUtils.isBlank(mipObjective) && StringUtils.isBlank(segmentImageObjective)) {
+            return true;
+        } else if (StringUtils.isBlank(mipObjective) )  {
+            LOG.warn("No objective found in the mip");
+            return false;
+        } else if (StringUtils.isBlank(segmentImageObjective)) {
+            LOG.warn("No objective found in the segmented image");
+            return false;
+        } else {
+            return StringUtils.equalsIgnoreCase(mipObjective, segmentImageObjective);
         }
     }
 
@@ -629,7 +653,10 @@ public class ExtractColorMIPsMetadata {
                 int channelFromMip = getChannel(cdmipMetadata);
                 int channelFromFN = extractChannelFromSegmentedImageName(fn.replace(indexingField, ""));
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
-                return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN);
+                String objectiveFromMip = cdmipMetadata.getAttr("Objective");
+                String objectiveFromFN = extractObjectiveFromSegmentedImageName(fn.replace(indexingField, ""));
+                return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
+                        matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
             };
         }
         if (segmentedImages.get(indexingField) == null) {
