@@ -24,6 +24,7 @@ function runGAJob {
 
     cmd="java ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+        --cacheExpirationInSeconds 120 \
         gradientScore \
         --maskThreshold ${MASK_THRESHOLD} \
         --negativeRadius ${NEGATIVE_RADIUS} \
