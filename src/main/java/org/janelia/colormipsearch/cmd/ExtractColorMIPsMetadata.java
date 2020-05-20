@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import javax.net.ssl.SSLContext;
@@ -131,8 +132,11 @@ public class ExtractColorMIPsMetadata {
         private int includeMIPsWithoutPublisingName = 0;
 
         @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
-                "0 - lookup segmented images but if none is found include the original, 0x1 - include the original MIP but only if a segmented image exists, 0x2 - include only segmented image if it exists")
-        private int sSegmentedImageHandling = 0;
+                "0 - lookup segmented images but if none is found include the original, " +
+                "0x1 - include the original MIP but only if a segmented image exists, " +
+                "0x2 - include only segmented image if it exists, " +
+                "0x4 - include both the original MIP and all its segmentations")
+        private int segmentedImageHandling = 0;
 
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
@@ -594,6 +598,8 @@ public class ExtractColorMIPsMetadata {
                 return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
             } else if (segmentedImageHandling == 0x2) {
                 return segmentedCDMIPs;
+            } else if (segmentedImageHandling == 0x4) {
+                return Stream.concat(Stream.of(cdmipMetadata), segmentedCDMIPs.stream()).collect(Collectors.toList());
             } else {
                 return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
             }
@@ -606,14 +612,14 @@ public class ExtractColorMIPsMetadata {
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
             indexingField = cdmipMetadata.getAttr("Body Id");
             Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+_([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
-
             segmentedImageMatcher = p -> {
                 String fn = StringUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
                 Preconditions.checkArgument(fn.contains(indexingField));
                 String cmFN = StringUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
                 String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
                 String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
-                return fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
+                return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||
+                        StringUtils.isNotBlank(cmFNState) && fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
             };
         } else {
             indexingField = cdmipMetadata.getAttr("Slide Code");
@@ -896,7 +902,7 @@ public class ExtractColorMIPsMetadata {
                             args.includeMIPsWithNoPublishedURL,
                             args.includeMIPsWithoutPublisingName,
                             args.segmentedMIPsBaseDir,
-                            args.sSegmentedImageHandling,
+                            args.segmentedImageHandling,
                             Paths.get(args.outputDir),
                             prepareColorDepthSearchArgs.outputFileName
                     );
