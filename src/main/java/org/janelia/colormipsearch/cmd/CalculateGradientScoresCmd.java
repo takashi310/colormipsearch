@@ -201,11 +201,19 @@ class CalculateGradientScoresCmd {
         List<ColorMIPSearchResultMetadata> srWithGradScores = gradientAreaGapComputations.stream()
                 .flatMap(gac -> gac.join().stream())
                 .collect(Collectors.toList());
-        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s",
-                srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s using {}M of memort",
+                srWithGradScores.size(),
+                resultsFileContent.results.size(),
+                inputResultsFile,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         ColorMIPSearchResultUtils.sortCDSResults(srWithGradScores);
-        LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s",
-                srWithGradScores.size(), resultsFileContent.results.size(), inputResultsFile, (System.currentTimeMillis() - startTime) / 1000.);
+        LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s using {}M of memory",
+                srWithGradScores.size(),
+                resultsFileContent.results.size(),
+                inputResultsFile,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         return new Results<>(srWithGradScores);
     }
 
