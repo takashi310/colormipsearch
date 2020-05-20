@@ -168,7 +168,9 @@ public class MIPInfo implements Serializable {
     public String toString() {
         return new ToStringBuilder(this)
                 .append("id", id)
+                .append("type", type)
                 .append("cdmPath", cdmPath)
+                .append("archivePath", archivePath)
                 .append("imagePath", imagePath)
                 .toString();
     }
@@ -241,7 +243,7 @@ public class MIPInfo implements Serializable {
     }
 
     private InputStream openZipEntryStream(Path archiveFilePath) throws IOException {
-        ZipFile archiveFile = new ZipFile(archivePath);
+        ZipFile archiveFile = new ZipFile(archiveFilePath.toFile());
         ZipEntry ze = archiveFile.getEntry(imagePath);
         if (ze != null) {
             return archiveFile.getInputStream(ze);
