@@ -605,11 +605,15 @@ public class ExtractColorMIPsMetadata {
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
             indexingField = cdmipMetadata.getAttr("Body Id");
+            Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+_([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
+
             segmentedImageMatcher = p -> {
                 String fn = StringUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
                 Preconditions.checkArgument(fn.contains(indexingField));
                 String cmFN = StringUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
-                return fn.contains(cmFN);
+                String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
+                String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
+                return fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
             };
         } else {
             indexingField = cdmipMetadata.getAttr("Slide Code");
@@ -640,6 +644,15 @@ public class ExtractColorMIPsMetadata {
                         return segmentMIPMetadata;
                     })
                     .collect(Collectors.toList());
+        }
+    }
+
+    private String extractEMNeuronStateFromName(String name, Pattern emNeuronStatePattern) {
+        Matcher matcher = emNeuronStatePattern.matcher(name);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return "";
         }
     }
 
