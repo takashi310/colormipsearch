@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -173,63 +175,90 @@ public class MIPInfo implements Serializable {
 
     public boolean exists() {
         if (StringUtils.equalsIgnoreCase("zipEntry", type)) {
-            ZipFile archiveFile;
-            try {
-                archiveFile = new ZipFile(archivePath);
-            } catch (IOException e) {
+            Path archiveFilePath = Paths.get(archivePath);
+            if (Files.isDirectory(archiveFilePath)) {
+                return checkFSDir(archiveFilePath);
+            } else if (Files.isRegularFile(archiveFilePath)) {
+                return checkZipEntry(archiveFilePath);
+            } else {
                 return false;
-            }
-            try {
-                if (archiveFile.getEntry(imagePath) != null) {
-                    return true;
-                } else {
-                    // slightly longer test
-                    String imageFn = Paths.get(imagePath).getFileName().toString();
-                    return archiveFile.stream()
-                            .filter(ze -> !ze.isDirectory())
-                            .map(ze -> Paths.get(ze.getName()).getFileName().toString())
-                            .filter(fn -> imageFn.equals(fn))
-                            .findFirst()
-                            .map(fn -> true)
-                            .orElse(false);
-                }
-            } finally {
-                try {
-                    archiveFile.close();
-                } catch (IOException ignore) {
-                }
             }
         } else {
             return new File(imagePath).exists();
         }
     }
 
+    private boolean checkFSDir(Path archiveFilePath) {
+        return Files.exists(archiveFilePath.resolve(imagePath));
+    }
+
+    private boolean checkZipEntry(Path archiveFilePath) {
+        ZipFile archiveFile;
+        try {
+            archiveFile = new ZipFile(archiveFilePath.toFile());
+        } catch (IOException e) {
+            return false;
+        }
+        try {
+            if (archiveFile.getEntry(imagePath) != null) {
+                return true;
+            } else {
+                // slightly longer test
+                String imageFn = Paths.get(imagePath).getFileName().toString();
+                return archiveFile.stream()
+                        .filter(ze -> !ze.isDirectory())
+                        .map(ze -> Paths.get(ze.getName()).getFileName().toString())
+                        .filter(fn -> imageFn.equals(fn))
+                        .findFirst()
+                        .map(fn -> true)
+                        .orElse(false);
+            }
+        } finally {
+            try {
+                archiveFile.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
     InputStream openInputStream() throws IOException {
         if (StringUtils.equalsIgnoreCase("zipEntry", type)) {
-            ZipFile archiveFile = new ZipFile(archivePath);
-            try {
-                ZipEntry ze = archiveFile.getEntry(imagePath);
-                if (ze != null) {
-                    return archiveFile.getInputStream(ze);
-                } else {
-                    String imageFn = Paths.get(imagePath).getFileName().toString();
-                    return archiveFile.stream()
-                            .filter(aze -> !aze.isDirectory())
-                            .filter(aze -> imageFn.equals(Paths.get(aze.getName()).getFileName().toString()))
-                            .findFirst()
-                            .map(aze -> getEntryStream(archiveFile, aze))
-                            .orElseGet(() -> {
-                                try {
-                                    archiveFile.close();
-                                } catch (IOException ignore) {
-                                }
-                                return null;
-                            });
-                }
-            } finally {
+            Path archiveFilePath = Paths.get(archivePath);
+            if (Files.isDirectory(archiveFilePath)) {
+                return openFileStream(archiveFilePath);
+            } else if (Files.isRegularFile(archiveFilePath)) {
+                return openZipEntryStream(archiveFilePath);
+            } else {
+                return null;
             }
         } else {
             return new FileInputStream(imagePath);
+        }
+    }
+
+    private InputStream openFileStream(Path archiveFilePath) throws IOException {
+        return Files.newInputStream(archiveFilePath.resolve(imagePath));
+    }
+
+    private InputStream openZipEntryStream(Path archiveFilePath) throws IOException {
+        ZipFile archiveFile = new ZipFile(archivePath);
+        ZipEntry ze = archiveFile.getEntry(imagePath);
+        if (ze != null) {
+            return archiveFile.getInputStream(ze);
+        } else {
+            String imageFn = Paths.get(imagePath).getFileName().toString();
+            return archiveFile.stream()
+                    .filter(aze -> !aze.isDirectory())
+                    .filter(aze -> imageFn.equals(Paths.get(aze.getName()).getFileName().toString()))
+                    .findFirst()
+                    .map(aze -> getEntryStream(archiveFile, aze))
+                    .orElseGet(() -> {
+                        try {
+                            archiveFile.close();
+                        } catch (IOException ignore) {
+                        }
+                        return null;
+                    });
         }
     }
 
