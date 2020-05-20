@@ -16,7 +16,7 @@ public class CachedMIPsUtils {
     private static LoadingCache<MIPInfo, MIPImage> mipsImagesCache;
 
     public static void initializeCache(long maxSize, long expirationInSeconds) {
-        LOG.info("Initialize cache: size={} and expiration={}min", maxSize, expirationInSeconds);
+        LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
         mipsImagesCache = CacheBuilder.newBuilder()
                 .concurrencyLevel(16)
                 .maximumSize(maxSize)

@@ -21,8 +21,8 @@ public class Main {
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
         private long cacheSize = 200000L;
-        @Parameter(names = "--cacheExpirationInMin", description = "Cache expiration in minutes")
-        private long cacheExpirationInMin = 60;
+        @Parameter(names = "--cacheExpirationInSeconds", description = "Cache expiration in seconds")
+        private long cacheExpirationInSeconds = 60;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         private boolean displayHelpMessage = false;
     }
@@ -75,7 +75,7 @@ public class Main {
             System.exit(1);
         }
         // initialize the cache
-        CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInMin);
+        CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInSeconds);
         // invoke the appropriate command
         switch (cmdline.getParsedCommand()) {
             case "searchFromJSON":
