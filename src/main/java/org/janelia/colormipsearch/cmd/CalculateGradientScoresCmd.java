@@ -201,7 +201,7 @@ class CalculateGradientScoresCmd {
         List<ColorMIPSearchResultMetadata> srWithGradScores = gradientAreaGapComputations.stream()
                 .flatMap(gac -> gac.join().stream())
                 .collect(Collectors.toList());
-        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s using {}M of memort",
+        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s using {}M of memory",
                 srWithGradScores.size(),
                 resultsFileContent.results.size(),
                 inputResultsFile,
