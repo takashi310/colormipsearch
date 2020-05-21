@@ -2,10 +2,10 @@
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
-export TOTAL_MASKS=47454
+export TOTAL_MASKS=34718
 export TOTAL_LIBRARIES=9603
-export MASKS_PER_JOB=15818
-export LIBRARIES_PER_JOB=3201
+export MASKS_PER_JOB=17359
+export LIBRARIES_PER_JOB=9603
 export PROCESSING_PARTITION_SIZE=500
 
 # round up the total numbers because the operations are integer divisions
@@ -14,7 +14,7 @@ export JOBS_FOR_MASKS=$((TOTAL_MASKS / MASKS_PER_JOB))
 export TOTAL_JOBS=$((JOBS_FOR_LIBRARIES * JOBS_FOR_MASKS))
 
 # first run was 16 cores x 300GB mem but apparently 16 cores and 240GB may be OK
-export CORES_RESOURCE=16
+export CORES_RESOURCE=20
 export MEM_RESOURCE=180
 
 export LOGFILE=
@@ -25,9 +25,10 @@ export PIX_FLUCTUATION=1
 export PIX_PCT_MATCH=1
 
 WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/all_sgal4
-export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_fl.json $WORKING_DIR/mips/flyem_hemibrain.json"
-export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_split_gal4_published.json $WORKING_DIR/mips/flylight_split_gal4_drivers_missing_from_published.json"
-export RESULTS_DIR=$WORKING_DIR/cdsresults.matches
+export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_with_fl.json"
+export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_split_gal4_published.json \
+                        $WORKING_DIR/mips/flylight_split_gal4_drivers_missing_from_published.json"
+export RESULTS_DIR=$WORKING_DIR/cdsresults.matches_including_fl
 export PER_MASKS_RESULTS_SUBDIR=flyem_hemibrain_all-vs-flylight_split_gal4_all
 export PER_LIBRARY_RESULTS_SUBDIR=flylight_split_gal4_all
 
