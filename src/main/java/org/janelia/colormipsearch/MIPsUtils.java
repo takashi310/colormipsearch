@@ -18,27 +18,17 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ij.ImagePlus;
-import ij.io.Opener;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MIPsUtils {
-
-    private enum ImageFormat {
-        PNG,
-        TIFF,
-        UNKNOWN
-    }
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
 
@@ -63,19 +53,14 @@ public class MIPsUtils {
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
-            ImagePlus ij = null;
             try {
-                ij = readImagePlus(mip.getId(), getImageFormat(mip.getImagePath()), inputStream);
-                return new MIPImage(mip, new ImageArray(ij));
+                return new MIPImage(mip, ImageArrayUtils.readImageArray(mip.getId(), mip.getImagePath(), inputStream));
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             } finally {
                 try {
                     inputStream.close();
                 } catch (IOException ignore) {
-                }
-                if (ij != null) {
-                    ij.close();
                 }
                 LOG.trace("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
             }
@@ -163,7 +148,7 @@ public class MIPsUtils {
             int from = offset > 0 ? offset : 0;
             try {
                 List<MIPInfo> mips = Files.find(mipsInputPath, 1, (p, fa) -> fa.isRegularFile())
-                        .filter(p -> isImageFile(p))
+                        .filter(p -> ImageArrayUtils.isImageFile(p.getFileName().toString()))
                         .filter(p -> {
                             if (CollectionUtils.isEmpty(mipsFilter)) {
                                 return true;
@@ -201,7 +186,7 @@ public class MIPsUtils {
             if (StringUtils.endsWithIgnoreCase(mipsLocation, ".zip")) {
                 // read mips from zip
                 return readMIPsFromZipArchive(mipsLocation, mipsFilter, offset, length);
-            } else if (isImageFile(mipsInputPath)) {
+            } else if (ImageArrayUtils.isImageFile(mipsInputPath.getFileName().toString())) {
                 // treat the file as a single image file
                 String fname = mipsInputPath.getFileName().toString();
                 int extIndex = fname.lastIndexOf('.');
@@ -256,51 +241,6 @@ public class MIPsUtils {
         return transformedMIP;
     }
 
-    private static ImagePlus readImagePlus(String title, ImageFormat format, InputStream stream) throws Exception {
-        switch (format) {
-            case PNG:
-                return readPngToImagePlus(title, stream);
-            case TIFF:
-                return readTiffToImagePlus(title, stream);
-        }
-        throw new IllegalArgumentException("Image must be in PNG or TIFF format");
-    }
-
-    private static ImageFormat getImageFormat(String filepath) {
-        String lowerPath = filepath.toLowerCase();
-
-        if (lowerPath.endsWith(".png")) {
-            return ImageFormat.PNG;
-        } else if (lowerPath.endsWith(".tiff") || lowerPath.endsWith(".tif")) {
-            return ImageFormat.TIFF;
-        }
-
-        LOG.warn("Image format unknown: {}", filepath);
-        return ImageFormat.UNKNOWN;
-    }
-
-    private static boolean isImageFile(Path p) {
-        return isImageFile(p.getFileName().toString());
-    }
-
-    private static boolean isImageFile(String fname) {
-        int extseparator = fname.lastIndexOf('.');
-        if (extseparator == -1) {
-            return false;
-        }
-        String fext = fname.substring(extseparator + 1);
-        switch (fext.toLowerCase()) {
-            case "jpg":
-            case "jpeg":
-            case "png":
-            case "tif":
-            case "tiff":
-                return true;
-            default:
-                return false;
-        }
-    }
-
     private static List<MIPInfo> readMIPsFromZipArchive(String mipsArchive, Set<String> mipsFilter, int offset, int length) {
         ZipFile archiveFile;
         try {
@@ -312,7 +252,7 @@ public class MIPsUtils {
         try {
             int from = offset > 0 ? offset : 0;
             List<MIPInfo> mips = archiveFile.stream()
-                    .filter(ze -> isImageFile(ze.getName()))
+                    .filter(ze -> ImageArrayUtils.isImageFile(ze.getName()))
                     .filter(ze -> {
                         if (CollectionUtils.isEmpty(mipsFilter)) {
                             return true;
@@ -351,14 +291,6 @@ public class MIPsUtils {
             }
         }
 
-    }
-
-    private static ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
-        return new ImagePlus(title, ImageIO.read(stream));
-    }
-
-    private static ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
-        return new Opener().openTiff(stream, title);
     }
 
 }

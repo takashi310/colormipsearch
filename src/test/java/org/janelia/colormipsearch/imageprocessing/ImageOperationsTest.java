@@ -17,7 +17,7 @@ public class ImageOperationsTest {
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
-            ImageArray testMIP = new ImageArray(testImage);
+            ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP)
                     .toImageArray();
@@ -36,7 +36,7 @@ public class ImageOperationsTest {
 
         for (int i = 1; i < 6; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
-            ImageArray testMIP = new ImageArray(testImage);
+            ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP)
                     .toImageArray();
@@ -56,7 +56,7 @@ public class ImageOperationsTest {
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest" + (i % 2 + 1) + ".tif", 1);
-            ImageArray testMIP = new ImageArray(testImage);
+            ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP).toImageArray();
             RankFilters maxFilter = new RankFilters();
@@ -71,7 +71,7 @@ public class ImageOperationsTest {
     public void maxFilterForBinary8Image() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray binaryMaxFilteredImage = ImageProcessing.create()
                 .toBinary8(50)
@@ -93,7 +93,7 @@ public class ImageOperationsTest {
     public void convertToGray8WithNoGammaCorrection() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageConverter ic = new ImageConverter(testImage);
         ic.convertToGray8();
@@ -111,7 +111,7 @@ public class ImageOperationsTest {
     public void convertToGray16WithNoGammaCorrection() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageConverter ic = new ImageConverter(testImage);
         ic.convertToGray16();
@@ -129,7 +129,7 @@ public class ImageOperationsTest {
     public void mirrorHorizontally() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray mirroredImage = ImageProcessing.create()
                 .horizontalMirror()
@@ -145,7 +145,7 @@ public class ImageOperationsTest {
     public void imageSignal() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray signalImage = ImageProcessing.create()
                 .toGray16(false)
@@ -165,7 +165,7 @@ public class ImageOperationsTest {
     public void maskRGBImage() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = new ImageArray(testImage);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray maskedImage = ImageProcessing.create()
                 .mask(250)

@@ -1,12 +1,5 @@
 package org.janelia.colormipsearch.imageprocessing;
 
-import java.util.Arrays;
-
-import ij.ImagePlus;
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ImageArray {
@@ -21,17 +14,6 @@ public class ImageArray {
         this.width = width;
         this.type = type;
         this.pixels = pixels;
-    }
-
-    public ImageArray(ImagePlus image) {
-        ImageProcessor ip = image.getProcessor();
-        this.type = ImageType.fromImagePlusType(image.getType());
-        this.height = ip.getHeight();
-        this.width = ip.getWidth();
-        this.pixels = new int[width * height];
-        for (int pi = 0; pi < width * height; pi++) {
-            pixels[pi] = ip.get(pi);
-        }
     }
 
     @Override
@@ -65,25 +47,6 @@ public class ImageArray {
 
     void setPixel(int x, int y, int p) {
         pixels[y * width + x] = p;
-    }
-
-    ImageProcessor getImageProcessor() {
-        switch (type) {
-            case GRAY8:
-                byte[] byteImageBuffer = new byte[pixels.length];
-                for (int i = 0; i < pixels.length; i++) {
-                    byteImageBuffer[i] = (byte) (pixels[i] & 0xFF);
-                }
-                return new ByteProcessor(width, height, byteImageBuffer);
-            case GRAY16:
-                short[] shortImageBuffer = new short[pixels.length];
-                for (int i = 0; i < pixels.length; i++) {
-                    shortImageBuffer[i] = (short) (pixels[i] & 0xFFFF);
-                }
-                return new ShortProcessor(width, height, shortImageBuffer, null /* default color model */);
-            default:
-                return new ColorProcessor(width, height, Arrays.copyOf(pixels, pixels.length));
-        }
     }
 
 }
