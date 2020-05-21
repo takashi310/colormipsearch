@@ -77,6 +77,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         LOG.debug("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
+                                .filter(MIPInfo::exists)
                                 .map(libraryMIP -> {
                                     MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
                                     ColorMIPSearchResult sr = colorMIPSearch.runImageComparison(libraryImage, maskImage);
