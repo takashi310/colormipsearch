@@ -19,6 +19,7 @@ class CmdUtils {
 
     static Executor createCDSExecutor(AbstractArgs args) {
         if (args.cdsConcurrency > 0) {
+            LOG.info("Create a fixed thread pool with {} worker threads", args.cdsConcurrency);
             return Executors.newFixedThreadPool(
                     args.cdsConcurrency,
                     new ThreadFactoryBuilder()
@@ -27,6 +28,7 @@ class CmdUtils {
                             .setPriority(Thread.NORM_PRIORITY + 1)
                             .build());
         } else {
+            LOG.info("Create a workstealing pool with {} worker threads", Runtime.getRuntime().availableProcessors());
             return Executors.newWorkStealingPool();
         }
     }
