@@ -186,7 +186,9 @@ public class MIPInfo implements Serializable {
                 return false;
             }
         } else {
-            return new File(imagePath).exists();
+            Path imageFilePath = Paths.get(imagePath);
+            return Files.exists(imageFilePath) ||
+                    StringUtils.isNotBlank(archivePath) && Files.exists(Paths.get(archivePath).resolve(imageFilePath));
         }
     }
 
@@ -234,7 +236,19 @@ public class MIPInfo implements Serializable {
                 return null;
             }
         } else {
-            return new FileInputStream(imagePath);
+            Path imageFilePath = Paths.get(imagePath);
+            if (Files.exists(imageFilePath)) {
+                return Files.newInputStream(imageFilePath);
+            } else if (StringUtils.isNotBlank(archivePath)) {
+                Path archiveFilePath = Paths.get(archivePath);
+                if (Files.exists(archiveFilePath.resolve(imageFilePath))) {
+                    return openFileStream(archiveFilePath);
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
     }
 
