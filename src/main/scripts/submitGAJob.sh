@@ -9,17 +9,18 @@ function runGAJob {
 
     NEGATIVE_RADIUS=20
     MASK_THRESHOLD=20
+
     REQUESTED_CORES=$((${CORES_RESOURCE:-0}))
     CONCURRENCY=$((2 * REQUESTED_CORES - 1))
     if [ ${CONCURRENCY} -lt 0 ] ; then
         CONCURRENCY=0
     fi
+    CONCURRENCY_OPTS="--cdsConcurrency ${CONCURRENCY}"
 
     MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
     CDGA_ZGAP_SUFFIX=${CDGA_ZGAP_SUFFIX:_20pxRGBMAX}
     CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
     CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
-    CONCURRENCY_OPTS="--cdsConcurrency ${CONCURRENCY}"
 
     if [ -n "${LOGFILE}" ] && [ -f "${LOGFILE}" ] ; then
         echo "Using Log config: ${LOGFILE}"

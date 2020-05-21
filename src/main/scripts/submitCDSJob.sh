@@ -10,6 +10,13 @@ function runCDSJob {
     MASK_OFFSET=$((MASK_INDEX * MASKS_PER_JOB))
     LIBRARY_OFFSET=$((LIBRARY_INDEX * LIBRARIES_PER_JOB))
 
+    REQUESTED_CORES=$((${CORES_RESOURCE:-0}))
+    CONCURRENCY=$((2 * REQUESTED_CORES - 1))
+    if [ ${CONCURRENCY} -lt 0 ] ; then
+        CONCURRENCY=0
+    fi
+    CONCURRENCY_OPTS="--cdsConcurrency ${CONCURRENCY}"
+
     MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
     if [ -n "${LOGFILE}" ] && [ -f "${LOGFILE}" ] ; then
         echo "Using Log config: ${LOGFILE}"
@@ -34,6 +41,7 @@ function runCDSJob {
         --libraryPartitionSize ${PROCESSING_PARTITION_SIZE} \
         --perMaskSubdir ${PER_MASKS_RESULTS_SUBDIR} \
         --perLibrarySubdir ${PER_LIBRARY_RESULTS_SUBDIR} \
+        ${CONCURRENCY_OPTS} \
         -od ${RESULTS_DIR} \
         $*"
 
