@@ -21,8 +21,10 @@ function runCDSJob {
     cmd="java ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
         searchFromJSON \
-        -m ${MASKS_FILE}:${MASK_OFFSET}:${MASKS_PER_JOB} \
-        -i ${LIBRARIES_FILE}:${LIBRARY_OFFSET}:${LIBRARIES_PER_JOB} \
+        -m ${MASKS_FILES} \
+        --masks-index ${MASK_OFFSET} --masks-length ${MASKS_PER_JOB} \
+        -i ${LIBRARIES_FILES} \
+        --images-index ${LIBRARY_OFFSET} --images-length ${LIBRARIES_PER_JOB} \
         --maskThreshold ${MASK_THRESHOLD} \
         --dataThreshold ${DATA_THRESHOLD} \
         --xyShift ${XY_SHIFT} \
