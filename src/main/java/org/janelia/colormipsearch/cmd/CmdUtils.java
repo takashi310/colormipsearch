@@ -19,7 +19,8 @@ class CmdUtils {
 
     static Executor createCDSExecutor(AbstractArgs args) {
         if (args.cdsConcurrency > 0) {
-            LOG.info("Create a fixed thread pool with {} worker threads", args.cdsConcurrency);
+            LOG.info("Create a fixed thread pool with {} worker threads ({} available processors for workstealing pool)",
+                    args.cdsConcurrency, Runtime.getRuntime().availableProcessors());
             return Executors.newFixedThreadPool(
                     args.cdsConcurrency,
                     new ThreadFactoryBuilder()
