@@ -39,10 +39,10 @@ function runCDSJob {
         --pctPositivePixels ${PIX_PCT_MATCH} \
         --mirrorMask \
         --libraryPartitionSize ${PROCESSING_PARTITION_SIZE} \
-        --perMaskSubdir ${PER_MASKS_RESULTS_SUBDIR} \
-        --perLibrarySubdir ${PER_LIBRARY_RESULTS_SUBDIR} \
+        --perMaskSubdir ${RESULTS_SUBDIR_FOR_MASKS} \
+        --perLibrarySubdir ${RESULTS_SUBDIR_FOR_LIBRARIES} \
         ${CONCURRENCY_OPTS} \
-        -od ${RESULTS_DIR} \
+        -od ${CDSMATCHES_RESULTS_DIR} \
         $*"
 
     echo "${cmd}"

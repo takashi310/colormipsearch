@@ -2,36 +2,12 @@
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
-export TOTAL_MASKS=34718
-export TOTAL_LIBRARIES=9603
-export MASKS_PER_JOB=17359
-export LIBRARIES_PER_JOB=9603
-export PROCESSING_PARTITION_SIZE=500
+source ${SCRIPT_DIR}/cdsparams.sh
 
 # round up the total numbers because the operations are integer divisions
 export JOBS_FOR_LIBRARIES=$((TOTAL_LIBRARIES / LIBRARIES_PER_JOB))
 export JOBS_FOR_MASKS=$((TOTAL_MASKS / MASKS_PER_JOB))
 export TOTAL_JOBS=$((JOBS_FOR_LIBRARIES * JOBS_FOR_MASKS))
-
-# first run was 16 cores x 300GB mem but apparently 16 cores and 240GB may be OK
-export CORES_RESOURCE=20
-export MEM_RESOURCE=180
-
-export LOGFILE=
-export MASK_THRESHOLD=20
-export DATA_THRESHOLD=20
-export XY_SHIFT=2
-export PIX_FLUCTUATION=1
-export PIX_PCT_MATCH=1
-
-WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/all_sgal4
-export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_with_fl.json"
-export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_split_gal4_published.json \
-                        $WORKING_DIR/mips/flylight_split_gal4_drivers_missing_from_published.json"
-CDSMATCHES_SUBDIR=cdsresults.matches_including_fl
-export RESULTS_DIR=$WORKING_DIR/${CDSMATCHES_SUBDIR}
-export PER_MASKS_RESULTS_SUBDIR=flyem_hemibrain_all-vs-flylight_split_gal4_all
-export PER_LIBRARY_RESULTS_SUBDIR=flylight_split_gal4_all
 
 function localRun {
     if [[ $# -lt 2 ]] ; then
@@ -61,4 +37,6 @@ echo "Total jobs: $TOTAL_JOBS"
 
 # to run locally use localRun <from> <to>
 # to run on the grid use gridRun <from> <to>
-localRun 1 $TOTAL_JOBS
+FIRST_JOB=${FIRST_JOB:-1}
+LAST_JOB=${LAST_JOB:-${TOTAL_JOBS}}
+$(RUN_CMD ${FIRST_JOB} ${LAST_JOB})
