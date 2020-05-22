@@ -1,0 +1,28 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <id>bin</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <moduleSets>
+        <moduleSet>
+            <useAllReactorProjects>true</useAllReactorProjects>
+            <includes>
+                <include>org.janelia.colormipsearch:colormipsearch-api:jar</include>
+                <include>org.janelia.colormipsearch:colormipsearch-tools:jar</include>
+            </includes>
+            <binaries>
+                <unpack>true</unpack>
+            </binaries>
+        </moduleSet>
+    </moduleSets>
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>*:jar</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>

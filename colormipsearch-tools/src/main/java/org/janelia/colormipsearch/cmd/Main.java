@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Main {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
         private long cacheSize = 200000L;

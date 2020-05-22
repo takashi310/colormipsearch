@@ -166,37 +166,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.20</version>
             </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                      <manifest>
-                        <mainClass>org.janelia.colormipsearch.cmd.Main</mainClass>
-                      </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 
     <modules>
         <module>colormipsearch-api</module>
         <module>colormipsearch-tools</module>
+        <module>colormipsearch-dist</module>
     </modules>
 
 </project>

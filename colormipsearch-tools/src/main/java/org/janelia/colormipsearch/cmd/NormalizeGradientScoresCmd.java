@@ -46,7 +46,7 @@ class NormalizeGradientScoresCmd {
         @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
         private boolean cleanup = false;
 
-        @Parameter(names = "--re-mormalize",
+        @Parameter(names = "--re-normalize",
                 description = "If set (re)normalize the gradient scores based on the new dataset",
                 arity = 0)
         private boolean reNormalize = false;
