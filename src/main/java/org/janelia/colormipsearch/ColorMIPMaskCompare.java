@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
-class ColorMIPMaskCompare {
+public class ColorMIPMaskCompare {
 
     private ImageArray m_query;
     private ImageArray m_negquery;
@@ -28,20 +28,28 @@ class ColorMIPMaskCompare {
     private int m_maskpos_st;
     private int m_maskpos_ed;
 
-    static class Output {
-        int matchingPixNum;
-        double matchingPct;
+    public static class Output {
+        private final int matchingPixNum;
+        private final double matchingPct;
 
         Output(int pixnum, double pct) {
             matchingPixNum = pixnum;
             matchingPct = pct;
         }
+
+        public int getMatchingPixNum() {
+            return matchingPixNum;
+        }
+
+        public double getMatchingPct() {
+            return matchingPct;
+        }
     }
 
     // Advanced Search
-    ColorMIPMaskCompare(ImageArray query, int mask_th, boolean mirror_mask,
-                        ImageArray negquery, int negmask_th,
-                        boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
+    public ColorMIPMaskCompare(ImageArray query, int mask_th, boolean mirror_mask,
+                               ImageArray negquery, int negmask_th,
+                               boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
         m_query = query;
         m_negquery = negquery;
         m_width = m_query.width;
@@ -107,7 +115,7 @@ class ColorMIPMaskCompare {
 
     }
 
-    Output runSearch(ImageArray tarimg_in) {
+    public Output runSearch(ImageArray tarimg_in) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = m_mask.length;

@@ -70,12 +70,12 @@ public class ColorMIPSearch implements Serializable {
             ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
-            boolean isMatch = output.matchingPct > pixThresdub;
+            boolean isMatch = output.getMatchingPct() > pixThresdub;
 
             return new ColorMIPSearchResult(
                     maskMIPImage.mipInfo,
                     libraryMIPImage.mipInfo,
-                    output.matchingPixNum, output.matchingPct, isMatch, false);
+                    output.getMatchingPixNum(), output.getMatchingPct(), isMatch, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", libraryMIPImage,  maskMIPImage, e);
             return new ColorMIPSearchResult(
