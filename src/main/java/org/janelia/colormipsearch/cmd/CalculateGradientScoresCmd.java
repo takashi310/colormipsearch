@@ -45,8 +45,8 @@ class CalculateGradientScoresCmd {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
         private ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
-        private ListArg resultsFile;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
+        private List<ListArg> resultsFiles;
 
         @Parameter(names = {"--topPublishedNameMatches"}, description = "If set only calculate the gradient score for the top specified color depth search results")
         private int topPublishedNameMatches;
@@ -58,14 +58,6 @@ class CalculateGradientScoresCmd {
             super(commonArgs);
         }
 
-        ListArg getResultsDir() {
-            return resultsDir;
-        }
-
-        ListArg getResultsFile() {
-            return resultsFile;
-        }
-
         Path getOutputDir() {
             if (resultsDir == null && StringUtils.isBlank(commonArgs.outputDir)) {
                 return null;
@@ -74,6 +66,10 @@ class CalculateGradientScoresCmd {
             } else {
                 return Paths.get(resultsDir.input);
             }
+        }
+
+        boolean validate() {
+            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
         }
     }
 
@@ -100,21 +96,32 @@ class CalculateGradientScoresCmd {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Path outputDir = args.getOutputDir();
-        if (args.resultsFile != null) {
-            File cdsResultsFile = new File(args.resultsFile.input);
-            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
-                    maskAreaGapCalculatorProvider,
-                    cdsResultsFile,
-                    args.gradientPath,
-                    args.gradientSuffix,
-                    args.zgapPath,
-                    StringUtils.defaultString(args.zgapSuffix, ""),
-                    args.topPublishedNameMatches,
-                    args.topPublishedSampleMatches,
-                    mapper,
-                    executor
-            );
-            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, cdsResultsFile), mapper);
+        if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
+            Utils.partitionList(args.resultsFiles, args.libraryPartitionSize).stream().parallel()
+                    .forEach(inputFiles -> {
+                        long startTime = System.currentTimeMillis();
+                        inputFiles.forEach(inputArg -> {
+                            File f = new File(inputArg.input);
+                            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                                    maskAreaGapCalculatorProvider,
+                                    f,
+                                    args.gradientPath,
+                                    args.gradientSuffix,
+                                    args.zgapPath,
+                                    StringUtils.defaultString(args.zgapSuffix, ""),
+                                    args.topPublishedNameMatches,
+                                    args.topPublishedSampleMatches,
+                                    mapper,
+                                    executor
+                            );
+                            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                        });
+                        LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
+                                inputFiles.size(),
+                                (System.currentTimeMillis() - startTime) / 1000.,
+                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                (Runtime.getRuntime().totalMemory() / _1M));
+                    });
         } else if (args.resultsDir != null) {
             try {
                 int from = Math.max(args.resultsDir.offset, 0);

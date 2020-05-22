@@ -87,7 +87,7 @@ public class Main {
                 localMIPFilesSearchCmd.execute();
                 break;
             case "gradientScore":
-                if (calculateGradientScoresCmd.getArgs().getResultsDir() == null && calculateGradientScoresCmd.getArgs().getResultsFile() == null) {
+                if (!calculateGradientScoresCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
                     cmdline.usage(cmdline.getParsedCommand(), sb);
                     System.exit(1);
