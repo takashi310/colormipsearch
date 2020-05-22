@@ -28,7 +28,8 @@ WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/all_sgal4
 export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_with_fl.json"
 export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_split_gal4_published.json \
                         $WORKING_DIR/mips/flylight_split_gal4_drivers_missing_from_published.json"
-export RESULTS_DIR=$WORKING_DIR/cdsresults.matches_including_fl
+CDSMATCHES_SUBDIR=cdsresults.matches_including_fl
+export RESULTS_DIR=$WORKING_DIR/${CDSMATCHES_SUBDIR}
 export PER_MASKS_RESULTS_SUBDIR=flyem_hemibrain_all-vs-flylight_split_gal4_all
 export PER_LIBRARY_RESULTS_SUBDIR=flylight_split_gal4_all
 
