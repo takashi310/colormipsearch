@@ -40,4 +40,6 @@ echo "Total jobs: ${TOTAL_JOBS}"
 # to run on the grid use gridRun <from> <to>
 FIRST_JOB=${FIRST_JOB:-1}
 LAST_JOB=${LAST_JOB:-${TOTAL_JOBS}}
-$(RUN_CMD ${FIRST_JOB} ${LAST_JOB})
+startcmd="${RUN_CMD} ${FIRST_JOB} ${LAST_JOB}"
+echo $startcmd
+($startcmd)
