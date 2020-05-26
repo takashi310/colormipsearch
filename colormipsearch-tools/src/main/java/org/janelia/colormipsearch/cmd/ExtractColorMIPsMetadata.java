@@ -558,7 +558,9 @@ public class ExtractColorMIPsMetadata {
             } else {
                 outputName = outputBasename + ".json";
             }
-            outputStream = new FileOutputStream(outputPath.resolve(outputName).toFile());
+            Path outputFilePath = outputPath.resolve(outputName);
+            LOG.info("Write color depth MIPs to {}", outputFilePath);
+            outputStream = new FileOutputStream(outputFilePath.toFile());
         } catch (FileNotFoundException e) {
             LOG.error("Error opening the outputfile {}", outputPath, e);
             return;
