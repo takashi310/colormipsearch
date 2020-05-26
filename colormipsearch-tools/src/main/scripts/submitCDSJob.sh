@@ -11,7 +11,8 @@ function runCDSJob {
     LIBRARY_OFFSET=$((LIBRARY_INDEX * LIBRARIES_PER_JOB))
 
     REQUESTED_CORES=$((${CORES_RESOURCE:-0}))
-    CONCURRENCY=$((2 * REQUESTED_CORES - 1))
+    CPU_RESERVE=$((${CPU_RESERVE:-1}))
+    CONCURRENCY=$((2 * REQUESTED_CORES - CPU_RESERVE))
     if [ ${CONCURRENCY} -lt 0 ] ; then
         CONCURRENCY=0
     fi
@@ -25,8 +26,12 @@ function runCDSJob {
         LOG_OPTS=""
     fi
 
+    MIPS_CACHE_SIZE=${MIPS_CACHE_SIZE:-200000}
+    MIPS_CACHE_EXPIRATION=${MIPS_CACHE_EXPIRATION:-60}
+
     cmd="java ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+        --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         searchFromJSON \
         -m ${MASKS_FILES} \
         --masks-index ${MASK_OFFSET} --masks-length ${MASKS_PER_JOB} \

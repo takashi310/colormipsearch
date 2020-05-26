@@ -11,7 +11,8 @@ function runGAJob {
     MASK_THRESHOLD=20
 
     REQUESTED_CORES=$((${CORES_RESOURCE:-0}))
-    CONCURRENCY=$((2 * REQUESTED_CORES - 1))
+    CPU_RESERVE=$((${CPU_RESERVE:-1}))
+    CONCURRENCY=$((2 * REQUESTED_CORES - CPU_RESERVE))
     if [ ${CONCURRENCY} -lt 0 ] ; then
         CONCURRENCY=0
     fi
@@ -29,9 +30,12 @@ function runGAJob {
         LOG_OPTS=""
     fi
 
+    MIPS_CACHE_SIZE=${MIPS_CACHE_SIZE:-200000}
+    MIPS_CACHE_EXPIRATION=${MIPS_CACHE_EXPIRATION:-60}
+
     cmd="java ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
-        --cacheExpirationInSeconds 120 \
+        --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         gradientScore \
         --maskThreshold ${MASK_THRESHOLD} \
         --negativeRadius ${NEGATIVE_RADIUS} \
