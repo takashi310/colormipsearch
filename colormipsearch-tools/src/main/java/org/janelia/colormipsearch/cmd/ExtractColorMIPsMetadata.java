@@ -330,8 +330,8 @@ public class ExtractColorMIPsMetadata {
             LOG.warn("No objective found in the mip");
             return false;
         } else if (StringUtils.isBlank(segmentImageObjective)) {
-            LOG.warn("No objective found in the segmented image");
-            return false;
+            // if the segmented image does not have objective match it against every image
+            return true;
         } else {
             return StringUtils.equalsIgnoreCase(mipObjective, segmentImageObjective);
         }
@@ -670,7 +670,6 @@ public class ExtractColorMIPsMetadata {
                         Preconditions.checkArgument(scIndex != -1);
                         ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                         cdmipMetadata.copyTo(segmentMIPMetadata);
-                        String fn = StringUtils.replacePattern(sifn.substring(scIndex + indexingField.length()), "\\.\\D*$", "");
                         segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
                         segmentMIPMetadata.type = type;
                         segmentMIPMetadata.segmentFilepath = p;
