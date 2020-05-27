@@ -22,13 +22,13 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         return val <= threshold ? 0 : 65535;
     }
 
-    private static int maskRGB(int val, int threshold) {
+    private static int maskRGB(int val, int threshold, int maskedVal) {
         int r = (val >> 16) & 0xFF;
         int g = (val >> 8) & 0xFF;
         int b = (val & 0xFF);
 
-        if (val != -16777216 && r <= threshold && g <= threshold && b <= threshold)
-            return -16777216; // alpha mask
+        if (val != maskedVal && r <= threshold && g <= threshold && b <= threshold)
+            return maskedVal;
         else
             return val;
     }
@@ -111,13 +111,17 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         };
     }
 
-    static ColorTransformation mask(int threshold) {
+    public static ColorTransformation mask(int threshold) {
+        return mask(threshold, -16777216);
+    }
+
+    public static ColorTransformation mask(int threshold, int maskedVal) {
         return new ColorTransformation(pt -> pt) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return maskRGB(pv, threshold);
+                        return maskRGB(pv, threshold, maskedVal);
                     case GRAY8:
                     case GRAY16:
                         return maskGray(pv, threshold);

@@ -65,7 +65,7 @@ public class ImageArrayUtils {
                 imagePlus = readTiffToImagePlus(title, stream);
                 break;
             default:
-                throw new IllegalArgumentException("Image must be in PNG or TIFF format");
+                throw new IllegalArgumentException("Image '" + name + "' must be in PNG or TIFF format");
         }
         try {
             return fromImagePlus(imagePlus);

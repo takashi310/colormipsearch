@@ -1,213 +1,98 @@
 package org.janelia.colormipsearch.api;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
+import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
+import org.janelia.colormipsearch.api.imageprocessing.LImage;
+import org.janelia.colormipsearch.api.imageprocessing.LImageUtils;
 
-public class ColorMIPMaskCompare {
+public class LImageColorMIPMaskCompare {
 
-    private final ImageArray m_query;
-    private final ImageArray m_negquery;
-    private final int[] m_mask;
-    private final int[] m_negmask;
-    private final int[][] m_tarmasklist;
-    private final int[][] m_tarmasklist_mirror;
-    private final int[][] m_tarnegmasklist;
-    private final int[][] m_tarnegmasklist_mirror;
-    private final int m_th;
+    private static final int MASKED_PIXEL = -16777216;
+
+    private final LImage maskImage;
+    private final int maskSize;
+    private final ImageTransformation[] xyShifts;
+    private final int dataThreshold;
     private final double m_pixfludub;
 
     // Advanced Search
-    public ColorMIPMaskCompare(ImageArray query, int mask_th, boolean mirror_mask,
-                               ImageArray negquery, int negmask_th,
-                               boolean mirror_negmask, int search_th, double toleranceZ, int xyshift) {
-        m_query = query;
-        m_negquery = negquery;
-
-        m_mask = get_mskpos_array(m_query, mask_th);
-        if (m_negquery != null) {
-            m_negmask = get_mskpos_array(m_negquery, negmask_th);
-        } else {
-            m_negmask = null;
-        }
-        m_th = search_th;
-        m_pixfludub = toleranceZ;
+    public LImageColorMIPMaskCompare(ImageArray query, int maskThreshold, boolean mirrorMask,
+                                     ImageArray negQuery, int negMaskThreshold, boolean negMirrorMask,
+                                     int searchThreshold, double toleranceZ, int xyshift) {
+        this.maskImage = LImageUtils.create(query).map(ColorTransformation.mask(maskThreshold, MASKED_PIXEL));
+        this.maskSize = maskImage.fold(0, (p, s) -> p != MASKED_PIXEL ? s + 1 : s);
+        this.dataThreshold = searchThreshold;
+        this.m_pixfludub = toleranceZ;
 
         // shifting
-        m_tarmasklist = generate_shifted_masks(m_mask, xyshift, query.width, query.height);
-        if (m_negquery != null) {
-            m_tarnegmasklist = generate_shifted_masks(m_negmask, xyshift, query.width, query.height);
-        } else {
-            m_tarnegmasklist = null;
-        }
-
-        // mirroring
-        if (mirror_mask) {
-            m_tarmasklist_mirror = new int[1 + (xyshift / 2) * 8][];
-            for (int i = 0; i < m_tarmasklist.length; i++)
-                m_tarmasklist_mirror[i] = mirror_mask(m_tarmasklist[i], query.width);
-        } else {
-            m_tarmasklist_mirror = null;
-        }
-        if (mirror_negmask && m_negquery != null) {
-            m_tarnegmasklist_mirror = new int[1 + (xyshift / 2) * 8][];
-            for (int i = 0; i < m_tarnegmasklist.length; i++)
-                m_tarnegmasklist_mirror[i] = mirror_mask(m_tarnegmasklist[i], query.width);
-        } else {
-            m_tarnegmasklist_mirror = null;
-        }
+        xyShifts = generateShiftTransformations(xyshift, mirrorMask);
     }
 
-    public ColorMIPCompareOutput runSearch(ImageArray tarimg_in) {
+    public ColorMIPCompareOutput runSearch(ImageArray targetImageArray) {
         int posi = 0;
         double posipersent = 0.0;
-        int masksize = m_mask.length;
-        int negmasksize = m_negquery != null ? m_negmask.length : 0;
 
-        for (int[] ints : m_tarmasklist) {
-            int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub);
-            if (tmpposi > posi) {
-                posi = tmpposi;
-                posipersent = (double) posi / (double) masksize;
-            }
-        }
-        if (m_tarnegmasklist != null) {
-            int nega = 0;
-            double negapersent = 0.0;
-            for (int[] ints : m_tarnegmasklist) {
-                int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub);
-                if (tmpnega > nega) {
-                    nega = tmpnega;
-                    negapersent = (double) nega / (double) negmasksize;
-                }
-            }
-            posipersent -= negapersent;
-            posi = (int) Math.round((double) posi - (double) nega * ((double) masksize / (double) negmasksize));
-        }
+        LImage targetImage = LImageUtils.create(targetImageArray);
+        BiFunction<Supplier<Integer>, Supplier<Integer>, Integer> op = (p1s, p2s) -> {
+            int pix1 = p1s.get();
+            if (pix1 != MASKED_PIXEL) {
+                int red1 = (pix1 >>> 16) & 0xff;
+                int green1 = (pix1 >>> 8) & 0xff;
+                int blue1 = pix1 & 0xff;
 
-        if (m_tarmasklist_mirror != null) {
-            int mirror_posi = 0;
-            double mirror_posipersent = 0.0;
-            for (int[] ints : m_tarmasklist_mirror) {
-                int tmpposi = calc_score(m_query, m_mask, tarimg_in, ints, m_th, m_pixfludub);
-                if (tmpposi > mirror_posi) {
-                    mirror_posi = tmpposi;
-                    mirror_posipersent = (double) mirror_posi / (double) masksize;
-                }
-            }
-            if (m_tarnegmasklist_mirror != null) {
-                int nega = 0;
-                double negapersent = 0.0;
-                for (int[] ints : m_tarnegmasklist_mirror) {
-                    int tmpnega = calc_score(m_negquery, m_negmask, tarimg_in, ints, m_th, m_pixfludub);
-                    if (tmpnega > nega) {
-                        nega = tmpnega;
-                        negapersent = (double) nega / (double) negmasksize;
+                int pix2 = p2s.get();
+                int red2 = (pix2 >>> 16) & 0xff;
+                int green2 = (pix2 >>> 8) & 0xff;
+                int blue2 = pix2 & 0xff;
+                if (red2 > dataThreshold || green2 > dataThreshold || blue2 > dataThreshold) {
+                    double pxGap = calculatePixelScore(red1, green1, blue1, red2, green2, blue2);
+                    if (pxGap <= m_pixfludub) {
+                        return 1;
                     }
                 }
-                mirror_posipersent -= negapersent;
-                mirror_posi = (int) Math.round((double) mirror_posi - (double) nega * ((double) masksize / (double) negmasksize));
             }
-            if (posipersent < mirror_posipersent) {
-                posi = mirror_posi;
-                posipersent = mirror_posipersent;
+            return 0;
+        };
+        for (ImageTransformation xyShiftTransformation : xyShifts) {
+            int tmpposi = LImageUtils.lazyCombine2(maskImage, targetImage.mapi(xyShiftTransformation), op)
+                    .fold(0, (p, s) -> s + p);
+            if (tmpposi > posi) {
+                posi = tmpposi;
+                posipersent = (double) posi / (double) maskSize;
             }
         }
 
         return new ColorMIPCompareOutput(posi, posipersent);
     }
 
-    private int[] get_mskpos_array(ImageArray msk, int thresm) {
-        int sumpx = msk.getPixelCount();
-        List<Integer> pos = new ArrayList<>();
-        int pix, red, green, blue;
-        for (int n4 = 0; n4 < sumpx; n4++) {
+    private ImageTransformation[] generateShiftTransformations(int xyshift, boolean withMirrors) {
+        int nShifts = 1 + (xyshift / 2) * 8;
+        ImageTransformation[] imageShifts = new ImageTransformation[withMirrors ? nShifts * 2 : nShifts];
 
-            pix = msk.get(n4);//Mask
-
-            red = (pix >>> 16) & 0xff;//mask
-            green = (pix >>> 8) & 0xff;//mask
-            blue = pix & 0xff;//mask
-
-            if (red > thresm || green > thresm || blue > thresm)
-                pos.add(n4);
-        }
-        return pos.stream().mapToInt(i -> i).toArray();
-    }
-
-    private int[] shift_mskpos_array(int[] src, int xshift, int yshift, int imageWidth, int imageHeight) {
-        List<Integer> pos = new ArrayList<>();
-        int x, y;
-        for (int i = 0; i < src.length; i++) {
-            int val = src[i];
-            x = (val % imageWidth) + xshift;
-            y = val / imageWidth + yshift;
-            if (x >= 0 && x < imageWidth && y >= 0 && y < imageHeight)
-                pos.add(y * imageWidth + x);
-            else
-                pos.add(-1);
-        }
-        return pos.stream().mapToInt(i -> i).toArray();
-    }
-
-    private int[][] generate_shifted_masks(int[] in, int xyshift, int w, int h) {
-        int[][] out = new int[1 + (xyshift / 2) * 8][];
-
-        out[0] = in.clone();
-        int maskid = 1;
+        imageShifts[0] = ImageTransformation.identity();
+        int index = 1;
         for (int i = 2; i <= xyshift; i += 2) {
             for (int xx = -i; xx <= i; xx += i) {
                 for (int yy = -i; yy <= i; yy += i) {
                     if (xx == 0 && yy == 0) continue;
-                    out[maskid] = shift_mskpos_array(in, xx, yy, w, h);
-                    maskid++;
+                    imageShifts[index] = ImageTransformation.shift(xx, yy);
+                    index++;
                 }
             }
         }
-        return out;
-    }
-
-    private int[] mirror_mask(int[] in, int ypitch) {
-        int[] out = in.clone();
-        int masksize = in.length;
-        int x;
-        for (int j = 0; j < masksize; j++) {
-            int val = in[j];
-            x = val % ypitch;
-            out[j] = val + (ypitch - 1) - 2 * x;
-        }
-        return out;
-    }
-
-    private int calc_score(ImageArray src, int[] srcmaskposi, ImageArray tar, int[] tarmaskposi, int th, double pixfludub) {
-        int masksize = srcmaskposi.length <= tarmaskposi.length ? srcmaskposi.length : tarmaskposi.length;
-        int posi = 0;
-        for (int masksig = 0; masksig < masksize; masksig++) {
-
-            if (srcmaskposi[masksig] == -1 || tarmaskposi[masksig] == -1) continue;
-
-            int pix1 = src.get(srcmaskposi[masksig]);
-            int red1 = (pix1 >>> 16) & 0xff;
-            int green1 = (pix1 >>> 8) & 0xff;
-            int blue1 = pix1 & 0xff;
-
-            int pix2 = tar.get(tarmaskposi[masksig]);
-            int red2 = (pix2 >>> 16) & 0xff;
-            int green2 = (pix2 >>> 8) & 0xff;
-            int blue2 = pix2 & 0xff;
-
-            if (red2 > th || green2 > th || blue2 > th) {
-                double pxGap = calc_score_px(red1, green1, blue1, red2, green2, blue2);
-                if (pxGap <= pixfludub) {
-                    posi++;
-                }
+        if (withMirrors) {
+            for (int i = 0; i < nShifts; i++) {
+                imageShifts[nShifts + i] = imageShifts[i].extend(ImageTransformation.horizontalMirror());
             }
         }
-        return posi;
+        return imageShifts;
     }
 
-    private double calc_score_px(int red1, int green1, int blue1, int red2, int green2, int blue2) {
+    private double calculatePixelScore(int red1, int green1, int blue1, int red2, int green2, int blue2) {
         int RG1 = 0;
         int BG1 = 0;
         int GR1 = 0;
