@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
 import org.slf4j.Logger;
@@ -95,7 +96,7 @@ public class MIPsUtils {
     @Nullable
     private static MIPInfo getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
         Path mipParentPath = mipPath.getParent();
-        String mipFilenameWithoutExtension = StringUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", "");
+        String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", "");
         List<Path> transformedMIPPaths;
         if (mipParentPath == null) {
             transformedMIPPaths = Arrays.asList(
@@ -227,7 +228,7 @@ public class MIPsUtils {
 
     @Nullable
     private static MIPInfo getTransformedMIPInfoFromZipEntry(String transformedMIPLocation, String mipEntryName, String transformationLookupSuffix) {
-        String transformedMIPFilename = StringUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
+        String transformedMIPFilename = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
         Path transformedMIPEntryPath = Paths.get(transformedMIPFilename);
         int nComponents = transformedMIPEntryPath.getNameCount();
         String transformedMIPEntryName = IntStream.range(0, nComponents)

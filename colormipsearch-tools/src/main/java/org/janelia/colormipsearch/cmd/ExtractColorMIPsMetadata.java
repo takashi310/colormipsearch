@@ -51,6 +51,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -639,9 +640,9 @@ public class ExtractColorMIPsMetadata {
             indexingField = cdmipMetadata.getAttr("Body Id");
             Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+_([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
             segmentedImageMatcher = p -> {
-                String fn = StringUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
+                String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
                 Preconditions.checkArgument(fn.contains(indexingField));
-                String cmFN = StringUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
+                String cmFN = RegExUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
                 String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
                 String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
                 return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||

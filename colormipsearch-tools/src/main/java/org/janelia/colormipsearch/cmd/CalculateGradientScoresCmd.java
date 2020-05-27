@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.GradientAreaGapUtils;
@@ -262,7 +263,7 @@ class CalculateGradientScoresCmd {
     }
 
     private String extractPublishingNameCandidateFromImageName(String imageName) {
-        String fn = StringUtils.replacePattern(new File(imageName).getName(), "\\.\\D*$", "");
+        String fn = RegExUtils.replacePattern(new File(imageName).getName(), "\\.\\D*$", "");
         int sepIndex = fn.indexOf('_');
         return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
