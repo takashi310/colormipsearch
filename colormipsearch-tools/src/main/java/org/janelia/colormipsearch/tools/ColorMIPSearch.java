@@ -5,7 +5,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
 import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
+import org.janelia.colormipsearch.api.LImageColorMIPMaskCompare;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +58,7 @@ public class ColorMIPSearch implements Serializable {
             LOG.debug("Compare library file {} with mask {}", libraryMIPImage,  maskMIPImage);
             double pixfludub = pixColorFluctuation / 100;
 
-            final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
+            final LImageColorMIPMaskCompare cc = new LImageColorMIPMaskCompare(
                     maskMIPImage.imageArray,
                     maskThreshold,
                     mirrorMask,
@@ -67,15 +69,15 @@ public class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage.imageArray);
+            ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(libraryMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
-            boolean isMatch = output.getMatchingPct() > pixThresdub;
+            boolean isMatch = colorMIPCompareOutput.getMatchingPct() > pixThresdub;
 
             return new ColorMIPSearchResult(
                     maskMIPImage.mipInfo,
                     libraryMIPImage.mipInfo,
-                    output.getMatchingPixNum(), output.getMatchingPct(), isMatch, false);
+                    colorMIPCompareOutput.getMatchingPixNum(), colorMIPCompareOutput.getMatchingPct(), isMatch, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", libraryMIPImage,  maskMIPImage, e);
             return new ColorMIPSearchResult(
