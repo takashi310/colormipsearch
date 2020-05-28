@@ -6,7 +6,10 @@ import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 import ij.ImagePlus;
+import ij.io.FileInfo;
 import ij.io.Opener;
+import ij.io.RandomAccessStream;
+import ij.io.TiffDecoder;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -93,6 +96,56 @@ public class ImageArrayUtils {
 
     private static ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
         return new Opener().openTiff(stream, title);
+    }
+
+    static ImagePlus readPackBits(String title, int endPos, InputStream stream) throws Exception {
+        RandomAccessStream ras = new RandomAccessStream(stream);
+        TiffDecoder tiffDecoder = new TiffDecoder(ras, title);
+        FileInfo[] imageFileInfo = tiffDecoder.getTiffInfo();
+        long fioffset = imageFileInfo[0].getOffset();
+        int ioffset = 0;
+        byte[] impxs = new byte[imageFileInfo[0].width * imageFileInfo[0].height * imageFileInfo[0].getBytesPerPixel()];
+        for (int i=0; i < imageFileInfo[0].stripOffsets.length; i++) {
+            ras.seek(fioffset + (long)imageFileInfo[0].stripOffsets[i]);
+            byte[] byteArray = new byte[imageFileInfo[0].stripLengths[i]];
+            int read = 0, left = byteArray.length;
+            while (left > 0) {
+                int r = ras.read(byteArray, read, left);
+                if (r == -1) break;
+                read += r;
+                left -= r;
+            }
+            ioffset = packBitsUncompress(byteArray, impxs, ioffset, endPos);
+            if (ioffset >= endPos) {
+                break;
+            }
+        }
+        return null;
+    }
+
+    public static int packBitsUncompress(byte[] input, byte[] output, int offset, int endPos) {
+        int index = 0;
+        int pos = offset;
+        while (pos < endPos && pos < output.length && index < input.length) {
+            byte n = input[index++];
+            if (n >= 0) { // 0 <= n <= 127
+                int buflen = Math.max(Math.min(n+1, input.length - (index + n + 1)), 0);
+                byte[] b = new byte[buflen];
+                for (int i = 0; i < buflen; i++) b[i] = input[index++];
+                System.arraycopy(b, 0, output, pos, b.length);
+                pos += b.length;
+                b = null;
+            } else if (n != -128) { // -127 <= n <= -1
+                int len = -n + 1;
+                if (index < input.length) {
+                    byte inp = input[index++];
+                    for (int i = 0; i < len; i++) output[pos++] = inp;
+                } else {
+                    System.out.println();
+                }
+            }
+        }
+        return pos;
     }
 
     public static ImageProcessor toImageProcessor(ImageArray imageArray) {

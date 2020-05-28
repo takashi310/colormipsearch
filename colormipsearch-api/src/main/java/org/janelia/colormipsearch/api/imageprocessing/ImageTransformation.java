@@ -143,12 +143,12 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation shift(int xshift, int yshift) {
+    public static ImageTransformation translate(int xshift, int yshift) {
         return new ImageTransformation() {
             @Override
             protected int apply(LImage lImage, int x, int y) {
-                int ax = x + xshift;
-                int ay = y + yshift;
+                int ax = x - xshift;
+                int ay = y - yshift;
                 if (ax >= 0 && ax < lImage.width() && ay >= 0 && ay < lImage.height()) {
                     return lImage.get(ax, ay);
                 } else {

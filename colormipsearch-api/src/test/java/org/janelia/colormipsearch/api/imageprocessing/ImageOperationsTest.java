@@ -68,6 +68,21 @@ public class ImageOperationsTest {
     }
 
     @Test
+    public void translateXY() {
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
+
+        int xOffset = 20;
+        int yOffset = 50;
+        testImage.getProcessor().translate(xOffset, yOffset);
+        ImageArray shiftedTestMIP = LImageUtils.create(testMIP)
+                .mapi(ImageTransformation.translate(xOffset, yOffset))
+                .toImageArray();
+
+        Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), shiftedTestMIP.pixels);
+    }
+
+    @Test
     public void maxFilterForBinary8Image() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
 
