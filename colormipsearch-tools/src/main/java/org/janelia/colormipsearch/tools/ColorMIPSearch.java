@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
 import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +51,10 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorMIPSearchResult runImageComparison(MIPImage libraryMIPImage, MIPImage maskMIPImage) {
+    public ColorMIPSearchResult runImageComparison(MIPImage searchedMIPImage, MIPImage maskMIPImage) {
         long startTime = System.currentTimeMillis();
         try {
-            LOG.debug("Compare library file {} with mask {}", libraryMIPImage,  maskMIPImage);
+            LOG.debug("Compare image file {} with mask {}", searchedMIPImage,  maskMIPImage);
             double pixfludub = pixColorFluctuation / 100;
 
             final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
@@ -67,23 +68,23 @@ public class ColorMIPSearch implements Serializable {
                     pixfludub,
                     xyShift
             );
-            ColorMIPMaskCompare.Output output = cc.runSearch(libraryMIPImage.imageArray);
+            ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(searchedMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
-            boolean isMatch = output.getMatchingPct() > pixThresdub;
+            boolean isMatch = colorMIPCompareOutput.getMatchingPct() > pixThresdub;
 
             return new ColorMIPSearchResult(
                     maskMIPImage.mipInfo,
-                    libraryMIPImage.mipInfo,
-                    output.getMatchingPixNum(), output.getMatchingPct(), isMatch, false);
+                    searchedMIPImage.mipInfo,
+                    colorMIPCompareOutput.getMatchingPixNum(), colorMIPCompareOutput.getMatchingPct(), isMatch, false);
         } catch (Throwable e) {
-            LOG.warn("Error comparing library file {} with mask {}", libraryMIPImage,  maskMIPImage, e);
+            LOG.warn("Error comparing library file {} with mask {}", searchedMIPImage,  maskMIPImage, e);
             return new ColorMIPSearchResult(
                     maskMIPImage != null ? maskMIPImage.mipInfo : null,
-                    libraryMIPImage != null ? libraryMIPImage.mipInfo : null,
+                    searchedMIPImage != null ? searchedMIPImage.mipInfo : null,
                     0, 0, false, true);
         } finally {
-            LOG.debug("Completed comparing library file {} with mask {} in {}ms", libraryMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);
+            LOG.debug("Completed comparing library file {} with mask {} in {}ms", searchedMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);
         }
     }
 

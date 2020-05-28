@@ -137,7 +137,7 @@ public abstract class ImageTransformation {
     public static ImageTransformation horizontalMirror() {
         return new ImageTransformation() {
             @Override
-            int apply(LImage lImage, int x, int y) {
+            protected int apply(LImage lImage, int x, int y) {
                 return lImage.get(lImage.width() - x - 1, y);
             }
         };
@@ -181,7 +181,7 @@ public abstract class ImageTransformation {
         return new ImageTransformation() {
 
             @Override
-            int apply(LImage lImage, int x, int y) {
+            protected int apply(LImage lImage, int x, int y) {
                 return IntStream.range(0, kHeight)
                         .filter(h -> {
                             int ay = y + h - kRadius;
@@ -220,7 +220,7 @@ public abstract class ImageTransformation {
             }
 
             @Override
-            int apply(LImage lImage, int x, int y) {
+            protected int apply(LImage lImage, int x, int y) {
                 MaxFilterContext maxFilterContext;
                 String maxFilterContextEntry = "maxFilter-" + this.hashCode();
                 if (lImage.getProcessingContext(maxFilterContextEntry) == null) {
@@ -400,7 +400,7 @@ public abstract class ImageTransformation {
         ImageTransformation currentTransformation = this;
         return new ImageTransformation(pixelTypeChange.andThen(colorTransformation.pixelTypeChange)) {
             @Override
-            int apply(LImage lImage, int x, int y) {
+            protected int apply(LImage lImage, int x, int y) {
                 int p = currentTransformation.apply(lImage, x, y);
                 ImageType pt = currentTransformation.pixelTypeChange.apply(lImage.getPixelType());
                 return colorTransformation.apply(pt, p);
@@ -408,5 +408,5 @@ public abstract class ImageTransformation {
         };
     }
 
-    abstract int apply(LImage lImage, int x, int y);
+    protected abstract int apply(LImage lImage, int x, int y);
 }

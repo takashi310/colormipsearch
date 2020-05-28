@@ -183,8 +183,14 @@ public class MIPInfo implements Serializable {
             }
         } else {
             Path imageFilePath = Paths.get(imagePath);
-            return Files.exists(imageFilePath) ||
-                    StringUtils.isNotBlank(archivePath) && Files.exists(Paths.get(archivePath).resolve(imageFilePath));
+            if (Files.exists(imageFilePath)) {
+                return imageFilePath.toFile().length() > 0L;
+            } else if (StringUtils.isNotBlank(archivePath)) {
+                Path fullImageFilePath = Paths.get(archivePath).resolve(imageFilePath);
+                return Files.exists(fullImageFilePath) && fullImageFilePath.toFile().length() > 0;
+            } else {
+                return false;
+            }
         }
     }
 

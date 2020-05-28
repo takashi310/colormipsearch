@@ -6,7 +6,10 @@ import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 import ij.ImagePlus;
+import ij.io.FileInfo;
 import ij.io.Opener;
+import ij.io.RandomAccessStream;
+import ij.io.TiffDecoder;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -65,7 +68,7 @@ public class ImageArrayUtils {
                 imagePlus = readTiffToImagePlus(title, stream);
                 break;
             default:
-                throw new IllegalArgumentException("Image must be in PNG or TIFF format");
+                throw new IllegalArgumentException("Image '" + name + "' must be in PNG or TIFF format");
         }
         try {
             return fromImagePlus(imagePlus);

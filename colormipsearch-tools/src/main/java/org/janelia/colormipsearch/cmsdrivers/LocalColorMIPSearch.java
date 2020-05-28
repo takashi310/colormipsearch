@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);
+    private static final long _1M = 1024 * 1024;
 
     private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
@@ -56,8 +57,10 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        LOG.info("Submitted all {} color depth searches for {} masks with {} libraries in {}s",
-                allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+        LOG.info("Submitted all {} color depth searches for {} masks with {} libraries in {}s - memory usage {}M",
+                allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(),
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
 
         List<ColorMIPSearchResult> allSearchResults = CompletableFuture.allOf(allColorDepthSearches.toArray(new CompletableFuture<?>[0]))
                 .thenApply(ignoredVoidResult -> allColorDepthSearches.stream()
@@ -65,7 +68,9 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         .collect(Collectors.toList()))
                 .join();
 
-        LOG.info("Finished all color depth searches {} masks with {} libraries in {}s", maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000);
+        LOG.info("Finished all color depth searches {} masks with {} libraries in {}s - memory usage {}M",
+                maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         return allSearchResults;
     }
 
@@ -88,7 +93,8 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing mask# {} - {} with {} out of {} libraries in {}ms", srs.size(), mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size(), System.currentTimeMillis() - startTime);
+                        LOG.info("Found {} results with matches comparing mask# {} - {} with {} out of {} libraries in {}ms",
+                                srs.size(), mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size(), System.currentTimeMillis() - startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);

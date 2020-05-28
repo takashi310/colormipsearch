@@ -14,8 +14,8 @@
         <jaxrs.jersey.version>2.29.1</jaxrs.jersey.version>
         <scopes.provided>provided</scopes.provided>
         <spark.version>2.3.1</spark.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>14</maven.compiler.source>
+        <maven.compiler.target>14</maven.compiler.target>
         <jackson.version>2.10.1</jackson.version>
     </properties>
 
@@ -98,12 +98,12 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.3.2</version>
+                <version>3.9</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
-                <version>4.1</version>
+                <version>4.2</version>
             </dependency>
             <dependency>
                 <groupId>net.jodah</groupId>
