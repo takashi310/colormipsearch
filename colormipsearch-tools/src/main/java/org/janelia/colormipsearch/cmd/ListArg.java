@@ -6,6 +6,7 @@ import java.util.List;
 import com.beust.jcommander.IStringConverter;
 import com.google.common.base.Splitter;
 
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 
 class ListArg {
@@ -61,7 +62,7 @@ class ListArg {
     }
 
     String listArgName() {
-        String fn = StringUtils.removePattern(new File(input).getName(), "\\..*");
+        String fn = RegExUtils.removePattern(new File(input).getName(), "\\..*");
         if (length > 0) {
             return fn + "_" + Math.max(offset, 0) + "_" + length;
         } else {
