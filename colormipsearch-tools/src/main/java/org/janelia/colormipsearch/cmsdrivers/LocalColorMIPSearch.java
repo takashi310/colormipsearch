@@ -59,7 +59,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
         LOG.info("Submitted all {} color depth searches for {} masks with {} libraries in {}s - memory usage {}M",
                 allColorDepthSearches.size(), maskMIPS.size(), libraryMIPS.size(),
-                (System.currentTimeMillis() - startTime) / 1000,
+                (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
 
         List<ColorMIPSearchResult> allSearchResults = CompletableFuture.allOf(allColorDepthSearches.toArray(new CompletableFuture<?>[0]))
@@ -69,7 +69,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                 .join();
 
         LOG.info("Finished all color depth searches {} masks with {} libraries in {}s - memory usage {}M",
-                maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000,
+                maskMIPS.size(), libraryMIPS.size(), (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         return allSearchResults;
     }
