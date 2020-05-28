@@ -143,21 +143,6 @@ public abstract class ImageTransformation {
         };
     }
 
-    public static ImageTransformation translate(int xshift, int yshift) {
-        return new ImageTransformation() {
-            @Override
-            protected int apply(LImage lImage, int x, int y) {
-                int ax = x - xshift;
-                int ay = y - yshift;
-                if (ax >= 0 && ax < lImage.width() && ay >= 0 && ay < lImage.height()) {
-                    return lImage.get(ax, ay);
-                } else {
-                    return 0;
-                }
-            }
-        };
-    }
-
     public static ImageTransformation clearRegion(BiPredicate<Integer, Integer> regionDefnPredicate) {
         return new ImageTransformation() {
             @Override
