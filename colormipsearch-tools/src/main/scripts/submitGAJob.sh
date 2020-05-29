@@ -33,7 +33,8 @@ function runGAJob {
     MIPS_CACHE_SIZE=${MIPS_CACHE_SIZE:-200000}
     MIPS_CACHE_EXPIRATION=${MIPS_CACHE_EXPIRATION:-60}
 
-    cmd="${JAVA_HOME}/bin/java ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
+    JAVA_EXEC=${JAVA_EXEC:java}
+    cmd="${JAVA_EXEC} ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
         --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         gradientScore \
