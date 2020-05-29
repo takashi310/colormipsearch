@@ -50,7 +50,7 @@ function runCDSJob {
         -od ${CDSMATCHES_RESULTS_DIR} \
         $*"
 
-    echo "Running on ($hostname): ${cmd}"
+    echo "Running on $HOSTNAME: ${cmd}"
     ($cmd)
 }
 

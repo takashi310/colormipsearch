@@ -50,9 +50,8 @@ function runGAJob {
         -od ${CDGA_OUTPUT_PARAM} \
         $*"
 
-    echo "Running on ($hostname): ${cmd}"
+    echo "Running on $HOSTNAME: ${cmd}"
     ($cmd)
-
 }
 
 CDGA_INPUT_DIR=${CDGA_INPUT_DIR:-$1}
