@@ -4,7 +4,7 @@ public class ColorMIPCompareOutput {
     private final int matchingPixNum;
     private final double matchingPct;
 
-    ColorMIPCompareOutput(int pixnum, double pct) {
+    public ColorMIPCompareOutput(int pixnum, double pct) {
         matchingPixNum = pixnum;
         matchingPct = pct;
     }

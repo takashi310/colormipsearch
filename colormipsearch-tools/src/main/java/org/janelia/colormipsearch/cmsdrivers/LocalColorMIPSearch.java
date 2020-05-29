@@ -10,6 +10,8 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
+import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
+import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
 import org.janelia.colormipsearch.tools.CachedMIPsUtils;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
@@ -76,6 +78,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPInfo maskMIP, List<MIPInfo> libraryMIPs) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
+        ColorMIPMaskCompare maskComparator = colorMIPSearch.createMaskComparator(maskImage);
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
                 .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
@@ -85,11 +88,22 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 .filter(MIPInfo::exists)
                                 .map(libraryMIP -> {
                                     MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
-                                    ColorMIPSearchResult sr = colorMIPSearch.runImageComparison(libraryImage, maskImage);
-                                    if (sr.isError()) {
-                                        LOG.warn("Errors encountered comparing {} with {}", libraryMIP, maskMIP);
+                                    ColorMIPCompareOutput sr = colorMIPSearch.runImageComparison(maskComparator, libraryImage);
+                                    if (colorMIPSearch.isMatch(sr)) {
+                                        return new ColorMIPSearchResult(
+                                                maskMIP,
+                                                libraryMIP,
+                                                sr.getMatchingPixNum(),
+                                                sr.getMatchingPct(),
+                                                true,
+                                                false
+                                        );
+                                    } else {
+                                        return new ColorMIPSearchResult(
+                                                maskMIP,
+                                                libraryMIP,
+                                                0, 0, false, false);
                                     }
-                                    return sr;
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());

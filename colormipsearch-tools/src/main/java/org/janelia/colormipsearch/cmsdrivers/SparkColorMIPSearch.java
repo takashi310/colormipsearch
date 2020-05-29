@@ -64,7 +64,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(lmPair -> colorMIPSearch.runImageComparison(lmPair._1, maskMIP))
                                     .filter(srByMask -> srByMask.isMatch() || srByMask.isError())
-                                    .sorted(colorMIPSearch.getColorMIPSearchComparator())
+                                    .sorted(colorMIPSearch.getColorMIPSearchResultComparator())
                                     .collect(Collectors.toList());
                             return new Tuple2<>(mls._1, srsByMask);
                         })

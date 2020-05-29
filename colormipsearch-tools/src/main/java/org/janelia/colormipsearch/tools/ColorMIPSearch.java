@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
 import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
+import org.janelia.colormipsearch.api.ArrayColorMIPMaskCompare;
+import org.janelia.colormipsearch.api.ColorMIPMaskCompareFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,23 +53,42 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
+    public ColorMIPMaskCompare createMaskComparator(MIPImage maskMIPImage) {
+        double zTolerance = pixColorFluctuation == null ? 0. : pixColorFluctuation / 100;
+        return ColorMIPMaskCompareFactory.createMaskComparator(
+                maskMIPImage.getImageArray(),
+                maskThreshold,
+                mirrorMask,
+                dataThreshold,
+                zTolerance,
+                xyShift
+        );
+    }
+
+    public ColorMIPCompareOutput runImageComparison(ColorMIPMaskCompare maskComparator, MIPImage searchedMIPImage) {
+        long startTime = System.currentTimeMillis();
+        try {
+            LOG.debug("Compare image file {}", searchedMIPImage);
+            return maskComparator.runSearch(searchedMIPImage.imageArray);
+        } catch (Throwable e) {
+            LOG.warn("Error comparing image file {}", searchedMIPImage, e);
+            return new ColorMIPCompareOutput(0, 0);
+        } finally {
+            LOG.debug("Completed comparing image file {}in {}ms", searchedMIPImage,  System.currentTimeMillis() - startTime);
+        }
+    }
+
+    public boolean isMatch(ColorMIPCompareOutput colorMIPCompareOutput) {
+        double pixThresdub = pctPositivePixels / 100;
+        double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
+        return colorMIPCompareOutput.getMatchingPct() > pixMatchRatioThreshold;
+    }
+
     public ColorMIPSearchResult runImageComparison(MIPImage searchedMIPImage, MIPImage maskMIPImage) {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare image file {} with mask {}", searchedMIPImage,  maskMIPImage);
-            double pixfludub = pixColorFluctuation / 100;
-
-            final ColorMIPMaskCompare cc = new ColorMIPMaskCompare(
-                    maskMIPImage.imageArray,
-                    maskThreshold,
-                    mirrorMask,
-                    null,
-                    0,
-                    mirrorMask,
-                    dataThreshold,
-                    pixfludub,
-                    xyShift
-            );
+            ColorMIPMaskCompare cc = createMaskComparator(maskMIPImage);
             ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(searchedMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
@@ -88,7 +109,7 @@ public class ColorMIPSearch implements Serializable {
         }
     }
 
-    public Comparator<ColorMIPSearchResult> getColorMIPSearchComparator() {
+    public Comparator<ColorMIPSearchResult> getColorMIPSearchResultComparator() {
         return Comparator.comparingInt(ColorMIPSearchResult::getMatchingPixels).reversed();
     }
 
