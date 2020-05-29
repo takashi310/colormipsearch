@@ -29,7 +29,7 @@ function runCDSJob {
     MIPS_CACHE_SIZE=${MIPS_CACHE_SIZE:-200000}
     MIPS_CACHE_EXPIRATION=${MIPS_CACHE_EXPIRATION:-60}
 
-    cmd="java ${MEM_OPTS} ${LOG_OPTS} \
+    cmd="${JAVA_HOME}/bin/java ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
         -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
         --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         searchFromJSON \
@@ -50,7 +50,7 @@ function runCDSJob {
         -od ${CDSMATCHES_RESULTS_DIR} \
         $*"
 
-    echo "${cmd}"
+    echo "Running on ($hostname): ${cmd}"
     ($cmd)
 }
 
