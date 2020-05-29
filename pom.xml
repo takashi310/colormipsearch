@@ -14,9 +14,10 @@
         <jaxrs.jersey.version>2.29.1</jaxrs.jersey.version>
         <scopes.provided>provided</scopes.provided>
         <spark.version>2.3.1</spark.version>
-        <maven.compiler.source>14</maven.compiler.source>
-        <maven.compiler.target>14</maven.compiler.target>
-        <jackson.version>2.10.1</jackson.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <jackson.version>2.10.4</jackson.version>
+        <slf4j.version>1.7.29</slf4j.version>
     </properties>
 
     <profiles>
@@ -45,12 +46,12 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
@@ -68,6 +69,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
 
@@ -113,7 +120,7 @@
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>1.72</version>
+                <version>1.78</version>
             </dependency>
 
             <!-- Spark -->
@@ -146,7 +153,7 @@
             <dependency>
                 <groupId>net.imagej</groupId>
                 <artifactId>ij</artifactId>
-                <version>1.52s</version>
+                <version>1.53a</version>
             </dependency>
 
             <!-- Testing -->
@@ -161,6 +168,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

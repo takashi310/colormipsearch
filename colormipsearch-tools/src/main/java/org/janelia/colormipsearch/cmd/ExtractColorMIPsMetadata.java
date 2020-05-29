@@ -47,6 +47,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
@@ -55,9 +57,8 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
 import org.janelia.colormipsearch.tools.MIPInfo;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
@@ -830,15 +831,14 @@ public class ExtractColorMIPsMetadata {
             sslContext.init(null, trustManagers, new SecureRandom());
 
             JacksonJsonProvider jsonProvider = new JacksonJaxbJsonProvider()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    ;
 
             return ClientBuilder.newBuilder()
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .readTimeout(0, TimeUnit.SECONDS)
                     .sslContext(sslContext)
                     .hostnameVerifier((s, sslSession) -> true)
-                    .register(JacksonFeature.class)
                     .register(jsonProvider)
                     .build();
         } catch (Exception e) {
@@ -861,8 +861,8 @@ public class ExtractColorMIPsMetadata {
             cmdline.parse(argv);
         } catch (Exception e) {
             StringBuilder sb = new StringBuilder(e.getMessage()).append('\n');
-            cmdline.usage(sb);
-            JCommander.getConsole().println(sb.toString());
+            cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+            cmdline.getConsole().println(sb.toString());
             System.exit(1);
         }
 
@@ -870,12 +870,14 @@ public class ExtractColorMIPsMetadata {
             cmdline.usage();
             System.exit(0);
         } else if (args.displayHelpMessage && StringUtils.isNotBlank(cmdline.getParsedCommand())) {
-            cmdline.usage(cmdline.getParsedCommand());
+            StringBuilder sb = new StringBuilder();
+            cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+            cmdline.getConsole().println(sb.toString());
             System.exit(0);
         } else if (StringUtils.isBlank(cmdline.getParsedCommand())) {
             StringBuilder sb = new StringBuilder("Missing command\n");
-            cmdline.usage(sb);
-            JCommander.getConsole().println(sb.toString());
+            cmdline.getUsageFormatter().usage(sb);
+            cmdline.getConsole().println(sb.toString());
             System.exit(1);
         }
 

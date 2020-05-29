@@ -50,11 +50,11 @@ public class Main {
         } catch (Exception e) {
             StringBuilder sb = new StringBuilder(e.getMessage()).append('\n');
             if (StringUtils.isNotBlank(cmdline.getParsedCommand())) {
-                cmdline.usage(cmdline.getParsedCommand(), sb);
+                cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
             } else {
-                cmdline.usage(sb);
+                cmdline.getUsageFormatter().usage(sb);
             }
-            JCommander.getConsole().println(sb.toString());
+            cmdline.getConsole().println(sb.toString());
             System.exit(1);
         }
 
@@ -62,12 +62,14 @@ public class Main {
             cmdline.usage();
             System.exit(0);
         } else if (commonArgs.displayHelpMessage && StringUtils.isNotBlank(cmdline.getParsedCommand())) {
-            cmdline.usage(cmdline.getParsedCommand());
+            StringBuilder sb = new StringBuilder();
+            cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+            cmdline.getConsole().println(sb.toString());
             System.exit(0);
         } else if (StringUtils.isBlank(cmdline.getParsedCommand())) {
             StringBuilder sb = new StringBuilder("Missing command\n");
-            cmdline.usage(sb);
-            JCommander.getConsole().println(sb.toString());
+            cmdline.getUsageFormatter().usage(sb);
+            cmdline.getConsole().println(sb.toString());
             System.exit(1);
         }
         // initialize the cache
@@ -85,7 +87,8 @@ public class Main {
             case "gradientScore":
                 if (!calculateGradientScoresCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
                 CmdUtils.createOutputDirs(calculateGradientScoresCmd.getArgs().getOutputDir());
@@ -95,7 +98,8 @@ public class Main {
                 if (CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsDirs) &&
                         CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsFiles)) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
                 CmdUtils.createOutputDirs(mergeResultsCmd.getArgs().getOutputDir());
@@ -104,7 +108,8 @@ public class Main {
             case "normalizeGradientScores":
                 if (!normalizeGradientScoresCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
                 CmdUtils.createOutputDirs(normalizeGradientScoresCmd.getArgs().getOutputDir());
@@ -113,7 +118,8 @@ public class Main {
             case "replaceImageURLs":
                 if (!replaceURLsCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
                 CmdUtils.createOutputDirs(replaceURLsCmd.getArgs().getOutputDir());
@@ -122,7 +128,8 @@ public class Main {
             case "gradientScoresFromMatchedResults":
                 if (!updateGradientScoresFromReverseSearchResultsCmd.getArgs().validate()) {
                     StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
                 CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
@@ -130,8 +137,8 @@ public class Main {
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");
-                cmdline.usage(sb);
-                JCommander.getConsole().println(sb.toString());
+                cmdline.getUsageFormatter().usage(sb);
+                cmdline.getConsole().println(sb.toString());
                 System.exit(1);
         }
     }
