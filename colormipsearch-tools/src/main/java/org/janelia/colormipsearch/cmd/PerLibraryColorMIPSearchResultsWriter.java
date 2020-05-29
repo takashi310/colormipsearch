@@ -32,12 +32,17 @@ class PerLibraryColorMIPSearchResultsWriter extends AbstractColorMIPSearchResult
                                 })));
 
         LOG.info("Write {} results by library", srsByLibrary.size());
-        srsByLibrary.forEach((libraryId, srsForCurrentLibrary) -> Failsafe.with(retryPolicy).run(
-                () -> writeSearchResultsToFile(
-                        outputPath == null
-                                ? null
-                                : outputPath.resolve(libraryId + ".json"),
-                        srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList()))));
+        srsByLibrary.entrySet().stream().parallel()
+                .forEach(e -> {
+                    String libraryId = e.getKey();
+                    List<ColorMIPSearchResult> srsForCurrentLibrary = e.getValue();
+                    Failsafe.with(retryPolicy).run(
+                            () -> writeSearchResultsToFile(
+                                    outputPath == null
+                                            ? null
+                                            : outputPath.resolve(libraryId + ".json"),
+                                    srsForCurrentLibrary.stream().map(ColorMIPSearchResult::perLibraryMetadata).collect(Collectors.toList())));
+                });
 
         LOG.info("Finished writing {} results by library", srsByLibrary.size());
     }

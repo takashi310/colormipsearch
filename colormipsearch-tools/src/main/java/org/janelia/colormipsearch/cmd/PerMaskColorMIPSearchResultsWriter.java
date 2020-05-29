@@ -32,12 +32,17 @@ class PerMaskColorMIPSearchResultsWriter extends AbstractColorMIPSearchResultsWr
                                 })));
 
         LOG.info("Write {} results by mask", srsByMasks.size());
-        srsByMasks.forEach((maskId, srsForCurrentMask) -> Failsafe.with(retryPolicy).run(
-                () -> writeSearchResultsToFile(
-                        outputPath == null
-                                ? null
-                                : outputPath.resolve(maskId + ".json"),
-                        srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList()))));
+        srsByMasks.entrySet().stream().parallel()
+                .forEach(e -> {
+                    String maskId = e.getKey();
+                    List<ColorMIPSearchResult> srsForCurrentMask = e.getValue();
+                    Failsafe.with(retryPolicy).run(
+                            () -> writeSearchResultsToFile(
+                                    outputPath == null
+                                            ? null
+                                            : outputPath.resolve(maskId + ".json"),
+                                    srsForCurrentMask.stream().map(ColorMIPSearchResult::perMaskMetadata).collect(Collectors.toList())));
+                });
 
         LOG.info("Finished writing {} results by mask", srsByMasks.size());
     }
