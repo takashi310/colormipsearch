@@ -10,7 +10,7 @@ public class ColorMIPMaskCompareFactory {
             int searchThreshold,
             double zTolerance,
             int xyShift) {
-        return new FColorMIPMaskCompare(
+        return new ArrayColorMIPMaskCompare(
                 maskImage,
                 maskThreshold,
                 mirrorMask,
