@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
 import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
-import org.janelia.colormipsearch.api.ArrayColorMIPMaskCompare;
 import org.janelia.colormipsearch.api.ColorMIPMaskCompareFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

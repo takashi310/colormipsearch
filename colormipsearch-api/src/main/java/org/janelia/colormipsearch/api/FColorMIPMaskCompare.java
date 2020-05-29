@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.api;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
