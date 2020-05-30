@@ -19,14 +19,13 @@ class CmdUtils {
 
     static Executor createCDSExecutor(AbstractArgs args) {
         if (args.cdsConcurrency > 0) {
-            LOG.info("Create a fixed thread pool with {} worker threads ({} available processors for workstealing pool)",
+            LOG.info("Create a thread pool with {} worker threads ({} available processors for workstealing pool)",
                     args.cdsConcurrency, Runtime.getRuntime().availableProcessors());
             return Executors.newFixedThreadPool(
                     args.cdsConcurrency,
                     new ThreadFactoryBuilder()
                             .setNameFormat("CDSRUNNER-%d")
                             .setDaemon(true)
-                            .setPriority(Thread.NORM_PRIORITY + 1)
                             .build());
         } else {
             LOG.info("Create a workstealing pool with {} worker threads", Runtime.getRuntime().availableProcessors());
