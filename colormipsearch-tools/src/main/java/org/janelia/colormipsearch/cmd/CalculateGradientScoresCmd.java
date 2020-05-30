@@ -280,7 +280,7 @@ class CalculateGradientScoresCmd {
         LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
         CompletableFuture<MaskGradientAreaGapCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load input mask {}", inputMaskMIP);
-            MIPImage inputMaskImage = CachedMIPsUtils.loadMIP(inputMaskMIP);
+            MIPImage inputMaskImage = MIPsUtils.loadMIP(inputMaskMIP); // no caching for the mask
             return maskAreaGapCalculatorProvider.createMaskGradientAreaGapCalculator(inputMaskImage.getImageArray());
         }, executor);
         List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
