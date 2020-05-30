@@ -120,7 +120,9 @@ public class MaskGradientAreaGapCalculator {
                         }
                     }
                 });
+        LOG.trace("Begin calculating area gap {}ms", System.currentTimeMillis() - startTime);
         long gradientAreaGap = gaps.fold(0L, (p, s) -> p > GAP_THRESHOLD ? s + p : s);
+        LOG.trace("Begin calculating regions with too much expression {}ms", System.currentTimeMillis() - startTime);
         long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> s + p);
         long areaGapScore = gradientAreaGap + tooMuchExpression / 2;
         LOG.trace("Area gap score {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
