@@ -21,12 +21,7 @@ class CmdUtils {
         if (args.cdsConcurrency > 0) {
             LOG.info("Create a thread pool with {} worker threads ({} available processors for workstealing pool)",
                     args.cdsConcurrency, Runtime.getRuntime().availableProcessors());
-            return Executors.newFixedThreadPool(
-                    args.cdsConcurrency,
-                    new ThreadFactoryBuilder()
-                            .setNameFormat("CDSRUNNER-%d")
-                            .setDaemon(true)
-                            .build());
+            return Executors.newWorkStealingPool(args.cdsConcurrency);
         } else {
             LOG.info("Create a workstealing pool with {} worker threads", Runtime.getRuntime().availableProcessors());
             return Executors.newWorkStealingPool();
