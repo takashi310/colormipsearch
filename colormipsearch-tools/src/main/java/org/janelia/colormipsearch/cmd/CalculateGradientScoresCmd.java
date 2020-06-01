@@ -277,7 +277,7 @@ class CalculateGradientScoresCmd {
                                                                                                           String zgapsSuffix,
                                                                                                           MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
                                                                                                           Executor executor) {
-        LOG.info("Calculate gradient score for {} matches of mip entry# {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
+        LOG.info("Calculate gradient score for {} matches of mip entry {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
         CompletableFuture<MaskGradientAreaGapCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load input mask {}", inputMaskMIP);
             MIPImage inputMaskImage = MIPsUtils.loadMIP(inputMaskMIP); // no caching for the mask
@@ -325,7 +325,7 @@ class CalculateGradientScoresCmd {
                             .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                             .max(Integer::compare)
                             .orElse(0);
-                    LOG.info("Max pixel percentage score for the {} selected matches of entry# {} ({}) -> {}",
+                    LOG.info("Max pixel percentage score for the {} selected matches of entry {} ({}) -> {}",
                             selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxMatchingPixels);
                     List<Long> areaGaps = areaGapComputations.stream()
                             .map(areaGapComputation -> areaGapComputation.join())
@@ -333,7 +333,7 @@ class CalculateGradientScoresCmd {
                     long maxAreaGap = areaGaps.stream()
                             .max(Long::compare)
                             .orElse(-1L);
-                    LOG.info("Max area gap for the {} selected matches of entry# {} ({}) -> {}",
+                    LOG.info("Max area gap for the {} selected matches of entry {} ({}) -> {}",
                             selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxAreaGap);
                     // set the normalized area gap values
                     if (maxAreaGap >= 0 && maxMatchingPixels > 0) {
