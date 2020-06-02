@@ -47,19 +47,19 @@ java -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     -rd local/testData/results.withscore
 ```
 
-## Pre-computed color depth search results
+## Pre-computed color depth search data
 
 A more detailed description can be found in [PrecomputedData.md](PrecomputedData.md).
 
 ## Generating EM - LM precomputed color depth search
 
 This section shows the steps and the commands used for generating 
-the precomputed EM vs LM color depth search results
+the precomputed color depth search data
 
 ### Generate the MIPs metadata for LM lines and EM bodies
 
-This step actually is not important for the color depth search
-but it is important for line or body lookup.
+The MIPs metadata as explained in [PrecomputedData.md](PrecomputedData.md) is 
+important for LM line or EM body lookup.
  
 ####Generate LM SplitGal4 MIPs:
 ```bash
@@ -103,6 +103,12 @@ java \
 ```
 
 ### Generate EM - LM color depth search results
+
+To generate the actual color depth search results there are several steps:
+    
+* Calculate color depth matches between EM MIPs and LM MIPs
+* Calculate gradient based score for the matches between EM MIPs and the LM MIPs.
+ 
 
 #### Step 1: Prepare LM and EM JSON input for color depth search
 

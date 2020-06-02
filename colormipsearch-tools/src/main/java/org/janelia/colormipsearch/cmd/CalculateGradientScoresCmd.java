@@ -115,7 +115,10 @@ class CalculateGradientScoresCmd {
                                     mapper,
                                     executor
                             );
-                            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
+                                    cdsResults,
+                                    CmdUtils.getOutputFile(outputDir, f),
+                                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                         });
                         LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
                                 inputFiles.size(),
@@ -154,7 +157,10 @@ class CalculateGradientScoresCmd {
                                         mapper,
                                         executor
                                 );
-                                ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                                ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
+                                        cdsResults,
+                                        CmdUtils.getOutputFile(outputDir, f),
+                                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                             });
                             LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
                                     fileList.size(),

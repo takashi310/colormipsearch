@@ -163,7 +163,10 @@ class NormalizeGradientScoresCmd {
                     })
                     .collect(Collectors.toList());
             ColorMIPSearchResultUtils.sortCDSResults(cdsResultsWithNormalizedScore);
-            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)), mapper);
+            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
+                    new Results<>(cdsResultsWithNormalizedScore),
+                    CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)),
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
         });
     }
 

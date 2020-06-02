@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -47,14 +48,15 @@ public class ColorMIPSearchResultUtils {
         cdsResults.sort(csrComp.reversed());
     }
 
-    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchResultMetadata>> cdsResults, File f, ObjectMapper mapper) {
+    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchResultMetadata>> cdsResults, File f,
+                                                 ObjectWriter objectWriter) {
         try {
             if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                 if (f == null) {
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(System.out, cdsResults);
+                    objectWriter.writeValue(System.out, cdsResults);
                 } else {
                     LOG.info("Writing {}", f);
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(f, cdsResults);
+                    objectWriter.writeValue(f, cdsResults);
                 }
             }
         } catch (IOException e) {

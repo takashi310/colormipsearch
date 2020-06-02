@@ -162,7 +162,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                     LOG.info("Finished updating {} results from {} in {}ms",
                                             cdsResults.results.size(), f, System.currentTimeMillis() - startTime);
                                     ColorMIPSearchResultUtils.sortCDSResults(cdsResults.results);
-                                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(cdsResults, CmdUtils.getOutputFile(outputDir, f), mapper);
+                                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
+                                            cdsResults,
+                                            CmdUtils.getOutputFile(outputDir, f),
+                                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                                 }
                             });
                     LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.);

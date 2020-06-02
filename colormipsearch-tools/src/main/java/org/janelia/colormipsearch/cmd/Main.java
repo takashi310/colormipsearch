@@ -33,6 +33,7 @@ public class Main {
         CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
         ReplaceURLsCmd replaceURLsCmd = new ReplaceURLsCmd(commonArgs);
         UpdateGradientScoresFromReverseSearchResultsCmd updateGradientScoresFromReverseSearchResultsCmd = new UpdateGradientScoresFromReverseSearchResultsCmd(commonArgs);
+        RenameLibraryNameCmd renameLibraryNameCmd = new RenameLibraryNameCmd(commonArgs);
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
@@ -43,6 +44,7 @@ public class Main {
                 .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
                 .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
+                .addCommand("renameLib", renameLibraryNameCmd.getArgs())
                 .build();
 
         try {
@@ -134,6 +136,16 @@ public class Main {
                 }
                 CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
                 updateGradientScoresFromReverseSearchResultsCmd.execute();
+                break;
+            case "renameLib":
+                if (!renameLibraryNameCmd.getArgs().validate()) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
+                    System.exit(1);
+                }
+                CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
+                renameLibraryNameCmd.execute();
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");

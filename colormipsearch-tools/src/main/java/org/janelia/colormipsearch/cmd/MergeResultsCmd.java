@@ -132,7 +132,10 @@ class MergeResultsCmd {
                             .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
 
                     ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
-                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(combinedResultsWithNoDuplicates), CmdUtils.getOutputFile(outputDir, new File(fn)), mapper);
+                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
+                            new Results<>(combinedResultsWithNoDuplicates),
+                            CmdUtils.getOutputFile(outputDir, new File(fn)),
+                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                 });
     }
 
