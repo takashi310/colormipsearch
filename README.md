@@ -104,11 +104,25 @@ java \
 
 ### Generate EM - LM color depth search results
 
-To generate the actual color depth search results there are several steps:
-    
+The steps to generate the precomputed color depth search results are the
+following:
+
+* Prepare the input file for the color depth matches 
 * Calculate color depth matches between EM MIPs and LM MIPs
-* Calculate gradient based score for the matches between EM MIPs and the LM MIPs.
- 
+    * this step outputs one set of color depth matches grouped by EM MIP ID and 
+    one set of matches grouped by the LM MIP ID 
+* Calculate gradient based score for the matches from EM MIPs to LM MIPs, considering
+only color depth matches grouped by EM MIP ID.
+* Update the gradient score for the LM to EM matches using the
+gradient score from the corresponding EM to LM match calculated in the previous step
+* Merge results - if the color depth search results between EM and various LM libraries
+were computed separately, for example EM vs Split-Gal4 matches were calculated 
+separately from EM vs MCFO, then this step will merge the EM vs Split-Gal4 and
+EM vs MCFO in a single result file so that all EM matches can be ranked appropriately
+* Rank final results and cleanup - this basically sorts the final results
+based on their gradient score and cleans up data that is not necessary for the release, 
+such as image file names.
+
 
 #### Step 1: Prepare LM and EM JSON input for color depth search
 
@@ -126,7 +140,7 @@ java \
     -l flylight_gen1_mcfo_published \
     --segmented-mips-base-dir /nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease.zip \
     --segmented-image-handling 0 \
-    -od local/testData/cdsresults \
+    -od local/testData/mips \
     $*
 ```
 Prepare SplitGal4 input:
@@ -140,7 +154,7 @@ java \
     -l flylight_split_gal4_published \
     --segmented-mips-base-dir /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_CDM \
     --segmented-image-handling 0 \
-    -od local/testData/cdsresults \
+    -od local/testData/mips \
     $*
 ```
 Prepare EM input:
@@ -152,27 +166,94 @@ java \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flyem_hemibrain \
-    -od local/testData/cdsresults \
+    -od local/testData/mips \
     $*
 ```
 
-#### Step 2: Generate the color depth search results
+#### Step 1': Replace image URLs
+
+Sometime the image URLs need to be replaced with image URLs that 
+reference MIPs generated with a different gamma value that are better 
+suited for viewing the matched regions. Image URLs can 
+be updated at any time but the sooner we apply this the fewer 
+files that need to be updated downstream.  
+
+This step requires a JSON file that contains the new image URLs 
+that will replace the ones that are set in the JSON created from 
+'flylight_gen1_mcfo_published' library. The new URLs for example could
+come from the MIPs generated with a different gamma value. There are 
+two sets of JSON files that will have to have the imageURLs update:
+ * the MCFO lines will have to be changed to reference the new URLs
+ * the EM to MCFO color depth search results reference the image of 
+ the MCFO MIP that matches the EM MIP entry, so these will have to be updated
+ to reference the new URL.
+
+```bash
+java \
+    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
+    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
+    prepareCDSArgs \
+    --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
+    --authorization "Bearer tokenvalue" \
+    -l flylight_gen1_mcfo_case_1_gamma1_4 \
+    -od local/testData/mips \
+    $*
+```
+
+Update image URLs for the lines:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    replaceImageURLs \
+    -src local/testData/mips/flylight_gen1_mcfo_published.json \
+    -target local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    --input-dirs local/testData/mips/gen1_mcfo_lines \
+    --result-id-field id \
+    -od local/testData/mips.gamma1.4/gen1_mcfo_lines
+```
+
+Update image URLs for the input MIPs:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    replaceImageURLs \
+    -src local/testData/mips/flylight_gen1_mcfo_published.json \
+    -target local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    --input-file local/testData/mips/flylight_gen1_mcfo_published.json \
+    --image-url-field imageURL \
+    --thumbnail-url-field thumbnailURL \
+    --result-id-field id \
+    -od local/testData/mips.gamma1.4
+```
+
+This step can also be applied later to replace the imageURLs 
+in the result files. As a reminder the imageURLs in the result
+files reference the matched image so the field that we lookup for 
+a match is "matchedId" 
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    replaceImageURLs \
+    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
+    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
+    --result-id-field matchedId  \
+    -od local/testData/cdsresults/flyem_hemibrain.gamma1_4
+```
+
+#### Step 2: Compute color depth matches
 
 Even though this process is run only once it outputs two sets of result files:
 one for the EM -> LM results and one for the LM -> EM results, 
 indexed by the EM mip IDs or LM mip IDs respectively.
-
-For EM vs MCFO this requires using the grid, otherwise it will
-take too long. For EM vs SplitGal4 this can run on a host that has the 
-proper resources.
 
 Calculate EM vs SplitGal4 results
 ```bash
 java -Xmx180G -Xms180G \
     -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     searchFromJSON  \
-    -m local/testData/cdsresults/flyem_hemibrain.json:0:5000 \
-    -i local/testData/cdsresults/flylight_gen1_mcfo_published.json:0:40000 \
+    -m local/testData/mips/flyem_hemibrain.json:0:5000 \
+    -i local/testData/mips/flylight_gen1_mcfo_published.json:0:40000 \
     --maskThreshold 20 \
     --dataThreshold 30 \
     --xyShift 2 \
@@ -189,8 +270,8 @@ java -Xmx180G -Xms180G \
 java -Xmx180G -Xms180G \
     -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
     searchFromJSON  \
-    -m local/testData/cdsresults/flyem_hemibrain.json:0:35000 \
-    -i local/testData/cdsresults/flylight_split_gal4_published.json:0:7800 \
+    -m local/testData/mips/flyem_hemibrain.json:0:35000 \
+    -i local/testData/mips/flylight_split_gal4_published.json:0:7800 \
     --maskThreshold 20 \
     --dataThreshold 30 \
     --xyShift 2 \
@@ -203,7 +284,7 @@ java -Xmx180G -Xms180G \
     -od local/testData/cdsresults
 ```
 
-#### Step 3: Calculate gradient score for the EM -> LM color depth search results
+#### Step 3: Calculate gradient score for the EM to LM color depth matches
 ```bash
 java -Xmx240G -Xms240G \
     -Dlog4j.configuration=file:///groups/scicompsoft/home/goinac/Work/color-depth-spark/local/log4j.properties \
@@ -240,7 +321,26 @@ java -Xmx240G -Xms240G \
     -od local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4
 ```
 
-#### Step 4: Update the gradient score for the LM -> EM color depths search results
+In order to simplify the parallelization options for Steps 2 and 3
+colormipsearch-tools module has a set of bash scripts that allow the user
+to the color depth matches and the gradient scoring jobs into smaller jobs
+and run them on a host with enough resources or on the grid.
+The commands to run these steps are:
+```bash
+sh colormipsearch-tools/src/main/scripts/submitCDSBatch.sh
+```
+and 
+```bash
+sh colormipsearch-tools/src/main/scripts/submitGABatch.sh
+```
+respectively. 
+
+Before running this commands make sure to set the appropriate parameters
+in `colormipsearch-tools/src/main/scripts/cdsparams.sh` which is imported
+in the above submit scripts.
+
+
+#### Step 4: Update the gradient score for the LM to EM color depths matches
 
 This step actually transfers the gradient score from the 
 ones calculated for EM -> LM results to the corresponding LM -> EM results.
@@ -278,54 +378,6 @@ java \
     local/testData/cdsresults.ga/flyem_hemibrain-vs-gen1_mcfo \
     local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4 \
     -od local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight
-```
-
-#### Step 5': Replace image URLs
-
-This step requires a JSON file that contains the new image URLs 
-that will replace the ones that are set in the JSON created from 
-'flylight_gen1_mcfo_published' library. The new URLs for example could
-come from the MIPs generated with a different gamma value. There are 
-two sets of JSON files that will have to have the imageURLs update:
- * the MCFO lines will have to be changed to reference the new URLs
- * the EM to MCFO color depth search results reference the image of 
- the MCFO MIP that matches the EM MIP entry, so these will have to be updated
- to reference the new URL.
-
-```bash
-java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    prepareCDSArgs \
-    --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
-    --authorization "Bearer tokenvalue" \
-    -l flylight_gen1_mcfo_case_1_gamma1_4 \
-    -od local/testData/cdsresults \
-    $*
-```
-
-Update image URLs for the lines:
-```bash
-java \
-    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
-    replaceImageURLs \
-    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
-    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
-    --input-dirs local/testData/mips/gen1_mcfo_lines \
-    --result-id-field id \
-    -od local/testData/mips.gamma1.4/gen1_mcfo_lines
-```
-
-Update image URLs for the color depth results:
-```bash
-java \
-    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
-    replaceImageURLs \
-    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
-    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
-    --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
-    --result-id-field matchedId  \
-    -od local/testData/updateURLS/cdsresults/flyem_hemibrain
 ```
 
 #### Step 6: Normalize and rank results:
