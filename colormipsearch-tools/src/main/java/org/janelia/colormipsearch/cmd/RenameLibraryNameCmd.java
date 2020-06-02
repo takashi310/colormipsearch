@@ -45,9 +45,6 @@ class RenameLibraryNameCmd {
         @Parameter(names = "-new-libname", description = "new library name", required = true)
         private String newLibName;
 
-        @Parameter(names = "-no-pretty-print", description = "Do not pretty print the results", arity = 0)
-        private boolean noPrettyPrint = false;
-
         @ParametersDelegate
         final CommonArgs commonArgs;
 
@@ -124,7 +121,7 @@ class RenameLibraryNameCmd {
                     .collect(Collectors.toList());
             ColorMIPSearchResultUtils.sortCDSResults(cdsResultsWithNormalizedScore);
             ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(new Results<>(cdsResultsWithNormalizedScore), CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)),
-                    args.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
         });
     }
 
