@@ -13,12 +13,12 @@ export LIBRARIES_PER_JOB=9883
 # this is the partition value used both for CDS and GA so it might need to be set differently for GA than it is for CDS
 # for CDS the recommended value is between 100-500
 # for GA the recommended value is between 5-50
-export PROCESSING_PARTITION_SIZE=10
+export PROCESSING_PARTITION_SIZE=17
 
 export CORES_RESOURCE=20
 export CPU_RESERVE=1
-export MEM_RESOURCE=180
-export MIPS_CACHE_SIZE=100000
+export MEM_RESOURCE=170
+export MIPS_CACHE_SIZE=50000
 export MIPS_CACHE_EXPIRATION=60
 
 CDSMATCHES_SUBDIR=cdsresults.matches
@@ -36,8 +36,12 @@ export CDGA_ZGAP_SUFFIX=_20pxRGBMAX
 export LOGFILE=
 
 # JAVA OPTS
-export JAVA_HOME=${JDK_8}
-export GC_OPTS=""
+# ${HOME}/tools/jdk-14.0.1
+export JAVA_HOME=${HOME}/tools/jdk-14.0.1
+export JAVA_EXEC=${JAVA_HOME}/bin/java
+
+ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
+export GC_OPTS="${ZGC}"
 # Color depth search params
 export MASK_THRESHOLD=20
 export DATA_THRESHOLD=20
@@ -50,9 +54,9 @@ export START_FILE_INDEX=0
 export TOTAL_FILES=34800
 export FILES_PER_JOB=100
 
-export TOP_RESULTS=500
+export TOP_RESULTS=300
 export SAMPLES_PER_LINE=0
 
-FIRST_JOB=2
-LAST_JOB=2
+FIRST_JOB=332
+LAST_JOB=332
 RUN_CMD="localRun"
