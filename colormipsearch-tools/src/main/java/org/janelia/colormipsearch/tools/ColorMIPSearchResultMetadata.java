@@ -195,8 +195,12 @@ public class ColorMIPSearchResultMetadata extends MetadataAttrs {
     public String toString() {
         return new ToStringBuilder(this)
                 .appendSuper(super.toString())
-                .append("matchedId", matchedId)
-                .append("matchedPublishedName", matchedPublishedName)
+                .append("matchedId",
+                        matchedId)
+                .append("matchedPublishedName",
+                        StringUtils.defaultIfBlank(matchedPublishedName, getAttr("PublishedName")))
+                .append("matchedLibrary",
+                        getAttr("Library"))
                 .toString();
     }
 
