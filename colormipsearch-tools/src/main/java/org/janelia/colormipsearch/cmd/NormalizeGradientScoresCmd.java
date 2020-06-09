@@ -155,8 +155,8 @@ class NormalizeGradientScoresCmd {
                                     csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels
                             );
                             if (areaGap >= 0) {
-                                LOG.debug("Update normalized score for {}: {} -> {}",
-                                        csr, csr.getNormalizedGradientAreaGapScore(), normalizedGapScore);
+                                LOG.debug("Update normalized score for {}: areaGap {}, current score {}, updated score {}",
+                                        csr, areaGap, csr.getNormalizedGradientAreaGapScore(), normalizedGapScore);
                                 csr.setNormalizedGradientAreaGapScore(normalizedGapScore);
                             } else {
                                 csr.setArtificialShapeScore(normalizedGapScore);
