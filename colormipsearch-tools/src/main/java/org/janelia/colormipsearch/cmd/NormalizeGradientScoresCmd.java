@@ -128,19 +128,19 @@ class NormalizeGradientScoresCmd {
             } else {
                 cdsResults = resultsFromJSONFile.results;
             }
-            Long maxAreaGap;
-            Integer maxMatchingPixels;
+            long maxAreaGap;
+            int maxMatchingPixels;
             if (args.reNormalize) {
                 maxAreaGap = cdsResults.stream().parallel()
                         .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
                         .max(Long::compare)
                         .orElse(-1L);
-                LOG.debug("Max area gap for {}  -> {}", fn, maxAreaGap);
+                LOG.info("Max area gap for {}  -> {}", fn, maxAreaGap);
                 maxMatchingPixels = cdsResults.stream().parallel()
                         .map(ColorMIPSearchResultMetadata::getMatchingPixels)
                         .max(Integer::compare)
                         .orElse(0);
-                LOG.debug("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
+                LOG.info("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
             } else {
                 maxAreaGap = -1L;
                 maxMatchingPixels = -1;
@@ -155,7 +155,7 @@ class NormalizeGradientScoresCmd {
                                     csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels
                             );
                             if (areaGap >= 0) {
-                                LOG.trace("Update normalized score for {}: {} -> {}",
+                                LOG.debug("Update normalized score for {}: {} -> {}",
                                         csr, csr.getNormalizedGradientAreaGapScore(), normalizedGapScore);
                                 csr.setNormalizedGradientAreaGapScore(normalizedGapScore);
                             } else {
