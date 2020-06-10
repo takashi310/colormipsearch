@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.tools.AbstractMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.MIPMetadata;
@@ -145,7 +146,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                 Results<List<ColorMIPSearchMatchMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(f, mapper);
                                 if (CollectionUtils.isNotEmpty(cdsResults.results)) {
                                     Set<String> sourceIds = cdsResults.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
-                                    Set<String> matchedIds = cdsResults.results.stream().map(MIPMetadata::getId).collect(Collectors.toSet());
+                                    Set<String> matchedIds = cdsResults.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                                     Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",

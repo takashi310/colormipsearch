@@ -5,9 +5,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.tools.AbstractMetadata;
 import org.janelia.colormipsearch.tools.MIPMetadata;
 
-class ColorDepthMetadata extends MIPMetadata {
+class ColorDepthMetadata extends AbstractMetadata {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty
     String sourceImageRef;

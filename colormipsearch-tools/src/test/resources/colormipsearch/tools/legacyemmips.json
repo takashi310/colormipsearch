@@ -1,0 +1,49 @@
+[ {
+  "id" : "2757945518448443403",
+  "type" : null,
+  "libraryName" : "FlyEM Hemibrain",
+  "publishedName" : "1001453586",
+  "imagePath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1001453586_RT_18U.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1001453586_RT_18U.tif",
+  "archivePath" : null,
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1001453586-RT-JRC2018_Unisex_20x_HR-CDM.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1001453586-RT-JRC2018_Unisex_20x_HR-CDM.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Body Id" : "1001453586",
+    "PublishedName" : "1001453586",
+    "Library" : "FlyEM Hemibrain"
+  }
+}, {
+  "id" : "2757945478464143371",
+  "type" : null,
+  "libraryName" : "FlyEM Hemibrain",
+  "publishedName" : "1002360103",
+  "imagePath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1002360103_RT_18U.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1002360103_RT_18U.tif",
+  "archivePath" : null,
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1002360103-RT-JRC2018_Unisex_20x_HR-CDM.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1002360103-RT-JRC2018_Unisex_20x_HR-CDM.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Body Id" : "1002360103",
+    "PublishedName" : "1002360103",
+    "Library" : "FlyEM Hemibrain"
+  }
+}, {
+  "id" : "2757945451884838923",
+  "type" : null,
+  "libraryName" : "FlyEM Hemibrain",
+  "publishedName" : "1002507131",
+  "imagePath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1002507131_RT_18U.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/1002507131_RT_18U.tif",
+  "archivePath" : null,
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1002507131-RT-JRC2018_Unisex_20x_HR-CDM.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/1002507131-RT-JRC2018_Unisex_20x_HR-CDM.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Body Id" : "1002507131",
+    "PublishedName" : "1002507131",
+    "Library" : "FlyEM Hemibrain"
+  }
+} ]

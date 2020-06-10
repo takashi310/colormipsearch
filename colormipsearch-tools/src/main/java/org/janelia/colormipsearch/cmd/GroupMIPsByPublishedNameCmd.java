@@ -47,6 +47,7 @@ import com.google.common.base.Splitter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.tools.AbstractMetadata;
 import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -223,7 +224,7 @@ public class GroupMIPsByPublishedNameCmd {
                     .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .collect(Collectors.groupingBy(
-                            MIPMetadata::getPublishedName,
+                            AbstractMetadata::getPublishedName,
                             Collectors.toList()));
             // write the results to the output
             resultsByLineOrSkeleton
@@ -240,7 +241,7 @@ public class GroupMIPsByPublishedNameCmd {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(cdmip.publicImageUrl);
         cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
-        cdMetadata.setRelatedImageRefId(cdmip.sourceImageRef);
+        cdMetadata.sourceImageRef  = cdmip.sourceImageRef;
         if (cdmip.sample != null) {
             cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);

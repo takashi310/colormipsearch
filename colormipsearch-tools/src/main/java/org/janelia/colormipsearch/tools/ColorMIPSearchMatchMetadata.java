@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class ColorMIPSearchMatchMetadata extends MIPMetadata {
+public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public static ColorMIPSearchMatchMetadata create(ColorMIPSearchMatchMetadata from) {
         ColorMIPSearchMatchMetadata cdsCopy = new ColorMIPSearchMatchMetadata();
@@ -32,14 +32,7 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
     private Double normalizedGapScore;
     private Double artificialShapeScore;
 
-    public String getSourceImageArchivePath() {
-        return sourceImageArchivePath;
-    }
-
-    public void setSourceImageArchivePath(String sourceImageArchivePath) {
-        this.sourceImageArchivePath = sourceImageArchivePath;
-    }
-
+    @JsonIgnore
     public String getSourceId() {
         return sourceId;
     }
@@ -48,6 +41,7 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
         this.sourceId = sourceId;
     }
 
+    @JsonIgnore
     public String getSourcePublishedName() {
         return sourcePublishedName;
     }
@@ -56,6 +50,7 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
         this.sourcePublishedName = sourcePublishedName;
     }
 
+    @JsonIgnore
     public String getSourceLibraryName() {
         return sourceLibraryName;
     }
@@ -78,6 +73,14 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
 
     public void setSourceImageType(String sourceImageType) {
         this.sourceImageType = sourceImageType;
+    }
+
+    public String getSourceImageArchivePath() {
+        return sourceImageArchivePath;
+    }
+
+    public void setSourceImageArchivePath(String sourceImageArchivePath) {
+        this.sourceImageArchivePath = sourceImageArchivePath;
     }
 
     public int getMatchingPixels() {
@@ -184,9 +187,17 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
         if (StringUtils.isBlank(attrName)) {
             return (attrValue) -> {}; // do nothing handler
         } else {
+            /*
+             * This relies on the ordering of the JSON file in which all source identifiers
+             * occur before any matched identifier and the matchedId occurs before any other
+             * match identifer such as matchedLibraryName, matchedPublishedName.
+             */
             switch (attrName) {
                 case "matchedId":
-                    return this::setId;
+                    return (attrValue) -> {
+                        copyIdentifiersToSourceIdentifiers();
+                        setId(attrValue);
+                    };
                 case "matchedPublishedName":
                     return this::setPublishedName;
                 case "matchedLibrary":
@@ -208,9 +219,18 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
                 case "artificialShapeScore":
                     return this::updateArtificialShapeScore;
                 default:
-                    return defaultAttributeValueHandler(attrName);
+                    return super.attributeValueHandler(attrName);
             }
         }
+    }
+
+    private void copyIdentifiersToSourceIdentifiers() {
+        this.sourceId = getId();
+        this.sourcePublishedName = getPublishedName();
+        this.sourceLibraryName = getLibraryName();
+        this.sourceImageName = getImageName();
+        this.sourceImageArchivePath = getImageArchivePath();
+        this.sourceImageType = getImageType();
     }
 
     @Override

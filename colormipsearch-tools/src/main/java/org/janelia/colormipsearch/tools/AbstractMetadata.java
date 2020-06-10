@@ -1,8 +1,6 @@
 package org.janelia.colormipsearch.tools;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -185,7 +183,20 @@ public abstract class AbstractMetadata {
      */
     @JsonAnySetter
     void addAttr(String attribute, String value) {
-        attributeValueHandler(attribute).accept(value);
+        attributeValueHandler(mapAttr(attribute)).accept(value);
+    }
+
+    /**
+     * This method is used for data migration in order to support both the "legacy" structure
+     * and the new one that does not use the attrs map.
+     *
+     * @param attrs
+     */
+    @JsonProperty
+    void setAttrs(Map<String, String> attrs) {
+        if (attrs != null) {
+            attrs.forEach((k, v) -> addAttr(k, v));
+        }
     }
 
     public void copyTo(AbstractMetadata that) {
@@ -268,7 +279,7 @@ public abstract class AbstractMetadata {
                 return "objective";
             case "channel":
                 return "channel";
-            case "Mounting Protocol":
+            case "mounting protocol":
                 return "mountingProtocol";
             case "type":
             case "imagetype":
