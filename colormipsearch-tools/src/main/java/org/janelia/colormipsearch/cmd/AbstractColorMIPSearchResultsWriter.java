@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.collections4.CollectionUtils;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +71,7 @@ abstract class AbstractColorMIPSearchResultsWriter {
 
     abstract void writeSearchResults(Path outputPath, List<ColorMIPSearchResult> searchResults);
 
-    void writeSearchResultsToFile(Path outputFile, List<ColorMIPSearchResultMetadata> searchResults) {
+    void writeSearchResultsToFile(Path outputFile, List<ColorMIPSearchMatchMetadata> searchResults) {
         long startTime = System.currentTimeMillis();
         if (CollectionUtils.isEmpty(searchResults)) {
             // nothing to do
@@ -175,7 +175,7 @@ abstract class AbstractColorMIPSearchResultsWriter {
         rfh.close();
     }
 
-    private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
+    private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchMatchMetadata> searchResults) throws IOException {
         gen.useDefaultPrettyPrinter();
         gen.writeStartObject();
         gen.writeArrayFieldStart("results");
@@ -185,8 +185,8 @@ abstract class AbstractColorMIPSearchResultsWriter {
         gen.flush();
     }
 
-    private void writeColorSearchResultsArray(JsonGenerator gen, List<ColorMIPSearchResultMetadata> searchResults) throws IOException {
-        for (ColorMIPSearchResultMetadata sr : searchResults) {
+    private void writeColorSearchResultsArray(JsonGenerator gen, List<ColorMIPSearchMatchMetadata> searchResults) throws IOException {
+        for (ColorMIPSearchMatchMetadata sr : searchResults) {
             gen.writeObject(sr);
         }
     }

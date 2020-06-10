@@ -49,7 +49,7 @@ public class MaskGradientAreaGapCalculator {
     private final LImage mask;
     private final LImage maskIntensityValues;
     private final LImage maskForUnwantedExpression; // pix(x,y) = 1 if there's too much expression surrounding x,y
-    private int maskThreshold;
+    private final int maskThreshold;
     private final boolean withMaskMirroring;
     private final ImageProcessing labelsClearing;
     private final ImageProcessing negativeRadiusDilation;

@@ -15,7 +15,7 @@ public class FColorMIPMaskCompare extends ColorMIPMaskCompare {
                                 ImageArray negquery, int negMaskThreshold,
                                 boolean mirrorNegMask, int searchThreshold,
                                 double zTolerance, int xyshift) {
-        super(query, maskThreshold, mirrorMask, negquery, negMaskThreshold, mirrorNegMask, searchThreshold, zTolerance, xyshift);
+        super(query, maskThreshold, negquery, negMaskThreshold, searchThreshold, zTolerance);
         this.mirrorMask = mirrorMask;
         this.mirrorNegMask = mirrorNegMask;
         this.allXYShifts = generateAllXYShifts(xyshift);

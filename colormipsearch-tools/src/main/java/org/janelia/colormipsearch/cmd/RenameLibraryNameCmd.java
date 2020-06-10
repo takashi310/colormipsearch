@@ -18,11 +18,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.GradientAreaGapUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.Results;
-import org.janelia.colormipsearch.tools.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,14 +106,14 @@ class RenameLibraryNameCmd {
         filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Replace library name for {}", fn);
             File cdsFile = new File(fn);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
-            List<ColorMIPSearchResultMetadata> cdsResults = resultsFromJSONFile.results;
-            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.stream()
+            Results<List<ColorMIPSearchMatchMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+            List<ColorMIPSearchMatchMetadata> cdsResults = resultsFromJSONFile.results;
+            List<ColorMIPSearchMatchMetadata> cdsResultsWithNormalizedScore = cdsResults.stream()
                     .peek(csr -> {
                         if (args.oldLibName.equals(csr.getLibraryName())) {
                             csr.setLibraryName(args.newLibName);
-                        } else if (args.oldLibName.equals(csr.getAttr("Library"))) {
-                            csr.addAttr("Library", args.newLibName);
+                        } else if (args.oldLibName.equals(csr.getSourceLibraryName())) {
+                            csr.setSourceLibraryName(args.newLibName);
                         }
                     })
                     .collect(Collectors.toList());

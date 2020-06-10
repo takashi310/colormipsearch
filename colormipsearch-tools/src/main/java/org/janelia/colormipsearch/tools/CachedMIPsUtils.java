@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public class CachedMIPsUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CachedMIPsUtils.class);
 
-    private static LoadingCache<MIPInfo, MIPImage> mipsImagesCache;
+    private static LoadingCache<MIPMetadata, MIPImage> mipsImagesCache;
 
     public static void initializeCache(long maxSize, long expirationInSeconds) {
         LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
@@ -21,17 +21,17 @@ public class CachedMIPsUtils {
                 .concurrencyLevel(16)
                 .maximumSize(maxSize)
                 .expireAfterAccess(Duration.ofSeconds(expirationInSeconds))
-                .build(new CacheLoader<MIPInfo, MIPImage>() {
+                .build(new CacheLoader<MIPMetadata, MIPImage>() {
                     @Override
-                    public MIPImage load(MIPInfo mipInfo) {
+                    public MIPImage load(MIPMetadata mipInfo) {
                         return MIPsUtils.loadMIP(mipInfo);
                     }
                 });
     }
 
-    public static MIPImage loadMIP(MIPInfo mipInfo) {
+    public static MIPImage loadMIP(MIPMetadata mipInfo) {
         try {
-            if (mipInfo == null || !mipInfo.exists()) {
+            if (mipInfo == null || !MIPsUtils.exists(mipInfo)) {
                 return null;
             } else {
                 return mipsImagesCache == null ? MIPsUtils.loadMIP(mipInfo) : mipsImagesCache.get(mipInfo);

@@ -17,10 +17,10 @@ import org.slf4j.LoggerFactory;
 public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
 
-    public static Results<List<ColorMIPSearchResultMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
+    public static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.debug("Reading {}", f);
-            return mapper.readValue(f, new TypeReference<Results<List<ColorMIPSearchResultMetadata>>>() {
+            return mapper.readValue(f, new TypeReference<Results<List<ColorMIPSearchMatchMetadata>>>() {
             });
         } catch (IOException e) {
             LOG.error("Error reading CDS results from json file {}", f, e);
@@ -28,14 +28,14 @@ public class ColorMIPSearchResultUtils {
         }
     }
 
-    public static void sortCDSResults(List<ColorMIPSearchResultMetadata> cdsResults) {
-        Comparator<ColorMIPSearchResultMetadata> csrComp = (csr1, csr2) -> {
+    public static void sortCDSResults(List<ColorMIPSearchMatchMetadata> cdsResults) {
+        Comparator<ColorMIPSearchMatchMetadata> csrComp = (csr1, csr2) -> {
             if (csr1.getNormalizedScore() != null && csr2.getNormalizedScore() != null) {
-                return Comparator.comparingDouble(ColorMIPSearchResultMetadata::getNormalizedScore)
+                return Comparator.comparingDouble(ColorMIPSearchMatchMetadata::getNormalizedScore)
                         .compare(csr1, csr2)
                         ;
             } else if (csr1.getNormalizedScore() == null && csr2.getNormalizedScore() == null) {
-                return Comparator.comparingInt(ColorMIPSearchResultMetadata::getMatchingPixels)
+                return Comparator.comparingInt(ColorMIPSearchMatchMetadata::getMatchingPixels)
                         .compare(csr1, csr2)
                         ;
             } else if (csr1.getNormalizedScore() == null) {
@@ -48,7 +48,7 @@ public class ColorMIPSearchResultUtils {
         cdsResults.sort(csrComp.reversed());
     }
 
-    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchResultMetadata>> cdsResults, File f,
+    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchMatchMetadata>> cdsResults, File f,
                                                  ObjectWriter objectWriter) {
         try {
             if (CollectionUtils.isNotEmpty(cdsResults.results)) {

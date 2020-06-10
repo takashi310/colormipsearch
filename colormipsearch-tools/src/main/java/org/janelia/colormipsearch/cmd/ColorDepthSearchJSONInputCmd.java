@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +91,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
             long librariesStartIndex = args.librariesStartIndex > 0 ? args.librariesStartIndex : 0;
             int librariesLength = args.librariesLength > 0 ? args.librariesLength : 0;
-            List<MIPInfo> inputLibrariesMips = args.librariesInputs.stream()
+            List<MIPMetadata> inputLibrariesMips = args.librariesInputs.stream()
                     .flatMap(libraryInput -> MIPsUtils.readMIPsFromJSON(
                             libraryInput.input,
                             libraryInput.offset,
@@ -100,7 +100,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                     .skip(librariesStartIndex)
                     .collect(Collectors.toList());
 
-            List<MIPInfo> librariesMips;
+            List<MIPMetadata> librariesMips;
             if (librariesLength > 0 && librariesLength < inputLibrariesMips.size()) {
                 librariesMips = inputLibrariesMips.subList(0, librariesLength);
             } else {
@@ -109,12 +109,12 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
             long masksStartIndex = args.masksStartIndex > 0 ? args.masksStartIndex : 0;
             int masksLength = args.masksLength > 0 ? args.masksLength : 0;
-            List<MIPInfo> inputMasksMips = args.masksInputs.stream()
+            List<MIPMetadata> inputMasksMips = args.masksInputs.stream()
                     .flatMap(masksInput -> MIPsUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter), mapper).stream())
                     .skip(masksStartIndex)
                     .collect(Collectors.toList());
 
-            List<MIPInfo> masksMips;
+            List<MIPMetadata> masksMips;
             if (masksLength > 0 && masksLength < inputMasksMips.size()) {
                 masksMips = inputMasksMips.subList(0, masksLength);
             } else {

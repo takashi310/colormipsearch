@@ -13,12 +13,12 @@ public class UtilsTest {
 
     @Test
     public void pickBestResultsWithAllSubResults() {
-        List<ColorMIPSearchResultMetadata> testData = createTestData();
+        List<ColorMIPSearchMatchMetadata> testData = createTestData();
         for (int i = 1; i <= 3; i++) {
-            List<ColorMIPSearchResultMetadata> selectedEntries = Utils.pickBestMatches(
+            List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
                     testData,
-                    csr -> csr.getMatchedPublishedName(),
-                    ColorMIPSearchResultMetadata::getMatchingPixels,
+                    csr -> csr.getPublishedName(),
+                    ColorMIPSearchMatchMetadata::getMatchingPixels,
                     i,
                     -1).stream()
                     .flatMap(se -> se.getEntry().stream())
@@ -29,20 +29,20 @@ public class UtilsTest {
 
     @Test
     public void pickBestResultsWithSubResults() {
-        List<ColorMIPSearchResultMetadata> testData = createTestData();
+        List<ColorMIPSearchMatchMetadata> testData = createTestData();
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ColorMIPSearchResultMetadata> selectedEntries = Utils.pickBestMatches(
+                List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
                         testData,
-                        ColorMIPSearchResultMetadata::getMatchedPublishedName,
-                        ColorMIPSearchResultMetadata::getMatchingPixels,
+                        ColorMIPSearchMatchMetadata::getPublishedName,
+                        ColorMIPSearchMatchMetadata::getMatchingPixels,
                         i,
                         -1).stream()
                         .flatMap(se -> Utils.pickBestMatches(
                                 se.getEntry(),
-                                csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
-                                ColorMIPSearchResultMetadata::getMatchingPixels,
+                                AbstractMetadata::getSlideCode, // pick best results by sample (identified by slide code)
+                                ColorMIPSearchMatchMetadata::getMatchingPixels,
                                 topSubResults,
                                 -1).stream())
                         .flatMap(se -> se.getEntry().stream())
@@ -54,20 +54,20 @@ public class UtilsTest {
 
     @Test
     public void pickBestResultsWithLimitedSubResults() {
-        List<ColorMIPSearchResultMetadata> testData = createTestData();
+        List<ColorMIPSearchMatchMetadata> testData = createTestData();
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ColorMIPSearchResultMetadata> selectedEntries = Utils.pickBestMatches(
+                List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
                         testData,
-                        ColorMIPSearchResultMetadata::getMatchedPublishedName,
-                        ColorMIPSearchResultMetadata::getMatchingPixels,
+                        ColorMIPSearchMatchMetadata::getPublishedName,
+                        ColorMIPSearchMatchMetadata::getMatchingPixels,
                         i,
                         1).stream()
                         .flatMap(se -> Utils.pickBestMatches(
                                 se.getEntry(),
-                                csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
-                                ColorMIPSearchResultMetadata::getMatchingPixels,
+                                AbstractMetadata::getSlideCode, // pick best results by sample (identified by slide code)
+                                ColorMIPSearchMatchMetadata::getMatchingPixels,
                                 topSubResults,
                                 -1).stream())
                         .flatMap(se -> se.getEntry().stream())
@@ -79,17 +79,17 @@ public class UtilsTest {
 
     @Test
     public void eliminateDuplicateResults() {
-        List<ColorMIPSearchResultMetadata> testData = ImmutableList.<ColorMIPSearchResultMetadata>builder()
+        List<ColorMIPSearchMatchMetadata> testData = ImmutableList.<ColorMIPSearchMatchMetadata>builder()
                 .add(createCSRWithMatchedIds("1", "10", "i1.1", "i10", 10))
                 .add(createCSRWithMatchedIds("1", "10", "i1.2", "i10", 10))
                 .add(createCSRWithMatchedIds("1", "20", "i1.1", "i20", 10))
                 .add(createCSRWithMatchedIds("1", "30", "i1.1", "i30", 10))
                 .add(createCSRWithMatchedIds("1", "30", "i1.2", "i30", 10))
                 .build();
-        List<ColorMIPSearchResultMetadata> resultsWithNoDuplicates = Utils.pickBestMatches(
+        List<ColorMIPSearchMatchMetadata> resultsWithNoDuplicates = Utils.pickBestMatches(
                 testData,
-                ColorMIPSearchResultMetadata::getMatchedId,
-                ColorMIPSearchResultMetadata::getMatchingPixels,
+                ColorMIPSearchMatchMetadata::getId,
+                ColorMIPSearchMatchMetadata::getMatchingPixels,
                 -1,
                 1)
                 .stream()
@@ -97,8 +97,8 @@ public class UtilsTest {
         assertEquals(3, resultsWithNoDuplicates.size());
     }
 
-    private List<ColorMIPSearchResultMetadata> createTestData() {
-        return ImmutableList.<ColorMIPSearchResultMetadata>builder()
+    private List<ColorMIPSearchMatchMetadata> createTestData() {
+        return ImmutableList.<ColorMIPSearchMatchMetadata>builder()
                 .add(createCSR("l1", "s1.1", 1))
                 .add(createCSR("l1", "s1.2", 2))
                 .add(createCSR("l1", "s1.3", 3))
@@ -111,20 +111,20 @@ public class UtilsTest {
                 .build();
     }
 
-    ColorMIPSearchResultMetadata createCSR(String line, String sample, int matchingPixels) {
-        ColorMIPSearchResultMetadata csr = new ColorMIPSearchResultMetadata();
-        csr.setMatchedPublishedName(line);
-        csr.addAttr("Slide Code", sample);
+    ColorMIPSearchMatchMetadata createCSR(String line, String sample, int matchingPixels) {
+        ColorMIPSearchMatchMetadata csr = new ColorMIPSearchMatchMetadata();
+        csr.setPublishedName(line);
+        csr.setSlideCode(sample);
         csr.setMatchingPixels(matchingPixels);
         return csr;
     }
 
-    ColorMIPSearchResultMetadata createCSRWithMatchedIds(String id, String matchedId, String imageName, String matchedImageName, int matchingPixels) {
-        ColorMIPSearchResultMetadata csr = new ColorMIPSearchResultMetadata();
-        csr.setId(id);
-        csr.setImageName(imageName);
-        csr.setMatchedId(matchedId);
-        csr.setMatchedImageName(matchedImageName);
+    ColorMIPSearchMatchMetadata createCSRWithMatchedIds(String id, String matchedId, String imageName, String matchedImageName, int matchingPixels) {
+        ColorMIPSearchMatchMetadata csr = new ColorMIPSearchMatchMetadata();
+        csr.setSourceId(id);
+        csr.setSourceImageName(imageName);
+        csr.setId(matchedId);
+        csr.setImageName(matchedImageName);
         csr.setMatchingPixels(matchingPixels);
         return csr;
     }

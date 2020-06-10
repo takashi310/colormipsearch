@@ -4,10 +4,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 public class MIPImage {
-    final MIPInfo mipInfo;
+    final MIPMetadata mipInfo;
     final ImageArray imageArray;
 
-    MIPImage(MIPInfo mipInfo, ImageArray imageArray) {
+    MIPImage(MIPMetadata mipInfo, ImageArray imageArray) {
         this.mipInfo = mipInfo;
         this.imageArray = imageArray;
     }

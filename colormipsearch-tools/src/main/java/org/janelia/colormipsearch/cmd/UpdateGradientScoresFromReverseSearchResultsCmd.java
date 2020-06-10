@@ -22,8 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.Results;
 import org.janelia.colormipsearch.tools.Utils;
 import org.slf4j.Logger;
@@ -109,7 +110,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        Map<String, List<ColorMIPSearchResultMetadata>> reverseResultsCache = new ConcurrentHashMap<>();
+        Map<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = new ConcurrentHashMap<>();
         try {
             LOG.info("Read reverse results directory {}", args.reverseResultsDir);
             Files.find(Paths.get(args.reverseResultsDir), 1, (p, fa) -> fa.isRegularFile()).parallel()
@@ -141,22 +142,22 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                             .map(File::new)
                             .forEach(f -> {
                                 long startTime = System.currentTimeMillis();
-                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(f, mapper);
+                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(f, mapper);
                                 if (CollectionUtils.isNotEmpty(cdsResults.results)) {
-                                    Set<String> ids = cdsResults.results.stream().map(csr -> csr.getId()).collect(Collectors.toSet());
-                                    Set<String> matchedIds = cdsResults.results.stream().map(csr -> csr.getMatchedId()).collect(Collectors.toSet());
+                                    Set<String> sourceIds = cdsResults.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
+                                    Set<String> matchedIds = cdsResults.results.stream().map(MIPMetadata::getId).collect(Collectors.toSet());
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-                                    Map<String, List<ColorMIPSearchResultMetadata>> reverseResults = readMatchIdResults(ids, matchedIds, reverseResultsCache);
+                                    Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsResults.results.stream()
                                             .forEach(csr -> {
-                                                ColorMIPSearchResultMetadata reverseCsr = findReverserseResult(csr, reverseResults);
+                                                ColorMIPSearchMatchMetadata reverseCsr = findReverserseResult(csr, reverseResults);
                                                 if (reverseCsr == null) {
                                                     LOG.debug("No matching result found for {}", csr);
                                                 } else {
                                                     csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
-                                                    csr.setNormalizedGradientAreaGapScore(reverseCsr.getNormalizedGradientAreaGapScore());
+                                                    csr.setNormalizedGapScore(reverseCsr.getNormalizedGapScore());
                                                 }
                                             });
                                     LOG.info("Finished updating {} results from {} in {}ms",
@@ -172,25 +173,25 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                 });
     }
 
-    private Map<String, List<ColorMIPSearchResultMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, Map<String, List<ColorMIPSearchResultMetadata>> reverseResults) {
+    private Map<String, List<ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults) {
         return matchIds.stream().parallel()
                 .flatMap(matchId -> streamMatchResultsWithGradientScore(reverseResults.get(matchId), ids))
-                .collect(Collectors.groupingBy(csr -> csr.getMatchedId(), Collectors.toList()));
+                .collect(Collectors.groupingBy(csr -> csr.getId(), Collectors.toList()));
     }
 
-    private Stream<ColorMIPSearchResultMetadata> streamMatchResultsWithGradientScore(List<ColorMIPSearchResultMetadata> content, Set<String> ids) {
+    private Stream<ColorMIPSearchMatchMetadata> streamMatchResultsWithGradientScore(List<ColorMIPSearchMatchMetadata> content, Set<String> ids) {
         if (content == null) {
             return Stream.of();
         } else {
             return content.stream()
-                    .filter(n -> ids.contains(n.getMatchedId()))
+                    .filter(n -> ids.contains(n.getId()))
                     .filter(n -> n.getGradientAreaGap() != -1)
                     ;
         }
     }
 
-    private ColorMIPSearchResultMetadata findReverserseResult(ColorMIPSearchResultMetadata result, Map<String, List<ColorMIPSearchResultMetadata>> indexedResults) {
-        List<ColorMIPSearchResultMetadata> matches = indexedResults.get(result.getId());
+    private ColorMIPSearchMatchMetadata findReverserseResult(ColorMIPSearchMatchMetadata result, Map<String, List<ColorMIPSearchMatchMetadata>> indexedResults) {
+        List<ColorMIPSearchMatchMetadata> matches = indexedResults.get(result.getId());
         if (matches == null) {
             return null;
         } else {

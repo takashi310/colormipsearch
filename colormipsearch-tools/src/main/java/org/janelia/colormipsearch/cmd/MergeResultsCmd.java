@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.Results;
 import org.janelia.colormipsearch.tools.Utils;
@@ -107,11 +107,11 @@ class MergeResultsCmd {
                     String fn = e.getKey();
                     List<String> resultList = e.getValue();
                     LOG.info("Combine results for {}", fn);
-                    List<ColorMIPSearchResultMetadata> combinedResults = resultList.stream()
+                    List<ColorMIPSearchMatchMetadata> combinedResults = resultList.stream()
                             .map(cdsFn -> new File(cdsFn))
                             .map(cdsFile -> {
                                 LOG.info("Reading {} -> {}", fn, cdsFile);
-                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
                                 if (cdsResults.results == null) {
                                     LOG.warn("Results file {} is empty", cdsFile);
                                 }
@@ -119,12 +119,12 @@ class MergeResultsCmd {
                             })
                             .filter(cdsResults -> CollectionUtils.isNotEmpty(cdsResults.results))
                             .flatMap(cdsResults -> cdsResults.results.stream())
-                            .filter(cdsr -> cdsr.getMatchingPixelsPct() * 100 > pctPositivePixels)
-                            .map(cdsr -> cleanup ? ColorMIPSearchResultMetadata.create(cdsr) : cdsr)
+                            .filter(csr -> csr.getMatchingRatio() * 100 > pctPositivePixels)
+                            .map(csr -> cleanup ? ColorMIPSearchMatchMetadata.create(csr) : csr)
                             .collect(Collectors.toList());
-                    List<ColorMIPSearchResultMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
+                    List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,
-                            csr -> csr.getMatchedId(),
+                            csr -> csr.getId(),
                             csr -> (double) csr.getMatchingPixels(),
                             -1,
                             1)

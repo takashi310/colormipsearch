@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmsdrivers;
 
-import java.io.File;
 import java.util.List;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -13,7 +12,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
 import org.janelia.colormipsearch.tools.MIPImage;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,25 +37,25 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
     }
 
     @Override
-    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
+    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> maskMIPS, List<MIPMetadata> libraryMIPS) {
         LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
 
         long nlibraries = libraryMIPS.size();
         long nmasks = maskMIPS.size();
 
         JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
-                .filter(mip -> new File(mip.getImagePath()).exists())
-                .map(mip -> MIPsUtils.loadMIP(mip));
+                .filter(MIPsUtils::exists)
+                .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
 
-        JavaRDD<MIPInfo> masksRDD = sparkContext.parallelize(maskMIPS)
-                .filter(mip -> new File(mip.getImagePath()).exists());
+        JavaRDD<MIPMetadata> masksRDD = sparkContext.parallelize(maskMIPS)
+                .filter(MIPsUtils::exists);
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<MIPImage, MIPInfo> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
+        JavaPairRDD<MIPImage, MIPMetadata> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
         LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
 
-        JavaPairRDD<MIPInfo, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
+        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
                 .groupBy(lms -> lms._2) // group by mask
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {

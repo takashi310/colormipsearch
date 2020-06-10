@@ -16,7 +16,7 @@ import org.janelia.colormipsearch.tools.CachedMIPsUtils;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
 import org.janelia.colormipsearch.tools.MIPImage;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.janelia.colormipsearch.tools.Utils;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
     }
 
     @Override
-    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPInfo> maskMIPS, List<MIPInfo> libraryMIPS) {
+    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> maskMIPS, List<MIPMetadata> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -54,7 +54,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
                 LongStream.range(0, maskMIPS.size()).boxed(),
-                maskMIPS.stream().filter(MIPInfo::exists),
+                maskMIPS.stream().filter(MIPsUtils::exists),
                 (mIndex, maskMIP) -> submitMaskSearches(mIndex + 1, maskMIP, libraryMIPS))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -76,7 +76,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
         return allSearchResults;
     }
 
-    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPInfo maskMIP, List<MIPInfo> libraryMIPs) {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPMetadata maskMIP, List<MIPMetadata> libraryMIPs) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
         ColorMIPMaskCompare maskComparator = colorMIPSearch.createMaskComparator(maskImage);
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
@@ -85,7 +85,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         LOG.debug("Compare mask# {} - {} with {} out of {} libraries", mIndex, maskMIP, libraryMIPsPartition.size(), libraryMIPs.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
-                                .filter(MIPInfo::exists)
+                                .filter(MIPsUtils::exists)
                                 .map(libraryMIP -> {
                                     MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
                                     ColorMIPCompareOutput sr = colorMIPSearch.runImageComparison(maskComparator, libraryImage);

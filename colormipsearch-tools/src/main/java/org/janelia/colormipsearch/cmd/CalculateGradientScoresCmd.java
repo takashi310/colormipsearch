@@ -26,10 +26,10 @@ import org.janelia.colormipsearch.api.GradientAreaGapUtils;
 import org.janelia.colormipsearch.api.MaskGradientAreaGapCalculator;
 import org.janelia.colormipsearch.api.MaskGradientAreaGapCalculatorProvider;
 import org.janelia.colormipsearch.tools.CachedMIPsUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.MIPImage;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.janelia.colormipsearch.tools.Results;
 import org.janelia.colormipsearch.tools.ScoredEntry;
@@ -103,7 +103,7 @@ class CalculateGradientScoresCmd {
                         long startTime = System.currentTimeMillis();
                         inputFiles.forEach(inputArg -> {
                             File f = new File(inputArg.input);
-                            Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                            Results<List<ColorMIPSearchMatchMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
                                     maskAreaGapCalculatorProvider,
                                     f,
                                     args.gradientPath,
@@ -145,7 +145,7 @@ class CalculateGradientScoresCmd {
                             long startTime = System.currentTimeMillis();
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
-                                Results<List<ColorMIPSearchResultMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
                                         maskAreaGapCalculatorProvider,
                                         f,
                                         args.gradientPath,
@@ -174,7 +174,7 @@ class CalculateGradientScoresCmd {
         }
     }
 
-    private Results<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForResultsFile(
+    private Results<List<ColorMIPSearchMatchMetadata>> calculateGradientAreaScoreForResultsFile(
             MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
             File inputResultsFile,
             String gradientsLocation,
@@ -185,16 +185,16 @@ class CalculateGradientScoresCmd {
             int topPublishedSampleMatches,
             ObjectMapper mapper,
             Executor executor) {
-        Results<List<ColorMIPSearchResultMetadata>> resultsFileContent = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(inputResultsFile, mapper);
+        Results<List<ColorMIPSearchMatchMetadata>> resultsFileContent = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(resultsFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return resultsFileContent;
         }
-        Map<MIPInfo, List<ColorMIPSearchResultMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topPublishedNameMatches, topPublishedSampleMatches);
+        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topPublishedNameMatches, topPublishedSampleMatches);
         LOG.info("Read {} entries ({} distinct IDs) from {}", resultsFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
 
         long startTime = System.currentTimeMillis();
-        List<CompletableFuture<List<ColorMIPSearchResultMetadata>>> gradientAreaGapComputations =
+        List<CompletableFuture<List<ColorMIPSearchMatchMetadata>>> gradientAreaGapComputations =
                 Streams.zip(
                         IntStream.range(0, Integer.MAX_VALUE).boxed(),
                         resultsGroupedById.entrySet().stream(),
@@ -211,7 +211,7 @@ class CalculateGradientScoresCmd {
                         .collect(Collectors.toList());
         // wait for all results to complete
         CompletableFuture.allOf(gradientAreaGapComputations.toArray(new CompletableFuture<?>[0])).join();
-        List<ColorMIPSearchResultMetadata> srWithGradScores = gradientAreaGapComputations.stream()
+        List<ColorMIPSearchMatchMetadata> srWithGradScores = gradientAreaGapComputations.stream()
                 .flatMap(gac -> gac.join().stream())
                 .collect(Collectors.toList());
         LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
@@ -230,38 +230,38 @@ class CalculateGradientScoresCmd {
         return new Results<>(srWithGradScores);
     }
 
-    private Map<MIPInfo, List<ColorMIPSearchResultMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchResultMetadata> cdsResults, int topPublishedNames, int topSamples) {
+    private Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults, int topPublishedNames, int topSamples) {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
                 .collect(Collectors.groupingBy(csr -> {
-                    MIPInfo mip = new MIPInfo();
-                    mip.setId(csr.getId());
-                    mip.setArchivePath(csr.getImageArchivePath());
-                    mip.setImagePath(csr.getImageName());
-                    mip.setType(csr.getImageType());
+                    MIPMetadata mip = new MIPMetadata();
+                    mip.setId(csr.getSourceId());
+                    mip.setImageArchivePath(csr.getSourceImageArchivePath());
+                    mip.setImageName(csr.getSourceImageName());
+                    mip.setImageType(csr.getSourceImageType());
                     return mip;
                 }, Collectors.collectingAndThen(
                         Collectors.toList(),
                         resultsForAnId -> {
-                            List<ColorMIPSearchResultMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(resultsForAnId, topPublishedNames, topSamples);
+                            List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(resultsForAnId, topPublishedNames, topSamples);
                             LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
                             return bestMatches;
                         })));
     }
 
-    private List<ColorMIPSearchResultMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchResultMetadata> cdsResults, int topPublishedNames, int topSamples) {
-        List<ScoredEntry<List<ColorMIPSearchResultMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
+    private List<ColorMIPSearchMatchMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchMatchMetadata> cdsResults, int topPublishedNames, int topSamples) {
+        List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
                 cdsResults,
-                csr -> StringUtils.defaultIfBlank(csr.getMatchedPublishedName(), extractPublishingNameCandidateFromImageName(csr.getMatchedImageName())), // pick best results by line
-                ColorMIPSearchResultMetadata::getMatchingPixels,
+                csr -> StringUtils.defaultIfBlank(csr.getPublishedName(), extractPublishingNameCandidateFromImageName(csr.getImageName())), // pick best results by line
+                ColorMIPSearchMatchMetadata::getMatchingPixels,
                 topPublishedNames,
                 -1);
 
         return topResultsByPublishedName.stream()
                 .flatMap(se -> Utils.pickBestMatches(
                         se.getEntry(),
-                        csr -> csr.getAttr("Slide Code"), // pick best results by sample (identified by slide code)
-                        ColorMIPSearchResultMetadata::getMatchingPixels,
+                        csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
+                        ColorMIPSearchMatchMetadata::getMatchingPixels,
                         topSamples,
                         1).stream())
                 .flatMap(se -> se.getEntry().stream())
@@ -274,15 +274,15 @@ class CalculateGradientScoresCmd {
         return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
 
-    private CompletableFuture<List<ColorMIPSearchResultMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,
-                                                                                                          MIPInfo inputMaskMIP,
-                                                                                                          List<ColorMIPSearchResultMetadata> selectedCDSResultsForInputMIP,
-                                                                                                          String gradientsLocation,
-                                                                                                          String gradientSuffix,
-                                                                                                          String zgapsLocation,
-                                                                                                          String zgapsSuffix,
-                                                                                                          MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
-                                                                                                          Executor executor) {
+    private CompletableFuture<List<ColorMIPSearchMatchMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,
+                                                                                                         MIPMetadata inputMaskMIP,
+                                                                                                         List<ColorMIPSearchMatchMetadata> selectedCDSResultsForInputMIP,
+                                                                                                         String gradientsLocation,
+                                                                                                         String gradientSuffix,
+                                                                                                         String zgapsLocation,
+                                                                                                         String zgapsSuffix,
+                                                                                                         MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
+                                                                                                         Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
         CompletableFuture<MaskGradientAreaGapCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load input mask {}", inputMaskMIP);
@@ -295,10 +295,10 @@ class CalculateGradientScoresCmd {
                 (i, csr) -> ImmutablePair.of(i + 1, csr))
                 .map(indexedCsr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
                     long startGapCalcTime = System.currentTimeMillis();
-                    MIPInfo matchedMIP = new MIPInfo();
-                    matchedMIP.setArchivePath(indexedCsr.getRight().getMatchedImageArchivePath());
-                    matchedMIP.setImagePath(indexedCsr.getRight().getMatchedImageName());
-                    matchedMIP.setType(indexedCsr.getRight().getMatchedImageType());
+                    MIPMetadata matchedMIP = new MIPMetadata();
+                    matchedMIP.setImageArchivePath(indexedCsr.getRight().getImageArchivePath());
+                    matchedMIP.setImageName(indexedCsr.getRight().getImageName());
+                    matchedMIP.setImageType(indexedCsr.getRight().getImageType());
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
                     MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, gradientsLocation, gradientSuffix));
                     MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
@@ -328,7 +328,7 @@ class CalculateGradientScoresCmd {
                 .thenApply(vr -> {
                     LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMaskMIP);
                     Integer maxMatchingPixels = selectedCDSResultsForInputMIP.stream()
-                            .map(ColorMIPSearchResultMetadata::getMatchingPixels)
+                            .map(ColorMIPSearchMatchMetadata::getMatchingPixels)
                             .max(Integer::compare)
                             .orElse(0);
                     LOG.info("Max pixel percentage score for the {} selected matches of entry {} ({}) -> {}",
@@ -345,11 +345,11 @@ class CalculateGradientScoresCmd {
                     if (maxAreaGap >= 0 && maxMatchingPixels > 0) {
                         selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
                                 .forEach(csr -> {
-                                    csr.setNormalizedGradientAreaGapScore(GradientAreaGapUtils.calculateAreaGapScore(
+                                    csr.setNormalizedGapScore(GradientAreaGapUtils.calculateAreaGapScore(
                                             csr.getGradientAreaGap(),
                                             maxAreaGap,
                                             csr.getMatchingPixels(),
-                                            csr.getMatchingPixelsPct(),
+                                            csr.getMatchingRatio(),
                                             maxMatchingPixels));
                                 });
                     }

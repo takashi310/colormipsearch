@@ -17,7 +17,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
                                     ImageArray negquery, int negMaskThreshold,
                                     boolean mirrorNegMask, int searchThreshold,
                                     double zTolerance, int xyshift) {
-        super(query, maskThreshold, mirrorMask, negquery, negMaskThreshold, mirrorNegMask, searchThreshold, zTolerance, xyshift);
+        super(query, maskThreshold, negquery, negMaskThreshold, searchThreshold, zTolerance);
         // shifting
         targetMasksList = generateShiftedMasks(maskPositions, xyshift, query.width, query.height);
         if (negQueryImage != null) {

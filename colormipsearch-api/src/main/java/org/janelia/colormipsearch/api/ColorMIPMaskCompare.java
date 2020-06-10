@@ -15,9 +15,9 @@ public abstract class ColorMIPMaskCompare {
     final double zTolerance;
 
     // Advanced Search
-    public ColorMIPMaskCompare(ImageArray query, int maskThreshold, boolean mirrorMask,
-                               ImageArray negquery, int negMaskThreshold, boolean mirrorNegMask,
-                               int searchThreshold, double zTolerance, int xyshift) {
+    public ColorMIPMaskCompare(ImageArray query, int maskThreshold,
+                               ImageArray negquery, int negMaskThreshold,
+                               int searchThreshold, double zTolerance) {
         this.queryImage = query;
         this.negQueryImage = negquery;
         this.searchThreshold = searchThreshold;
@@ -48,6 +48,13 @@ public abstract class ColorMIPMaskCompare {
         return pos.stream().mapToInt(i -> i).toArray();
     }
 
+    /**
+     * Run the color depth search between the current mask (the one from the context of the current comparator) and
+     * the targetImage parameter.
+     *
+     * @param targetImage
+     * @return
+     */
     public abstract ColorMIPCompareOutput runSearch(ImageArray targetImage);
 
     double calculatePixelGap(int red1, int green1, int blue1, int red2, int green2, int blue2) {

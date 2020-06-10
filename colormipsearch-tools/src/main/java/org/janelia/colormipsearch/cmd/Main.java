@@ -26,6 +26,8 @@ public class Main {
     public static void main(String[] argv) {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
+        GroupMIPsByPublishedNameCmd groupMIPsByPublishedNameCmd = new GroupMIPsByPublishedNameCmd(commonArgs);
+        CreateColorDepthSearchJSONInputCmd createColorDepthSearchJSONInputCmd = new CreateColorDepthSearchJSONInputCmd(commonArgs);
         ColorDepthSearchJSONInputCmd jsonMIPsSearchCmd = new ColorDepthSearchJSONInputCmd(commonArgs);
         ColorDepthSearchLocalMIPsCmd localMIPFilesSearchCmd = new ColorDepthSearchLocalMIPsCmd(commonArgs);
         MergeResultsCmd mergeResultsCmd = new MergeResultsCmd(commonArgs);
@@ -37,10 +39,12 @@ public class Main {
 
         JCommander cmdline = JCommander.newBuilder()
                 .addObject(mainArgs)
+                .addCommand("groupMIPsByPublishedName", groupMIPsByPublishedNameCmd.getArgs())
+                .addCommand("createColorDepthSearchJSONInput", createColorDepthSearchJSONInputCmd.getArgs())
                 .addCommand("searchFromJSON", jsonMIPsSearchCmd.getArgs())
                 .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
-                .addCommand("mergeResults", mergeResultsCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
+                .addCommand("mergeResults", mergeResultsCmd.getArgs())
                 .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
                 .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
@@ -78,6 +82,11 @@ public class Main {
         CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInSeconds);
         // invoke the appropriate command
         switch (cmdline.getParsedCommand()) {
+            case "groupMIPsByPublishedName":
+                groupMIPsByPublishedNameCmd.execute();
+                break;
+            case "createColorDepthSearchJSONInput":
+                createColorDepthSearchJSONInputCmd.execute();
             case "searchFromJSON":
                 CmdUtils.createOutputDirs(jsonMIPsSearchCmd.getArgs().getPerLibraryDir(), jsonMIPsSearchCmd.getArgs().getPerMaskDir());
                 jsonMIPsSearchCmd.execute();

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,10 +52,10 @@ public class ReplaceURLsCmd {
         String resultIDField;
 
         @Parameter(names = {"--image-url-field"}, description = "Image URL field")
-        String imageURLField = "image_path";
+        String imageURLField = "imageURL";
 
         @Parameter(names = {"--thumbnail-url-field"}, description = "Thumbnail URL field")
-        String thumbnailURLField = "thumbnail_path";
+        String thumbnailURLField = "thumbnailURL";
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -96,7 +96,7 @@ public class ReplaceURLsCmd {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        Map<String, MIPInfo> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
+        Map<String, MIPMetadata> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
                         mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
@@ -104,7 +104,7 @@ public class ReplaceURLsCmd {
                                 Collectors.toList(),
                                 r -> r.get(0))));
 
-        Map<String, MIPInfo> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
+        Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
                         mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
@@ -144,8 +144,8 @@ public class ReplaceURLsCmd {
                                  String resultIdFieldName,
                                  String imageURLFieldName,
                                  String thumbnailURLFieldName,
-                                 Map<String, MIPInfo> indexedSourceMIPs,
-                                 Map<String, MIPInfo> indexedTargetMIPs,
+                                 Map<String, MIPMetadata> indexedSourceMIPs,
+                                 Map<String, MIPMetadata> indexedTargetMIPs,
                                  Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -161,13 +161,13 @@ public class ReplaceURLsCmd {
                         }
                         String imageURL = getFieldValue(jsonNode, imageURLFieldName);
                         String thumbnailURL = getFieldValue(jsonNode, thumbnailURLFieldName);
-                        MIPInfo targetMIP = indexedTargetMIPs.get(id);
+                        MIPMetadata targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
                             LOG.warn("No target URLs found for {}", id);
                         } else if (StringUtils.isBlank(targetMIP.getImageURL()) || StringUtils.isBlank(targetMIP.getThumbnailURL())) {
                             LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.getImageURL(), targetMIP.getThumbnailURL());
                         } else {
-                            MIPInfo srcMIP = indexedSourceMIPs.get(id);
+                            MIPMetadata srcMIP = indexedSourceMIPs.get(id);
                             if (srcMIP == null) {
                                 LOG.warn("No source URLS found for {} for validation", id);
                             } else {

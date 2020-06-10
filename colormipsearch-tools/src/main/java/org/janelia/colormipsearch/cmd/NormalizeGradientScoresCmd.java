@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.GradientAreaGapUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultMetadata;
+import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.Results;
 import org.janelia.colormipsearch.tools.Utils;
@@ -114,12 +114,12 @@ class NormalizeGradientScoresCmd {
         filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
-            Results<List<ColorMIPSearchResultMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
-            List<ColorMIPSearchResultMetadata> cdsResults;
+            Results<List<ColorMIPSearchMatchMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+            List<ColorMIPSearchMatchMetadata> cdsResults;
             if (args.cleanup) {
                 cdsResults = Utils.pickBestMatches(
                         resultsFromJSONFile.results,
-                        csr -> csr.getMatchedId(),
+                        csr -> csr.getId(),
                         csr -> (double) csr.getMatchingPixels(),
                         -1,
                         1)
@@ -132,12 +132,12 @@ class NormalizeGradientScoresCmd {
             int maxMatchingPixels;
             if (args.reNormalize) {
                 maxAreaGap = cdsResults.stream().parallel()
-                        .map(ColorMIPSearchResultMetadata::getGradientAreaGap)
+                        .map(ColorMIPSearchMatchMetadata::getGradientAreaGap)
                         .max(Long::compare)
                         .orElse(-1L);
                 LOG.info("Max area gap for {}  -> {}", fn, maxAreaGap);
                 maxMatchingPixels = cdsResults.stream().parallel()
-                        .map(ColorMIPSearchResultMetadata::getMatchingPixels)
+                        .map(ColorMIPSearchMatchMetadata::getMatchingPixels)
                         .max(Integer::compare)
                         .orElse(0);
                 LOG.info("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
@@ -145,19 +145,19 @@ class NormalizeGradientScoresCmd {
                 maxAreaGap = -1L;
                 maxMatchingPixels = -1;
             }
-            List<ColorMIPSearchResultMetadata> cdsResultsWithNormalizedScore = cdsResults.stream().parallel()
-                    .filter(csr -> csr.getMatchingPixelsPct() * 100. > args.pctPositivePixels)
-                    .map(csr -> args.cleanup ? ColorMIPSearchResultMetadata.create(csr) : csr)
+            List<ColorMIPSearchMatchMetadata> cdsResultsWithNormalizedScore = cdsResults.stream().parallel()
+                    .filter(csr -> csr.getMatchingRatio() * 100. > args.pctPositivePixels)
+                    .map(csr -> args.cleanup ? ColorMIPSearchMatchMetadata.create(csr) : csr)
                     .peek(csr -> {
                         if (args.reNormalize) {
                             long areaGap = csr.getGradientAreaGap();
                             double normalizedGapScore = GradientAreaGapUtils.calculateAreaGapScore(
-                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), maxMatchingPixels
+                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingRatio(), maxMatchingPixels
                             );
                             if (areaGap >= 0) {
                                 LOG.debug("Update normalized score for {}: matchingPixels {}, matchingPixelsToMaskRatio {}, areaGap {}, current score {} -> updated score {}",
-                                        csr, csr.getMatchingPixels(), csr.getMatchingPixelsPct(), areaGap, csr.getNormalizedGradientAreaGapScore(), normalizedGapScore);
-                                csr.setNormalizedGradientAreaGapScore(normalizedGapScore);
+                                        csr, csr.getMatchingPixels(), csr.getMatchingRatio(), areaGap, csr.getNormalizedGapScore(), normalizedGapScore);
+                                csr.setNormalizedGapScore(normalizedGapScore);
                             } else {
                                 csr.setArtificialShapeScore(normalizedGapScore);
                             }

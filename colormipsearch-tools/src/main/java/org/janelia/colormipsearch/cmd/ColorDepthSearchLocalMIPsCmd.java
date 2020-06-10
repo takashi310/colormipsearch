@@ -10,7 +10,7 @@ import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
-import org.janelia.colormipsearch.tools.MIPInfo;
+import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,10 +55,10 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                 args.pctPositivePixels);
         ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
         try {
-            List<MIPInfo> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
+            List<MIPMetadata> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
                     args.libraryMIPsLocation.input, args.libraryMIPsLocation.offset, args.libraryMIPsLocation.length, args.filterAsLowerCase(args.libraryMIPsFilter)
             );
-            List<MIPInfo> masksMips = MIPsUtils.readMIPsFromLocalFiles(
+            List<MIPMetadata> masksMips = MIPsUtils.readMIPsFromLocalFiles(
                     args.maskMIPsLocation.input, args.maskMIPsLocation.offset, args.maskMIPsLocation.length, args.filterAsLowerCase(args.maskMIPsFilter)
             );
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
