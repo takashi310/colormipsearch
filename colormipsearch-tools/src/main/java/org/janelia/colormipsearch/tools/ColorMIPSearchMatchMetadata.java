@@ -1,26 +1,14 @@
 package org.janelia.colormipsearch.tools;
 
-import java.io.IOException;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ColorMIPSearchMatchMetadata extends MIPMetadata {
-    private static class NegNumberAsNullSerializer extends JsonSerializer<Long> {
-
-        @Override
-        public void serialize(Long l, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-            if (l != null && l >= 0) {
-                jsonGenerator.writeNumber(l);
-            }
-        }
-    }
 
     public static ColorMIPSearchMatchMetadata create(ColorMIPSearchMatchMetadata from) {
         ColorMIPSearchMatchMetadata cdsCopy = new ColorMIPSearchMatchMetadata();
@@ -39,7 +27,8 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
     private String sourceImageType;
     private int matchingPixels;
     private double matchingRatio;
-    private long gradientAreaGap = -1L;
+    @JsonProperty
+    private Long gradientAreaGap;
     private Double normalizedGapScore;
     private Double artificialShapeScore;
 
@@ -121,13 +110,13 @@ public class ColorMIPSearchMatchMetadata extends MIPMetadata {
             setMatchingRatio(Double.parseDouble(matchingRatioValue));
     }
 
-    @JsonSerialize(using = NegNumberAsNullSerializer.class)
+    @JsonIgnore
     public long getGradientAreaGap() {
-        return gradientAreaGap;
+        return gradientAreaGap == null ? -1 : gradientAreaGap;
     }
 
     public void setGradientAreaGap(long gradientAreaGap) {
-        this.gradientAreaGap = gradientAreaGap;
+        this.gradientAreaGap = gradientAreaGap >= 0 ? gradientAreaGap : null;
     }
 
     public Double getNormalizedGapScore() {

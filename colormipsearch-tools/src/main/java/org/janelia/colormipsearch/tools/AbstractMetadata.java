@@ -34,7 +34,6 @@ public abstract class AbstractMetadata {
     private String channel;
     private String mountingProtocol;
     private Boolean publishedToStaging;
-    private final Map<String, String> attrs = new LinkedHashMap<>();
 
     @JsonProperty
     public String getId() {
@@ -204,13 +203,6 @@ public abstract class AbstractMetadata {
         that.channel = this.channel;
         that.mountingProtocol = this.mountingProtocol;
         that.publishedToStaging = this.publishedToStaging;
-        iterateAttrs((k, v) -> {
-            that.addAttr(mapAttr(k), v);
-        });
-    }
-
-    protected void iterateAttrs(BiConsumer<String, String> attrConsumer) {
-        this.attrs.forEach(attrConsumer);
     }
 
     Consumer<String> attributeValueHandler(String attrName) {
@@ -251,7 +243,7 @@ public abstract class AbstractMetadata {
     }
 
     Consumer<String> defaultAttributeValueHandler(String attrName) {
-        return (attrValue) -> attrs.put(attrName, attrValue);
+        return (attrValue) -> {}; // do nothing
     }
 
     String mapAttr(String attrName) {

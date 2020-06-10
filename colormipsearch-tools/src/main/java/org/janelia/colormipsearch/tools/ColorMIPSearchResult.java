@@ -51,11 +51,6 @@ public class ColorMIPSearchResult implements Serializable {
         return isError;
     }
 
-    ColorMIPSearchResult applyGradientAreaGap(long gradientAreaGap) {
-        this.gradientAreaGap = gradientAreaGap;
-        return this;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -110,8 +105,6 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setPublishedName(maskMIP.getPublishedName());
         srMetadata.setImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setImageName(maskMIP.getImageName());
-        srMetadata.setImageType(maskMIP.getImageType());
-        maskMIP.iterateAttrs(srMetadata::addAttr);
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
@@ -136,7 +129,6 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setImageName(libraryMIP.getImageName());
         srMetadata.setImageType(libraryMIP.getImageType());
-        libraryMIP.iterateAttrs(srMetadata::addAttr); // add all attributes from libraryMIP
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);

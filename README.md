@@ -64,9 +64,8 @@ important for LM line or EM body lookup.
 ####Generate LM SplitGal4 MIPs:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    groupMIPS \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_split_gal4_published \
@@ -78,9 +77,8 @@ java \
 ####Generate LM MCFO MIPs:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    groupMIPS \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_gen1_mcfo_published \
@@ -92,9 +90,8 @@ java \
 ####Generate EM MIPs:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    groupMIPS \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flyem_hemibrain \
@@ -132,9 +129,8 @@ as input (see the '--segmented-mips-base-dir' argument).
 Prepare MCFO input:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    prepareCDSArgs \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_gen1_mcfo_published \
@@ -146,9 +142,8 @@ java \
 Prepare SplitGal4 input:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    prepareCDSArgs \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_split_gal4_published \
@@ -160,9 +155,8 @@ java \
 Prepare EM input:
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    prepareCDSArgs \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flyem_hemibrain \
@@ -190,9 +184,8 @@ two sets of JSON files that will have to have the imageURLs update:
 
 ```bash
 java \
-    -cp target/colormipsearch-1.1-jar-with-dependencies.jar \
-    org.janelia.colormipsearch.cmd.ExtractColorMIPsMetadata \
-    prepareCDSArgs \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_gen1_mcfo_case_1_gamma1_4 \

@@ -94,9 +94,6 @@ public class GroupMIPsByPublishedNameCmd {
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         private List<String> datasets;
 
-        @Parameter(names = {"--output-directory", "-od"}, description = "Output directory", required = true)
-        private String outputDir;
-
         @Parameter(names = {"--skeletons-directory", "-emdir"}, description = "Em skeletons sub-directory")
         private String skeletonsOutput = "by_body";
 
@@ -142,9 +139,9 @@ public class GroupMIPsByPublishedNameCmd {
         args.libraries.forEach(library -> {
             Path outputPath;
             if (isEmLibrary(library.input)) {
-                outputPath = Paths.get(args.outputDir, args.skeletonsOutput);
+                outputPath = Paths.get(args.commonArgs.outputDir, args.skeletonsOutput);
             } else {
-                outputPath = Paths.get(args.outputDir, args.linesOutput);
+                outputPath = Paths.get(args.commonArgs.outputDir, args.linesOutput);
             }
             groupMIPsByPublishedName(
                     serverEndpoint,
