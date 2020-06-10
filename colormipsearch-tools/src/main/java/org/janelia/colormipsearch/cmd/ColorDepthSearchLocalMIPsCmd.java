@@ -68,9 +68,9 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                 String maskName = args.maskMIPsLocation.listArgName();
                 saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskName + "-inputs-" + inputName + "-cdsParameters.json");
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
-                new PerMaskColorMIPSearchResultsWriter().writeSearchResults(args.getPerMaskDir(), cdsResults);
+                ColorMIPSearchResultsWriter.writeSearchResults(args.getPerMaskDir(), cdsResults, ColorMIPSearchResult::perMaskMetadata);
                 if (StringUtils.isNotBlank(args.perLibrarySubdir)) {
-                    new PerLibraryColorMIPSearchResultsWriter().writeSearchResults(args.getPerLibraryDir(), cdsResults);
+                    ColorMIPSearchResultsWriter.writeSearchResults(args.getPerLibraryDir(), cdsResults, ColorMIPSearchResult::perLibraryMetadata);
                 }
             }
         } finally {

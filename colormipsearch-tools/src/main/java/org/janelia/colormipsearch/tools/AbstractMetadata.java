@@ -182,7 +182,7 @@ public abstract class AbstractMetadata {
      * @param value
      */
     @JsonAnySetter
-    void addAttr(String attribute, String value) {
+    private void addAttr(String attribute, String value) {
         attributeValueHandler(mapAttr(attribute)).accept(value);
     }
 
@@ -193,7 +193,7 @@ public abstract class AbstractMetadata {
      * @param attrs
      */
     @JsonProperty
-    void setAttrs(Map<String, String> attrs) {
+    private void setAttrs(Map<String, String> attrs) {
         if (attrs != null) {
             attrs.forEach((k, v) -> addAttr(k, v));
         }

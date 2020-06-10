@@ -19,6 +19,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         return cdsCopy;
     }
 
+
     private String sourceId;
     private String sourcePublishedName;
     private String sourceLibraryName;
@@ -32,6 +33,11 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private Double normalizedGapScore;
     private Double artificialShapeScore;
 
+    /**
+     * This is field will not written for every match in a result file because it only adds a lot of noise.
+     *
+     * @return
+     */
     @JsonIgnore
     public String getSourceId() {
         return sourceId;
@@ -41,6 +47,11 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.sourceId = sourceId;
     }
 
+    /**
+     * This is field will not written for every match in a result file because it only adds a lot of noise.
+     *
+     * @return
+     */
     @JsonIgnore
     public String getSourcePublishedName() {
         return sourcePublishedName;
@@ -50,6 +61,11 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.sourcePublishedName = sourcePublishedName;
     }
 
+    /**
+     * This is field will not written for every match in a result file because it only adds a lot of noise.
+     *
+     * @return
+     */
     @JsonIgnore
     public String getSourceLibraryName() {
         return sourceLibraryName;

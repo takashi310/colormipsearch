@@ -17,6 +17,17 @@ import org.slf4j.LoggerFactory;
 public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
 
+    public static CDSMatches readCDSMatchesFromJSONFile(File f, ObjectMapper mapper) {
+        try {
+            LOG.debug("Reading {}", f);
+            return mapper.readValue(f, new TypeReference<CDSMatches>() {
+            });
+        } catch (IOException e) {
+            LOG.error("Error reading CDS results from json file {}", f, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.debug("Reading {}", f);

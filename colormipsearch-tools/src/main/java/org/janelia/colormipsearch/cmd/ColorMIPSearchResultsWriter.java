@@ -11,30 +11,31 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.apache.commons.collections4.CollectionUtils;
+import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.tools.MIPIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class AbstractColorMIPSearchResultsWriter {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractColorMIPSearchResultsWriter.class);
+class ColorMIPSearchResultsWriter {
+    private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultsWriter.class);
 
-    final RetryPolicy<List<ColorMIPSearchResult>> retryPolicy;
-
-    public AbstractColorMIPSearchResultsWriter() {
-        retryPolicy = new RetryPolicy<List<ColorMIPSearchResult>>()
-                .handle(IllegalStateException.class)
-                .withDelay(Duration.ofMillis(500))
-                .withMaxRetries(20);
-    }
+    private final static RetryPolicy<List<ColorMIPSearchResult>> RETRY_POLICY = new RetryPolicy<List<ColorMIPSearchResult>>()
+            .handle(IllegalStateException.class)
+            .withDelay(Duration.ofMillis(500))
+            .withMaxRetries(20);
 
     private static class ResultsFileHandler {
         private final RandomAccessFile rf;
@@ -69,11 +70,43 @@ abstract class AbstractColorMIPSearchResultsWriter {
         }
     }
 
-    abstract void writeSearchResults(Path outputPath, List<ColorMIPSearchResult> searchResults);
+    static void writeSearchResults(Path outputPath, List<ColorMIPSearchResult> searchResults, Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> colorSearchResultMapper) {
+        List<CDSMatches> cdsGroupedResults = searchResults.stream()
+                .map(colorSearchResultMapper)
+                .collect(Collectors.groupingBy(
+                        csr -> new MIPIdentifier(
+                                csr.getSourceId(),
+                                csr.getSourcePublishedName(),
+                                csr.getSourceLibraryName()),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                l -> {
+                                    l.sort(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed());
+                                    return l;
+                                })))
+                .entrySet().stream().map(e -> new CDSMatches(
+                        e.getKey().getId(),
+                        e.getKey().getPublishedName(),
+                        e.getKey().getLibraryName(),
+                        e.getValue()))
+                .collect(Collectors.toList());
+        LOG.info("Write {} file results", cdsGroupedResults.size());
+        cdsGroupedResults.stream().parallel()
+                .forEach(cdsMatches -> {
+                    Failsafe.with(RETRY_POLICY).run(
+                            () -> writeSearchResultsToFile(
+                                    outputPath == null
+                                            ? null
+                                            : outputPath.resolve(cdsMatches.getMaskId() + ".json"),
+                                    cdsMatches)
+                    );
+                });
+        LOG.info("Finished writing {} file results", cdsGroupedResults.size());
+    }
 
-    void writeSearchResultsToFile(Path outputFile, List<ColorMIPSearchMatchMetadata> searchResults) {
+    private static void writeSearchResultsToFile(Path outputFile, CDSMatches searchResults) {
         long startTime = System.currentTimeMillis();
-        if (CollectionUtils.isEmpty(searchResults)) {
+        if (searchResults.isEmpty()) {
             // nothing to do
             return;
         }
@@ -81,12 +114,12 @@ abstract class AbstractColorMIPSearchResultsWriter {
         if (outputFile == null) {
             try {
                 JsonGenerator gen = mapper.getFactory().createGenerator(System.out, JsonEncoding.UTF8);
-                writeColorSearchResults(gen, searchResults);
+                writeColorDepthSearchMatches(gen, searchResults);
             } catch (IOException e) {
-                LOG.error("Error writing json output for {} results", searchResults.size(), e);
+                LOG.error("Error writing json output for {} results", searchResults.results.size(), e);
                 throw new UncheckedIOException(e);
             } finally {
-                LOG.info("Written {} results in {}ms", searchResults.size(), System.currentTimeMillis() - startTime);
+                LOG.info("Written {} results in {}ms", searchResults.results.size(), System.currentTimeMillis() - startTime);
             }
         } else {
             ResultsFileHandler rfHandler;
@@ -104,12 +137,13 @@ abstract class AbstractColorMIPSearchResultsWriter {
                 gen.useDefaultPrettyPrinter();
             } catch (IOException e) {
                 rfHandler.close();
-                LOG.error("Error creating the JSON writer for writing {} results", searchResults.size(), e);
+                LOG.error("Error creating the JSON writer for writing {} results", searchResults.results.size(), e);
                 throw new UncheckedIOException(e);
             }
             if (initialOutputFileSize > 0) {
+                // result file exists and is not empty
                 try {
-                    LOG.info("Append {} results to {}", searchResults.size(), outputFile);
+                    LOG.info("Append {} results to {}", searchResults.results.size(), outputFile);
                     // FP is positioned at the end of the last element
                     // position FP after the end of the last item
                     // this may not work on Windows because of the new line separator
@@ -120,41 +154,42 @@ abstract class AbstractColorMIPSearchResultsWriter {
                     // append the new elements to the existing results
                     gen.writeStartObject(); // just to tell the generator that this is inside of an object which has an array
                     gen.writeArrayFieldStart("results");
-                    gen.writeObject(searchResults.get(0)); // write the first element - it can be any element or dummy object
+                    gen.writeObject(searchResults.results.get(0)); // write the first element - it can be any element or dummy object
                     // just to fool the generator that there is already an element in the array
                     gen.flush();
                     // reset the position
                     rfHandler.rf.seek(endOfLastItemPos);
                     // and now start writing the actual elements
-                    writeColorSearchResultsArray(gen, searchResults);
+                    writeColorSearchMatchesArray(gen, searchResults.results);
                     gen.writeEndArray();
                     gen.writeEndObject();
                     gen.flush();
                     long currentPos = rfHandler.rf.getFilePointer();
                     rfHandler.rf.setLength(currentPos); // truncate
                 } catch (IOException e) {
-                    LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.size(), outputFile, e);
+                    LOG.error("Error writing json output for {} results to existing outputfile {}", searchResults.results.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
                     closeFile(rfHandler);
-                    LOG.info("Written {} results to existing file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results to existing file -> {} in {}ms", searchResults.results.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             } else {
+                // new result file
                 try {
-                    LOG.info("Create {} with {} results", outputFile, searchResults.size());
-                    writeColorSearchResults(gen, searchResults);
+                    LOG.info("Create {} with {} results", outputFile, searchResults.results.size());
+                    writeColorDepthSearchMatches(gen, searchResults);
                 } catch (IOException e) {
-                    LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.size(), outputFile, e);
+                    LOG.error("Error writing json output for {} results to new outputfile {}", searchResults.results.size(), outputFile, e);
                     throw new UncheckedIOException(e);
                 } finally {
                     closeFile(rfHandler);
-                    LOG.info("Written {} results to new file -> {} in {}ms", searchResults.size(), outputFile, System.currentTimeMillis() - startTime);
+                    LOG.info("Written {} results to new file -> {} in {}ms", searchResults.results.size(), outputFile, System.currentTimeMillis() - startTime);
                 }
             }
         }
     }
 
-    private ResultsFileHandler openFile(File f) throws IOException {
+    private static ResultsFileHandler openFile(File f) throws IOException {
         long startTime = System.currentTimeMillis();
         RandomAccessFile rf = new RandomAccessFile(f, "rw");
         FileChannel fc = rf.getChannel();
@@ -171,21 +206,24 @@ abstract class AbstractColorMIPSearchResultsWriter {
         }
     }
 
-    private void closeFile(ResultsFileHandler rfh) {
+    private static void closeFile(ResultsFileHandler rfh) {
         rfh.close();
     }
 
-    private void writeColorSearchResults(JsonGenerator gen, List<ColorMIPSearchMatchMetadata> searchResults) throws IOException {
+    private static void writeColorDepthSearchMatches(JsonGenerator gen, CDSMatches cdsMatches) throws IOException {
         gen.useDefaultPrettyPrinter();
         gen.writeStartObject();
+        gen.writeStringField("maskId", cdsMatches.getMaskId());
+        gen.writeStringField("maskPublishedName", cdsMatches.getMaskPublishedName());
+        gen.writeStringField("maskLibraryName", cdsMatches.getMaskLibraryName());
         gen.writeArrayFieldStart("results");
-        writeColorSearchResultsArray(gen, searchResults);
+        writeColorSearchMatchesArray(gen, cdsMatches.results);
         gen.writeEndArray();
         gen.writeEndObject();
         gen.flush();
     }
 
-    private void writeColorSearchResultsArray(JsonGenerator gen, List<ColorMIPSearchMatchMetadata> searchResults) throws IOException {
+    private static void writeColorSearchMatchesArray(JsonGenerator gen, List<ColorMIPSearchMatchMetadata> searchResults) throws IOException {
         for (ColorMIPSearchMatchMetadata sr : searchResults) {
             gen.writeObject(sr);
         }
