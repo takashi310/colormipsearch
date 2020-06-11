@@ -158,6 +158,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                                 if (reverseCsr == null) {
                                                     LOG.debug("No matching result found for {}", csr);
                                                 } else {
+                                                    LOG.debug("Set gradient area gap for {} from {} to {}", csr, reverseCsr, reverseCsr.getGradientAreaGap());
                                                     csr.setGradientAreaGap(reverseCsr.getGradientAreaGap());
                                                     csr.setNormalizedGapScore(reverseCsr.getNormalizedGapScore());
                                                 }
