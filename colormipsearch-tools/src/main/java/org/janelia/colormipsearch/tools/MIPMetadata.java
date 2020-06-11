@@ -10,5 +10,4 @@ public class MIPMetadata extends AbstractMetadata {
     public void setRelatedImageRefId(String relatedImageRefId) {
         this.relatedImageRefId = relatedImageRefId;
     }
-
 }

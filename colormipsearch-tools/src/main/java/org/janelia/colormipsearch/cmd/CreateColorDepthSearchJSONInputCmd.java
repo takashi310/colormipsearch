@@ -47,6 +47,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -76,58 +77,60 @@ public class CreateColorDepthSearchJSONInputCmd {
     private static class CreateColorDepthSearchJSONInputArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
                 description = "JACS data service base URL", required = true)
-        private String dataServiceURL;
+        String dataServiceURL;
 
         @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
-        private String libraryMappingURL = "http://config.int.janelia.org/config/cdm_libraries";
+        String libraryMappingURL = "http://config.int.janelia.org/config/cdm_libraries";
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
-        private String authorization;
+        String authorization;
 
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
-        private String alignmentSpace = "JRC2018_Unisex_20x_HR";
+        String alignmentSpace = "JRC2018_Unisex_20x_HR";
 
         @Parameter(names = {"--libraries", "-l"},
                 description = "Which libraries to extract such as {flyem_hemibrain, flylight_gen1_gal4, flylight_gen1_lexa, flylight_gen1_mcfo_case_1, flylight_splitgal4_drivers}. " +
                         "The format is <libraryName>[:<offset>[:<length>]]",
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
-        private List<ListArg> libraries;
+        List<ListArg> libraries;
 
         @Parameter(names = "--included-libraries", variableArity = true, description = "If set, MIPs should also be in all these libraries")
-        private Set<String> includedLibraries;
+        Set<String> includedLibraries;
 
         @Parameter(names = "--excluded-libraries", variableArity = true, description = "If set, MIPs should not be part of any of these libraries")
-        private Set<String> excludedLibraries;
+        Set<String> excludedLibraries;
 
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
-        private List<String> datasets;
+        List<String> datasets;
 
         @Parameter(names = {"--segmented-mips-base-dir"}, description = "The base directory for segmented MIPS")
-        private String segmentedMIPsBaseDir;
-
+        String segmentedMIPsBaseDir;
 
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
-        private boolean includeMIPsWithNoPublishedURL;
+        boolean includeMIPsWithNoPublishedURL;
 
         @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flag for include MIPs without publishing name: " +
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
                 "0x2 - the mip is included even if publishedToStaging is not set")
-        private int includeMIPsWithoutPublisingName;
+        int includeMIPsWithoutPublisingName;
 
         @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
                 "0 - lookup segmented images but if none is found include the original, " +
                 "0x1 - include the original MIP but only if a segmented image exists, " +
                 "0x2 - include only segmented image if it exists, " +
                 "0x4 - include both the original MIP and all its segmentations")
-        private int segmentedImageHandling;
+        int segmentedImageHandling;
 
         @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
-        private List<ListArg> excludedMIPs;
+        List<ListArg> excludedMIPs;
+
+        @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
+        boolean keepDuplicates;
 
         @Parameter(names = {"--output-filename"}, description = "Output file name")
-        private String outputFileName;
+        String outputFileName;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -255,6 +258,7 @@ public class CreateColorDepthSearchJSONInputCmd {
             return;
         }
         try {
+            Map<String, List<String>> cdmNameToMIPIdForDupCheck = new HashMap<>();
             Pair<String, Map<String, List<String>>> segmentedImages;
             if (isEmLibrary(libraryArg.input)) {
                 Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)_.*");
@@ -291,6 +295,37 @@ public class CreateColorDepthSearchJSONInputCmd {
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, args.segmentedMIPsBaseDir, segmentedImages, args.segmentedImageHandling).stream())
                         .map(ColorDepthMetadata::asMIPInfo)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
+                        .peek(cdmip -> {
+                            String cdmName = cdmip.getCdmName();
+                            if (StringUtils.isNotBlank(cdmName)) {
+                                List<String> mipIds = cdmNameToMIPIdForDupCheck.get(cdmName);
+                                if (mipIds == null) {
+                                    cdmNameToMIPIdForDupCheck.put(cdmName, ImmutableList.of(cdmip.getId()));
+                                } else {
+                                    if (!mipIds.contains(cdmip.getId())) {
+                                        cdmNameToMIPIdForDupCheck.put(
+                                                cdmName,
+                                                ImmutableList.<String>builder().addAll(mipIds).add(cdmip.getId()).build());
+                                    }
+                                }
+                            }
+                        })
+                        .filter(cdmip -> {
+                            String cdmName = cdmip.getCdmName();
+                            if (args.keepDuplicates || StringUtils.isBlank(cdmName)) {
+                                return true;
+                            } else {
+                                cdmNameToMIPIdForDupCheck.get(cdmName);
+                                List<String> mipIds = cdmNameToMIPIdForDupCheck.get(cdmName);
+                                int mipIndex = mipIds.indexOf(cdmip.getId());
+                                if (mipIndex == 0) {
+                                    return true;
+                                } else {
+                                    LOG.info("Not keeping {} because it is a duplicate of {}", cdmip.getId(), mipIds.get(0));
+                                    return false;
+                                }
+                            }
+                        })
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
