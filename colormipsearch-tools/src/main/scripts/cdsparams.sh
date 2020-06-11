@@ -58,13 +58,24 @@ export PIX_FLUCTUATION=1
 export PIX_PCT_MATCH=1
 
 # GA params
-export START_FILE_INDEX=0
+# TOTAL_FILES is the least number > the number of files containing matches by EM that is divisible by FILES_PER_JOB
+# the reason for that is that in bash TOTAL_FILES/FILES_PER_JOB is an integer division and if it does not divide exactly
+# we may not process all the files
+# so to calculate it `ls ${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS} | wc` then take the least number > the value
+# that is divisible by the selected value for FILES_PER_JOB
 export TOTAL_FILES=34800
+export START_FILE_INDEX=0
+# the value depends on the CPU and memory resources available on the machine. If running on the grid requesting 20 cores
+# for split gal4 drivers we can use up to 200 files per job - for MCFO we cannot go higher than 100 since the number of MCFOs
+# is much larger
 export FILES_PER_JOB=100
 
+# this specifies the number of lines to select for gradient scoring.
 export TOP_RESULTS=300
 export SAMPLES_PER_LINE=0
 
-FIRST_JOB=332
-LAST_JOB=332
+# FIRST_JOB and LAST_JOB specify the job range - if not set they default to first and last job respectivelly
+FIRST_JOB=1
+LAST_JOB=1
+# use localRun to run on the host on which the command is invoked or gridRun to invoke it using bsub
 RUN_CMD="localRun"
