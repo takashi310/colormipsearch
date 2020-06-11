@@ -17,16 +17,21 @@ public class CachedMIPsUtils {
 
     public static void initializeCache(long maxSize, long expirationInSeconds) {
         LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
-        mipsImagesCache = CacheBuilder.newBuilder()
-                .concurrencyLevel(16)
-                .maximumSize(maxSize)
-                .expireAfterAccess(Duration.ofSeconds(expirationInSeconds))
-                .build(new CacheLoader<MIPMetadata, MIPImage>() {
-                    @Override
-                    public MIPImage load(MIPMetadata mipInfo) {
-                        return MIPsUtils.loadMIP(mipInfo);
-                    }
-                });
+        CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
+                .concurrencyLevel(16);
+        if (expirationInSeconds > 0) {
+             cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
+        }
+        if (maxSize > 0) {
+            cacheBuilder.maximumSize(maxSize);
+        }
+        mipsImagesCache = cacheBuilder
+            .build(new CacheLoader<MIPMetadata, MIPImage>() {
+                @Override
+                public MIPImage load(MIPMetadata mipInfo) {
+                    return MIPsUtils.loadMIP(mipInfo);
+                }
+            });
     }
 
     public static MIPImage loadMIP(MIPMetadata mipInfo) {

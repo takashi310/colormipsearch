@@ -3,11 +3,16 @@ MASK_NAME=flyem_hemibrain_with_fl
 LIBRARY_NAME=flylight_gen1_mcfo_published
 GA_PRECOMPUTED_FILES_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease.zip
 
+# MASKS_FILES and LIBRARIES_FILES are - comma or space separated - json files
+# created with the "createColorDepthSearchJSONInput" command
 export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_with_fl.json"
 export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_gen1_mcfo_published_gamma1_4.json"
 
+# to get the value for TOTAL_MASKS we can simply run `grep imageURL "$WORKING_DIR/mips/flyem_hemibrain_with_fl.json | wc`
 export TOTAL_MASKS=47454
+# to get the value for TOTAL_LIBRARIES we can simply run `grep imageURL "$WORKING_DIR/mips/flylight_gen1_mcfo_published_gamma1_4.json | wc`
 export TOTAL_LIBRARIES=177894
+# the selection of the number of masks or libraries per job is empirical based on the size of the libraries and/or masks
 export MASKS_PER_JOB=7909
 export LIBRARIES_PER_JOB=9883
 # this is the partition value used both for CDS and GA so it might need to be set differently for GA than it is for CDS
@@ -17,8 +22,11 @@ export PROCESSING_PARTITION_SIZE=17
 
 export CORES_RESOURCE=20
 export CPU_RESERVE=1
+# MEM_RESOURCE value is the memory in GB available on the host on which this runs
 export MEM_RESOURCE=170
-export MIPS_CACHE_SIZE=50000
+# a cache size of 100000 is OK if there are at least 160GB of memory - otherwise set it to 50000 or
+# to some other reasonable value based on the available memory
+export MIPS_CACHE_SIZE=100000
 export MIPS_CACHE_EXPIRATION=60
 
 CDSMATCHES_SUBDIR=cdsresults.matches
