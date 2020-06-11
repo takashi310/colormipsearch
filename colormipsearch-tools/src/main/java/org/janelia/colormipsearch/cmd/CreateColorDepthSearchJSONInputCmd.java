@@ -259,6 +259,24 @@ public class CreateColorDepthSearchJSONInputCmd {
         }
         try {
             Map<String, List<String>> cdmNameToMIPIdForDupCheck = new HashMap<>();
+            if (CollectionUtils.isNotEmpty(excludedMIPs)) {
+                // build the initial map for duplicate check as well
+                excludedMIPs.forEach(cdmip -> {
+                    String cdmName = cdmip.getCdmName();
+                    if (StringUtils.isNotBlank(cdmName)) {
+                        List<String> mipIds = cdmNameToMIPIdForDupCheck.get(cdmName);
+                        if (mipIds == null) {
+                            cdmNameToMIPIdForDupCheck.put(cdmName, ImmutableList.of(cdmip.getId()));
+                        } else {
+                            if (!mipIds.contains(cdmip.getId())) {
+                                cdmNameToMIPIdForDupCheck.put(
+                                        cdmName,
+                                        ImmutableList.<String>builder().addAll(mipIds).add(cdmip.getId()).build());
+                            }
+                        }
+                    }
+                });
+            }
             Pair<String, Map<String, List<String>>> segmentedImages;
             if (isEmLibrary(libraryArg.input)) {
                 Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)_.*");
