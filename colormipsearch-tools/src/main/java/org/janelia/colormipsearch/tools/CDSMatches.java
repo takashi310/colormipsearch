@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -64,6 +65,7 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         }
     }
 
+    @JsonIgnore
     public boolean isEmpty() {
         return CollectionUtils.isEmpty(results);
     }
