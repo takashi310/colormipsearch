@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.Results;
@@ -111,7 +112,7 @@ class MergeResultsCmd {
                             .map(cdsFn -> new File(cdsFn))
                             .map(cdsFile -> {
                                 LOG.info("Reading {} -> {}", fn, cdsFile);
-                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+                                CDSMatches cdsResults = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsFile, mapper);
                                 if (cdsResults.results == null) {
                                     LOG.warn("Results file {} is empty", cdsFile);
                                 }
@@ -124,7 +125,7 @@ class MergeResultsCmd {
                             .collect(Collectors.toList());
                     List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,
-                            csr -> csr.getId(),
+                            ColorMIPSearchMatchMetadata::getId,
                             csr -> (double) csr.getMatchingPixels(),
                             -1,
                             1)
@@ -132,8 +133,8 @@ class MergeResultsCmd {
                             .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
 
                     ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
-                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
-                            new Results<>(combinedResultsWithNoDuplicates),
+                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                            CDSMatches.singletonfromResultsOfColorMIPSearchMatches(combinedResultsWithNoDuplicates),
                             CmdUtils.getOutputFile(outputDir, new File(fn)),
                             args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                 });

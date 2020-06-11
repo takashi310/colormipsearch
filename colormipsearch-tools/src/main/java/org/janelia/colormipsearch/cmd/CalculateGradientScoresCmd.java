@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.GradientAreaGapUtils;
 import org.janelia.colormipsearch.api.MaskGradientAreaGapCalculator;
 import org.janelia.colormipsearch.api.MaskGradientAreaGapCalculatorProvider;
+import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.CachedMIPsUtils;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
@@ -44,16 +45,22 @@ class CalculateGradientScoresCmd {
     @Parameters(commandDescription = "Calculate gradient area score for the results")
     static class GradientScoreResultsArgs extends AbstractArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
-        private ListArg resultsDir;
+        ListArg resultsDir;
 
         @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
-        private List<ListArg> resultsFiles;
+        List<ListArg> resultsFiles;
 
-        @Parameter(names = {"--topPublishedNameMatches"}, description = "If set only calculate the gradient score for the top specified color depth search results")
-        private int topPublishedNameMatches;
+        @Parameter(names = {"--topPublishedNameMatches"},
+                description = "If set only calculate the gradient score for the specified number of best lines color depth search results")
+        int numberOfBestLines;
 
-        @Parameter(names = {"--topPublishedSampleMatches"}, description = "If set select the top sample matches per line to use for gradient score")
-        private int topPublishedSampleMatches = 1;
+        @Parameter(names = {"--topPublishedSampleMatches"},
+                description = "If set select the specified numnber of best samples for each line to calculate the gradient score")
+        int numberOfBestSamplesPerLine = 1;
+
+        @Parameter(names = {"--topMatchesPerSample"},
+                description = "Number of best matches for each line to be used for gradient scoring (defaults to 1)")
+        int numberOfBestMatchesPerSample = 1;
 
         GradientScoreResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -103,20 +110,21 @@ class CalculateGradientScoresCmd {
                         long startTime = System.currentTimeMillis();
                         inputFiles.forEach(inputArg -> {
                             File f = new File(inputArg.input);
-                            Results<List<ColorMIPSearchMatchMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                            CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
                                     maskAreaGapCalculatorProvider,
                                     f,
                                     args.gradientPath,
                                     args.gradientSuffix,
                                     args.zgapPath,
                                     StringUtils.defaultString(args.zgapSuffix, ""),
-                                    args.topPublishedNameMatches,
-                                    args.topPublishedSampleMatches,
+                                    args.numberOfBestLines,
+                                    args.numberOfBestSamplesPerLine,
+                                    args.numberOfBestMatchesPerSample,
                                     mapper,
                                     executor
                             );
-                            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
-                                    cdsResults,
+                            ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                    cdsMatches,
                                     CmdUtils.getOutputFile(outputDir, f),
                                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                         });
@@ -145,20 +153,21 @@ class CalculateGradientScoresCmd {
                             long startTime = System.currentTimeMillis();
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
-                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = calculateGradientAreaScoreForResultsFile(
+                                CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
                                         maskAreaGapCalculatorProvider,
                                         f,
                                         args.gradientPath,
                                         args.gradientSuffix,
                                         args.zgapPath,
                                         StringUtils.defaultString(args.zgapSuffix, ""),
-                                        args.topPublishedNameMatches,
-                                        args.topPublishedSampleMatches,
+                                        args.numberOfBestLines,
+                                        args.numberOfBestSamplesPerLine,
+                                        args.numberOfBestMatchesPerSample,
                                         mapper,
                                         executor
                                 );
-                                ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
-                                        cdsResults,
+                                ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                        cdsMatches,
                                         CmdUtils.getOutputFile(outputDir, f),
                                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                             });
@@ -174,24 +183,29 @@ class CalculateGradientScoresCmd {
         }
     }
 
-    private Results<List<ColorMIPSearchMatchMetadata>> calculateGradientAreaScoreForResultsFile(
+    private CDSMatches calculateGradientAreaScoreForResultsFile(
             MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
             File inputResultsFile,
             String gradientsLocation,
             String gradientSuffix,
             String zgapsLocation,
             String zgapsSuffix,
-            int topPublishedNameMatches,
-            int topPublishedSampleMatches,
+            int numberOfBestLinesToSelect,
+            int numberOfBestSamplesPerLineToSelect,
+            int numberOfBestMatchesPerSampleToSelect,
             ObjectMapper mapper,
             Executor executor) {
-        Results<List<ColorMIPSearchMatchMetadata>> resultsFileContent = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(inputResultsFile, mapper);
-        if (CollectionUtils.isEmpty(resultsFileContent.results)) {
+        CDSMatches matchesFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(inputResultsFile, mapper);
+        if (CollectionUtils.isEmpty(matchesFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
-            return resultsFileContent;
+            return matchesFileContent;
         }
-        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(resultsFileContent.results, topPublishedNameMatches, topPublishedSampleMatches);
-        LOG.info("Read {} entries ({} distinct IDs) from {}", resultsFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
+        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(
+                matchesFileContent.results,
+                numberOfBestLinesToSelect,
+                numberOfBestSamplesPerLineToSelect,
+                numberOfBestMatchesPerSampleToSelect);
+        LOG.info("Read {} entries ({} distinct IDs) from {}", matchesFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
 
         long startTime = System.currentTimeMillis();
         List<CompletableFuture<List<ColorMIPSearchMatchMetadata>>> gradientAreaGapComputations =
@@ -216,21 +230,24 @@ class CalculateGradientScoresCmd {
                 .collect(Collectors.toList());
         LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
                 srWithGradScores.size(),
-                resultsFileContent.results.size(),
+                matchesFileContent.results.size(),
                 inputResultsFile,
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         ColorMIPSearchResultUtils.sortCDSResults(srWithGradScores);
         LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
                 srWithGradScores.size(),
-                resultsFileContent.results.size(),
+                matchesFileContent.results.size(),
                 inputResultsFile,
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-        return new Results<>(srWithGradScores);
+        return CDSMatches.singletonfromResultsOfColorMIPSearchMatches(srWithGradScores);
     }
 
-    private Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults, int topPublishedNames, int topSamples) {
+    private Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
+                                                                                                           int numberOfBestLinesToSelect,
+                                                                                                           int numberOfBestSamplesToSelectPerLine,
+                                                                                                           int numberOfBestMatchesToSelectPerSample) {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
                 .collect(Collectors.groupingBy(csr -> {
@@ -243,18 +260,25 @@ class CalculateGradientScoresCmd {
                 }, Collectors.collectingAndThen(
                         Collectors.toList(),
                         resultsForAnId -> {
-                            List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(resultsForAnId, topPublishedNames, topSamples);
+                            List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(
+                                    resultsForAnId,
+                                    numberOfBestLinesToSelect,
+                                    numberOfBestSamplesToSelectPerLine,
+                                    numberOfBestMatchesToSelectPerSample);
                             LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
                             return bestMatches;
                         })));
     }
 
-    private List<ColorMIPSearchMatchMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchMatchMetadata> cdsResults, int topPublishedNames, int topSamples) {
+    private List<ColorMIPSearchMatchMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchMatchMetadata> cdsResults,
+                                                                                    int numberOfBestPublishedNamesToSelect,
+                                                                                    int numberOfBestSamplesToSelectPerPublishedName,
+                                                                                    int numberOfBestMatchesToSelectPerSample) {
         List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
                 cdsResults,
                 csr -> StringUtils.defaultIfBlank(csr.getPublishedName(), extractPublishingNameCandidateFromImageName(csr.getImageName())), // pick best results by line
                 ColorMIPSearchMatchMetadata::getMatchingPixels,
-                topPublishedNames,
+                numberOfBestPublishedNamesToSelect,
                 -1);
 
         return topResultsByPublishedName.stream()
@@ -262,8 +286,9 @@ class CalculateGradientScoresCmd {
                         se.getEntry(),
                         csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
                         ColorMIPSearchMatchMetadata::getMatchingPixels,
-                        topSamples,
-                        1).stream())
+                        numberOfBestSamplesToSelectPerPublishedName,
+                        numberOfBestMatchesToSelectPerSample <= 0 ? 1 : numberOfBestMatchesToSelectPerSample)
+                        .stream())
                 .flatMap(se -> se.getEntry().stream())
                 .collect(Collectors.toList());
     }

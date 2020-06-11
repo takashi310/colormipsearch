@@ -54,15 +54,21 @@ public class LegacyLoadersTest {
         };
         for (String resultFile : resultFiles) {
             File legacyCDSResultsFile = new File(resultFile);
-            Results<List<ColorMIPSearchMatchMetadata>> resultsFileContent = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(legacyCDSResultsFile, mapper);
-
-            List<CDSMatches> cdsMatchesFromResults = CDSMatches.fromResultsOfColorMIPSearchMatches(resultsFileContent);
-            Assert.assertEquals(1, cdsMatchesFromResults.size());
-
+            CDSMatches resultsFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(legacyCDSResultsFile, mapper);
+            Assert.assertNull(resultsFileContent.getMaskId());
+            Assert.assertNull(resultsFileContent.getMaskPublishedName());
+            Assert.assertNull(resultsFileContent.getMaskLibraryName());
+            CDSMatches cdsMatchesFromResults = CDSMatches.singletonfromResultsOfColorMIPSearchMatches(resultsFileContent.results);
+            Assert.assertNotNull(cdsMatchesFromResults.getMaskId());
+            Assert.assertNotNull(cdsMatchesFromResults.getMaskPublishedName());
+            Assert.assertNotNull(cdsMatchesFromResults.getMaskLibraryName());
             try {
-                String json = mapper.writer().writeValueAsString(cdsMatchesFromResults.get(0));
+                String json = mapper.writer().writeValueAsString(cdsMatchesFromResults);
                 CDSMatches cdsMatchesReadContent = mapper.readValue(json, new TypeReference<CDSMatches>() {
                 });
+                Assert.assertEquals(cdsMatchesFromResults.getMaskId(), cdsMatchesReadContent.getMaskId());
+                Assert.assertEquals(cdsMatchesFromResults.getMaskPublishedName(), cdsMatchesReadContent.getMaskPublishedName());
+                Assert.assertEquals(cdsMatchesFromResults.getMaskLibraryName(), cdsMatchesReadContent.getMaskLibraryName());
                 Assert.assertTrue(resultsFileContent.results.size() > 0);
                 Assert.assertEquals(resultsFileContent.results, cdsMatchesReadContent.results);
             } catch (JsonProcessingException e) {

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.tools.AbstractMetadata;
+import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.MIPMetadata;
@@ -126,7 +127,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                         }
                         reverseResultsCache.put(
                                 id,
-                                ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(
+                                ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(
                                         p.toFile(), mapper).results.stream().filter(r -> r.getGradientAreaGap() != -1).collect(Collectors.toList())
                         );
                     });
@@ -143,15 +144,15 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                             .map(File::new)
                             .forEach(f -> {
                                 long startTime = System.currentTimeMillis();
-                                Results<List<ColorMIPSearchMatchMetadata>> cdsResults = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(f, mapper);
-                                if (CollectionUtils.isNotEmpty(cdsResults.results)) {
-                                    Set<String> sourceIds = cdsResults.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
-                                    Set<String> matchedIds = cdsResults.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
+                                CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
+                                if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
+                                    Set<String> sourceIds = cdsMatches.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
+                                    Set<String> matchedIds = cdsMatches.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
                                     LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                                     Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
-                                    cdsResults.results.stream()
+                                    cdsMatches.results.stream()
                                             .forEach(csr -> {
                                                 ColorMIPSearchMatchMetadata reverseCsr = findReverserseResult(csr, reverseResults);
                                                 if (reverseCsr == null) {
@@ -162,10 +163,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
                                                 }
                                             });
                                     LOG.info("Finished updating {} results from {} in {}ms",
-                                            cdsResults.results.size(), f, System.currentTimeMillis() - startTime);
-                                    ColorMIPSearchResultUtils.sortCDSResults(cdsResults.results);
-                                    ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
-                                            cdsResults,
+                                            cdsMatches.results.size(), f, System.currentTimeMillis() - startTime);
+                                    ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
+                                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                            cdsMatches,
                                             CmdUtils.getOutputFile(outputDir, f),
                                             args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                                 }

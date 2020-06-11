@@ -13,9 +13,9 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
 
-    public static List<CDSMatches> fromResultsOfColorMIPSearchMatches(Results<List<ColorMIPSearchMatchMetadata>> results) {
-        if (CollectionUtils.isNotEmpty(results.results)) {
-            return results.results.stream()
+    public static List<CDSMatches> fromResultsOfColorMIPSearchMatches(List<ColorMIPSearchMatchMetadata> listOfCDSMatches) {
+        if (CollectionUtils.isNotEmpty(listOfCDSMatches)) {
+            return listOfCDSMatches.stream()
                     .collect(Collectors.groupingBy(
                             csr -> new MIPIdentifier(csr.getSourceId(), csr.getSourcePublishedName(), csr.getSourceLibraryName()),
                             Collectors.toList()))
@@ -28,6 +28,16 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         } else {
             return Collections.emptyList();
         }
+    }
+
+    public static CDSMatches singletonfromResultsOfColorMIPSearchMatches(List<ColorMIPSearchMatchMetadata> listOfCDSMatches) {
+        List<CDSMatches> cdsMatches = fromResultsOfColorMIPSearchMatches(listOfCDSMatches);
+        if (cdsMatches.isEmpty()) {
+            throw new IllegalArgumentException("Expected a single set of color depth matches but found none");
+        } else if (cdsMatches.size() > 1) {
+            throw new IllegalArgumentException("Expected a single set of color depth matches but found " + cdsMatches.size());
+        }
+        return cdsMatches.get(0);
     }
 
     private final String maskId;

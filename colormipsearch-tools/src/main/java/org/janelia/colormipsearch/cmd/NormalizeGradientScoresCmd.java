@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.GradientAreaGapUtils;
+import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.Results;
@@ -114,11 +115,11 @@ class NormalizeGradientScoresCmd {
         filesToProcess.stream().parallel().forEach((fn) -> {
             LOG.info("Set gradient score results for {}", fn);
             File cdsFile = new File(fn);
-            Results<List<ColorMIPSearchMatchMetadata>> resultsFromJSONFile = ColorMIPSearchResultUtils.readCDSResultsFromJSONFile(cdsFile, mapper);
+            CDSMatches cdsMatchesFromJSONFile = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsFile, mapper);
             List<ColorMIPSearchMatchMetadata> cdsResults;
             if (args.cleanup) {
                 cdsResults = Utils.pickBestMatches(
-                        resultsFromJSONFile.results,
+                        cdsMatchesFromJSONFile.results,
                         csr -> csr.getId(),
                         csr -> (double) csr.getMatchingPixels(),
                         -1,
@@ -126,7 +127,7 @@ class NormalizeGradientScoresCmd {
                         .stream()
                         .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
             } else {
-                cdsResults = resultsFromJSONFile.results;
+                cdsResults = cdsMatchesFromJSONFile.results;
             }
             long maxAreaGap;
             int maxMatchingPixels;
@@ -165,8 +166,8 @@ class NormalizeGradientScoresCmd {
                     })
                     .collect(Collectors.toList());
             ColorMIPSearchResultUtils.sortCDSResults(cdsResultsWithNormalizedScore);
-            ColorMIPSearchResultUtils.writeCDSResultsToJSONFile(
-                    new Results<>(cdsResultsWithNormalizedScore),
+            ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                    CDSMatches.singletonfromResultsOfColorMIPSearchMatches(cdsResultsWithNormalizedScore),
                     CmdUtils.getOutputFile(args.getOutputDir(), new File(fn)),
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
         });

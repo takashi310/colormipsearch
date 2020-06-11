@@ -28,7 +28,7 @@ public class ColorMIPSearchResultUtils {
         }
     }
 
-    public static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
+    static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.debug("Reading {}", f);
             return mapper.readValue(f, new TypeReference<Results<List<ColorMIPSearchMatchMetadata>>>() {
@@ -59,15 +59,14 @@ public class ColorMIPSearchResultUtils {
         cdsResults.sort(csrComp.reversed());
     }
 
-    public static void writeCDSResultsToJSONFile(Results<List<ColorMIPSearchMatchMetadata>> cdsResults, File f,
-                                                 ObjectWriter objectWriter) {
+    public static void writeCDSMatchesToJSONFile(CDSMatches cdsMatches, File f, ObjectWriter objectWriter) {
         try {
-            if (CollectionUtils.isNotEmpty(cdsResults.results)) {
+            if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
                 if (f == null) {
-                    objectWriter.writeValue(System.out, cdsResults);
+                    objectWriter.writeValue(System.out, cdsMatches);
                 } else {
                     LOG.info("Writing {}", f);
-                    objectWriter.writeValue(f, cdsResults);
+                    objectWriter.writeValue(f, cdsMatches);
                 }
             }
         } catch (IOException e) {
