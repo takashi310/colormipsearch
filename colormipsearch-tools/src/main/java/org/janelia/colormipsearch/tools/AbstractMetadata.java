@@ -199,21 +199,21 @@ public abstract class AbstractMetadata {
         }
     }
 
-    public void copyTo(AbstractMetadata that) {
-        that.id = this.id;
-        that.publishedName = this.publishedName;
-        that.libraryName = this.libraryName;
-        that.imageURL = this.imageURL;
-        that.thumbnailURL = this.thumbnailURL;
+    public <T extends AbstractMetadata> void copyTo(T that) {
+        that.setId(this.id);
+        that.setPublishedName(this.publishedName);
+        that.setLibraryName(this.libraryName);
+        that.setImageURL(this.imageURL);
+        that.setThumbnailURL(this.thumbnailURL);
         // copy the "attributes"
-        that.slideCode = this.slideCode;
-        that.objective = this.objective;
-        that.gender = this.gender;
-        that.anatomicalArea = this.anatomicalArea;
-        that.alignmentSpace = this.alignmentSpace;
-        that.channel = this.channel;
-        that.mountingProtocol = this.mountingProtocol;
-        that.publishedToStaging = this.publishedToStaging;
+        that.setSlideCode(this.slideCode);
+        that.setObjective(this.objective);
+        that.setGender(this.gender);
+        that.setAnatomicalArea(this.anatomicalArea);
+        that.setAlignmentSpace(this.alignmentSpace);
+        that.setChannel(this.channel);
+        that.setMountingProtocol(this.mountingProtocol);
+        that.setPublishedToStaging(this.publishedToStaging);
     }
 
     Consumer<String> attributeValueHandler(String attrName) {

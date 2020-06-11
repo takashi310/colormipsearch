@@ -199,6 +199,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
                 .toString();
     }
 
+    public void copyTo(ColorMIPSearchMatchMetadata that) {
+        super.copyTo(that);
+        that.matchingPixels = this.matchingPixels;
+        that.matchingRatio = this.matchingRatio;
+        that.gradientAreaGap = this.gradientAreaGap;
+        that.normalizedGapScore = this.normalizedGapScore;
+        that.artificialShapeScore = this.artificialShapeScore;
+    }
+
     Consumer<String> attributeValueHandler(String attrName) {
         if (StringUtils.isBlank(attrName)) {
             return (attrValue) -> {}; // do nothing handler
