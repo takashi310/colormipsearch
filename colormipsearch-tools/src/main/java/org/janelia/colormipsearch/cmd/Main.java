@@ -43,10 +43,10 @@ public class Main {
                 .addCommand("searchFromJSON", jsonMIPsSearchCmd.getArgs())
                 .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
                 .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
+                .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
                 .addCommand("mergeResults", mergeResultsCmd.getArgs())
                 .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
                 .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
-                .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
                 .build();
 
         try {
@@ -104,6 +104,16 @@ public class Main {
                 CmdUtils.createOutputDirs(calculateGradientScoresCmd.getArgs().getOutputDir());
                 calculateGradientScoresCmd.execute();
                 break;
+            case "gradientScoresFromMatchedResults":
+                if (!updateGradientScoresFromReverseSearchResultsCmd.getArgs().validate()) {
+                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
+                    System.exit(1);
+                }
+                CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
+                updateGradientScoresFromReverseSearchResultsCmd.execute();
+                break;
             case "mergeResults":
                 if (CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsDirs) &&
                         CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsFiles)) {
@@ -134,16 +144,6 @@ public class Main {
                 }
                 CmdUtils.createOutputDirs(replaceURLsCmd.getArgs().getOutputDir());
                 replaceURLsCmd.execute();
-                break;
-            case "gradientScoresFromMatchedResults":
-                if (!updateGradientScoresFromReverseSearchResultsCmd.getArgs().validate()) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
-                updateGradientScoresFromReverseSearchResultsCmd.execute();
                 break;
             default:
                 StringBuilder sb = new StringBuilder("Invalid command\n");
