@@ -85,6 +85,7 @@ public class Main {
                 break;
             case "createColorDepthSearchJSONInput":
                 createColorDepthSearchJSONInputCmd.execute();
+                break;
             case "searchFromJSON":
                 CmdUtils.createOutputDirs(jsonMIPsSearchCmd.getArgs().getPerLibraryDir(), jsonMIPsSearchCmd.getArgs().getPerMaskDir());
                 jsonMIPsSearchCmd.execute();

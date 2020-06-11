@@ -105,11 +105,6 @@ public class CreateColorDepthSearchJSONInputCmd {
         @Parameter(names = {"--segmented-mips-base-dir"}, description = "The base directory for segmented MIPS")
         private String segmentedMIPsBaseDir;
 
-        @Parameter(names = {"--skeletons-directory", "-emdir"}, description = "Em skeletons sub-directory")
-        private String skeletonsOutput = "by_body";
-
-        @Parameter(names = {"--lines-directory", "-lmdir"}, description = "LM lines sub-directory")
-        private String linesOutput = "by_line";
 
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         private boolean includeMIPsWithNoPublishedURL;
@@ -178,18 +173,12 @@ public class CreateColorDepthSearchJSONInputCmd {
         }
 
         args.libraries.forEach(library -> {
-            Path outputPath;
-            if (isEmLibrary(library.input)) {
-                outputPath = Paths.get(args.commonArgs.outputDir, args.skeletonsOutput);
-            } else {
-                outputPath = Paths.get(args.commonArgs.outputDir, args.linesOutput);
-            }
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
                     library,
                     excludedMips,
                     libraryNameMapping,
-                    outputPath,
+                    Paths.get(args.commonArgs.outputDir),
                     args.outputFileName
             );
         });
