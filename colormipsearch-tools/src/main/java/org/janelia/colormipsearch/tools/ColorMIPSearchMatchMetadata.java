@@ -199,13 +199,14 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
                 .toString();
     }
 
+    @Override
     public void copyTo(ColorMIPSearchMatchMetadata that) {
         super.copyTo(that);
-        that.matchingPixels = this.matchingPixels;
-        that.matchingRatio = this.matchingRatio;
-        that.gradientAreaGap = this.gradientAreaGap;
-        that.normalizedGapScore = this.normalizedGapScore;
-        that.artificialShapeScore = this.artificialShapeScore;
+        that.setMatchingPixels(this.getMatchingPixels());
+        that.setMatchingRatio(this.getMatchingRatio());
+        that.setGradientAreaGap(this.getGradientAreaGap());
+        that.setNormalizedGapScore(this.getNormalizedGapScore());
+        that.setArtificialShapeScore(this.getArtificialShapeScore());
     }
 
     Consumer<String> attributeValueHandler(String attrName) {
