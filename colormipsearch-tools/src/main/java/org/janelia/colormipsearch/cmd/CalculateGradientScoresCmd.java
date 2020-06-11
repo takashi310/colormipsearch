@@ -56,11 +56,11 @@ class CalculateGradientScoresCmd {
 
         @Parameter(names = {"--topPublishedSampleMatches"},
                 description = "If set select the specified numnber of best samples for each line to calculate the gradient score")
-        int numberOfBestSamplesPerLine = 1;
+        int numberOfBestSamplesPerLine;
 
         @Parameter(names = {"--topMatchesPerSample"},
                 description = "Number of best matches for each line to be used for gradient scoring (defaults to 1)")
-        int numberOfBestMatchesPerSample = 1;
+        int numberOfBestMatchesPerSample;
 
         GradientScoreResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -287,7 +287,7 @@ class CalculateGradientScoresCmd {
                         csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
                         ColorMIPSearchMatchMetadata::getMatchingPixels,
                         numberOfBestSamplesToSelectPerPublishedName,
-                        numberOfBestMatchesToSelectPerSample <= 0 ? 1 : numberOfBestMatchesToSelectPerSample)
+                        numberOfBestMatchesToSelectPerSample)
                         .stream())
                 .flatMap(se -> se.getEntry().stream())
                 .collect(Collectors.toList());
