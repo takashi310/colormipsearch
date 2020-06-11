@@ -26,8 +26,6 @@ import org.janelia.colormipsearch.tools.AbstractMetadata;
 import org.janelia.colormipsearch.tools.CDSMatches;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.tools.MIPMetadata;
-import org.janelia.colormipsearch.tools.Results;
 import org.janelia.colormipsearch.tools.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,7 +192,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
     }
 
     private ColorMIPSearchMatchMetadata findReverserseResult(ColorMIPSearchMatchMetadata result, Map<String, List<ColorMIPSearchMatchMetadata>> indexedResults) {
-        List<ColorMIPSearchMatchMetadata> matches = indexedResults.get(result.getId());
+        List<ColorMIPSearchMatchMetadata> matches = indexedResults.get(result.getSourceId());
         if (matches == null) {
             return null;
         } else {
