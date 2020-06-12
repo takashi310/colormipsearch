@@ -199,7 +199,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
                 .toString();
     }
 
-    @Override
     public void copyTo(ColorMIPSearchMatchMetadata that) {
         super.copyTo(that);
         that.setMatchingPixels(this.getMatchingPixels());
