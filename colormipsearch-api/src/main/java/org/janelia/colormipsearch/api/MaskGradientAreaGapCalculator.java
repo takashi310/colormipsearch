@@ -80,7 +80,7 @@ public class MaskGradientAreaGapCalculator {
                 ? LImageUtils.create(inputZGapImageArray)
                 : negativeRadiusDilation.applyTo(inputImage).reduce(); // eval immediately
 
-        long areaGap = calculateAreaGap(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.identity());
+        long areaGap = calculateAreaGap(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.IDENTITY);
 
         if (withMaskMirroring) {
             LOG.trace("Start calculating area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);

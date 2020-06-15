@@ -17,6 +17,9 @@ import ij.process.ShortProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Image Utils.
+ */
 public class ImageArrayUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImageArrayUtils.class);
@@ -27,6 +30,11 @@ public class ImageArrayUtils {
         UNKNOWN
     }
 
+    /**
+     * Read an image array from an ImageJ ImagePlus object.
+     * @param imagePlus
+     * @return
+     */
     public static ImageArray fromImagePlus(ImagePlus imagePlus) {
         ImageType type = ImageType.fromImagePlusType(imagePlus.getType());
         ImageProcessor ip = imagePlus.getProcessor();
@@ -39,6 +47,11 @@ public class ImageArrayUtils {
         return new ImageArray(type, width, height, pixels);
     }
 
+    /**
+     * Determine if the file identified by the given name is an image file. This is only based on the filename extension.
+     * @param name - file name
+     * @return
+     */
     public static boolean isImageFile(String name) {
         int extseparator = name.lastIndexOf('.');
         if (extseparator == -1) {
@@ -57,6 +70,15 @@ public class ImageArrayUtils {
         }
     }
 
+    /**
+     * Read an image array from a byte stream.
+     *
+     * @param title
+     * @param name
+     * @param stream
+     * @return
+     * @throws Exception
+     */
     public static ImageArray readImageArray(String title, String name, InputStream stream) throws Exception {
         ImageFormat format = getImageFormat(name);
         ImagePlus imagePlus;

@@ -3,6 +3,10 @@ package org.janelia.colormipsearch.api.imageprocessing;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+/**
+ * ColorTransformation - transformations that converts a pixel type into another pixel type
+ * irrespective of the pixel position - based only on the pixel value.
+ */
 public abstract class ColorTransformation implements BiFunction<ImageType, Integer, Integer> {
     final Function<ImageType, ImageType> pixelTypeChange;
 

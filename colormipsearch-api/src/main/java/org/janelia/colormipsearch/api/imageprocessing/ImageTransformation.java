@@ -5,8 +5,14 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+/**
+ * ImageTransformation - image transformations that take both pixel value and pixel position into consideration
+ */
 public abstract class ImageTransformation {
 
+    /**
+     * Identity transformation - it returns the same pixel as in the source.
+     */
     public static ImageTransformation IDENTITY = ImageTransformation.identity();
 
     private interface ColorHistogram {
@@ -125,7 +131,7 @@ public abstract class ImageTransformation {
         }
     }
 
-    public static ImageTransformation identity() {
+    private static ImageTransformation identity() {
         return new ImageTransformation() {
             @Override
             public int apply(LImage lImage, int x, int y) {
@@ -134,6 +140,11 @@ public abstract class ImageTransformation {
         };
     }
 
+    /**
+     * Image horizontal mirroring.
+     *
+     * @return
+     */
     public static ImageTransformation horizontalMirror() {
         return new ImageTransformation() {
             @Override
@@ -143,6 +154,12 @@ public abstract class ImageTransformation {
         };
     }
 
+    /**
+     * Transformation that clears the image regions identified by the given predicate.
+     *
+     * @param regionDefnPredicate region predicate that takes the pixel x and y and returns true if the pixel is in the region, false otherwise
+     * @return the ImageTransformation that clears the region specified by the given region predicate
+     */
     public static ImageTransformation clearRegion(BiPredicate<Integer, Integer> regionDefnPredicate) {
         return new ImageTransformation() {
             @Override
@@ -156,6 +173,12 @@ public abstract class ImageTransformation {
         };
     }
 
+    /**
+     * Returns an image transformation that applies a maximum filter with the given radius.
+     *
+     * @param radius filter's radius
+     * @return
+     */
     public static ImageTransformation maxFilter(double radius) {
         return ImageTransformation.maxFilterWithHistogram(radius);
     }
@@ -396,6 +419,12 @@ public abstract class ImageTransformation {
         };
     }
 
+    /**
+     * Method that creates an color based transformation for each pixel irrespective of the pixel position.
+     *
+     * @param colorTransformation to be applied
+     * @return an image transformation that applies the given color transformation to each pixel from the image.
+     */
     public ImageTransformation fmap(ColorTransformation colorTransformation) {
         ImageTransformation currentTransformation = this;
         return new ImageTransformation(pixelTypeChange.andThen(colorTransformation.pixelTypeChange)) {
@@ -408,5 +437,11 @@ public abstract class ImageTransformation {
         };
     }
 
+    /**
+     * @param lImage source image
+     * @param x pixel x position
+     * @param y pixel y position
+     * @return pixel from lImage after applying the transformation at (x, y)
+     */
     protected abstract int apply(LImage lImage, int x, int y);
 }

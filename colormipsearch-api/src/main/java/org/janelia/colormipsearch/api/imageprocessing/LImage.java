@@ -2,14 +2,32 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import java.util.function.BiFunction;
 
+/**
+ * Lazy Image data type
+ */
 public interface LImage {
 
+    /**
+     * @return pixel type
+     */
     ImageType getPixelType();
 
+    /**
+     * Get the pixel value at the given positions
+     * @param x position
+     * @param y position
+     * @return pixel value
+     */
     int get(int x, int y);
 
+    /**
+     * @return image height.
+     */
     int height();
 
+    /**
+     * @return image width.
+     */
     int width();
 
     LImage map(ColorTransformation colorChange);

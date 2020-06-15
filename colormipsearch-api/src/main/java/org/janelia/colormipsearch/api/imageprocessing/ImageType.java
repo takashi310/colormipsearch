@@ -2,6 +2,16 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import ij.ImagePlus;
 
+/**
+ * ImageType specifies the pixel type such as:
+ *   - gray - 8 bits pixel
+ *   - gray - 16 bits pixel
+ *   - RGB - 24 bits pixel
+ *      R - bits 0-7
+ *      G - bits 8-15
+ *      B - bits 16-23
+ *      this type is used for ARGB pixels as well where alpha is in the most significant byte position - 24-32
+ */
 enum ImageType {
     UNKNOWN(-1),
     GRAY8(ImagePlus.GRAY8),
