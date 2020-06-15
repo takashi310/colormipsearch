@@ -2,6 +2,14 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import java.util.function.Function;
 
+/**
+ * This is a 3 parameter function.
+ *
+ * @param <S>
+ * @param <T>
+ * @param <U>
+ * @param <R>
+ */
 @FunctionalInterface
 public interface TriFunction<S, T, U, R> {
     R apply(S s, T t, U u);

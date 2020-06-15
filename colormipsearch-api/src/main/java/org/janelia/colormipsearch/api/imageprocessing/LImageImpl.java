@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+/**
+ * Lazy image type implementation.
+ */
 public class LImageImpl implements LImage {
 
     private final ImageType imageType;
