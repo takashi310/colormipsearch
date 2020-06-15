@@ -105,11 +105,14 @@ public class GroupMIPsByPublishedNameCmd {
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         boolean includeMIPsWithNoPublishedURL;
 
-        @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flaf for include MIPs without publishing name: " +
+        @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flag for include MIPs without publishing name: " +
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
                 "0x2 - the mip is included even if publishedToStaging is not set")
         int includeMIPsWithoutPublisingName;
+
+        @Parameter(names = {"--default-gender"}, description = "Default gender")
+        String defaultGender = "f";
 
         @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
         boolean keepDuplicates;
@@ -225,7 +228,7 @@ public class GroupMIPsByPublishedNameCmd {
                     .filter(cdmip -> args.includeMIPsWithNoPublishedURL || hasPublishedImageURL(cdmip))
                     .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
-                    .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
+                    .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .peek(cdmip -> {
                         String cdmName = cdmip.getCdmName();
@@ -266,31 +269,6 @@ public class GroupMIPsByPublishedNameCmd {
                     .forEach((lineOrSkeletonName, results) -> writeColorDepthMetadata(outputPath.resolve(lineOrSkeletonName + ".json"), results))
             ;
         }
-    }
-
-    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
-        String libraryName = libraryNameExtractor.apply(cdmip);
-        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.setId(cdmip.id);
-        cdMetadata.setLibraryName(libraryName);
-        cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(cdmip.publicImageUrl);
-        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
-        cdMetadata.sourceImageRef  = cdmip.sourceImageRef;
-        if (cdmip.sample != null) {
-            cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
-            cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
-            cdMetadata.setSlideCode(cdmip.sample.slideCode);
-            cdMetadata.setGender(cdmip.sample.gender);
-            cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
-        } else {
-            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
-        }
-        cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
-        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
-        cdMetadata.setObjective(cdmip.objective);
-        cdMetadata.setChannel(cdmip.channelNumber);
-        return cdMetadata;
     }
 
     private boolean checkMIPLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {
@@ -342,6 +320,31 @@ public class GroupMIPsByPublishedNameCmd {
         return StringUtils.isNotBlank(cdmip.publicImageUrl);
     }
 
+    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
+        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+        cdMetadata.setId(cdmip.id);
+        cdMetadata.setLibraryName(libraryName);
+        cdMetadata.filepath = cdmip.filepath;
+        cdMetadata.setImageURL(cdmip.publicImageUrl);
+        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
+        cdMetadata.sourceImageRef  = cdmip.sourceImageRef;
+        if (cdmip.sample != null) {
+            cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
+            cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
+            cdMetadata.setSlideCode(cdmip.sample.slideCode);
+            cdMetadata.setGender(cdmip.sample.gender);
+            cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
+        } else {
+            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
+        }
+        cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
+        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+        cdMetadata.setObjective(cdmip.objective);
+        cdMetadata.setChannel(cdmip.channelNumber);
+        return cdMetadata;
+    }
+
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
         List<String> mipNameComponents = Splitter.on('-').splitToList(cdmip.name);
         String line = mipNameComponents.size() > 0 ? mipNameComponents.get(0) : cdmip.name;
@@ -358,7 +361,7 @@ public class GroupMIPsByPublishedNameCmd {
         cdMetadata.setSlideCode(slideCode);
     }
 
-    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, String defaultGender, Function<ColorDepthMIP, String> libraryNameExtractor) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
@@ -367,6 +370,7 @@ public class GroupMIPsByPublishedNameCmd {
         cdMetadata.setImageURL(cdmip.publicImageUrl);
         cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
         cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
+        cdMetadata.setGender(defaultGender);
         return cdMetadata;
     }
 

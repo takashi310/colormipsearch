@@ -26,7 +26,9 @@ public abstract class AbstractMetadata {
     private String thumbnailURL;
     private String slideCode;
     private String objective;
-    private String gender;
+    // use a default for the gender for now
+    // LM should override this attribute and for EM will default to "female"
+    private String gender = "f";
     private String anatomicalArea;
     private String alignmentSpace;
     private String channel;

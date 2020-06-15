@@ -126,6 +126,9 @@ public class CreateColorDepthSearchJSONInputCmd {
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
         List<ListArg> excludedMIPs;
 
+        @Parameter(names = {"--default-gender"}, description = "Default gender")
+        String defaultGender = "f";
+
         @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
         boolean keepDuplicates;
 
@@ -309,7 +312,7 @@ public class CreateColorDepthSearchJSONInputCmd {
                         .filter(cdmip -> args.includeMIPsWithNoPublishedURL || hasPublishedImageURL(cdmip))
                         .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
-                        .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
+                        .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, args.segmentedMIPsBaseDir, segmentedImages, args.segmentedImageHandling).stream())
                         .map(ColorDepthMetadata::asMIPInfo)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
@@ -430,31 +433,6 @@ public class CreateColorDepthSearchJSONInputCmd {
         }
     }
 
-    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
-        String libraryName = libraryNameExtractor.apply(cdmip);
-        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.setId(cdmip.id);
-        cdMetadata.setLibraryName(libraryName);
-        cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(cdmip.publicImageUrl);
-        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
-        cdMetadata.sourceImageRef = cdmip.sourceImageRef;
-        if (cdmip.sample != null) {
-            cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
-            cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
-            cdMetadata.setSlideCode(cdmip.sample.slideCode);
-            cdMetadata.setGender(cdmip.sample.gender);
-            cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
-        } else {
-            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
-        }
-        cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
-        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
-        cdMetadata.setObjective(cdmip.objective);
-        cdMetadata.setChannel(cdmip.channelNumber);
-        return cdMetadata;
-    }
-
     private int getColorChannel(ColorDepthMetadata cdMetadata) {
         String channel = cdMetadata.getChannel();
         if (StringUtils.isNotBlank(channel)) {
@@ -562,6 +540,31 @@ public class CreateColorDepthSearchJSONInputCmd {
         return StringUtils.isNotBlank(cdmip.publicImageUrl);
     }
 
+    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
+        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+        cdMetadata.setId(cdmip.id);
+        cdMetadata.setLibraryName(libraryName);
+        cdMetadata.filepath = cdmip.filepath;
+        cdMetadata.setImageURL(cdmip.publicImageUrl);
+        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
+        cdMetadata.sourceImageRef = cdmip.sourceImageRef;
+        if (cdmip.sample != null) {
+            cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
+            cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
+            cdMetadata.setSlideCode(cdmip.sample.slideCode);
+            cdMetadata.setGender(cdmip.sample.gender);
+            cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
+        } else {
+            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
+        }
+        cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
+        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+        cdMetadata.setObjective(cdmip.objective);
+        cdMetadata.setChannel(cdmip.channelNumber);
+        return cdMetadata;
+    }
+
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
         List<String> mipNameComponents = Splitter.on('-').splitToList(cdmip.name);
         String line = mipNameComponents.size() > 0 ? mipNameComponents.get(0) : cdmip.name;
@@ -578,7 +581,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         cdMetadata.setSlideCode(slideCode);
     }
 
-    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, String defaultGender, Function<ColorDepthMIP, String> libraryNameExtractor) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
@@ -587,6 +590,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         cdMetadata.setImageURL(cdmip.publicImageUrl);
         cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
         cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
+        cdMetadata.setGender(defaultGender);
         return cdMetadata;
     }
 
