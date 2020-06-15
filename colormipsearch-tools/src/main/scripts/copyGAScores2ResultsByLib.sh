@@ -4,9 +4,9 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 source ${SCRIPT_DIR}/cdsparams.sh
 
-if [ -n "${LOGFILE}" ] && [ -f "${LOGFILE}" ] ; then
-    echo "Using Log config: ${LOGFILE}"
-    LOG_OPTS="-Dlog4j.configuration=file://${LOGFILE}"
+if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
+    echo "Using Log config: ${LOGCONFIGFILE}"
+    LOG_OPTS="-Dlog4j.configuration=file://${LOGCONFIGFILE}"
 else
     LOG_OPTS=""
 fi

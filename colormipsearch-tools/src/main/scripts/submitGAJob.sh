@@ -23,9 +23,9 @@ function runGAJob {
     CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
     CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
 
-    if [ -n "${LOGFILE}" ] && [ -f "${LOGFILE}" ] ; then
-        echo "Using Log config: ${LOGFILE}"
-        LOG_OPTS="-Dlog4j.configuration=file://${LOGFILE}"
+    if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
+        echo "Using Log config: ${LOGCONFIGFILE}"
+        LOG_OPTS="-Dlog4j.configuration=file://${LOGCONFIGFILE}"
     else
         LOG_OPTS=""
     fi

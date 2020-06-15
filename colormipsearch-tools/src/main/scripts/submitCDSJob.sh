@@ -19,9 +19,9 @@ function runCDSJob {
     CONCURRENCY_OPTS="--cdsConcurrency ${CONCURRENCY}"
 
     MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
-    if [ -n "${LOGFILE}" ] && [ -f "${LOGFILE}" ] ; then
-        echo "Using Log config: ${LOGFILE}"
-        LOG_OPTS="-Dlog4j.configuration=file://${LOGFILE}"
+    if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
+        echo "Using Log config: ${LOGCONFIGFILE}"
+        LOG_OPTS="-Dlog4j.configuration=file://${LOGCONFIGFILE}"
     else
         LOG_OPTS=""
     fi
@@ -31,7 +31,7 @@ function runCDSJob {
 
     JAVA_EXEC=${JAVA_EXEC:java}
     cmd="${JAVA_EXEC} ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
-        -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+        -jar target/colormipsearch-${CDS_JAR_VERSION}-jar-with-dependencies.jar \
         --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         searchFromJSON \
         -m ${MASKS_FILES} \

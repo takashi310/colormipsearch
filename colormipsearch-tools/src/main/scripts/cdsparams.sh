@@ -41,7 +41,7 @@ export CDGA_GRADIENTS_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/40x_MCFO_Segment
 export CDGA_ZGAP_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/40x_MCFO_Segmented_PackBits-forPublicRelease_20pxRGBMAX
 export CDGA_ZGAP_SUFFIX=_20pxRGBMAX
 
-export LOGFILE=
+export LOGCONFIGFILE=
 
 # JAVA OPTS
 # ${HOME}/tools/jdk-14.0.1
@@ -50,6 +50,10 @@ export JAVA_EXEC=${JAVA_HOME}/bin/java
 
 ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
 export GC_OPTS="${ZGC}"
+
+# this only needs to change on a new release
+export CDS_JAR_VERSION="1.2"
+
 # Color depth search params
 export MASK_THRESHOLD=20
 export DATA_THRESHOLD=20
