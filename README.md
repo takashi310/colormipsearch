@@ -205,6 +205,32 @@ java \
     $*
 ```
 
+#### JSON input only for new MIPs
+
+If you only need to run the color depth search for some new MIPS
+that have been added to the library you can do that using the following command:
+```bash
+java \
+    -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+    createColorDepthSearchJSONInput \
+    --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2  \
+    --authorization "Bearer tokenvalue" \
+    -l flylight_split_gal4_published \
+    -od local/testData/mips \
+    --output-filename new_splitgal4_published \
+    --excluded-mips local/testData/mips/existing_splitgal4_published.json
+```
+The command assumes that "local/testData/mips/existing_splitgal4_published.json" is 
+a JSON file that contains the metadat for all MIPs that you don't need to compute and
+it will put the MIPs that require color depth search in the 
+"new_splitgal4_published.json" ("--excluded-mips" argument) under 
+"local/testData/mips" directory ("-od" argument)
+
+"createColorDepthSearchJSONInput" also supports an "--excluded-libraries"
+which checks the case in which a MIP is part of multiple libraries
+and if it is part of any library specified in the --excluded-lubraries list
+then the MIP will not be included in the output JSON.  
+
 #### Step 1': Replace image URLs
 
 Sometime the image URLs need to be replaced with image URLs that 
