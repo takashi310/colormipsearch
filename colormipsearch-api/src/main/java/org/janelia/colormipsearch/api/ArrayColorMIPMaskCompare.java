@@ -5,6 +5,11 @@ import java.util.List;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
+/**
+ * ArrayColorMIPMaskCompare - implements the color depth mip comparison
+ * using internal arrays containg the positions from the mask that are above the mask threshold
+ * and the positions after applying the specified x-y shift and mirroring transformations.
+ */
 public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
 
     private final int[][] targetMasksList;
@@ -12,16 +17,15 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
     private final int[][] negTargetMasksList;
     private final int[][] negMirrorTargetMasksList;
 
-    // Advanced Search
     public ArrayColorMIPMaskCompare(ImageArray query, int maskThreshold, boolean mirrorMask,
                                     ImageArray negquery, int negMaskThreshold,
                                     boolean mirrorNegMask, int searchThreshold,
                                     double zTolerance, int xyshift) {
         super(query, maskThreshold, negquery, negMaskThreshold, searchThreshold, zTolerance);
         // shifting
-        targetMasksList = generateShiftedMasks(maskPositions, xyshift, query.width, query.height);
+        targetMasksList = generateShiftedMasks(maskPositions, xyshift, query.getWidth(), query.getHeight());
         if (negQueryImage != null) {
-            negTargetMasksList = generateShiftedMasks(negMaskPositions, xyshift, query.width, query.height);
+            negTargetMasksList = generateShiftedMasks(negMaskPositions, xyshift, query.getWidth(), query.getHeight());
         } else {
             negTargetMasksList = null;
         }
@@ -30,19 +34,20 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
         if (mirrorMask) {
             mirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < targetMasksList.length; i++)
-                mirrorTargetMasksList[i] = mirrorMask(targetMasksList[i], query.width);
+                mirrorTargetMasksList[i] = mirrorMask(targetMasksList[i], query.getWidth());
         } else {
             mirrorTargetMasksList = null;
         }
         if (mirrorNegMask && negQueryImage != null) {
             negMirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < negTargetMasksList.length; i++)
-                negMirrorTargetMasksList[i] = mirrorMask(negTargetMasksList[i], query.width);
+                negMirrorTargetMasksList[i] = mirrorMask(negTargetMasksList[i], query.getWidth());
         } else {
             negMirrorTargetMasksList = null;
         }
     }
 
+    @Override
     public ColorMIPCompareOutput runSearch(ImageArray targetImage) {
         int posi = 0;
         double posipersent = 0.0;

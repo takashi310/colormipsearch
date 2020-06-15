@@ -5,6 +5,10 @@ import java.util.List;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
+/**
+ * ColorMIPMaskCompare encapsulates a mask and it provides a method to compare
+ * the enclosed mask with other mips.
+ */
 public abstract class ColorMIPMaskCompare {
 
     final ImageArray queryImage;
@@ -14,10 +18,9 @@ public abstract class ColorMIPMaskCompare {
     final int searchThreshold;
     final double zTolerance;
 
-    // Advanced Search
-    public ColorMIPMaskCompare(ImageArray query, int maskThreshold,
-                               ImageArray negquery, int negMaskThreshold,
-                               int searchThreshold, double zTolerance) {
+    protected ColorMIPMaskCompare(ImageArray query, int maskThreshold,
+                                  ImageArray negquery, int negMaskThreshold,
+                                  int searchThreshold, double zTolerance) {
         this.queryImage = query;
         this.negQueryImage = negquery;
         this.searchThreshold = searchThreshold;
@@ -50,13 +53,25 @@ public abstract class ColorMIPMaskCompare {
 
     /**
      * Run the color depth search between the current mask (the one from the context of the current comparator) and
-     * the targetImage parameter.
+     * the targetImage parameter. The method compares each pixel from the mask that is above a given mask threshold with the
+     * corresponding pixel from the target that is above a data threshold. The method also may use mirroring and/or x-y translation
+     * to search for a map in additional natching candidate positions.
      *
      * @param targetImage
      * @return
      */
     public abstract ColorMIPCompareOutput runSearch(ImageArray targetImage);
 
+    /**
+     * Calculate the Z-gap between two RGB pixels
+     * @param red1 - red component of the first pixel
+     * @param green1 - green component of the first pixel
+     * @param blue1 - blue component of the first pixel
+     * @param red2 - red component of the second pixel
+     * @param green2 - green component of the second pixel
+     * @param blue2 - blue component of the second pixel
+     * @return
+     */
     double calculatePixelGap(int red1, int green1, int blue1, int red2, int green2, int blue2) {
         int RG1 = 0;
         int BG1 = 0;

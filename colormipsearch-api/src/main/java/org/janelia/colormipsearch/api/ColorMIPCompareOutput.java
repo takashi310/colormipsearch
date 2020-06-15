@@ -5,11 +5,13 @@ package org.janelia.colormipsearch.api;
  */
 public class ColorMIPCompareOutput {
     private final int matchingPixNum;
-    private final double matchingPct;
+    private final double matchingPixNumToMaskRatio;
 
-    public ColorMIPCompareOutput(int pixnum, double pct) {
+    public static final ColorMIPCompareOutput NO_MATCH = new ColorMIPCompareOutput(0, 0);
+
+    ColorMIPCompareOutput(int pixnum, double pct) {
         matchingPixNum = pixnum;
-        matchingPct = pct;
+        matchingPixNumToMaskRatio = pct;
     }
 
     /**
@@ -22,7 +24,7 @@ public class ColorMIPCompareOutput {
     /**
      * @return the ratio of the matching pixels to the size of the mask.
      */
-    public double getMatchingPct() {
-        return matchingPct;
+    public double getMatchingPixNumToMaskRatio() {
+        return matchingPixNumToMaskRatio;
     }
 }

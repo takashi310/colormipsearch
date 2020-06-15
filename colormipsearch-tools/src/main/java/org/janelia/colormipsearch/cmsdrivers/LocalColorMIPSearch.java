@@ -94,7 +94,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                                 maskMIP,
                                                 libraryMIP,
                                                 sr.getMatchingPixNum(),
-                                                sr.getMatchingPct(),
+                                                sr.getMatchingPixNumToMaskRatio(),
                                                 true,
                                                 false
                                         );

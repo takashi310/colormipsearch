@@ -4,6 +4,9 @@ import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
 
+/**
+ * Utils for calculating gradient area gap scores.
+ */
 public class GradientAreaGapUtils {
 
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
@@ -210,11 +213,22 @@ public class GradientAreaGapUtils {
         return sliceNumber;
     }
 
-    public static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        return calculateAreaGapScore1(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchPct, maxPixelMatch);
+    /**
+     * The method calculates the normalized gradient score given the gradient area gap and the pixel match values
+     * using the maximum area gap and maximum pixel match for normalization.
+     *
+     * @param gradientAreaGap - gradient area gap
+     * @param maxAreaGap - maximum area gap from the current data set
+     * @param pixelMatch - pixel match size
+     * @param pixelMatchRatio - pixel match size to mask size ratio
+     * @param maxPixelMatch - maximum pixel size of the current data set.
+     * @return
+     */
+    public static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchRatio, long maxPixelMatch) {
+        return calculateAreaGapScore1(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchRatio, maxPixelMatch);
     }
 
-    static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+    private static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         if (pixelMatch == 0 || pixelMatchPct == 0) {
             return 0;
         } else {
@@ -235,7 +249,7 @@ public class GradientAreaGapUtils {
         }
     }
 
-    static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+    private static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         if (pixelMatch == 0 || pixelMatchPct == 0) {
             return 0;
         } else {
@@ -251,7 +265,7 @@ public class GradientAreaGapUtils {
         }
     }
 
-    static double calculateAreaGapScore3(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
+    private static double calculateAreaGapScore3(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
         if (pixelMatch == 0 || pixelMatchPct == 0) {
             return 0;
         } else {

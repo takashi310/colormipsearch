@@ -2,12 +2,15 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+/**
+ * Image array representation containing image type,  image width, height and image pixel arrays.
+ */
 public class ImageArray {
 
-    public ImageType type;
-    public int height;
-    public int width;
-    public int[] pixels;
+    ImageType type;
+    int height;
+    int width;
+    int[] pixels;
 
     ImageArray(ImageType type, int width, int height, int[] pixels) {
         this.height = height;
@@ -27,6 +30,14 @@ public class ImageArray {
 
     public int getPixelCount() {
         return width * height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 
     public int get(int pi) {

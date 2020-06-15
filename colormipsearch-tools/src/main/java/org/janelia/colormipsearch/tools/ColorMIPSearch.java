@@ -71,7 +71,7 @@ public class ColorMIPSearch implements Serializable {
             return maskComparator.runSearch(searchedMIPImage.imageArray);
         } catch (Throwable e) {
             LOG.warn("Error comparing image file {}", searchedMIPImage, e);
-            return new ColorMIPCompareOutput(0, 0);
+            return ColorMIPCompareOutput.NO_MATCH;
         } finally {
             LOG.debug("Completed comparing image file {}in {}ms", searchedMIPImage,  System.currentTimeMillis() - startTime);
         }
@@ -80,7 +80,7 @@ public class ColorMIPSearch implements Serializable {
     public boolean isMatch(ColorMIPCompareOutput colorMIPCompareOutput) {
         double pixThresdub = pctPositivePixels / 100;
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
-        return colorMIPCompareOutput.getMatchingPct() > pixMatchRatioThreshold;
+        return colorMIPCompareOutput.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
     }
 
     public ColorMIPSearchResult runImageComparison(MIPImage searchedMIPImage, MIPImage maskMIPImage) {
@@ -91,12 +91,12 @@ public class ColorMIPSearch implements Serializable {
             ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(searchedMIPImage.imageArray);
 
             double pixThresdub = pctPositivePixels / 100;
-            boolean isMatch = colorMIPCompareOutput.getMatchingPct() > pixThresdub;
+            boolean isMatch = colorMIPCompareOutput.getMatchingPixNumToMaskRatio() > pixThresdub;
 
             return new ColorMIPSearchResult(
                     maskMIPImage.mipInfo,
                     searchedMIPImage.mipInfo,
-                    colorMIPCompareOutput.getMatchingPixNum(), colorMIPCompareOutput.getMatchingPct(), isMatch, false);
+                    colorMIPCompareOutput.getMatchingPixNum(), colorMIPCompareOutput.getMatchingPixNumToMaskRatio(), isMatch, false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", searchedMIPImage,  maskMIPImage, e);
             return new ColorMIPSearchResult(

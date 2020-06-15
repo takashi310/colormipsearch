@@ -4,6 +4,11 @@ import java.util.function.Function;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
+/**
+ * FColorMIPMaskCompare - implements the color depth mip comparison using a more functional
+ * approach and only stores the initial mask positions and for the x-y shifts and mirrors it
+ * uses a functional approach that applies the corresponding transformation to the original position.
+ */
 public class FColorMIPMaskCompare extends ColorMIPMaskCompare {
 
     private final boolean mirrorMask;
@@ -27,12 +32,12 @@ public class FColorMIPMaskCompare extends ColorMIPMaskCompare {
         int masksize = maskPositions.length;
         int negmasksize = negQueryImage != null ? negMaskPositions.length : 0;
 
-        Function<Integer, Integer> mirrorTransformation = mirror(queryImage.width);
+        Function<Integer, Integer> mirrorTransformation = mirror(queryImage.getWidth());
         for (int xyShiftIndex = 0;  xyShiftIndex < allXYShifts.length; xyShiftIndex += 2) {
             int xshift = allXYShifts[xyShiftIndex];
             int yshift = allXYShifts[xyShiftIndex + 1];
             int tmpposi;
-            Function<Integer, Integer> xyShiftTransform = shiftPos(xshift, yshift, queryImage.width, queryImage.height);
+            Function<Integer, Integer> xyShiftTransform = shiftPos(xshift, yshift, queryImage.getWidth(), queryImage.getHeight());
             tmpposi = calculateScore(queryImage, maskPositions, targetImage, xyShiftTransform);
             if (tmpposi > posi) {
                 posi = tmpposi;
@@ -53,7 +58,7 @@ public class FColorMIPMaskCompare extends ColorMIPMaskCompare {
                 int xshift = allXYShifts[xyShiftIndex];
                 int yshift = allXYShifts[xyShiftIndex + 1];
                 int tmpnega;
-                Function<Integer, Integer> negXYShiftTransform = shiftPos(xshift, yshift, negQueryImage.width, negQueryImage.height);
+                Function<Integer, Integer> negXYShiftTransform = shiftPos(xshift, yshift, negQueryImage.getWidth(), negQueryImage.getHeight());
                 tmpnega = calculateScore(negQueryImage, negMaskPositions, targetImage, negXYShiftTransform);
                 if (tmpnega > nega) {
                     nega = tmpnega;
