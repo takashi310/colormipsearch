@@ -11,6 +11,47 @@ or just
 This will produce a jar called `target/colormipsearch-<VERSION>-jar-with-dependencies.jar` which can be run 
 either with Spark or on the local host or on the cluster by using bsub.
 
+## Release the artifacts to Janelia Nexus Repo:
+
+Before running the release script make sure you have an server entry
+for the janelia-repo in your default maven settings.xml, typically located
+at ~/.m2/settings.xml
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <servers>
+    <server>
+      <id>janelia-repo</id>
+      <username>yourusername</username>
+      <password>yourpassword</password>
+    </server>
+  </servers>
+
+</settings>
+```
+
+If you don't want the password in clear in settings.xml, maven offers a mechanism to encrypt it
+using:
+```
+mvn --encrypt-master-password <password>
+```
+to create a master password and then use
+```
+mvn --encrypt-password <password>
+```
+which you can enter in place of your password. Check [maven documentation](https://maven.apache.org/guides/mini/guide-encryption.html)
+how you can do this.
+
+To release the artifacts simply run:
+
+```./release.sh <version>```
+
+This command will also tag the repository with the `<version>`.
+
+
 ## Run
 
 ### Perform color depth search for one mask and one image only
