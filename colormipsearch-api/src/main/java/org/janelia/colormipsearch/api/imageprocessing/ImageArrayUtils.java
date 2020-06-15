@@ -73,9 +73,9 @@ public class ImageArrayUtils {
     /**
      * Read an image array from a byte stream.
      *
-     * @param title
-     * @param name
-     * @param stream
+     * @param title image title
+     * @param name image (file) name used only for determining the image encoding
+     * @param stream image pixels stream
      * @return
      * @throws Exception
      */

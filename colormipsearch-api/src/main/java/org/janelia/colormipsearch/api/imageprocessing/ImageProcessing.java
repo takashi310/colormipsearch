@@ -1,7 +1,8 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
-import java.util.function.BiPredicate;
-
+/**
+ * Wrapper for composing multiple image transformations.
+ */
 public class ImageProcessing {
 
     public static ImageProcessing create(ImageTransformation imageTransformation) {

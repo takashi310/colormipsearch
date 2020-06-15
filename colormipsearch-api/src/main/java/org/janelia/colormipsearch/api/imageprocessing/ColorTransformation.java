@@ -4,13 +4,13 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * ColorTransformation - transformations that converts a pixel type into another pixel type
- * irrespective of the pixel position - based only on the pixel value.
+ * ColorTransformation - transformations that converts a pixel value into another pixel value
+ * based only on the pixel type and pixel value, irrespective of the pixel position.
  */
 public abstract class ColorTransformation implements BiFunction<ImageType, Integer, Integer> {
     final Function<ImageType, ImageType> pixelTypeChange;
 
-    ColorTransformation(Function<ImageType, ImageType> pixelTypeChange) {
+    protected ColorTransformation(Function<ImageType, ImageType> pixelTypeChange) {
         this.pixelTypeChange = pixelTypeChange;
     }
 
