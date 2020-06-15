@@ -10,13 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This calculates the gradient area gap between an EM mask and an LM (segmented) image.
+ * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
  */
 public class MaskGradientAreaGapCalculator {
 
     private static final Logger LOG = LoggerFactory.getLogger(MaskGradientAreaGapCalculator.class);
     private static final int GAP_THRESHOLD = 3;
 
+    /**
+     * Create a constructor for gradient area gap calculator.
+     *
+     * @param maskThreshold
+     * @param negativeRadius
+     * @param mirrorMask
+     * @return
+     */
     public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
                                                                                                     int negativeRadius,
                                                                                                     boolean mirrorMask) {
@@ -70,6 +78,16 @@ public class MaskGradientAreaGapCalculator {
         this.negativeRadiusDilation = negativeRadiusDilation;
     }
 
+    /**
+     * Calculate area gap between the encapsulated mask and the given image with the corresponding image gradients and zgaps.
+     * The gradient image must be non-null but the z-gap image can be null in which case it is calculated using
+     * a dilation transformation.
+     *
+     * @param inputImageArray
+     * @param inputGradientImageArray
+     * @param inputZGapImageArray
+     * @return
+     */
     public long calculateMaskAreaGap(ImageArray inputImageArray,
                                      ImageArray inputGradientImageArray,
                                      ImageArray inputZGapImageArray) {

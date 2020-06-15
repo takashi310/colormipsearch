@@ -9,7 +9,7 @@ public interface MaskGradientAreaGapCalculatorProvider {
      * that encapsulates the provided mask.
      *
      * @param maskImage encapsulated mask image
-     * @return
+     * @return a gradient area gap calculator for the given mask
      */
     MaskGradientAreaGapCalculator createMaskGradientAreaGapCalculator(ImageArray maskImage);
 }
