@@ -14,11 +14,11 @@ echo "Changing version numbers to ${RELEASE_VER}"
 mvn versions:set -DnewVersion=${RELEASE_VER} -DgenerateBackupPoms=false
 git commit -a -m "Updated version to ${RELEASE_VER}"
 
+echo "Deploy maven artifacts"
+mvn clean deploy
+
 echo "Creating git tag for ${RELEASE_VER}"
 git tag ${RELEASE_VER}
-
-echo "Deploy maven artifacts"
-mvn deploy
 
 echo "Pushing to Github..."
 git push origin
