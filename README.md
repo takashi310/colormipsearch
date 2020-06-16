@@ -483,7 +483,7 @@ Upload MIPs
 find . local/testData/mips \
     -type f \
     -name "*.json" \
-    -printf "%f\n" > publishedNames.txt
+    -printf "%f\n" | sed s/.json// | sort -u > publishedNames.txt
 aws s3 cp publishedNames.txt s3://janelia-neuronbridge-data-prod/publishedNames.txt
 
 # create and upload data version file
