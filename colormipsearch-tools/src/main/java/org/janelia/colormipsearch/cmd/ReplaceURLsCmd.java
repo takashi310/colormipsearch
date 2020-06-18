@@ -19,6 +19,7 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -230,6 +231,8 @@ public class ReplaceURLsCmd {
                     .map(jsonNode -> (ObjectNode) jsonNode);
         } else {
             return jsonContent.findValues("results").stream()
+                    .map(jsonNode -> (ArrayNode) jsonNode)
+                    .flatMap(resultsNode -> StreamSupport.stream(resultsNode.spliterator(), false))
                     .map(jsonNode -> (ObjectNode) jsonNode);
         }
     }
