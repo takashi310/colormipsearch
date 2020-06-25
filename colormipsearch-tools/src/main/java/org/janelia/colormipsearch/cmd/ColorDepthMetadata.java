@@ -44,8 +44,8 @@ class ColorDepthMetadata extends AbstractMetadata {
         that.segmentFilepath = this.segmentFilepath;
     }
 
-    MIPMetadata asMIPInfo() {
-        MIPMetadata mipInfo = new MIPMetadata();
+    MIPWithGradMetadata asMIPWithGradient() {
+        MIPWithGradMetadata mipInfo = new MIPWithGradMetadata();
         this.copyTo(mipInfo);
         mipInfo.setImageType(this.getImageType());
         mipInfo.setImageArchivePath(segmentedDataBasePath);

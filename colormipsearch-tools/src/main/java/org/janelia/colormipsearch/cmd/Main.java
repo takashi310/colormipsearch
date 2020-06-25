@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.List;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
@@ -84,6 +86,14 @@ public class Main {
                 groupMIPsByPublishedNameCmd.execute();
                 break;
             case "createColorDepthSearchJSONInput":
+                List<String> cdsJSONInputValidationErrors = createColorDepthSearchJSONInputCmd.getArgs().validate();
+                if (!cdsJSONInputValidationErrors.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    cdsJSONInputValidationErrors.forEach(err -> sb.append(err).append('\n'));
+                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
+                    cmdline.getConsole().println(sb.toString());
+                    System.exit(1);
+                }
                 createColorDepthSearchJSONInputCmd.execute();
                 break;
             case "searchFromJSON":
@@ -95,8 +105,10 @@ public class Main {
                 localMIPFilesSearchCmd.execute();
                 break;
             case "gradientScore":
-                if (!calculateGradientScoresCmd.getArgs().validate()) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
+                List<String> gradScoreArgsValidationErrors = calculateGradientScoresCmd.getArgs().validate();
+                if (!gradScoreArgsValidationErrors.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    gradScoreArgsValidationErrors.forEach(err -> sb.append(err).append('\n'));
                     cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
                     cmdline.getConsole().println(sb.toString());
                     System.exit(1);

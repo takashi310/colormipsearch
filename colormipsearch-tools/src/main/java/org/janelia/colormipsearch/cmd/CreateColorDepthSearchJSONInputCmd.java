@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
@@ -48,6 +50,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -74,7 +77,7 @@ public class CreateColorDepthSearchJSONInputCmd {
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     @Parameters(commandDescription = "Grooup MIPs by published name")
-    private static class CreateColorDepthSearchJSONInputArgs {
+    static class CreateColorDepthSearchJSONInputArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
                 description = "JACS data service base URL", required = true)
         String dataServiceURL;
@@ -94,6 +97,27 @@ public class CreateColorDepthSearchJSONInputCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
+        @Parameter(names = {"--librariesGradientsPaths"},
+                description = "Path to libraries gradients. If defined it must have the same length as --libraries",
+                variableArity = true)
+        List<String> libraryGradientsPaths;
+
+        @Parameter(names = {"--librariesGradientsSuffixes"},
+                description = "Gradients path suffix. If defined it must have the same length as --libraries otherwise " +
+                        "it will default to '_gradient'",
+                variableArity = true)
+        List<String> libraryGradientsSuffixes;
+
+        @Parameter(names = {"--librariesZGapsPaths"},
+                description = "Path to libraries zgaps. If defined it must have the same length as --libraries",
+                variableArity = true)
+        List<String> libraryZGapMasksPaths;
+
+        @Parameter(names = {"--librariesZGapSuffixes"},
+                description = "ZGap path suffix. If --librariesZGapsPaths is present then this must also be present and have the same length",
+                variableArity = true)
+        List<String> libraryZGapMasksSuffixes;
+
         @Parameter(names = "--included-libraries", variableArity = true, description = "If set, MIPs should also be in all these libraries")
         Set<String> includedLibraries;
 
@@ -103,8 +127,10 @@ public class CreateColorDepthSearchJSONInputCmd {
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         List<String> datasets;
 
-        @Parameter(names = {"--segmented-mips-base-dir"}, description = "The base directory for segmented MIPS")
-        String segmentedMIPsBaseDir;
+        @Parameter(names = {"--segmented-mips-base-dir"},
+                description = "The base directory for segmented MIPS",
+                variableArity = true)
+        List<String> librarySegmentedMIPsBaseDir;
 
         @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
         boolean includeMIPsWithNoPublishedURL;
@@ -141,6 +167,37 @@ public class CreateColorDepthSearchJSONInputCmd {
         CreateColorDepthSearchJSONInputArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
+
+        List<String> validate() {
+            List<String> errors = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(librarySegmentedMIPsBaseDir) && librarySegmentedMIPsBaseDir.size() != libraries.size() ) {
+                errors.add("If segmentation paths are defined there has to be a 1:1 correspondence with the libraries argument");
+            }
+            if (CollectionUtils.isNotEmpty(libraryGradientsPaths) && libraryGradientsPaths.size() != libraries.size() ) {
+                errors.add("If gradients paths are defined there has to be a 1:1 correspondence with the libraries argument");
+            }
+            if (CollectionUtils.isNotEmpty(libraryGradientsPaths) &&
+                CollectionUtils.isNotEmpty(libraryGradientsSuffixes) && libraryGradientsPaths.size() != libraryGradientsSuffixes.size()) {
+                errors.add("If some gradients path have a non standard suffix you must define the corresponding suffix for each path so" +
+                        "the size of librariesGradientsSuffixes must match the size of librariesGradientsPaths");
+            }
+            if (CollectionUtils.isNotEmpty(libraryZGapMasksPaths) && libraryZGapMasksPaths.size() != libraries.size() ) {
+                errors.add("If zgap paths are defined there has to be a 1:1 correspondence with the libraries argument");
+            }
+            if (CollectionUtils.isNotEmpty(libraryZGapMasksPaths) && CollectionUtils.size(libraryZGapMasksSuffixes) != libraryZGapMasksPaths.size()) {
+                errors.add("A zgap suffix must be defined for each zgap path since these are rarely the same");
+            }
+            return errors;
+        }
+    }
+
+    class LibraryPathsArgs {
+        ListArg library;
+        String segmentationPath;
+        String gradientsPath;
+        String gradientsSuffix;
+        String zgapsPath;
+        String zgapsSuffix;
     }
 
     private final CreateColorDepthSearchJSONInputArgs args;
@@ -178,15 +235,32 @@ public class CreateColorDepthSearchJSONInputCmd {
             excludedMips = Collections.emptySet();
         }
 
-        args.libraries.forEach(library -> {
+        Streams.zip(
+                IntStream.range(0, args.libraries.size()).boxed(),
+                args.libraries.stream(),
+                (lindex, library) -> {
+                    LibraryPathsArgs lpaths = new LibraryPathsArgs();
+                    lpaths.library = library;
+                    // !!!!!! FIXME
+                    return lpaths;
+                }
+        ).forEach(lpaths -> {
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
-                    library,
+                    lpaths.library,
+                    lpaths.segmentationPath,
+                    lpaths.gradientsPath,
+                    lpaths.gradientsSuffix,
+                    lpaths.zgapsPath,
+                    lpaths.zgapsSuffix,
                     excludedMips,
                     libraryNameMapping,
                     Paths.get(args.commonArgs.outputDir),
                     args.outputFileName
             );
+
+        });
+        args.libraries.forEach(library -> {
         });
     }
 
@@ -209,6 +283,11 @@ public class CreateColorDepthSearchJSONInputCmd {
 
     private void createColorDepthSearchJSONInputMIPs(WebTarget serverEndpoint,
                                                      ListArg libraryArg,
+                                                     String librarySegmentationPath,
+                                                     String libraryGradientsPath,
+                                                     String libraryGradientSuffix,
+                                                     String libraryZGapPath,
+                                                     String libraryZGapSuffix,
                                                      Set<MIPMetadata> excludedMIPs,
                                                      Map<String, String> libraryNamesMapping,
                                                      Path outputPath,
@@ -283,10 +362,10 @@ public class CreateColorDepthSearchJSONInputCmd {
             Pair<String, Map<String, List<String>>> segmentedImages;
             if (isEmLibrary(libraryArg.input)) {
                 Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)_.*");
-                segmentedImages = getSegmentedImages(skeletonRegExPattern, args.segmentedMIPsBaseDir);
+                segmentedImages = getSegmentedImages(skeletonRegExPattern, librarySegmentationPath);
             } else {
                 Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
-                segmentedImages = getSegmentedImages(slideCodeRegExPattern, args.segmentedMIPsBaseDir);
+                segmentedImages = getSegmentedImages(slideCodeRegExPattern, librarySegmentationPath);
             }
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
@@ -313,8 +392,8 @@ public class CreateColorDepthSearchJSONInputCmd {
                         .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, args.segmentedMIPsBaseDir, segmentedImages, args.segmentedImageHandling).stream())
-                        .map(ColorDepthMetadata::asMIPInfo)
+                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling).stream())
+                        .map(ColorDepthMetadata::asMIPWithGradient)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .peek(cdmip -> {
                             String cdmName = cdmip.getCdmName();
@@ -345,6 +424,16 @@ public class CreateColorDepthSearchJSONInputCmd {
                                     LOG.info("Not keeping {} because it is a duplicate of {}", cdmip.getId(), mipIds.get(0));
                                     return false;
                                 }
+                            }
+                        })
+                        .peek(cdmip -> {
+                            if (StringUtils.isNotBlank(libraryGradientsPath)) {
+                                // TODO
+                            }
+                        })
+                        .peek(cdmip -> {
+                            if (StringUtils.isNotBlank(libraryZGapPath)) {
+                                // TODO
                             }
                         })
                         .forEach(cdmip -> {

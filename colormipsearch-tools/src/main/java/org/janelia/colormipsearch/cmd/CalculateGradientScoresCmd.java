@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -76,8 +77,13 @@ class CalculateGradientScoresCmd {
             }
         }
 
-        boolean validate() {
-            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+        List<String> validate() {
+            List<String> errors = new ArrayList<>();
+            boolean inputFound = resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+            if (!inputFound) {
+                errors.add("No result file or directory containing results has been specified");
+            }
+            return errors;
         }
     }
 
