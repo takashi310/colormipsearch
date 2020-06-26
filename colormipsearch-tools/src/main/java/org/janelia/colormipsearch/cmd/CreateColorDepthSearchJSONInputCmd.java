@@ -241,7 +241,29 @@ public class CreateColorDepthSearchJSONInputCmd {
                 (lindex, library) -> {
                     LibraryPathsArgs lpaths = new LibraryPathsArgs();
                     lpaths.library = library;
-                    // !!!!!! FIXME
+                    if (CollectionUtils.isNotEmpty(args.librarySegmentedMIPsBaseDir)) {
+                        lpaths.segmentationPath = args.librarySegmentedMIPsBaseDir.get(lindex);
+                    } else {
+                        lpaths.segmentationPath = null;
+                    }
+                    if  (CollectionUtils.isNotEmpty(args.libraryGradientsPaths)) {
+                        lpaths.gradientsPath = args.libraryGradientsPaths.get(lindex);
+                        if (CollectionUtils.isNotEmpty(args.libraryGradientsSuffixes)) {
+                            lpaths.gradientsSuffix = args.libraryGradientsSuffixes.get(lindex);
+                        } else {
+                            lpaths.gradientsSuffix = "_gradient"; // default gradient suffix;
+                        }
+                    } else {
+                        lpaths.gradientsPath = null;
+                        lpaths.gradientsSuffix = null;
+                    }
+                    if  (CollectionUtils.isNotEmpty(args.libraryZGapMasksPaths)) {
+                        lpaths.zgapsPath = args.libraryZGapMasksPaths.get(lindex);
+                        lpaths.zgapsSuffix = args.libraryZGapMasksSuffixes.get(lindex);
+                    } else {
+                        lpaths.zgapsPath = null;
+                        lpaths.zgapsSuffix = null;
+                    }
                     return lpaths;
                 }
         ).forEach(lpaths -> {
@@ -427,13 +449,19 @@ public class CreateColorDepthSearchJSONInputCmd {
                             }
                         })
                         .peek(cdmip -> {
-                            if (StringUtils.isNotBlank(libraryGradientsPath)) {
-                                // TODO
+                            MIPMetadata gradientMIP = MIPsUtils.getTransformedMIPInfo(cdmip, libraryGradientsPath, libraryGradientSuffix);
+                            if (gradientMIP !=  null) {
+                                cdmip.setImageGradientArchivePath(gradientMIP.getImageArchivePath());
+                                cdmip.setImageGradientName(gradientMIP.getImageName());
+                                cdmip.setImageGradientType(gradientMIP.getImageType());
                             }
                         })
                         .peek(cdmip -> {
-                            if (StringUtils.isNotBlank(libraryZGapPath)) {
-                                // TODO
+                            MIPMetadata zgapMIP = MIPsUtils.getTransformedMIPInfo(cdmip, libraryZGapPath, libraryZGapSuffix);
+                            if (zgapMIP !=  null) {
+                                cdmip.setImageZGapArchivePath(zgapMIP.getImageArchivePath());
+                                cdmip.setImageZGapName(zgapMIP.getImageName());
+                                cdmip.setImageZGapType(zgapMIP.getImageType());
                             }
                         })
                         .forEach(cdmip -> {
