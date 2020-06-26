@@ -204,6 +204,7 @@ public abstract class AbstractMetadata {
     public <T extends AbstractMetadata> void copyTo(T that) {
         that.setId(this.id);
         that.setPublishedName(this.publishedName);
+        that.setAlignmentSpace(this.alignmentSpace);
         that.setLibraryName(this.libraryName);
         that.setImageURL(this.imageURL);
         that.setThumbnailURL(this.thumbnailURL);

@@ -661,6 +661,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
+        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(cdmip.publicImageUrl);
@@ -702,6 +703,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
+        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(cdmip.publicImageUrl);
