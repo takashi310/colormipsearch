@@ -74,8 +74,8 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     private void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
         ColorMIPSearchDriver colorMIPSearchDriver;
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.dataThreshold,
                 args.maskThreshold,
+                args.dataThreshold,
                 args.pixColorFluctuation,
                 args.xyShift,
                 args.mirrorMask,

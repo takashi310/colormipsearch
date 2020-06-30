@@ -48,8 +48,8 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
 
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.dataThreshold,
                 args.maskThreshold,
+                args.dataThreshold,
                 args.pixColorFluctuation,
                 args.xyShift,
                 args.mirrorMask,
