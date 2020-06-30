@@ -14,6 +14,7 @@ import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearch;
 import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
+import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.tools.MIPMetadata;
 import org.janelia.colormipsearch.tools.MIPsUtils;
 import org.slf4j.Logger;
@@ -132,8 +133,12 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                         .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
                 saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskNames + "-inputs-" + inputNames + "-cdsParameters.json");
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
-                ColorMIPSearchResultsWriter.writeSearchResults(args.getPerMaskDir(), cdsResults, ColorMIPSearchResult::perMaskMetadata);
-                ColorMIPSearchResultsWriter.writeSearchResults(args.getPerLibraryDir(), cdsResults, ColorMIPSearchResult::perLibraryMetadata);
+                ColorMIPSearchResultsWriter.writeSearchResults(
+                        args.getPerMaskDir(),
+                        ColorMIPSearchResultUtils.groupResults(cdsResults, ColorMIPSearchResult::perMaskMetadata));
+                ColorMIPSearchResultsWriter.writeSearchResults(
+                        args.getPerLibraryDir(),
+                        ColorMIPSearchResultUtils.groupResults(cdsResults, ColorMIPSearchResult::perLibraryMetadata));
             }
         } finally {
             colorMIPSearchDriver.terminate();

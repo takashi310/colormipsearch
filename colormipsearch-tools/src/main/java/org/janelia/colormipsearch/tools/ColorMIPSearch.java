@@ -20,21 +20,21 @@ public class ColorMIPSearch implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearch.class);
 
+    private final Integer defaultMaskThreshold;
     private final Integer dataThreshold;
-    private final Integer maskThreshold;
     private final Integer xyShift;
     private final boolean mirrorMask;
     private final Double pixColorFluctuation;
     private final Double pctPositivePixels;
 
-    public ColorMIPSearch(Integer dataThreshold,
-                          Integer maskThreshold,
+    public ColorMIPSearch(Integer defaultMaskThreshold,
+                          Integer dataThreshold,
                           Double pixColorFluctuation,
                           Integer xyShift,
                           boolean mirrorMask,
                           Double pctPositivePixels) {
+        this.defaultMaskThreshold = defaultMaskThreshold;
         this.dataThreshold = dataThreshold;
-        this.maskThreshold = maskThreshold;
         this.pixColorFluctuation = pixColorFluctuation;
         this.xyShift = xyShift;
         this.mirrorMask = mirrorMask;
@@ -43,8 +43,8 @@ public class ColorMIPSearch implements Serializable {
 
     public Map<String, String> getCDSParameters() {
         Map<String, String> cdsParams = new LinkedHashMap<>();
+        cdsParams.put("defaultMaskThreshold", defaultMaskThreshold != null ? defaultMaskThreshold.toString() : null);
         cdsParams.put("dataThreshold", dataThreshold != null ? dataThreshold.toString() : null);
-        cdsParams.put("maskThreshold", maskThreshold != null ? maskThreshold.toString() : null);
         cdsParams.put("xyShift", xyShift != null ? xyShift.toString() : null);
         cdsParams.put("mirrorMask", String.valueOf(mirrorMask));
         cdsParams.put("pixColorFluctuation", pixColorFluctuation != null ? pixColorFluctuation.toString() : null);
@@ -52,8 +52,15 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorMIPMaskCompare createMaskComparator(MIPImage maskMIPImage) {
+    public ColorMIPMaskCompare createMaskComparatorWithDefaultThreshold(MIPImage maskMIPImage) {
+        return createMaskComparator(maskMIPImage, defaultMaskThreshold);
+    }
+
+    public ColorMIPMaskCompare createMaskComparator(MIPImage maskMIPImage, Integer maskThresholdParam) {
         double zTolerance = pixColorFluctuation == null ? 0. : pixColorFluctuation / 100;
+        int maskThreshold = maskThresholdParam != null
+                ? maskThresholdParam
+                : defaultMaskThreshold == null || defaultMaskThreshold < 0 ? 0 : defaultMaskThreshold;
         return ColorMIPMaskCompareFactory.createMaskComparator(
                 maskMIPImage.getImageArray(),
                 maskThreshold,
@@ -68,7 +75,7 @@ public class ColorMIPSearch implements Serializable {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare image file {}", searchedMIPImage);
-            return maskComparator.runSearch(searchedMIPImage.imageArray);
+            return maskComparator.runSearch(searchedMIPImage.getImageArray());
         } catch (Throwable e) {
             LOG.warn("Error comparing image file {}", searchedMIPImage, e);
             return ColorMIPCompareOutput.NO_MATCH;
@@ -78,7 +85,6 @@ public class ColorMIPSearch implements Serializable {
     }
 
     public boolean isMatch(ColorMIPCompareOutput colorMIPCompareOutput) {
-        double pixThresdub = pctPositivePixels / 100;
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
         return colorMIPCompareOutput.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
     }
@@ -87,21 +93,21 @@ public class ColorMIPSearch implements Serializable {
         long startTime = System.currentTimeMillis();
         try {
             LOG.debug("Compare image file {} with mask {}", searchedMIPImage,  maskMIPImage);
-            ColorMIPMaskCompare cc = createMaskComparator(maskMIPImage);
-            ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(searchedMIPImage.imageArray);
-
-            double pixThresdub = pctPositivePixels / 100;
-            boolean isMatch = colorMIPCompareOutput.getMatchingPixNumToMaskRatio() > pixThresdub;
-
+            ColorMIPMaskCompare cc = createMaskComparatorWithDefaultThreshold(maskMIPImage);
+            ColorMIPCompareOutput colorMIPCompareOutput = cc.runSearch(searchedMIPImage.getImageArray());
+            boolean isMatch = isMatch(colorMIPCompareOutput);
             return new ColorMIPSearchResult(
-                    maskMIPImage.mipInfo,
-                    searchedMIPImage.mipInfo,
-                    colorMIPCompareOutput.getMatchingPixNum(), colorMIPCompareOutput.getMatchingPixNumToMaskRatio(), isMatch, false);
+                    maskMIPImage.getMipInfo(),
+                    searchedMIPImage.getMipInfo(),
+                    colorMIPCompareOutput.getMatchingPixNum(),
+                    colorMIPCompareOutput.getMatchingPixNumToMaskRatio(),
+                    isMatch,
+                    false);
         } catch (Throwable e) {
             LOG.warn("Error comparing library file {} with mask {}", searchedMIPImage,  maskMIPImage, e);
             return new ColorMIPSearchResult(
-                    maskMIPImage != null ? maskMIPImage.mipInfo : null,
-                    searchedMIPImage != null ? searchedMIPImage.mipInfo : null,
+                    maskMIPImage != null ? maskMIPImage.getMipInfo() : null,
+                    searchedMIPImage != null ? searchedMIPImage.getMipInfo() : null,
                     0, 0, false, true);
         } finally {
             LOG.debug("Completed comparing library file {} with mask {} in {}ms", searchedMIPImage,  maskMIPImage, System.currentTimeMillis() - startTime);

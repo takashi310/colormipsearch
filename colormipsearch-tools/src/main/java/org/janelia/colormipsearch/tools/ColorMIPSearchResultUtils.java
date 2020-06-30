@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +18,28 @@ import org.slf4j.LoggerFactory;
 
 public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
+
+    public static List<CDSMatches> groupResults(List<ColorMIPSearchResult> results, Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> resultMapper) {
+        return results.stream()
+                .map(resultMapper)
+                .collect(Collectors.groupingBy(
+                        csr -> new MIPIdentifier(
+                                csr.getSourceId(),
+                                csr.getSourcePublishedName(),
+                                csr.getSourceLibraryName()),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                l -> {
+                                    l.sort(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed());
+                                    return l;
+                                })))
+                .entrySet().stream().map(e -> new CDSMatches(
+                        e.getKey().getId(),
+                        e.getKey().getPublishedName(),
+                        e.getKey().getLibraryName(),
+                        e.getValue()))
+                .collect(Collectors.toList());
+    }
 
     public static CDSMatches readCDSMatchesFromJSONFile(File f, ObjectMapper mapper) {
         try {

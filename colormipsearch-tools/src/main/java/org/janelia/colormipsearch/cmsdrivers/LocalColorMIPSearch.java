@@ -78,7 +78,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPMetadata maskMIP, List<MIPMetadata> libraryMIPs) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
-        ColorMIPMaskCompare maskComparator = colorMIPSearch.createMaskComparator(maskImage);
+        ColorMIPMaskCompare maskComparator = colorMIPSearch.createMaskComparatorWithDefaultThreshold(maskImage);
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
                 .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {

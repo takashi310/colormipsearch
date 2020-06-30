@@ -11,10 +11,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -23,9 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.janelia.colormipsearch.tools.CDSMatches;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
 import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
-import org.janelia.colormipsearch.tools.MIPIdentifier;
+import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,28 +66,9 @@ class ColorMIPSearchResultsWriter {
         }
     }
 
-    static void writeSearchResults(Path outputPath, List<ColorMIPSearchResult> searchResults, Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> colorSearchResultMapper) {
-        List<CDSMatches> cdsGroupedResults = searchResults.stream()
-                .map(colorSearchResultMapper)
-                .collect(Collectors.groupingBy(
-                        csr -> new MIPIdentifier(
-                                csr.getSourceId(),
-                                csr.getSourcePublishedName(),
-                                csr.getSourceLibraryName()),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed());
-                                    return l;
-                                })))
-                .entrySet().stream().map(e -> new CDSMatches(
-                        e.getKey().getId(),
-                        e.getKey().getPublishedName(),
-                        e.getKey().getLibraryName(),
-                        e.getValue()))
-                .collect(Collectors.toList());
-        LOG.info("Write {} file results", cdsGroupedResults.size());
-        cdsGroupedResults.stream().parallel()
+    static void writeSearchResults(Path outputPath, List<CDSMatches> cdsMatchesList) {
+        LOG.info("Write {} file results", cdsMatchesList.size());
+        cdsMatchesList.stream().parallel()
                 .forEach(cdsMatches -> {
                     Failsafe.with(RETRY_POLICY).run(
                             () -> writeSearchResultsToFile(
@@ -101,7 +78,7 @@ class ColorMIPSearchResultsWriter {
                                     cdsMatches)
                     );
                 });
-        LOG.info("Finished writing {} file results", cdsGroupedResults.size());
+        LOG.info("Finished writing {} file results", cdsMatchesList.size());
     }
 
     private static void writeSearchResultsToFile(Path outputFile, CDSMatches searchResults) {
