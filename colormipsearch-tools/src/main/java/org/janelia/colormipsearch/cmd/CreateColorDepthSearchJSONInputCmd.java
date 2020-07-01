@@ -506,7 +506,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
             indexingField = cdmipMetadata.getPublishedName();
-            Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+_([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
+            Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+[_-]([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
             segmentedImageMatcher = p -> {
                 String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
                 Preconditions.checkArgument(fn.contains(indexingField));
@@ -667,6 +667,7 @@ public class CreateColorDepthSearchJSONInputCmd {
         cdMetadata.setImageURL(cdmip.publicImageUrl);
         cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
         cdMetadata.sourceImageRef = cdmip.sourceImageRef;
+        cdMetadata.sampleRef = cdmip.sampleRef;
         if (cdmip.sample != null) {
             cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);

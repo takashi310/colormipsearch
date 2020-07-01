@@ -13,6 +13,7 @@ class MIPWithGradMetadata extends MIPMetadata {
     private String imageZGapArchivePath;
     private String imageZGapName;
     private String imageZGapType;
+    private String sampleRef;
 
     @JsonProperty
     String getImageGradientArchivePath() {
@@ -66,5 +67,14 @@ class MIPWithGradMetadata extends MIPMetadata {
 
     void setImageZGapType(String imageZGapType) {
         this.imageZGapType = imageZGapType;
+    }
+
+    @JsonProperty
+    public String getSampleRef() {
+        return sampleRef;
+    }
+
+    public void setSampleRef(String sampleRef) {
+        this.sampleRef = sampleRef;
     }
 }
