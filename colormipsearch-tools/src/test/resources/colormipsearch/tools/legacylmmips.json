@@ -1,0 +1,89 @@
+[ {
+  "id" : "2711777465767821323",
+  "type" : "file",
+  "libraryName" : "FlyLight Split-GAL4 Drivers",
+  "publishedName" : "LH2453",
+  "imagePath" : "MB072C-20121114_31_E5-f_20x_c0__001.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/asoy_mb_polarity_case_2/GMR_MB072C-20121114_31_E5-20x-Brain-JRC2018_Unisex_20x_HR-1845060921378996322-CH1_CDM.png",
+  "archivePath" : "/nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_CDM",
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Published Name" : "LH2453",
+    "PublishedName" : "LH2453",
+    "Slide Code" : "20121114_31_E5",
+    "Gender" : "f",
+    "Anatomical Area" : "Brain",
+    "Alignment Space" : "JRC2018_Unisex_20x_HR",
+    "Objective" : "20x",
+    "Library" : "FlyLight Split-GAL4 Drivers",
+    "Channel" : "1"
+  }
+}, {
+  "id" : "2711777467147747339",
+  "type" : null,
+  "libraryName" : "FlyLight Split-GAL4 Drivers",
+  "publishedName" : "LH2453",
+  "imagePath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/asoy_mb_polarity_case_2/GMR_MB072C-20121114_31_E5-63x-Brain-JRC2018_Unisex_20x_HR-1845060921378996322-CH1_CDM.png",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/asoy_mb_polarity_case_2/GMR_MB072C-20121114_31_E5-63x-Brain-JRC2018_Unisex_20x_HR-1845060921378996322-CH1_CDM.png",
+  "archivePath" : null,
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Published Name" : "LH2453",
+    "PublishedName" : "LH2453",
+    "Slide Code" : "20121114_31_E5",
+    "Gender" : "f",
+    "Anatomical Area" : "Brain",
+    "Alignment Space" : "JRC2018_Unisex_20x_HR",
+    "Objective" : "63x",
+    "Library" : "FlyLight Split-GAL4 Drivers",
+    "Channel" : "1"
+  }
+}, {
+  "id" : "2711777467844001803",
+  "type" : "file",
+  "libraryName" : "FlyLight Split-GAL4 Drivers",
+  "publishedName" : "LH2453",
+  "imagePath" : "MB072C-20121114_31_E5-f_63x_c1__001.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/asoy_mb_polarity_case_2/GMR_MB072C-20121114_31_E5-63x-Brain-JRC2018_Unisex_20x_HR-1845060921378996322-CH2_CDM.png",
+  "archivePath" : "/nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_CDM",
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_2.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_2.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Published Name" : "LH2453",
+    "PublishedName" : "LH2453",
+    "Slide Code" : "20121114_31_E5",
+    "Gender" : "f",
+    "Anatomical Area" : "Brain",
+    "Alignment Space" : "JRC2018_Unisex_20x_HR",
+    "Objective" : "63x",
+    "Library" : "FlyLight Split-GAL4 Drivers",
+    "Channel" : "2"
+  }
+}, {
+  "id" : "2711777467844001803",
+  "type" : "file",
+  "libraryName" : "FlyLight Split-GAL4 Drivers",
+  "publishedName" : "LH2453",
+  "imagePath" : "MB072C-20121114_31_E5-f_63x_c1__002.tif",
+  "cdmPath" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/asoy_mb_polarity_case_2/GMR_MB072C-20121114_31_E5-63x-Brain-JRC2018_Unisex_20x_HR-1845060921378996322-CH2_CDM.png",
+  "archivePath" : "/nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_CDM",
+  "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_2.png",
+  "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/LH2453-20121114_31_E5-Split_GAL4-f-63x-brain-JRC2018_Unisex_20x_HR-CDM_2.jpg",
+  "relatedImageRefId" : null,
+  "attrs" : {
+    "Published Name" : "LH2453",
+    "PublishedName" : "LH2453",
+    "Slide Code" : "20121114_31_E5",
+    "Gender" : "f",
+    "Anatomical Area" : "Brain",
+    "Alignment Space" : "JRC2018_Unisex_20x_HR",
+    "Objective" : "63x",
+    "Library" : "FlyLight Split-GAL4 Drivers",
+    "Channel" : "2"
+  }
+} ]
