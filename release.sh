@@ -18,7 +18,7 @@ echo "Deploy maven artifacts"
 ./mvnw clean deploy
 
 echo "Creating git tag for ${RELEASE_VER}"
-git tag ${RELEASE_VER}
+git tag v${RELEASE_VER}
 
 echo "Pushing to Github..."
 git push origin
