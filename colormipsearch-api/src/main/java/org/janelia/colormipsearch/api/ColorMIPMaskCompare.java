@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
 
 /**
  * ColorMIPMaskCompare encapsulates a mask and it provides a method to compare
@@ -39,6 +40,12 @@ public abstract class ColorMIPMaskCompare {
         List<Integer> pos = new ArrayList<>();
         int pix, red, green, blue;
         for (int pi = 0; pi < sumpx; pi++) {
+            int x = pi % msk.getWidth();
+            int y = pi / msk.getWidth();
+            if (ImageTransformation.IS_LABEL_REGION.test(x, y)) {
+                // label regions are not to be searched
+                continue;
+            }
             pix = msk.get(pi);//Mask
 
             red = (pix >>> 16) & 0xff;//mask

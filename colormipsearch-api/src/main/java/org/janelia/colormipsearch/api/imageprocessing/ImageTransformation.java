@@ -15,6 +15,8 @@ public abstract class ImageTransformation {
      */
     public static ImageTransformation IDENTITY = ImageTransformation.identity();
 
+    public static BiPredicate<Integer, Integer> IS_LABEL_REGION = (x, y) -> x < 330 && y < 100 || x >= 950 && y < 85;
+
     private interface ColorHistogram {
         /**
          * Add a value and return the new max

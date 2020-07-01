@@ -29,7 +29,7 @@ public class MaskGradientAreaGapCalculator {
                                                                                                     int negativeRadius,
                                                                                                     boolean mirrorMask) {
         ImageProcessing clearLabels = ImageProcessing.create(
-                ImageTransformation.clearRegion((x, y) -> x < 330 && y < 100 || x >= 950 && y < 85));
+                ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION));
         ImageProcessing negativeRadiusDilation = clearLabels.mask(maskThreshold).maxFilter(negativeRadius);
         return (ImageArray maskImageArray) -> {
             long startTime = System.currentTimeMillis();
