@@ -714,8 +714,12 @@ public class CreateColorDepthSearchJSONInputCmd {
     }
 
     private String extractEMSkeletonIdFromName(String name) {
-        List<String> mipNameComponents = Splitter.on('_').splitToList(name);
-        return mipNameComponents.size() > 0 ? mipNameComponents.get(0) : null;
+        String[] mipNameComponents = StringUtils.split(name, "-_");
+        if (mipNameComponents != null && mipNameComponents.length  > 0) {
+            return mipNameComponents[0];
+        } else {
+            return null;
+        }
     }
 
     private String extractEMNeuronStateFromName(String name, Pattern emNeuronStatePattern) {
