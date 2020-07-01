@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.File;
 import java.util.List;
@@ -8,6 +8,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,8 +27,8 @@ public class LegacyLoadersTest {
     @Test
     public void loadMLegacyMIP() {
         String[] mipFiles = new String[] {
-                "src/test/resources/colormipsearch/tools/legacylmmips.json",
-                "src/test/resources/colormipsearch/tools/legacyemmips.json"
+                "src/test/resources/colormipsearch/api/cdsearch/legacylmmips.json",
+                "src/test/resources/colormipsearch/api/cdsearch/legacyemmips.json"
         };
         for (String mipFile : mipFiles) {
             List<MIPMetadata> mips = MIPsUtils.readMIPsFromJSON(mipFile, 0, -1, null, mapper);
@@ -36,8 +39,8 @@ public class LegacyLoadersTest {
     @Test
     public void loadMLegacyColorDepthSearchResults() {
         String[] resultFiles = new String[] {
-                "src/test/resources/colormipsearch/tools/legacy_2757945549444349963_cdsresult.json",
-                "src/test/resources/colormipsearch/tools/legacy_2711777212448636939_cdsresult.json"
+                "src/test/resources/colormipsearch/api/cdsearch/legacy_2757945549444349963_cdsresult.json",
+                "src/test/resources/colormipsearch/api/cdsearch/legacy_2711777212448636939_cdsresult.json"
         };
         for (String resultFile : resultFiles) {
             File legacyCDSResultsFile = new File(resultFile);
@@ -49,8 +52,8 @@ public class LegacyLoadersTest {
     @Test
     public void loadCDSMatches() {
         String[] resultFiles = new String[] {
-                "src/test/resources/colormipsearch/tools/legacy_2757945549444349963_cdsresult.json",
-                "src/test/resources/colormipsearch/tools/legacy_2711777212448636939_cdsresult.json"
+                "src/test/resources/colormipsearch/api/cdsearch/legacy_2757945549444349963_cdsresult.json",
+                "src/test/resources/colormipsearch/api/cdsearch/legacy_2711777212448636939_cdsresult.json"
         };
         for (String resultFile : resultFiles) {
             File legacyCDSResultsFile = new File(resultFile);

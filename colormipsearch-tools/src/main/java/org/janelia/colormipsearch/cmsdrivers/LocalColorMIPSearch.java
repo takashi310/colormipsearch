@@ -10,15 +10,15 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
-import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
-import org.janelia.colormipsearch.tools.CachedMIPsUtils;
-import org.janelia.colormipsearch.tools.ColorMIPSearch;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
-import org.janelia.colormipsearch.tools.MIPImage;
-import org.janelia.colormipsearch.tools.MIPMetadata;
-import org.janelia.colormipsearch.tools.MIPsUtils;
-import org.janelia.colormipsearch.tools.Utils;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPCompareOutput;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMaskCompare;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.api.cdmips.MIPImage;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.api.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

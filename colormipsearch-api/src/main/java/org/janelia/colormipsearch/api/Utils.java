@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api;
 
 import java.util.ArrayList;
 import java.util.Collections;

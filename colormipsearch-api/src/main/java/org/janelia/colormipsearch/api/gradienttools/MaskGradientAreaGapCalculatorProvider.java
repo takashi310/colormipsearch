@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api;
+package org.janelia.colormipsearch.api.gradienttools;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 

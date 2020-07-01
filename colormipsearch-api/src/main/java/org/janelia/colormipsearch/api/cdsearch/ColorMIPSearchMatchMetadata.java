@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.function.Consumer;
 
@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
@@ -208,7 +209,8 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setArtificialShapeScore(this.getArtificialShapeScore());
     }
 
-    Consumer<String> attributeValueHandler(String attrName) {
+    @Override
+    protected Consumer<String> attributeValueHandler(String attrName) {
         if (StringUtils.isBlank(attrName)) {
             return (attrValue) -> {}; // do nothing handler
         } else {
@@ -259,7 +261,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     }
 
     @Override
-    String mapAttr(String attrName) {
+    protected String mapAttr(String attrName) {
         if (StringUtils.isBlank(attrName)) {
             return null;
         }

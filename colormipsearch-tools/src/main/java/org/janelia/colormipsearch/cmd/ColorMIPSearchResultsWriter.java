@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.janelia.colormipsearch.tools.CDSMatches;
-import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
+import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

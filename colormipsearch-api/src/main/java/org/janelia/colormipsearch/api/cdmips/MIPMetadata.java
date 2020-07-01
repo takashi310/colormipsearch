@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdmips;
 
 import java.nio.file.Paths;
 

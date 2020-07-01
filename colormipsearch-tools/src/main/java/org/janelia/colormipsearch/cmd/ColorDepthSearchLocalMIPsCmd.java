@@ -8,11 +8,11 @@ import com.beust.jcommander.Parameters;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
-import org.janelia.colormipsearch.tools.ColorMIPSearch;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResult;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.tools.MIPMetadata;
-import org.janelia.colormipsearch.tools.MIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

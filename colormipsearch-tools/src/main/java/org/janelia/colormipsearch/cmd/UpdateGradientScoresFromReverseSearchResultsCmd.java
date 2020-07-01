@@ -22,11 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.tools.AbstractMetadata;
-import org.janelia.colormipsearch.tools.CDSMatches;
-import org.janelia.colormipsearch.tools.ColorMIPSearchMatchMetadata;
-import org.janelia.colormipsearch.tools.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.tools.Utils;
+import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
+import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

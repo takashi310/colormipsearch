@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.ArrayList;
 import java.util.List;

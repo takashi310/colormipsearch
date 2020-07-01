@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdmips;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -219,7 +219,7 @@ public abstract class AbstractMetadata {
         that.setPublishedToStaging(this.publishedToStaging);
     }
 
-    Consumer<String> attributeValueHandler(String attrName) {
+    protected Consumer<String> attributeValueHandler(String attrName) {
         if (StringUtils.isBlank(attrName)) {
             return (attrValue) -> {}; // do nothing handler
         } else {
@@ -260,7 +260,7 @@ public abstract class AbstractMetadata {
         return (attrValue) -> {}; // do nothing
     }
 
-    String mapAttr(String attrName) {
+    protected String mapAttr(String attrName) {
         if (StringUtils.isBlank(attrName)) {
             return null;
         }

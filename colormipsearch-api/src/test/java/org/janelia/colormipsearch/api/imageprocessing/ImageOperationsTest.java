@@ -16,7 +16,7 @@ public class ImageOperationsTest {
                 .maxFilter(10);
 
         for (int i = 0; i < 5; i++) {
-            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
             ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP)
@@ -35,7 +35,7 @@ public class ImageOperationsTest {
                 .thenExtend(ImageTransformation.horizontalMirror());
 
         for (int i = 1; i < 6; i++) {
-            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
             ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP)
@@ -55,7 +55,7 @@ public class ImageOperationsTest {
                 .thenExtend(ImageTransformation.maxFilter(10));
 
         for (int i = 0; i < 5; i++) {
-            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
             ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP).toImageArray();
@@ -69,7 +69,7 @@ public class ImageOperationsTest {
 
     @Test
     public void maxFilterForBinary8Image() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
@@ -91,7 +91,7 @@ public class ImageOperationsTest {
 
     @Test
     public void convertToGray8WithNoGammaCorrection() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
@@ -109,7 +109,7 @@ public class ImageOperationsTest {
 
     @Test
     public void convertToGray16WithNoGammaCorrection() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
@@ -127,7 +127,7 @@ public class ImageOperationsTest {
 
     @Test
     public void mirrorHorizontally() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
@@ -143,7 +143,7 @@ public class ImageOperationsTest {
 
     @Test
     public void imageSignal() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
@@ -163,7 +163,7 @@ public class ImageOperationsTest {
 
     @Test
     public void maskRGBImage() {
-        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/minmaxTest1.tif", 1);
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 

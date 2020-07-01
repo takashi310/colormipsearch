@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

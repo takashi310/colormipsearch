@@ -7,7 +7,7 @@ import com.beust.jcommander.Parameter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.tools.CachedMIPsUtils;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 
 /**
  * Perform color depth mask search on a Spark cluster.

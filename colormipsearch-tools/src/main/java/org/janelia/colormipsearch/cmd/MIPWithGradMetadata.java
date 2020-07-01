@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.janelia.colormipsearch.tools.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 class MIPWithGradMetadata extends MIPMetadata {
     // gradient image location

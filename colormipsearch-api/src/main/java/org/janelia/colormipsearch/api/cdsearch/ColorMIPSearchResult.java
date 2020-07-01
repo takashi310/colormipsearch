@@ -1,10 +1,11 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 /**
  * The result of comparing a search mask against a given image.

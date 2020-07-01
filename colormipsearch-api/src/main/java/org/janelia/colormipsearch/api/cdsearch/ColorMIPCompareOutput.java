@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api;
+package org.janelia.colormipsearch.api.cdsearch;
 
 /**
  * ColorMIPCompareOutput represents the color depth match summary result.

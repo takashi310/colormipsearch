@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdmips;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;

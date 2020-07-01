@@ -1,13 +1,11 @@
-package org.janelia.colormipsearch.tools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.janelia.colormipsearch.api.ColorMIPCompareOutput;
-import org.janelia.colormipsearch.api.ColorMIPMaskCompare;
-import org.janelia.colormipsearch.api.ColorMIPMaskCompareFactory;
+import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

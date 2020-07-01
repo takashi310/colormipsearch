@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.janelia.colormipsearch.tools.ColorMIPSearch;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
