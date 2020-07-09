@@ -205,7 +205,7 @@ class CalculateGradientScoresCmd {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return matchesFileContent;
         }
-        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = selectCDSResultForGradientScoreCalculation(
+        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
                 matchesFileContent.results,
                 numberOfBestLinesToSelect,
                 numberOfBestSamplesPerLineToSelect,
@@ -247,61 +247,6 @@ class CalculateGradientScoresCmd {
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         return CDSMatches.singletonfromResultsOfColorMIPSearchMatches(srWithGradScores);
-    }
-
-    private Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
-                                                                                                           int numberOfBestLinesToSelect,
-                                                                                                           int numberOfBestSamplesToSelectPerLine,
-                                                                                                           int numberOfBestMatchesToSelectPerSample) {
-        return cdsResults.stream()
-                .peek(csr -> csr.setGradientAreaGap(-1))
-                .collect(Collectors.groupingBy(csr -> {
-                    MIPMetadata mip = new MIPMetadata();
-                    mip.setId(csr.getSourceId());
-                    mip.setImageArchivePath(csr.getSourceImageArchivePath());
-                    mip.setImageName(csr.getSourceImageName());
-                    mip.setImageType(csr.getSourceImageType());
-                    return mip;
-                }, Collectors.collectingAndThen(
-                        Collectors.toList(),
-                        resultsForAnId -> {
-                            List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(
-                                    resultsForAnId,
-                                    numberOfBestLinesToSelect,
-                                    numberOfBestSamplesToSelectPerLine,
-                                    numberOfBestMatchesToSelectPerSample);
-                            LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
-                            return bestMatches;
-                        })));
-    }
-
-    private List<ColorMIPSearchMatchMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchMatchMetadata> cdsResults,
-                                                                                    int numberOfBestPublishedNamesToSelect,
-                                                                                    int numberOfBestSamplesToSelectPerPublishedName,
-                                                                                    int numberOfBestMatchesToSelectPerSample) {
-        List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
-                cdsResults,
-                csr -> StringUtils.defaultIfBlank(csr.getPublishedName(), extractPublishingNameCandidateFromImageName(csr.getImageName())), // pick best results by line
-                ColorMIPSearchMatchMetadata::getMatchingPixels,
-                numberOfBestPublishedNamesToSelect,
-                -1);
-
-        return topResultsByPublishedName.stream()
-                .flatMap(se -> Utils.pickBestMatches(
-                        se.getEntry(),
-                        csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
-                        ColorMIPSearchMatchMetadata::getMatchingPixels,
-                        numberOfBestSamplesToSelectPerPublishedName,
-                        numberOfBestMatchesToSelectPerSample)
-                        .stream())
-                .flatMap(se -> se.getEntry().stream())
-                .collect(Collectors.toList());
-    }
-
-    private String extractPublishingNameCandidateFromImageName(String imageName) {
-        String fn = RegExUtils.replacePattern(new File(imageName).getName(), "\\.\\D*$", "");
-        int sepIndex = fn.indexOf('_');
-        return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
 
     private CompletableFuture<List<ColorMIPSearchMatchMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,

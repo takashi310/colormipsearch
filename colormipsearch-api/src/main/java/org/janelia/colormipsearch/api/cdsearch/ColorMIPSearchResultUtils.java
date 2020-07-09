@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -13,8 +14,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.api.ScoredEntry;
+import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +81,61 @@ public class ColorMIPSearchResultUtils {
             LOG.error("Error reading CDS results from json file {}", f, e);
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
+                                                                                                                 int numberOfBestLinesToSelect,
+                                                                                                                 int numberOfBestSamplesToSelectPerLine,
+                                                                                                                 int numberOfBestMatchesToSelectPerSample) {
+        return cdsResults.stream()
+                .peek(csr -> csr.setGradientAreaGap(-1))
+                .collect(Collectors.groupingBy(csr -> {
+                    MIPMetadata mip = new MIPMetadata();
+                    mip.setId(csr.getSourceId());
+                    mip.setImageArchivePath(csr.getSourceImageArchivePath());
+                    mip.setImageName(csr.getSourceImageName());
+                    mip.setImageType(csr.getSourceImageType());
+                    return mip;
+                }, Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        resultsForAnId -> {
+                            List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(
+                                    resultsForAnId,
+                                    numberOfBestLinesToSelect,
+                                    numberOfBestSamplesToSelectPerLine,
+                                    numberOfBestMatchesToSelectPerSample);
+                            LOG.info("Selected {} best matches out of {}", bestMatches.size(), resultsForAnId.size());
+                            return bestMatches;
+                        })));
+    }
+
+    private static List<ColorMIPSearchMatchMetadata> pickBestPublishedNameAndSampleMatches(List<ColorMIPSearchMatchMetadata> cdsResults,
+                                                                                           int numberOfBestPublishedNamesToSelect,
+                                                                                           int numberOfBestSamplesToSelectPerPublishedName,
+                                                                                           int numberOfBestMatchesToSelectPerSample) {
+        List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
+                cdsResults,
+                csr -> StringUtils.defaultIfBlank(csr.getPublishedName(), extractPublishingNameCandidateFromImageName(csr.getImageName())), // pick best results by line
+                ColorMIPSearchMatchMetadata::getMatchingPixels,
+                numberOfBestPublishedNamesToSelect,
+                -1);
+
+        return topResultsByPublishedName.stream()
+                .flatMap(se -> Utils.pickBestMatches(
+                        se.getEntry(),
+                        csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
+                        ColorMIPSearchMatchMetadata::getMatchingPixels,
+                        numberOfBestSamplesToSelectPerPublishedName,
+                        numberOfBestMatchesToSelectPerSample)
+                        .stream())
+                .flatMap(se -> se.getEntry().stream())
+                .collect(Collectors.toList());
+    }
+
+    private static String extractPublishingNameCandidateFromImageName(String imageName) {
+        String fn = RegExUtils.replacePattern(new File(imageName).getName(), "\\.\\D*$", "");
+        int sepIndex = fn.indexOf('_');
+        return sepIndex > 0 ? fn.substring(0, sepIndex) : fn;
     }
 
     /**
