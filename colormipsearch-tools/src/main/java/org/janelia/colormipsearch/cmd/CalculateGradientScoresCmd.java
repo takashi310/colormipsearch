@@ -291,8 +291,6 @@ class CalculateGradientScoresCmd {
                         LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",
                                 resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     } else {
-                        // in this case we could assume the grdients are available for the input and
-                        // we could group the results by matched ID but for now we simply do not do it because it's too inefficient.
                         areaGap = -1;
                     }
                     indexedCsr.getRight().setGradientAreaGap(areaGap);
