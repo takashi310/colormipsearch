@@ -21,6 +21,12 @@ import org.slf4j.LoggerFactory;
 public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
 
+    /**
+     * Map results using the provided mapping and group them by source published name.
+     * @param results
+     * @param resultMapper basically specify whether the results grouping is done by mask or by library.
+     * @return
+     */
     public static List<CDSMatches> groupResults(List<ColorMIPSearchResult> results, Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> resultMapper) {
         return results.stream()
                 .map(resultMapper)
@@ -43,11 +49,17 @@ public class ColorMIPSearchResultUtils {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Read CDS matches from the specified JSON formatted file.
+     *
+     * @param f
+     * @param mapper
+     * @return
+     */
     public static CDSMatches readCDSMatchesFromJSONFile(File f, ObjectMapper mapper) {
         try {
             LOG.debug("Reading {}", f);
-            return mapper.readValue(f, new TypeReference<CDSMatches>() {
-            });
+            return mapper.readValue(f, CDSMatches.class);
         } catch (IOException e) {
             LOG.error("Error reading CDS results from json file {}", f, e);
             throw new UncheckedIOException(e);
@@ -65,6 +77,10 @@ public class ColorMIPSearchResultUtils {
         }
     }
 
+    /**
+     * Sort results by tge normalized score if it is available. If not use matching pixels attribute.
+     * @param cdsResults
+     */
     public static void sortCDSResults(List<ColorMIPSearchMatchMetadata> cdsResults) {
         Comparator<ColorMIPSearchMatchMetadata> csrComp = (csr1, csr2) -> {
             if (csr1.getNormalizedScore() != null && csr2.getNormalizedScore() != null) {
