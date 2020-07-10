@@ -33,24 +33,28 @@ public class ColorMIPSearchResultUtils {
      * @param resultMapper basically specify whether the results grouping is done by mask or by library.
      * @return
      */
-    public static List<CDSMatches> groupResults(List<ColorMIPSearchResult> results, Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> resultMapper) {
+    public static List<CDSMatches> groupResults(List<ColorMIPSearchResult> results,
+                                                Function<ColorMIPSearchResult, ColorMIPSearchMatchMetadata> resultMapper) {
         return results.stream()
                 .map(resultMapper)
                 .collect(Collectors.groupingBy(
                         csr -> new MIPIdentifier(
                                 csr.getSourceId(),
                                 csr.getSourcePublishedName(),
-                                csr.getSourceLibraryName()),
+                                csr.getSourceLibraryName(),
+                                csr.getSourceImageURL()
+                        ),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
-                                l -> {
-                                    l.sort(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed());
-                                    return l;
-                                })))
+                                l -> l.stream()
+                                        .peek(csr -> csr.setSourceImageURL(null))
+                                        .sorted(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed())
+                                        .collect(Collectors.toList()))))
                 .entrySet().stream().map(e -> new CDSMatches(
                         e.getKey().getId(),
                         e.getKey().getPublishedName(),
                         e.getKey().getLibraryName(),
+                        e.getKey().getImageURL(),
                         e.getValue()))
                 .collect(Collectors.toList());
     }

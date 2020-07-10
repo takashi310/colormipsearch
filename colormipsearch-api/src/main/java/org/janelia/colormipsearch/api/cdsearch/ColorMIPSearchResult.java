@@ -5,6 +5,7 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 /**
@@ -89,6 +90,14 @@ public class ColorMIPSearchResult implements Serializable {
                 .toString();
     }
 
+    public MIPIdentifier perLibraryId() {
+        return new MIPIdentifier(
+                getLibraryId(),
+                libraryMIP.getPublishedName(),
+                libraryMIP.getLibraryName(),
+                libraryMIP.getImageURL());
+    }
+
     public ColorMIPSearchMatchMetadata perLibraryMetadata() {
         ColorMIPSearchMatchMetadata srMetadata = new ColorMIPSearchMatchMetadata();
         srMetadata.setSourceId(getLibraryId());
@@ -110,6 +119,14 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         return srMetadata;
+    }
+
+    public MIPIdentifier perMaskId() {
+        return new MIPIdentifier(
+                getMaskId(),
+                maskMIP.getPublishedName(),
+                maskMIP.getLibraryName(),
+                maskMIP.getImageURL());
     }
 
     public ColorMIPSearchMatchMetadata perMaskMetadata() {

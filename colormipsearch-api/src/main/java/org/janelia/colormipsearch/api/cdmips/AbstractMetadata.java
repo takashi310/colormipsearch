@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.cdmips;
 
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -76,6 +77,15 @@ public abstract class AbstractMetadata {
 
     public void setImageName(String imageName) {
         this.imageName = imageName;
+    }
+
+    @JsonIgnore
+    public String getImagePath() {
+        if (StringUtils.isBlank(imageArchivePath)) {
+            return imageName;
+        } else {
+            return Paths.get(imageArchivePath, imageName).toString();
+        }
     }
 
     public String getImageArchivePath() {

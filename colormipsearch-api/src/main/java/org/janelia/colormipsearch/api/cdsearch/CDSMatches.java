@@ -19,12 +19,13 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         if (CollectionUtils.isNotEmpty(listOfCDSMatches)) {
             return listOfCDSMatches.stream()
                     .collect(Collectors.groupingBy(
-                            csr -> new MIPIdentifier(csr.getSourceId(), csr.getSourcePublishedName(), csr.getSourceLibraryName()),
+                            csr -> new MIPIdentifier(csr.getSourceId(), csr.getSourcePublishedName(), csr.getSourceLibraryName(), csr.getSourceImageURL()),
                             Collectors.toList()))
                     .entrySet().stream().map(e -> new CDSMatches(
                             e.getKey().getId(),
                             e.getKey().getPublishedName(),
                             e.getKey().getLibraryName(),
+                            e.getKey().getImageURL(),
                             e.getValue()))
                     .collect(Collectors.toList());
         } else {
@@ -45,23 +46,27 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
     private final String maskId;
     private final String maskPublishedName;
     private final String maskLibraryName;
+    private final String maskImageURL;
 
     @JsonCreator
     public CDSMatches(
             @JsonProperty("maskId") String maskId,
             @JsonProperty("maskPublishedName") String maskPublishedName,
             @JsonProperty("maskLibraryName") String maskLibraryName,
+            @JsonProperty("maskImageURL") String maskImageURL,
             @JsonProperty("results") List<ColorMIPSearchMatchMetadata> results) {
         super(results);
         this.maskId = maskId;
         this.maskPublishedName = maskPublishedName;
         this.maskLibraryName = maskLibraryName;
+        this.maskImageURL = maskImageURL;
 
         if (StringUtils.isNotBlank(maskId)) {
             results.forEach(csr -> {
                 csr.setSourceId(this.maskId);
                 csr.setSourcePublishedName(this.maskPublishedName);
                 csr.setSourceLibraryName(this.maskLibraryName);
+                csr.setSourceImageURL(this.maskImageURL);
             });
         }
     }
@@ -81,5 +86,9 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
 
     public String getMaskLibraryName() {
         return maskLibraryName;
+    }
+
+    public String getMaskImageURL() {
+        return maskImageURL;
     }
 }

@@ -7,11 +7,13 @@ public class MIPIdentifier {
     private final String id;
     private final String publishedName;
     private final String libraryName;
+    private final String imageURL;
 
-    public MIPIdentifier(String id, String publishedName, String libraryName) {
+    public MIPIdentifier(String id, String publishedName, String libraryName, String imageURL) {
         this.id = id;
         this.publishedName = publishedName;
         this.libraryName = libraryName;
+        this.imageURL = imageURL;
     }
 
     public String getId() {
@@ -24,6 +26,10 @@ public class MIPIdentifier {
 
     public String getLibraryName() {
         return libraryName;
+    }
+
+    public String getImageURL() {
+        return imageURL;
     }
 
     @Override

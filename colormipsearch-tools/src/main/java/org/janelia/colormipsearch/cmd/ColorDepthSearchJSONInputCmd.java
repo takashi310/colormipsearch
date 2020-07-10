@@ -135,10 +135,14 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                 List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
                 ColorMIPSearchResultsWriter.writeSearchResults(
                         args.getPerMaskDir(),
-                        ColorMIPSearchResultUtils.groupResults(cdsResults, ColorMIPSearchResult::perMaskMetadata));
+                        ColorMIPSearchResultUtils.groupResults(
+                                cdsResults,
+                                ColorMIPSearchResult::perMaskMetadata));
                 ColorMIPSearchResultsWriter.writeSearchResults(
                         args.getPerLibraryDir(),
-                        ColorMIPSearchResultUtils.groupResults(cdsResults, ColorMIPSearchResult::perLibraryMetadata));
+                        ColorMIPSearchResultUtils.groupResults(
+                                cdsResults,
+                                ColorMIPSearchResult::perLibraryMetadata));
             }
         } finally {
             colorMIPSearchDriver.terminate();

@@ -27,6 +27,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceImageName;
     private String sourceImageArchivePath;
     private String sourceImageType;
+    private String sourceImageURL;
     private int matchingPixels;
     private double matchingRatio;
     @JsonProperty
@@ -98,6 +99,14 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setSourceImageArchivePath(String sourceImageArchivePath) {
         this.sourceImageArchivePath = sourceImageArchivePath;
+    }
+
+    public String getSourceImageURL() {
+        return sourceImageURL;
+    }
+
+    public void setSourceImageURL(String sourceImageURL) {
+        this.sourceImageURL = sourceImageURL;
     }
 
     public int getMatchingPixels() {
