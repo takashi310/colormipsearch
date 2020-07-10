@@ -90,14 +90,6 @@ public class ColorMIPSearchResult implements Serializable {
                 .toString();
     }
 
-    public MIPIdentifier perLibraryId() {
-        return new MIPIdentifier(
-                getLibraryId(),
-                libraryMIP.getPublishedName(),
-                libraryMIP.getLibraryName(),
-                libraryMIP.getImageURL());
-    }
-
     public ColorMIPSearchMatchMetadata perLibraryMetadata() {
         ColorMIPSearchMatchMetadata srMetadata = new ColorMIPSearchMatchMetadata();
         srMetadata.setSourceId(getLibraryId());
@@ -106,6 +98,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setSourceImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setSourceImageType(libraryMIP.getImageType());
         srMetadata.setSourceImageName(libraryMIP.getImageName());
+        srMetadata.setSourceImageURL(libraryMIP.getImageURL());
 
         srMetadata.setImageURL(maskMIP.getImageURL());
         srMetadata.setThumbnailURL(maskMIP.getThumbnailURL());
@@ -121,14 +114,6 @@ public class ColorMIPSearchResult implements Serializable {
         return srMetadata;
     }
 
-    public MIPIdentifier perMaskId() {
-        return new MIPIdentifier(
-                getMaskId(),
-                maskMIP.getPublishedName(),
-                maskMIP.getLibraryName(),
-                maskMIP.getImageURL());
-    }
-
     public ColorMIPSearchMatchMetadata perMaskMetadata() {
         ColorMIPSearchMatchMetadata srMetadata = new ColorMIPSearchMatchMetadata();
         srMetadata.setSourceId(getMaskId());
@@ -137,6 +122,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setSourceImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setSourceImageName(maskMIP.getImageName());
         srMetadata.setSourceImageType(maskMIP.getImageType());
+        srMetadata.setSourceImageURL(maskMIP.getImageURL());
 
         srMetadata.setImageURL(libraryMIP.getImageURL());
         srMetadata.setThumbnailURL(libraryMIP.getThumbnailURL());
