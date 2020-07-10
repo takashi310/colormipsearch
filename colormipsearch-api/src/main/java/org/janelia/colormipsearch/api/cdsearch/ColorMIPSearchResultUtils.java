@@ -102,6 +102,7 @@ public class ColorMIPSearchResultUtils {
                     mip.setImageArchivePath(csr.getSourceImageArchivePath());
                     mip.setImageName(csr.getSourceImageName());
                     mip.setImageType(csr.getSourceImageType());
+                    mip.setImageURL(csr.getSourceImageURL());
                     return mip;
                 }, Collectors.collectingAndThen(
                         Collectors.toList(),
