@@ -49,26 +49,32 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
     private final String maskImageURL;
 
     @JsonCreator
-    public CDSMatches(
-            @JsonProperty("maskId") String maskId,
-            @JsonProperty("maskPublishedName") String maskPublishedName,
-            @JsonProperty("maskLibraryName") String maskLibraryName,
-            @JsonProperty("maskImageURL") String maskImageURL,
-            @JsonProperty("results") List<ColorMIPSearchMatchMetadata> results) {
+    public static CDSMatches createCDSMatches(@JsonProperty("maskId") String maskId,
+                                              @JsonProperty("maskPublishedName") String maskPublishedName,
+                                              @JsonProperty("maskLibraryName") String maskLibraryName,
+                                              @JsonProperty("maskImageURL") String maskImageURL,
+                                              @JsonProperty("results") List<ColorMIPSearchMatchMetadata> results) {
+        if (StringUtils.isNotBlank(maskId)) {
+            results.forEach(csr -> {
+                csr.setSourceId(maskId);
+                csr.setSourcePublishedName(maskPublishedName);
+                csr.setSourceLibraryName(maskLibraryName);
+                csr.setSourceImageURL(maskImageURL);
+            });
+        }
+        return new CDSMatches(maskId, maskPublishedName, maskLibraryName, maskImageURL, results);
+    }
+
+    CDSMatches(String maskId,
+               String maskPublishedName,
+               String maskLibraryName,
+               String maskImageURL,
+               List<ColorMIPSearchMatchMetadata> results) {
         super(results);
         this.maskId = maskId;
         this.maskPublishedName = maskPublishedName;
         this.maskLibraryName = maskLibraryName;
         this.maskImageURL = maskImageURL;
-
-        if (StringUtils.isNotBlank(maskId)) {
-            results.forEach(csr -> {
-                csr.setSourceId(this.maskId);
-                csr.setSourcePublishedName(this.maskPublishedName);
-                csr.setSourceLibraryName(this.maskLibraryName);
-                csr.setSourceImageURL(this.maskImageURL);
-            });
-        }
     }
 
     @JsonIgnore

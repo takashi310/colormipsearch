@@ -47,7 +47,10 @@ public class ColorMIPSearchResultUtils {
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 l -> l.stream()
-                                        .peek(csr -> csr.setSourceImageURL(null))
+                                        .map(csr -> {
+                                            csr.setSourceImageURL(null);
+                                            return csr;
+                                        })
                                         .sorted(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed())
                                         .collect(Collectors.toList()))))
                 .entrySet().stream().map(e -> new CDSMatches(
