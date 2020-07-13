@@ -127,6 +127,10 @@ public class CreateColorDepthSearchJSONInputCmd {
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         List<String> datasets;
 
+        @Parameter(names = {"--segmented-mips-variant"},
+                description = "The entry name in the variants dictionary for segmented images")
+        String segmentationVariantName;
+
         @Parameter(names = {"--segmented-mips-base-dir"},
                 description = "The base directory for segmented MIPS",
                 variableArity = true)
@@ -270,6 +274,7 @@ public class CreateColorDepthSearchJSONInputCmd {
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
                     lpaths.library,
+                    args.segmentationVariantName,
                     lpaths.segmentationPath,
                     lpaths.gradientsPath,
                     lpaths.gradientsSuffix,
@@ -305,6 +310,7 @@ public class CreateColorDepthSearchJSONInputCmd {
 
     private void createColorDepthSearchJSONInputMIPs(WebTarget serverEndpoint,
                                                      ListArg libraryArg,
+                                                     String segmentationVariantType,
                                                      String librarySegmentationPath,
                                                      String libraryGradientsPath,
                                                      String libraryGradientSuffix,
@@ -417,6 +423,15 @@ public class CreateColorDepthSearchJSONInputCmd {
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling).stream())
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
+                        .peek(cdmip -> {
+                            if (StringUtils.isNotBlank(segmentationVariantType)) {
+                                // add the image itself as a variant
+                                cdmip.addVariant(segmentationVariantType,
+                                        cdmip.getImageArchivePath(),
+                                        cdmip.getImageName(),
+                                        cdmip.getImageType());
+                            }
+                        })
                         .peek(cdmip -> {
                             String cdmName = cdmip.getCdmName();
                             if (StringUtils.isNotBlank(cdmName)) {
