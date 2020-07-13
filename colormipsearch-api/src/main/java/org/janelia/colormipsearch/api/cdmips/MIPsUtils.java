@@ -197,7 +197,7 @@ public class MIPsUtils {
      * @return
      */
     @Nullable
-    public static MIPMetadata getTransformedMIPInfo(MIPMetadata mipInfo, String transformedMIPLocation, String transformationLookupSuffix) {
+    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, String transformedMIPLocation, String transformationLookupSuffix) {
         if (StringUtils.isBlank(transformedMIPLocation)) {
             return null;
         } else {

@@ -20,21 +20,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
-import org.janelia.colormipsearch.api.gradienttools.MaskGradientAreaGapCalculator;
-import org.janelia.colormipsearch.api.gradienttools.MaskGradientAreaGapCalculatorProvider;
-import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
-import org.janelia.colormipsearch.api.ScoredEntry;
-import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
+import org.janelia.colormipsearch.api.gradienttools.MaskGradientAreaGapCalculator;
+import org.janelia.colormipsearch.api.gradienttools.MaskGradientAreaGapCalculatorProvider;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -275,8 +273,8 @@ class CalculateGradientScoresCmd {
                     matchedMIP.setImageName(indexedCsr.getRight().getImageName());
                     matchedMIP.setImageType(indexedCsr.getRight().getImageType());
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, gradientsLocation, gradientSuffix));
-                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getTransformedMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
+                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(matchedMIP, gradientsLocation, gradientSuffix));
+                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
                     LOG.debug("Loaded images for calculating area gap for {}:{} ({} vs {}) in {}ms",
                             resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     long areaGap;

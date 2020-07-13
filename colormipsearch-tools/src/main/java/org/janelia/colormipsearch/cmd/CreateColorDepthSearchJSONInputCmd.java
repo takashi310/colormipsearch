@@ -415,7 +415,7 @@ public class CreateColorDepthSearchJSONInputCmd {
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
                         .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling).stream())
-                        .map(ColorDepthMetadata::asMIPWithGradient)
+                        .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .peek(cdmip -> {
                             String cdmName = cdmip.getCdmName();
@@ -449,19 +449,15 @@ public class CreateColorDepthSearchJSONInputCmd {
                             }
                         })
                         .peek(cdmip -> {
-                            MIPMetadata gradientMIP = MIPsUtils.getTransformedMIPInfo(cdmip, libraryGradientsPath, libraryGradientSuffix);
+                            MIPMetadata gradientMIP = MIPsUtils.getAncillaryMIPInfo(cdmip, libraryGradientsPath, libraryGradientSuffix);
                             if (gradientMIP !=  null) {
-                                cdmip.setImageGradientArchivePath(gradientMIP.getImageArchivePath());
-                                cdmip.setImageGradientName(gradientMIP.getImageName());
-                                cdmip.setImageGradientType(gradientMIP.getImageType());
+                                cdmip.addVariant("gradient", gradientMIP.getImageArchivePath(), gradientMIP.getImageName(), gradientMIP.getImageType());
                             }
                         })
                         .peek(cdmip -> {
-                            MIPMetadata zgapMIP = MIPsUtils.getTransformedMIPInfo(cdmip, libraryZGapPath, libraryZGapSuffix);
+                            MIPMetadata zgapMIP = MIPsUtils.getAncillaryMIPInfo(cdmip, libraryZGapPath, libraryZGapSuffix);
                             if (zgapMIP !=  null) {
-                                cdmip.setImageZGapArchivePath(zgapMIP.getImageArchivePath());
-                                cdmip.setImageZGapName(zgapMIP.getImageName());
-                                cdmip.setImageZGapType(zgapMIP.getImageType());
+                                cdmip.addVariant("zgap", zgapMIP.getImageArchivePath(), zgapMIP.getImageName(), zgapMIP.getImageType());
                             }
                         })
                         .forEach(cdmip -> {

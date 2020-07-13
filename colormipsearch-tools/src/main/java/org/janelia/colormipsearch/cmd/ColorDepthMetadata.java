@@ -45,8 +45,8 @@ class ColorDepthMetadata extends AbstractMetadata {
         that.sampleRef = this.sampleRef;
     }
 
-    MIPWithGradMetadata asMIPWithGradient() {
-        MIPWithGradMetadata mipInfo = new MIPWithGradMetadata();
+    MIPWithVariantsMetadata asMIPWithVariants() {
+        MIPWithVariantsMetadata mipInfo = new MIPWithVariantsMetadata();
         this.copyTo(mipInfo);
         mipInfo.setImageType(this.getImageType());
         mipInfo.setImageArchivePath(segmentedDataBasePath);
