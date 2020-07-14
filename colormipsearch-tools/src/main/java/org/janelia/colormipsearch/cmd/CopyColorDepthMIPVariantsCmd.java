@@ -1,5 +1,8 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -14,13 +17,14 @@ import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
-import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,18 +86,17 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private void copyAllMIPsVariants(CopyColorDepthMIPVariantsArgs args) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        List<MIPWithVariantsMetadata> inputMips = MIPsUtils.readGenericMIPsFromJSON(
+        List<MIPWithVariantsMetadata> inputMips = readGenericMIPsFromJSON(
                 args.inputMIPs.input,
                 args.inputMIPs.offset,
                 args.inputMIPs.length,
                 CommonArgs.toLowerCase(args.mipsFilter),
-                mapper,
-                MIPWithVariantsMetadata.class
+                mapper
         );
 
         Map<String, List<MIPWithVariantsMetadata>> inputMIPsGroupedByID = inputMips.stream()
                 .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()));
-        LOG.info("Copy variants for {} mips", inputMIPsGroupedByID);
+        LOG.info("Copy variants for {} mips", inputMIPsGroupedByID.size());
 
         Path outputPath = args.getOutputDir();
         if (outputPath == null) {
@@ -109,6 +112,28 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                         }
                     }
                 });
+    }
+
+    private List<MIPWithVariantsMetadata> readGenericMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
+        try {
+            LOG.info("Reading {}", mipsJSONFilename);
+            List<MIPWithVariantsMetadata> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPWithVariantsMetadata>>() {
+            });
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = offset > 0 ? offset : 0;
+                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsJSONFilename, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getId())))
+                        .collect(Collectors.toList());
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsJSONFilename, e);
+            throw new UncheckedIOException(e);
+        }
     }
 
     private boolean copyMIPVariants(int mipIndex, MIPWithVariantsMetadata mip, Path outputPath, Map<String, String> variantMapping) {
@@ -133,7 +158,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private String createMIPSegmentName(String cdmPath, String imageExt, int segmentIndex) {
         String cdmName = Paths.get(cdmPath).getFileName().toString();
         String cdmSegmentName = RegExUtils.replacePattern(cdmName, "_CDM\\..*$", "");
-        return String.format("%s-%2d_CDM%s", cdmSegmentName, segmentIndex, imageExt);
+        return String.format("%s-%02d_CDM%s", cdmSegmentName, segmentIndex, imageExt);
     }
 
     private String getImageExt(String imagePath) {
