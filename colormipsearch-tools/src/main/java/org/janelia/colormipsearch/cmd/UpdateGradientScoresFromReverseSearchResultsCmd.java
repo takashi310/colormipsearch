@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +31,12 @@ import org.janelia.colormipsearch.api.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class UpdateGradientScoresFromReverseSearchResultsCmd {
+class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(UpdateGradientScoresFromReverseSearchResultsCmd.class);
 
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
-    static class GradientScoreResultsArgs {
+    static class GradientScoreResultsArgs extends AbstractCmdArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Results directory for which the gradients need to be set")
         private ListArg resultsDir;
@@ -64,25 +65,35 @@ class UpdateGradientScoresFromReverseSearchResultsCmd {
             }
         }
 
-        boolean validate() {
-            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+        @Override
+        List<String> validate() {
+            List<String> errors = new ArrayList<>();
+            boolean inputFound = resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+            if (!inputFound) {
+                errors.add("No result file or directory containing results has been specified");
+            }
+            return errors;
         }
     }
 
     private final GradientScoreResultsArgs args;
     private final ObjectMapper mapper;
 
-    UpdateGradientScoresFromReverseSearchResultsCmd(CommonArgs commonArgs) {
+    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         this.args = new GradientScoreResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
+    @Override
     GradientScoreResultsArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getOutputDir());
         updateGradientScores(args);
     }
 

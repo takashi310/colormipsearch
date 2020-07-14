@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,20 +19,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
+import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class NormalizeGradientScoresCmd {
+class NormalizeGradientScoresCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(NormalizeGradientScoresCmd.class);
 
     @Parameters(commandDescription = "Normalize gradient score for the search results - " +
             "if the area gap is not available consider it as if there was a perfect shape match, i.e., areagap = 0")
-    static class NormalizeGradientScoresArgs {
+    static class NormalizeGradientScoresArgs extends AbstractCmdArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Results directory for which scores will be normalized")
         private ListArg resultsDir;
@@ -66,25 +67,35 @@ class NormalizeGradientScoresCmd {
             }
         }
 
-        boolean validate() {
-            return resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+        @Override
+        List<String> validate() {
+            List<String> errors = new ArrayList<>();
+            boolean inputFound = resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
+            if (!inputFound) {
+                errors.add("No result file or directory containing results has been specified");
+            }
+            return errors;
         }
     }
 
     private final NormalizeGradientScoresArgs args;
     private final ObjectMapper mapper;
 
-    NormalizeGradientScoresCmd(CommonArgs commonArgs) {
+    NormalizeGradientScoresCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         args = new NormalizeGradientScoresArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
+    @Override
     NormalizeGradientScoresArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getOutputDir());
         setGradientScores(args);
     }
 

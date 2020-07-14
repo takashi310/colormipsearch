@@ -36,12 +36,12 @@ import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class CalculateGradientScoresCmd {
+class CalculateGradientScoresCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
     private static final long _1M = 1024 * 1024;
 
     @Parameters(commandDescription = "Calculate gradient area score for the results")
-    static class GradientScoreResultsArgs extends AbstractArgs {
+    static class GradientScoreResultsArgs extends AbstractColorDepthMatchArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
         ListArg resultsDir;
 
@@ -74,6 +74,7 @@ class CalculateGradientScoresCmd {
             }
         }
 
+        @Override
         List<String> validate() {
             List<String> errors = new ArrayList<>();
             boolean inputFound = resultsDir != null || CollectionUtils.isNotEmpty(resultsFiles);
@@ -86,15 +87,19 @@ class CalculateGradientScoresCmd {
 
     private final GradientScoreResultsArgs args;
 
-    CalculateGradientScoresCmd(CommonArgs commonArgs) {
+    CalculateGradientScoresCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         this.args = new GradientScoreResultsArgs(commonArgs);
     }
 
+    @Override
     GradientScoreResultsArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getOutputDir());
         calculateGradientAreaScore(args);
     }
 

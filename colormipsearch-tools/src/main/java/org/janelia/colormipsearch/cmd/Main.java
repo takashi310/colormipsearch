@@ -28,28 +28,24 @@ public class Main {
     public static void main(String[] argv) {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
-        GroupMIPsByPublishedNameCmd groupMIPsByPublishedNameCmd = new GroupMIPsByPublishedNameCmd(commonArgs);
-        CreateColorDepthSearchJSONInputCmd createColorDepthSearchJSONInputCmd = new CreateColorDepthSearchJSONInputCmd(commonArgs);
-        ColorDepthSearchJSONInputCmd jsonMIPsSearchCmd = new ColorDepthSearchJSONInputCmd(commonArgs);
-        ColorDepthSearchLocalMIPsCmd localMIPFilesSearchCmd = new ColorDepthSearchLocalMIPsCmd(commonArgs);
-        MergeResultsCmd mergeResultsCmd = new MergeResultsCmd(commonArgs);
-        NormalizeGradientScoresCmd normalizeGradientScoresCmd = new NormalizeGradientScoresCmd(commonArgs);
-        CalculateGradientScoresCmd calculateGradientScoresCmd = new CalculateGradientScoresCmd(commonArgs);
-        ReplaceURLsCmd replaceURLsCmd = new ReplaceURLsCmd(commonArgs);
-        UpdateGradientScoresFromReverseSearchResultsCmd updateGradientScoresFromReverseSearchResultsCmd = new UpdateGradientScoresFromReverseSearchResultsCmd(commonArgs);
-
-        JCommander cmdline = JCommander.newBuilder()
-                .addObject(mainArgs)
-                .addCommand("groupMIPsByPublishedName", groupMIPsByPublishedNameCmd.getArgs())
-                .addCommand("createColorDepthSearchJSONInput", createColorDepthSearchJSONInputCmd.getArgs())
-                .addCommand("searchFromJSON", jsonMIPsSearchCmd.getArgs())
-                .addCommand("searchLocalFiles", localMIPFilesSearchCmd.getArgs())
-                .addCommand("gradientScore", calculateGradientScoresCmd.getArgs())
-                .addCommand("gradientScoresFromMatchedResults", updateGradientScoresFromReverseSearchResultsCmd.getArgs())
-                .addCommand("mergeResults", mergeResultsCmd.getArgs())
-                .addCommand("normalizeGradientScores", normalizeGradientScoresCmd.getArgs())
-                .addCommand("replaceImageURLs", replaceURLsCmd.getArgs())
-                .build();
+        AbstractCmd[] cmds = new AbstractCmd[] {
+                new CreateColorDepthSearchJSONInputCmd("createColorDepthSearchJSONInput", commonArgs),
+                new GroupMIPsByPublishedNameCmd("groupMIPsByPublishedName", commonArgs),
+                new ReplaceURLsCmd("replaceImageURLs", commonArgs),
+                new ColorDepthSearchJSONInputCmd("searchFromJSON", commonArgs),
+                new ColorDepthSearchLocalMIPsCmd("searchLocalFiles", commonArgs),
+                new CalculateGradientScoresCmd("gradientScore", commonArgs),
+                new UpdateGradientScoresFromReverseSearchResultsCmd("gradientScoresFromMatchedResults", commonArgs),
+                new MergeResultsCmd("mergeResults", commonArgs),
+                new NormalizeGradientScoresCmd("normalizeGradientScores", commonArgs),
+                new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)
+        };
+        JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
+                .addObject(mainArgs);
+        for (AbstractCmd cmd : cmds) {
+            cmdlineBuilder.addCommand(cmd.getCommandName(), cmd.getArgs());
+        }
+        JCommander cmdline = cmdlineBuilder.build();
 
         try {
             cmdline.parse(argv);
@@ -81,87 +77,23 @@ public class Main {
         // initialize the cache
         CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInSeconds);
         // invoke the appropriate command
-        switch (cmdline.getParsedCommand()) {
-            case "groupMIPsByPublishedName":
-                groupMIPsByPublishedNameCmd.execute();
-                break;
-            case "createColorDepthSearchJSONInput":
-                List<String> cdsJSONInputValidationErrors = createColorDepthSearchJSONInputCmd.getArgs().validate();
-                if (!cdsJSONInputValidationErrors.isEmpty()) {
+        for (AbstractCmd cmd : cmds) {
+            if (cmd.matches(cmdline.getParsedCommand())) {
+                List<String> validationErrors = cmd.getArgs().validate();
+                if (!validationErrors.isEmpty()) {
                     StringBuilder sb = new StringBuilder();
-                    cdsJSONInputValidationErrors.forEach(err -> sb.append(err).append('\n'));
+                    validationErrors.forEach(err -> sb.append(err).append('\n'));
                     cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
                     cmdline.getConsole().println(sb.toString());
                     System.exit(1);
                 }
-                createColorDepthSearchJSONInputCmd.execute();
-                break;
-            case "searchFromJSON":
-                CmdUtils.createOutputDirs(jsonMIPsSearchCmd.getArgs().getPerLibraryDir(), jsonMIPsSearchCmd.getArgs().getPerMaskDir());
-                jsonMIPsSearchCmd.execute();
-                break;
-            case "searchLocalFiles":
-                CmdUtils.createOutputDirs(localMIPFilesSearchCmd.getArgs().getPerLibraryDir(), localMIPFilesSearchCmd.getArgs().getPerMaskDir());
-                localMIPFilesSearchCmd.execute();
-                break;
-            case "gradientScore":
-                List<String> gradScoreArgsValidationErrors = calculateGradientScoresCmd.getArgs().validate();
-                if (!gradScoreArgsValidationErrors.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    gradScoreArgsValidationErrors.forEach(err -> sb.append(err).append('\n'));
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(calculateGradientScoresCmd.getArgs().getOutputDir());
-                calculateGradientScoresCmd.execute();
-                break;
-            case "gradientScoresFromMatchedResults":
-                if (!updateGradientScoresFromReverseSearchResultsCmd.getArgs().validate()) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(updateGradientScoresFromReverseSearchResultsCmd.getArgs().getOutputDir());
-                updateGradientScoresFromReverseSearchResultsCmd.execute();
-                break;
-            case "mergeResults":
-                if (CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsDirs) &&
-                        CollectionUtils.isEmpty(mergeResultsCmd.getArgs().resultsFiles)) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(mergeResultsCmd.getArgs().getOutputDir());
-                mergeResultsCmd.execute();
-                break;
-            case "normalizeGradientScores":
-                if (!normalizeGradientScoresCmd.getArgs().validate()) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(normalizeGradientScoresCmd.getArgs().getOutputDir());
-                normalizeGradientScoresCmd.execute();
-                break;
-            case "replaceImageURLs":
-                if (!replaceURLsCmd.getArgs().validate()) {
-                    StringBuilder sb = new StringBuilder("No result file or directory containing results has been specified").append('\n');
-                    cmdline.getUsageFormatter().usage(cmdline.getParsedCommand(), sb);
-                    cmdline.getConsole().println(sb.toString());
-                    System.exit(1);
-                }
-                CmdUtils.createOutputDirs(replaceURLsCmd.getArgs().getOutputDir());
-                replaceURLsCmd.execute();
-                break;
-            default:
-                StringBuilder sb = new StringBuilder("Invalid command\n");
-                cmdline.getUsageFormatter().usage(sb);
-                cmdline.getConsole().println(sb.toString());
-                System.exit(1);
+                cmd.execute();
+                return;
+            }
         }
+        StringBuilder sb = new StringBuilder("Invalid command\n");
+        cmdline.getUsageFormatter().usage(sb);
+        cmdline.getConsole().println(sb.toString());
+        System.exit(1);
     }
 }

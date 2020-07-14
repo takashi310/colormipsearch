@@ -24,7 +24,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchJSONInputCmd.class);
 
     @Parameters(commandDescription = "Color depth search for a batch of MIPs")
-    static class JsonMIPsSearchArgs extends AbstractArgs {
+    static class JsonMIPsSearchArgs extends AbstractColorDepthMatchArgs {
         @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing images to search")
         private List<ListArg> librariesInputs;
@@ -59,15 +59,19 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
     private final JsonMIPsSearchArgs args;
 
-    ColorDepthSearchJSONInputCmd(CommonArgs commonArgs) {
+    ColorDepthSearchJSONInputCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         this.args = new JsonMIPsSearchArgs(commonArgs);
     }
 
+    @Override
     JsonMIPsSearchArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         runSearchFromJSONInput(args);
     }
 
@@ -97,7 +101,8 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                             libraryInput.input,
                             libraryInput.offset,
                             libraryInput.length,
-                            args.filterAsLowerCase(args.libraryMIPsFilter), mapper).stream())
+                            CommonArgs.toLowerCase(args.libraryMIPsFilter),
+                            mapper).stream())
                     .skip(librariesStartIndex)
                     .collect(Collectors.toList());
 
@@ -111,7 +116,12 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
             long masksStartIndex = args.masksStartIndex > 0 ? args.masksStartIndex : 0;
             int masksLength = args.masksLength > 0 ? args.masksLength : 0;
             List<MIPMetadata> inputMasksMips = args.masksInputs.stream()
-                    .flatMap(masksInput -> MIPsUtils.readMIPsFromJSON(masksInput.input, masksInput.offset, masksInput.length, args.filterAsLowerCase(args.maskMIPsFilter), mapper).stream())
+                    .flatMap(masksInput -> MIPsUtils.readMIPsFromJSON(
+                            masksInput.input,
+                            masksInput.offset,
+                            masksInput.length,
+                            CommonArgs.toLowerCase(args.maskMIPsFilter),
+                            mapper).stream())
                     .skip(masksStartIndex)
                     .collect(Collectors.toList());
 

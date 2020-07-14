@@ -26,11 +26,11 @@ import org.janelia.colormipsearch.api.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class MergeResultsCmd {
+class MergeResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(MergeResultsCmd.class);
 
     @Parameters(commandDescription = "Merge color depth search results")
-    static class MergeResultsArgs {
+    static class MergeResultsArgs extends AbstractCmdArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, variableArity = true, description = "Results directory to be combined")
         List<String> resultsDirs;
 
@@ -61,15 +61,19 @@ class MergeResultsCmd {
 
     private final MergeResultsArgs args;
 
-    MergeResultsCmd(CommonArgs commonArgs) {
+    MergeResultsCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         args =  new MergeResultsArgs(commonArgs);
     }
 
+    @Override
     MergeResultsArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getOutputDir());
         mergeResults(args);
     }
 

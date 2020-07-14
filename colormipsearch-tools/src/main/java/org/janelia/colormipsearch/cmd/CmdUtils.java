@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 class CmdUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CmdUtils.class);
 
-    static Executor createCDSExecutor(AbstractArgs args) {
+    static Executor createCDSExecutor(AbstractColorDepthMatchArgs args) {
         if (args.cdsConcurrency > 0) {
             LOG.info("Create a thread pool with {} worker threads ({} available processors for workstealing pool)",
                     args.cdsConcurrency, Runtime.getRuntime().availableProcessors());

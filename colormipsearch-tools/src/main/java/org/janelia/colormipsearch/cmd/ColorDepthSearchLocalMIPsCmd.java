@@ -20,7 +20,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchLocalMIPsCmd.class);
 
     @Parameters(commandDescription = "Color depth search for MIP files")
-    static class LocalMIPFilesSearchArgs extends AbstractArgs {
+    static class LocalMIPFilesSearchArgs extends AbstractColorDepthMatchArgs {
         @Parameter(names = "-i", required = true, converter = ListArg.ListArgConverter.class, description = "Library MIPs location")
         ListArg libraryMIPsLocation;
 
@@ -34,15 +34,19 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
 
     private final LocalMIPFilesSearchArgs args;
 
-    ColorDepthSearchLocalMIPsCmd(CommonArgs commonArgs) {
+    ColorDepthSearchLocalMIPsCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         this.args = new LocalMIPFilesSearchArgs(commonArgs);
     }
 
+    @Override
     LocalMIPFilesSearchArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         runSearchForLocalMIPFiles(args);
     }
 
@@ -57,10 +61,16 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
         ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
         try {
             List<MIPMetadata> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
-                    args.libraryMIPsLocation.input, args.libraryMIPsLocation.offset, args.libraryMIPsLocation.length, args.filterAsLowerCase(args.libraryMIPsFilter)
+                    args.libraryMIPsLocation.input,
+                    args.libraryMIPsLocation.offset,
+                    args.libraryMIPsLocation.length,
+                    CommonArgs.toLowerCase(args.libraryMIPsFilter)
             );
             List<MIPMetadata> masksMips = MIPsUtils.readMIPsFromLocalFiles(
-                    args.maskMIPsLocation.input, args.maskMIPsLocation.offset, args.maskMIPsLocation.length, args.filterAsLowerCase(args.maskMIPsFilter)
+                    args.maskMIPsLocation.input,
+                    args.maskMIPsLocation.offset,
+                    args.maskMIPsLocation.length,
+                    CommonArgs.toLowerCase(args.maskMIPsFilter)
             );
             if (librariesMips.isEmpty() || masksMips.isEmpty()) {
                 LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());

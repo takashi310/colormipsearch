@@ -287,6 +287,28 @@ public class MIPsUtils {
         }
     }
 
+    public static <T extends AbstractMetadata> List<T> readGenericMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper, Class<T> mipsType) {
+        try {
+            LOG.info("Reading {}", mipsJSONFilename);
+            List<T> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<T>>() {
+            });
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = offset > 0 ? offset : 0;
+                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsJSONFilename, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getId())))
+                        .collect(Collectors.toList());
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading {}", mipsJSONFilename, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static List<MIPMetadata> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", mipsJSONFilename);

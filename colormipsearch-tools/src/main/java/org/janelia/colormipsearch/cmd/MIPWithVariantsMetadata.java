@@ -2,8 +2,10 @@ package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
@@ -15,6 +17,22 @@ class MIPWithVariantsMetadata extends MIPMetadata {
 
     private Map<String, String> variants = null;
     private String sampleRef;
+
+    Set<String> getVariantTypes() {
+        if (variants == null) {
+            return Collections.emptySet();
+        } else {
+            return variants.keySet();
+        }
+    }
+
+    String getVariant(String variant) {
+        if (variants == null) {
+            return null;
+        } else {
+            return variants.get(variant);
+        }
+    }
 
     void addVariant(String variant, String variantLocation, String variantName, String variantEntryType) {
         if (StringUtils.isBlank(variantName)) {

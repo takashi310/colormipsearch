@@ -12,7 +12,7 @@ import com.beust.jcommander.ParametersDelegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-class AbstractArgs {
+class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = "--app")
     String appName = "ColorMIPSearch";
 
@@ -70,7 +70,7 @@ class AbstractArgs {
     @Parameter(names = {"--perLibrarySubdir"}, description = "Results subdirectory for results grouped by library MIP ID")
     String perLibrarySubdir;
 
-    AbstractArgs(CommonArgs commonArgs) {
+    AbstractColorDepthMatchArgs(CommonArgs commonArgs) {
         this.commonArgs = commonArgs;
     }
 
@@ -102,11 +102,4 @@ class AbstractArgs {
         }
     }
 
-    Set<String> filterAsLowerCase(Set<String> f) {
-        if (CollectionUtils.isEmpty(f)) {
-            return Collections.emptySet();
-        } else {
-            return f.stream().map(s -> s.toLowerCase()).collect(Collectors.toSet());
-        }
-    }
 }

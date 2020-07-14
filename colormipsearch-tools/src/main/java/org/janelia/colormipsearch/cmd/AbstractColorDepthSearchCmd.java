@@ -7,15 +7,21 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class AbstractColorDepthSearchCmd {
+abstract class AbstractColorDepthSearchCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractColorDepthSearchCmd.class);
 
+    AbstractColorDepthSearchCmd(String commandName) {
+        super(commandName);
+    }
+
     void saveCDSParameters(ColorMIPSearch colorMIPSearch, Path outputDir, String fname) {
+
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         if (outputDir != null) {

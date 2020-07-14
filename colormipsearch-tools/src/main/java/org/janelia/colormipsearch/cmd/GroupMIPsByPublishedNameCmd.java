@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class GroupMIPsByPublishedNameCmd {
+public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(GroupMIPsByPublishedNameCmd.class);
 
@@ -66,7 +66,7 @@ public class GroupMIPsByPublishedNameCmd {
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     @Parameters(commandDescription = "Grooup MIPs by published name")
-    private static class GroupMIPsByPublishedNameArgs {
+    private static class GroupMIPsByPublishedNameArgs extends AbstractCmdArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
                 description = "JACS data service base URL", required = true)
         String dataServiceURL;
@@ -127,17 +127,20 @@ public class GroupMIPsByPublishedNameCmd {
     private final GroupMIPsByPublishedNameArgs args;
     private final ObjectMapper mapper;
 
-    GroupMIPsByPublishedNameCmd(CommonArgs commonArgs) {
+    GroupMIPsByPublishedNameCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         args = new GroupMIPsByPublishedNameArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
+    @Override
     GroupMIPsByPublishedNameArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
 

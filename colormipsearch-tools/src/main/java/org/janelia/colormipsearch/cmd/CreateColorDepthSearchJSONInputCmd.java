@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class CreateColorDepthSearchJSONInputCmd {
+public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CreateColorDepthSearchJSONInputCmd.class);
     private static final int MAX_SEGMENTED_DATA_DEPTH = 5;
@@ -77,7 +77,7 @@ public class CreateColorDepthSearchJSONInputCmd {
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     @Parameters(commandDescription = "Grooup MIPs by published name")
-    static class CreateColorDepthSearchJSONInputArgs {
+    static class CreateColorDepthSearchJSONInputArgs extends AbstractCmdArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
                 description = "JACS data service base URL", required = true)
         String dataServiceURL;
@@ -207,17 +207,20 @@ public class CreateColorDepthSearchJSONInputCmd {
     private final CreateColorDepthSearchJSONInputArgs args;
     private final ObjectMapper mapper;
 
-    CreateColorDepthSearchJSONInputCmd(CommonArgs commonArgs) {
+    CreateColorDepthSearchJSONInputCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         args = new CreateColorDepthSearchJSONInputArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
+    @Override
     CreateColorDepthSearchJSONInputArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
 

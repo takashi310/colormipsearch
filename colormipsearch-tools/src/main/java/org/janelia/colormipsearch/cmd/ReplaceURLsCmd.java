@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +30,11 @@ import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReplaceURLsCmd {
+public class ReplaceURLsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ReplaceURLsCmd.class);
 
     @Parameters(commandDescription = "Replace image URLs from the source MIPs to the URLs from the target MIPs")
-    static class ReplaceURLsArgs {
+    static class ReplaceURLsArgs extends AbstractCmdArgs {
         @Parameter(names = {"--source-mips", "-src"}, required = true,
                 description = "File containing the MIPS whose image URLs will change")
         private String sourceMIPsFilename;
@@ -64,9 +65,15 @@ public class ReplaceURLsCmd {
         ReplaceURLsArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
-        
-        boolean validate() {
-            return CollectionUtils.isNotEmpty(inputDirs) || CollectionUtils.isNotEmpty(inputFiles);
+
+        @Override
+        List<String> validate() {
+            List<String> errors = new ArrayList<>();
+            boolean inputFound = inputDirs != null || CollectionUtils.isNotEmpty(inputFiles);
+            if (!inputFound) {
+                errors.add("No input file or directory containing results has been specified");
+            }
+            return errors;
         }
 
         Path getOutputDir() {
@@ -81,15 +88,19 @@ public class ReplaceURLsCmd {
 
     private final ReplaceURLsArgs args;
 
-    ReplaceURLsCmd(CommonArgs commonArgs) {
+    ReplaceURLsCmd(String commandName, CommonArgs commonArgs) {
+        super(commandName);
         args =  new ReplaceURLsArgs(commonArgs);
     }
 
+    @Override
     ReplaceURLsArgs getArgs() {
         return args;
     }
 
+    @Override
     void execute() {
+        CmdUtils.createOutputDirs(args.getOutputDir());
         replaceMIPsURLs(args);
     }
 
