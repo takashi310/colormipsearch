@@ -503,7 +503,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                     nc -> {
                                         String suffix = StringUtils.defaultIfBlank(libraryGradientSuffix, "");
                                         if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
-                                            return nc.replace(librarySegmentationSuffix, "") + suffix;
+                                            return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
                                         } else {
                                             return nc + suffix;
                                         }
@@ -519,7 +519,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                     nc -> {
                                         String suffix = StringUtils.defaultIfBlank(libraryZGapSuffix, "");
                                         if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
-                                            return nc.replace(librarySegmentationSuffix, "") + suffix;
+                                            return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
                                         } else {
                                             return nc + suffix;
                                         }

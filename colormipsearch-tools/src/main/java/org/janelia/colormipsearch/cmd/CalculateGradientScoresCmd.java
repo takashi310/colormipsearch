@@ -289,7 +289,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             nc -> {
                                 String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
                                 if (StringUtils.isNotBlank(librarySuffix)) {
-                                    return nc.replace(librarySuffix, "") + suffix;
+                                    return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
                                 } else {
                                     return nc + suffix;
                                 }
@@ -300,7 +300,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             nc -> {
                                 String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
                                 if (StringUtils.isNotBlank(librarySuffix)) {
-                                    return nc.replace(librarySuffix, "") + suffix;
+                                    return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
                                 } else {
                                     return nc + suffix;
                                 }
