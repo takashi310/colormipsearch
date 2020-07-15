@@ -313,18 +313,42 @@ public class MIPsUtils {
 
     @Nullable
     private static MIPMetadata getAncillaryMIPInfoFromZipEntry(String ancillaryMIPLocation, String mipEntryName, Function<String, String> ancillaryMIPSuffixMapping) {
-        String ancillaryMIPFilename = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
-        Path ancillaryMIPEntryPath = Paths.get(ancillaryMIPFilename);
-        int nComponents = ancillaryMIPEntryPath.getNameCount();
-        String ancillaryMIPEntryName = IntStream.range(0, nComponents)
-                .mapToObj(i -> i < nComponents-1 ? ancillaryMIPSuffixMapping.apply(ancillaryMIPEntryPath.getName(i).toString()) : ancillaryMIPEntryPath.getName(i).toString())
+        String mipEntryNameWithoutExtension = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", "");
+        Path mipEntryPath = Paths.get(mipEntryNameWithoutExtension);
+        int nComponents = mipEntryPath.getNameCount();
+        String baseAncillaryMIPEntryName = IntStream.range(0, nComponents)
+                .mapToObj(i -> i < nComponents-1 ? ancillaryMIPSuffixMapping.apply(mipEntryPath.getName(i).toString()) : mipEntryPath.getName(i).toString())
                 .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
-        MIPMetadata ancillaryMIP = new MIPMetadata();
-        ancillaryMIP.setImageType("zipEntry");
-        ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
-        ancillaryMIP.setCdmPath(ancillaryMIPEntryName);
-        ancillaryMIP.setImageName(ancillaryMIPEntryName);
-        return ancillaryMIP;
+        List<String> ancillaryMIPEntryNames = Arrays.asList(
+                baseAncillaryMIPEntryName + ".png",
+                baseAncillaryMIPEntryName + ".tif"
+        );
+        ZipFile archiveFile;
+        try {
+            archiveFile = new ZipFile(ancillaryMIPLocation);
+        } catch (IOException e) {
+            return null;
+        }
+        try {
+            return ancillaryMIPEntryNames.stream()
+                    .map(ancillaryMIPEntryName -> {
+                        MIPMetadata ancillaryMIP = new MIPMetadata();
+                        ancillaryMIP.setImageType("zipEntry");
+                        ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
+                        ancillaryMIP.setCdmPath(ancillaryMIPEntryName);
+                        ancillaryMIP.setImageName(ancillaryMIPEntryName);
+                        return ancillaryMIP;
+                    })
+                    .filter(ancillaryMIP -> archiveFile.getEntry(ancillaryMIP.getImageName()) != null)
+                    .findFirst()
+                    .orElse(null)
+                    ;
+        } finally {
+            try {
+                archiveFile.close();
+            } catch (IOException ignore) {
+            }
+        }
     }
 
     private static List<MIPMetadata> readMIPsFromDirectory(Path mipsInputDirectory, Set<String> mipsFilter, int offset, int length) {
