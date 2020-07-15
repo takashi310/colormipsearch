@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.net.ssl.SSLContext;
@@ -770,37 +771,40 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             return ImmutablePair.of("", Collections.emptyMap());
         } else {
             Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
+            Function<String, String> indexingFieldFromName = n -> {
+                Matcher m = indexingFieldRegExPattern.matcher(n);
+                if (m.find()) {
+                    return m.group(1);
+                } else {
+                    LOG.warn("Indexing field could not be extracted from {} - no match found using {}", n, indexingFieldRegExPattern);
+                    return null;
+                }
+            };
+
             if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldRegExPattern, segmentdMIPsBasePath));
+                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldFromName, segmentdMIPsBasePath));
             } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldRegExPattern, segmentdMIPsBasePath.toFile()));
+                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldFromName, segmentdMIPsBasePath.toFile()));
             } else {
                 return ImmutablePair.of("file", Collections.emptyMap());
             }
         }
     }
 
-    private Map<String, List<String>> getSegmentedImagesFromDir(Pattern indexingFieldRegExPattern, Path segmentedMIPsBasePath) {
+    private Map<String, List<String>> getSegmentedImagesFromDir(Function<String, String> indexingFieldFromName, Path segmentedMIPsBasePath) {
         try {
             return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
-                    .collect(Collectors.groupingBy(entryName -> {
-                        Matcher m = indexingFieldRegExPattern.matcher(entryName);
-                        if (m.find()) {
-                            return m.group(1);
-                        } else {
-                            LOG.warn("Indexing field not found in {} using {}", entryName, indexingFieldRegExPattern);
-                            throw new IllegalArgumentException("Indexing field code not found in " + entryName);
-                        }
-                    }));
+                    .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .collect(Collectors.groupingBy(indexingFieldFromName));
         } catch (IOException e) {
             LOG.warn("Error scanning {} for segmented images", segmentedMIPsBasePath, e);
             return Collections.emptyMap();
         }
     }
 
-    private Map<String, List<String>> getSegmentedImagesFromZip(Pattern slideCodeRegExPattern, File segmentedMIPsFile) {
+    private Map<String, List<String>> getSegmentedImagesFromZip(Function<String, String> indexingFieldFromName, File segmentedMIPsFile) {
         ZipFile segmentedMIPsZipFile;
         try {
             segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
@@ -811,16 +815,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         try {
             return segmentedMIPsZipFile.stream()
                     .filter(ze -> !ze.isDirectory())
-                    .map(ze -> ze.getName())
-                    .collect(Collectors.groupingBy(entryName -> {
-                        Matcher m = slideCodeRegExPattern.matcher(entryName);
-                        if (m.find()) {
-                            return m.group(1);
-                        } else {
-                            LOG.warn("Slide code not found in {}", entryName);
-                            throw new IllegalArgumentException("Slide code not found in " + entryName);
-                        }
-                    }));
+                    .map(ZipEntry::getName)
+                    .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .collect(Collectors.groupingBy(indexingFieldFromName));
         } finally {
             try {
                 segmentedMIPsZipFile.close();
