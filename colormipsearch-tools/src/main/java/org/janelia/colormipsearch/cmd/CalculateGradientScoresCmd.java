@@ -121,6 +121,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
                                     maskAreaGapCalculatorProvider,
                                     f,
+                                    args.librarySuffix,
                                     args.gradientPath,
                                     args.gradientSuffix,
                                     args.zgapPath,
@@ -164,6 +165,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
                                         maskAreaGapCalculatorProvider,
                                         f,
+                                        args.librarySuffix,
                                         args.gradientPath,
                                         args.gradientSuffix,
                                         args.zgapPath,
@@ -194,6 +196,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     private CDSMatches calculateGradientAreaScoreForResultsFile(
             MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
             File inputResultsFile,
+            String librarySuffix,
             String gradientsLocation,
             String gradientSuffix,
             String zgapsLocation,
@@ -224,6 +227,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 inputResultsFile.getAbsolutePath() + "#" + (i + 1),
                                 resultsEntry.getKey(),
                                 resultsEntry.getValue(),
+                                librarySuffix,
                                 gradientsLocation,
                                 gradientSuffix,
                                 zgapsLocation,
@@ -255,6 +259,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     private CompletableFuture<List<ColorMIPSearchMatchMetadata>> calculateGradientAreaScoreForCDSResults(String resultIDIndex,
                                                                                                          MIPMetadata inputMaskMIP,
                                                                                                          List<ColorMIPSearchMatchMetadata> selectedCDSResultsForInputMIP,
+                                                                                                         String librarySuffix,
                                                                                                          String gradientsLocation,
                                                                                                          String gradientSuffix,
                                                                                                          String zgapsLocation,
@@ -278,8 +283,28 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                     matchedMIP.setImageName(indexedCsr.getRight().getImageName());
                     matchedMIP.setImageType(indexedCsr.getRight().getImageType());
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(matchedMIP, gradientsLocation, gradientSuffix));
-                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(matchedMIP, zgapsLocation, zgapsSuffix));
+                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
+                            matchedMIP,
+                            gradientsLocation,
+                            nc -> {
+                                String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
+                                if (StringUtils.isNotBlank(librarySuffix)) {
+                                    return nc.replace(librarySuffix, "") + suffix;
+                                } else {
+                                    return nc + suffix;
+                                }
+                            }));
+                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
+                            matchedMIP,
+                            zgapsLocation,
+                            nc -> {
+                                String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
+                                if (StringUtils.isNotBlank(librarySuffix)) {
+                                    return nc.replace(librarySuffix, "") + suffix;
+                                } else {
+                                    return nc + suffix;
+                                }
+                            }));
                     LOG.debug("Loaded images for calculating area gap for {}:{} ({} vs {}) in {}ms",
                             resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     long areaGap;

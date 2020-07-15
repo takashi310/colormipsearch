@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +179,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private void copyMIPVariant(MIPMetadata variantMIP, Path target) {
         try {
             LOG.debug("cp {} {}", variantMIP, target);
-            Files.copy(MIPsUtils.openInputStream(variantMIP), target);
+            Files.copy(MIPsUtils.openInputStream(variantMIP), target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             LOG.error("Error copying {} -> {}", variantMIP, target, e);
         }

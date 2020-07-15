@@ -37,6 +37,9 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
     Double pctPositivePixels = 0.0;
 
+    @Parameter(names = {"--librarySuffix"}, description = "Library suffix")
+    String librarySuffix;
+
     @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location")
     String gradientPath;
 

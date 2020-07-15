@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -189,24 +190,24 @@ public class MIPsUtils {
     }
 
     /**
-     * TransformedMIP can be the corresponding gradient image or a ZGap image that has applied the dilation already.
+     * AncillaryMIP can be the corresponding gradient image or a ZGap image that has applied the dilation already.
      * The typical pattern is that the image file name is the same but the path to it has a certain suffix
      * such as '_gradient' or '_20pxRGBMAX'
      * @param mipInfo
-     * @param transformedMIPLocation
-     * @param transformationLookupSuffix
+     * @param ancillaryMIPLocation
+     * @param ancillaryMIPSuffixMapping specifies how the mapping changes from the mipInfo to the ancillary mip
      * @return
      */
     @Nullable
-    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, String transformedMIPLocation, String transformationLookupSuffix) {
-        if (StringUtils.isBlank(transformedMIPLocation)) {
+    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, String ancillaryMIPLocation, Function<String, String> ancillaryMIPSuffixMapping) {
+        if (StringUtils.isBlank(ancillaryMIPLocation)) {
             return null;
         } else {
-            Path transformedMIPPath = Paths.get(transformedMIPLocation);
-            if (Files.isDirectory(transformedMIPPath)) {
-                return getTransformedMIPInfoFromFilePath(transformedMIPPath, Paths.get(mipInfo.getImageName()), transformationLookupSuffix);
-            } else if (Files.isRegularFile(transformedMIPPath) && StringUtils.endsWithIgnoreCase(transformedMIPLocation, ".zip")) {
-                return getTransformedMIPInfoFromZipEntry(transformedMIPLocation, mipInfo.getImageName(), transformationLookupSuffix);
+            Path ancillaryMIPPath = Paths.get(ancillaryMIPLocation);
+            if (Files.isDirectory(ancillaryMIPPath)) {
+                return getAncillaryMIPInfoFromFilePath(ancillaryMIPPath, Paths.get(mipInfo.getImageName()), ancillaryMIPSuffixMapping);
+            } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPLocation, ".zip")) {
+                return getAncillaryMIPInfoFromZipEntry(ancillaryMIPLocation, mipInfo.getImageName(), ancillaryMIPSuffixMapping);
             } else {
                 return null;
             }
@@ -214,20 +215,20 @@ public class MIPsUtils {
     }
 
     @Nullable
-    private static MIPMetadata getTransformedMIPInfoFromFilePath(Path transformedMIPPath, Path mipPath, String transformationLookupSuffix) {
+    private static MIPMetadata getAncillaryMIPInfoFromFilePath(Path ancillaryMIPPath, Path mipPath, Function<String, String> ancillaryMIPSuffixMapping) {
         Path mipParentPath = mipPath.getParent();
         String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", "");
-        List<Path> transformedMIPPaths;
+        List<Path> ancillaryMIPPaths;
         if (mipParentPath == null) {
-            transformedMIPPaths = Arrays.asList(
-                    transformedMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
-                    transformedMIPPath.resolve(mipFilenameWithoutExtension + ".tif")
+            ancillaryMIPPaths = Arrays.asList(
+                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
+                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif")
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
-            transformedMIPPaths = IntStream.range(0, nComponents)
+            ancillaryMIPPaths = IntStream.range(0, nComponents)
                     .map(i -> nComponents - i - 1)
-                    .mapToObj(i -> mipParentPath.getName(i).toString() + transformationLookupSuffix)
+                    .mapToObj(i -> ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString()))
                     .reduce(new ArrayList<String>(),
                             (a, e) -> {
                                 if (a.isEmpty()) {
@@ -245,19 +246,19 @@ public class MIPsUtils {
                             })
                     .stream()
                     .flatMap(p -> Stream.of(
-                            transformedMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
-                            transformedMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
+                            ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
+                            ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
                     .collect(Collectors.toList());
         }
-        return transformedMIPPaths.stream()
+        return ancillaryMIPPaths.stream()
                 .filter(p -> Files.exists(p)).filter(p -> Files.isRegularFile(p))
                 .findFirst()
                 .map(Path::toString)
-                .map(transformedMIPImagePathname -> {
-                    MIPMetadata transformedMIP = new MIPMetadata();
-                    transformedMIP.setCdmPath(transformedMIPImagePathname);
-                    transformedMIP.setImageName(transformedMIPImagePathname);
-                    return transformedMIP;
+                .map(ancillaryMIPImagePathname -> {
+                    MIPMetadata ancillaryMIP = new MIPMetadata();
+                    ancillaryMIP.setCdmPath(ancillaryMIPImagePathname);
+                    ancillaryMIP.setImageName(ancillaryMIPImagePathname);
+                    return ancillaryMIP;
                 })
                 .orElse(null);
     }
@@ -311,19 +312,19 @@ public class MIPsUtils {
     }
 
     @Nullable
-    private static MIPMetadata getTransformedMIPInfoFromZipEntry(String transformedMIPLocation, String mipEntryName, String transformationLookupSuffix) {
-        String transformedMIPFilename = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
-        Path transformedMIPEntryPath = Paths.get(transformedMIPFilename);
-        int nComponents = transformedMIPEntryPath.getNameCount();
-        String transformedMIPEntryName = IntStream.range(0, nComponents)
-                .mapToObj(i -> i < nComponents-1 ? transformedMIPEntryPath.getName(i).toString() + transformationLookupSuffix : transformedMIPEntryPath.getName(i).toString())
+    private static MIPMetadata getAncillaryMIPInfoFromZipEntry(String ancillaryMIPLocation, String mipEntryName, Function<String, String> ancillaryMIPSuffixMapping) {
+        String ancillaryMIPFilename = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", ".png");
+        Path ancillaryMIPEntryPath = Paths.get(ancillaryMIPFilename);
+        int nComponents = ancillaryMIPEntryPath.getNameCount();
+        String ancillaryMIPEntryName = IntStream.range(0, nComponents)
+                .mapToObj(i -> i < nComponents-1 ? ancillaryMIPSuffixMapping.apply(ancillaryMIPEntryPath.getName(i).toString()) : ancillaryMIPEntryPath.getName(i).toString())
                 .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
-        MIPMetadata transformedMIP = new MIPMetadata();
-        transformedMIP.setImageType("zipEntry");
-        transformedMIP.setImageArchivePath(transformedMIPLocation);
-        transformedMIP.setCdmPath(transformedMIPEntryName);
-        transformedMIP.setImageName(transformedMIPEntryName);
-        return transformedMIP;
+        MIPMetadata ancillaryMIP = new MIPMetadata();
+        ancillaryMIP.setImageType("zipEntry");
+        ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
+        ancillaryMIP.setCdmPath(ancillaryMIPEntryName);
+        ancillaryMIP.setImageName(ancillaryMIPEntryName);
+        return ancillaryMIP;
     }
 
     private static List<MIPMetadata> readMIPsFromDirectory(Path mipsInputDirectory, Set<String> mipsFilter, int offset, int length) {

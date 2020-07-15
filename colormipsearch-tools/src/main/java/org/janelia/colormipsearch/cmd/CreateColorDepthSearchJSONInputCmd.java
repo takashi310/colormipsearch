@@ -110,6 +110,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
+        @Parameter(names = {"--librariesGradientsSuffixes"},
+                description = "Segmentation path suffix. This is usefull when each ancillary mip such as segmentation, gradient and zgap has its specific suffix. " +
+                        "If it is specified when building the path to the gradients or zgaps this suffix will be replaced by the corresponding gradient or zgap suffix",
+                variableArity = true)
+        List<String> librarySegmentationsSuffixes;
+
         @Parameter(names = {"--librariesGradientsPaths"},
                 description = "Path to libraries gradients. If defined it must have the same length as --libraries",
                 variableArity = true)
@@ -214,6 +220,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     class LibraryPathsArgs {
         ListArg library;
         String segmentationPath;
+        String segmentationSuffix;
         String gradientsPath;
         String gradientsSuffix;
         String zgapsPath;
@@ -266,6 +273,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     lpaths.library = library;
                     if (CollectionUtils.isNotEmpty(args.librarySegmentedMIPsBaseDir)) {
                         lpaths.segmentationPath = args.librarySegmentedMIPsBaseDir.get(lindex);
+                        if (CollectionUtils.isNotEmpty(args.librarySegmentationsSuffixes) && lindex < args.librarySegmentationsSuffixes.size()) {
+                            lpaths.segmentationSuffix = args.librarySegmentationsSuffixes.get(lindex);
+                        } else {
+                            lpaths.segmentationSuffix = null;
+                        }
                     } else {
                         lpaths.segmentationPath = null;
                     }
@@ -295,6 +307,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     lpaths.library,
                     args.segmentationVariantName,
                     lpaths.segmentationPath,
+                    lpaths.segmentationSuffix,
                     lpaths.gradientsPath,
                     lpaths.gradientsSuffix,
                     lpaths.zgapsPath,
@@ -331,6 +344,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                      ListArg libraryArg,
                                                      String segmentationVariantType,
                                                      String librarySegmentationPath,
+                                                     String librarySegmentationSuffix,
                                                      String libraryGradientsPath,
                                                      String libraryGradientSuffix,
                                                      String libraryZGapPath,
@@ -483,13 +497,33 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                             }
                         })
                         .peek(cdmip -> {
-                            MIPMetadata gradientMIP = MIPsUtils.getAncillaryMIPInfo(cdmip, libraryGradientsPath, libraryGradientSuffix);
+                            MIPMetadata gradientMIP = MIPsUtils.getAncillaryMIPInfo(
+                                    cdmip,
+                                    libraryGradientsPath,
+                                    nc -> {
+                                        String suffix = StringUtils.defaultIfBlank(libraryGradientSuffix, "");
+                                        if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
+                                            return nc.replace(librarySegmentationSuffix, "") + suffix;
+                                        } else {
+                                            return nc + suffix;
+                                        }
+                                    });
                             if (gradientMIP !=  null) {
                                 cdmip.addVariant("gradient", gradientMIP.getImageArchivePath(), gradientMIP.getImageName(), gradientMIP.getImageType());
                             }
                         })
                         .peek(cdmip -> {
-                            MIPMetadata zgapMIP = MIPsUtils.getAncillaryMIPInfo(cdmip, libraryZGapPath, libraryZGapSuffix);
+                            MIPMetadata zgapMIP = MIPsUtils.getAncillaryMIPInfo(
+                                    cdmip,
+                                    libraryZGapPath,
+                                    nc -> {
+                                        String suffix = StringUtils.defaultIfBlank(libraryZGapSuffix, "");
+                                        if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
+                                            return nc.replace(librarySegmentationSuffix, "") + suffix;
+                                        } else {
+                                            return nc + suffix;
+                                        }
+                                    });
                             if (zgapMIP !=  null) {
                                 cdmip.addVariant("zgap", zgapMIP.getImageArchivePath(), zgapMIP.getImageName(), zgapMIP.getImageType());
                             }
