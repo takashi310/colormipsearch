@@ -107,7 +107,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
             LOG.info("No destination path has been specified");
             return;
         }
-        inputMIPsGroupedByID.entrySet().stream()
+        inputMIPsGroupedByID.entrySet().stream().parallel()
                 .forEach(me -> {
                     int mipIndex = 1;
                     for (MIPWithVariantsMetadata mip : me.getValue()) {
