@@ -78,7 +78,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
-    class ChannelBaseValidator implements IValueValidator<Integer> {
+    static class ChannelBaseValidator implements IValueValidator<Integer> {
 
         @Override
         public void validate(String name, Integer value) throws ParameterException {
