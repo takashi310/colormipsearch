@@ -126,7 +126,8 @@ public class MIPsUtils {
         }
     }
 
-    static InputStream openInputStream(MIPMetadata mip) throws IOException {
+    @Nullable
+    public static InputStream openInputStream(MIPMetadata mip) throws IOException {
         if (StringUtils.equalsIgnoreCase("zipEntry", mip.getImageType())) {
             Path archiveFilePath = Paths.get(mip.getImageArchivePath());
             if (Files.isDirectory(archiveFilePath)) {

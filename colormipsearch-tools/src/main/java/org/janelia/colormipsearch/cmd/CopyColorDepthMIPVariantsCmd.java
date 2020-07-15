@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -25,6 +26,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,12 +146,13 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         };
         for (String variant : mipVariantTypes) {
             String variantDestination = variantMapping.get(variant);
-            if (StringUtils.isNotBlank(variantDestination)) {
-                String variantSource = mip.getVariant(variant);
+            if (StringUtils.isNotBlank(variantDestination) && mip.hasVariant(variant)) {
+                MIPMetadata variantSource = mip.variantAsMIP(variant);
+                CmdUtils.createOutputDirs(outputPath.resolve(variantDestination));
                 copyMIPVariant(
                         variantSource,
                         outputPath.resolve(variantDestination)
-                                .resolve(createMIPSegmentName(mip.getCdmPath(), getImageExt(variantSource), mipIndex))
+                                .resolve(createMIPSegmentName(mip.getCdmPath(), getImageExt(variantSource.getImagePath()), mipIndex))
                 );
             }
         }
@@ -171,8 +175,13 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
     }
 
-    private void copyMIPVariant(String variant, Path target) {
-        System.out.println("!!!!! CP " + variant + " " + target); // FIXME
+    private void copyMIPVariant(MIPMetadata variantMIP, Path target) {
+        try {
+            LOG.debug("cp {} {}", variantMIP, target);
+            Files.copy(MIPsUtils.openInputStream(variantMIP), target);
+        } catch (IOException e) {
+            LOG.error("Error copying {} -> {}", variantMIP, target, e);
+        }
     }
 
 }

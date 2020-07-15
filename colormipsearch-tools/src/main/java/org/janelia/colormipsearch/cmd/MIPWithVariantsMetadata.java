@@ -26,11 +26,26 @@ class MIPWithVariantsMetadata extends MIPMetadata {
         }
     }
 
+    boolean hasVariant(String variant) {
+        return variants != null && StringUtils.isNotBlank(variants.get(variant));
+    }
     String getVariant(String variant) {
-        if (variants == null) {
-            return null;
-        } else {
+        if (hasVariant(variant)) {
             return variants.get(variant);
+        } else {
+            return null;
+        }
+    }
+
+    MIPMetadata variantAsMIP(String variant) {
+        if (hasVariant(variant)) {
+            MIPMetadata variantMIP = new MIPMetadata();
+            variantMIP.setImageName(variants.get(variant));
+            variantMIP.setImageArchivePath(variants.get(variant + "ArchivePath"));
+            variantMIP.setImageType(variants.get(variant + "EntryType"));
+            return variantMIP;
+        } else {
+            return null;
         }
     }
 
