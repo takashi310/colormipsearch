@@ -36,7 +36,9 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -76,6 +78,15 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
+    class ChannelBaseValidator implements IValueValidator<Integer> {
+
+        @Override
+        public void validate(String name, Integer value) throws ParameterException {
+            if (value < 0 || value > 1) {
+                throw new ParameterException("Invalid channel base - supported values are {0, 1}");
+            }
+        }
+    }
     @Parameters(commandDescription = "Grooup MIPs by published name")
     static class CreateColorDepthSearchJSONInputArgs extends AbstractCmdArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
@@ -151,6 +162,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 "0x2 - include only segmented image if it exists, " +
                 "0x4 - include both the original MIP and all its segmentations")
         int segmentedImageHandling;
+
+        @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
+        int segmentedImageChannelBase = 0;
 
         @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
@@ -423,7 +437,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                         .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling).stream())
+                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .peek(cdmip -> {
@@ -498,11 +512,15 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata, String segmentedImagesBasePath, Pair<String, Map<String, List<String>>> segmentedImages, int segmentedImageHandling) {
+    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
+                                                       String segmentedImagesBasePath,
+                                                       Pair<String, Map<String, List<String>>> segmentedImages,
+                                                       int segmentedImageHandling,
+                                                       int segmentedImageChannelBase) {
         if (StringUtils.isBlank(segmentedImagesBasePath)) {
             return Collections.singletonList(cdmipMetadata);
         } else {
-            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImagesBasePath, segmentedImages.getLeft(), segmentedImages.getRight());
+            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImagesBasePath, segmentedImages.getLeft(), segmentedImages.getRight(), segmentedImageChannelBase);
             if (segmentedImageHandling == 0x1) {
                 return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
             } else if (segmentedImageHandling == 0x2) {
@@ -515,7 +533,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages) {
+    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
         String indexingField;
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
@@ -536,7 +554,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 String fn = Paths.get(p).getFileName().toString();
                 Preconditions.checkArgument(fn.contains(indexingField));
                 int channelFromMip = getColorChannel(cdmipMetadata);
-                int channelFromFN = extractColorChannelFromSegmentedImageName(fn.replace(indexingField, ""));
+                int channelFromFN = extractColorChannelFromSegmentedImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                 String objectiveFromMip = cdmipMetadata.getObjective();
                 String objectiveFromFN = extractObjectiveFromSegmentedImageName(fn.replace(indexingField, ""));
@@ -573,12 +591,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private int extractColorChannelFromSegmentedImageName(String imageName) {
+    private int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
         Pattern regExPattern = Pattern.compile("_ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
             String channel = chMatcher.group(1);
-            return Integer.parseInt(channel);
+            return Integer.parseInt(channel) - channelBase;
         } else {
             return -1;
         }
