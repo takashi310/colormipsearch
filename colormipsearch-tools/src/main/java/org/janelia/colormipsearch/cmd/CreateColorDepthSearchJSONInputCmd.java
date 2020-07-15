@@ -110,7 +110,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
-        @Parameter(names = {"--librariesGradientsSuffixes"},
+        @Parameter(names = {"--librarySegmentationsSuffixes"},
                 description = "Segmentation path suffix. This is usefull when each ancillary mip such as segmentation, gradient and zgap has its specific suffix. " +
                         "If it is specified when building the path to the gradients or zgaps this suffix will be replaced by the corresponding gradient or zgap suffix",
                 variableArity = true)
