@@ -628,7 +628,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
-        Pattern regExPattern = Pattern.compile("_ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
             String channel = chMatcher.group(1);
@@ -639,7 +639,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private String extractObjectiveFromSegmentedImageName(String imageName) {
-        Pattern regExPattern = Pattern.compile("_([0-9]+x)_", Pattern.CASE_INSENSITIVE);
+        Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher objectiveMatcher = regExPattern.matcher(imageName);
         if (objectiveMatcher.find()) {
             return objectiveMatcher.group(1);
