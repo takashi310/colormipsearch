@@ -425,7 +425,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)[_-].*");
                 segmentedImages = getSegmentedImages(skeletonRegExPattern, librarySegmentationPath);
             } else {
-                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+_)ch?(\\d+)_", Pattern.CASE_INSENSITIVE);
+                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
                 segmentedImages = getSegmentedImages(slideCodeRegExPattern, librarySegmentationPath);
             }
             LOG.info("Found {} segmented slide codes", segmentedImages.getRight().size());
