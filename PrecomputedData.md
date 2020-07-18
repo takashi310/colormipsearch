@@ -14,21 +14,17 @@ Below there's an example of just one MIP for line "R10A07" from file `R10A07.jso
     "id" : "2711777284640997387",
     "publishedName" : "R10A07",
     "libraryName" : "FlyLight Gen1 MCFO",
-    "image_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121_61_G1-GAL4-f-40
+    "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121_61_G1-GAL4-f-40
 x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
-    "thumbnail_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121_
+    "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121_
 61_G1-GAL4-f-40x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg",
-    "attrs" : {
-      "Published Name" : "R10A07",
-      "Slide Code" : "20181121_61_G1",
-      "Gender" : "f",
-      "Mounting Protocol" : "DPX PBS Mounting",
-      "Anatomical Area" : "Brain",
-      "Alignment Space" : "JRC2018_Unisex_20x_HR",
-      "Objective" : "40x",
-      "Library" : "FlyLight Gen1 MCFO",
-      "Channel" : "1"
-    }
+    "slideCode" : "20181121_61_G1",
+    "gender" : "f",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "anatomicalArea" : "Brain",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "objective" : "40x",
+    "channel" : "1"
   } ]
 }
 ```
@@ -45,14 +41,11 @@ The example below is the MIP for body "296358430" from file `296358430.json`
     "id" : "2757945469383475211",
     "publishedName" : "296358430",
     "libraryName" : "FlyEM Hemibrain",
-    "image_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-JRC2018_Unisex_2\
+    "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-JRC2018_Unisex_2\
 0x_HR-CDM.png",
-    "thumbnail_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-J\
+    "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-J\
 RC2018_Unisex_20x_HR-CDM.jpg",
-    "attrs" : {
-      "Body Id" : "296358430",
-      "Library" : "FlyEM Hemibrain"
-    }
+    "gender":  "f"
   } ]
 }
 ```
@@ -71,57 +64,51 @@ one for the EM MIP - `2757945469383475211.json` and one for the LM MIP - `271177
 The EM result file looks like:
 ```json
 {
+  "maskId" : "2757945469383475211",
+  "maskPublishedName" : "296358430",
+  "maskLibraryName" : "FlyEM Hemibrain",
   "results" : [ {
-    "id" : "2757945469383475211",
-    "publishedName" : "296358430",
-    "libraryName" : "FlyEM Hemibrain",
-    "matchedId" : "2711777284640997387",
-    "matchedPublishedName" : "R10A07",
-    "normalizedScore" : 998.3483729833197,
-    "image_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121_61_G1-GAL4-f-4\
-0x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
-    "thumbnail_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO/R10A07-20181121\
-_61_G1-GAL4-f-40x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg",
-    "attrs" : {
-      "Slide Code" : "20181121_61_G1",
-      "Published Name" : "R10A07",
-      "Gender" : "f",
-      "Genotype" : "GR.10.A07 R10A07",
-      "Mounting Protocol" : "DPX PBS Mounting",
-      "Anatomical Area" : "Brain",
-      "Alignment Space" : "JRC2018_Unisex_20x_HR",
-      "Objective" : "40x",
-      "Library" : "FlyLight Gen1 MCFO",
-      "Channel" : "1",
-      "Matched pixels" : "190",
-      "Score" : "0.0490702479338843",
-      "Gradient Area Gap" : "2438",
-      "NormalizedGapScore" : "998.3483729833197"    }
+    "id" : "2711777284640997387",
+    "publishedName" : "R10A07",
+    "libraryName" : "FlyLight Gen1 MCFO",
+    "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO_gamma_corrected/R42B08-20190205_62_H
+5-GAL4-f-40x-brain-JRC2018_Unisex_20x_HR-CDM_3.png",
+    "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Gen1_MCFO_gamma_corrected/R42B0
+8-20190205_62_H5-GAL4-f-40x-brain-JRC2018_Unisex_20x_HR-CDM_3.jpg",
+    "slideCode" : "20181121_61_G1",
+    "objective" : "40x",
+    "gender" : "f",
+    "anatomicalArea" : "Brain",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "channel" : "1",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "matchingPixels" : 190,
+    "matchingRatio" : 0.0490702479338843,
+    "gradientAreaGap" : 2438,
+    "normalizedGapScore" : 998.3483729833197,
+    "normalizedScore" : 998.3483729833197
   } ]
 }
 ```
 and the corresponding LM result:
 ```json
 {
+  "maskId" : "2711777284640997387",
+  "maskPublishedName" : "R10A07",
+  "maskLibraryName" : "FlyLight Gen1 MCFO",
   "results" : [ {
-    "id" : "2711777284640997387",
-    "publishedName" : "R10A07",
-    "libraryName" : "FlyLight Gen1 MCFO",
-    "matchedId" : "2757945469383475211",
-    "matchedPublishedName" : "296358430",
+    "id" : "2757945469383475211",
+    "publishedName" : "296358430",
     "normalizedScore" : 998.3483729833197,
-    "image_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-JRC2018_Unisex_2\
+    "imageURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-JRC2018_Unisex_2\
 0x_HR-CDM.png",
-    "thumbnail_path" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-J\
+    "thumbnailURL" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.0/296358430-L-J\
 RC2018_Unisex_20x_HR-CDM.jpg",
-    "attrs" : {
-      "Body Id" : "296358430",
-      "Library" : "FlyEM Hemibrain",
-      "Matched pixels" : "190",
-      "Score" : "0.0490702479338843",
-      "GradientAreaGap" : "2438",
-      "NormalizedGapScore" : "998.3483729833197"
-    }
+    "library" : "FlyEM Hemibrain",
+    "matchingPixels" : "190",
+    "matchingRatio" : "0.0490702479338843",
+    "gradientAreaGap" : "2438",
+    "normalizedGapScore" : "998.3483729833197"
   } ]
 }
 ```
