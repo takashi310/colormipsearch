@@ -110,6 +110,7 @@ public class MIPsUtils {
                 return true;
             } else {
                 // slightly longer test
+                LOG.warn("Full archive scan for {}", mip);
                 String imageFn = Paths.get(mip.getImageName()).getFileName().toString();
                 return archiveFile.stream()
                         .filter(ze -> !ze.isDirectory())
@@ -165,6 +166,7 @@ public class MIPsUtils {
         if (ze != null) {
             return archiveFile.getInputStream(ze);
         } else {
+            LOG.warn("Full archive scan for {}", mip);
             String imageFn = Paths.get(mip.getImageName()).getFileName().toString();
             return archiveFile.stream()
                     .filter(aze -> !aze.isDirectory())
