@@ -29,6 +29,7 @@ class MIPWithVariantsMetadata extends MIPMetadata {
     boolean hasVariant(String variant) {
         return variants != null && StringUtils.isNotBlank(variants.get(variant));
     }
+
     String getVariant(String variant) {
         if (hasVariant(variant)) {
             return variants.get(variant);

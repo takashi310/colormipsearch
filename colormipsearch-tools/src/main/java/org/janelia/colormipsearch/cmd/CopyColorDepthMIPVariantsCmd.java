@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,6 +47,9 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
         @Parameter(names = {"--targetDirectory"}, description = "Input image file(s) start index")
         String targetFolder;
+
+        @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
+        boolean simulateFlag;
 
         @DynamicParameter(names = "-variantMapping", description = "Variants mapping")
         private Map<String, String> variantMapping = new HashMap<>();
@@ -83,7 +87,9 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
     @Override
     void execute() {
-        CmdUtils.createOutputDirs(args.getOutputDir());
+        if (!args.simulateFlag) {
+            CmdUtils.createOutputDirs(args.getOutputDir());
+        }
         copyAllMIPsVariants(args);
     }
 
@@ -107,11 +113,19 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
             LOG.info("No destination path has been specified");
             return;
         }
+        BiConsumer<MIPMetadata,  Path> copyMIPVariantAction;
+        if (args.simulateFlag) {
+            copyMIPVariantAction = (variantMIP, target) -> {
+                LOG.info("cp {} {}", variantMIP, target);
+            };
+        } else {
+            copyMIPVariantAction = this::copyMIPVariant;
+        }
         inputMIPsGroupedByID.entrySet().stream().parallel()
                 .forEach(me -> {
                     int mipIndex = 1;
                     for (MIPWithVariantsMetadata mip : me.getValue()) {
-                        if (copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping)) {
+                        if (copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, copyMIPVariantAction)) {
                             mipIndex++;
                         }
                     }
@@ -140,7 +154,10 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
     }
 
-    private boolean copyMIPVariants(int mipIndex, MIPWithVariantsMetadata mip, Path outputPath, Map<String, String> variantMapping) {
+    private boolean copyMIPVariants(int mipIndex, MIPWithVariantsMetadata mip,
+                                    Path outputPath,
+                                    Map<String, String> variantMapping,
+                                    BiConsumer<MIPMetadata, Path> action) {
         Set<String> mipVariantTypes = mip.getVariantTypes();
         if (mipVariantTypes.isEmpty()) {
             return false;
@@ -149,8 +166,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
             String variantDestination = variantMapping.get(variant);
             if (StringUtils.isNotBlank(variantDestination) && mip.hasVariant(variant)) {
                 MIPMetadata variantSource = mip.variantAsMIP(variant);
-                CmdUtils.createOutputDirs(outputPath.resolve(variantDestination));
-                copyMIPVariant(
+                action.accept(
                         variantSource,
                         outputPath.resolve(variantDestination)
                                 .resolve(createMIPSegmentName(mip.getCdmPath(), getImageExt(variantSource.getImagePath()), mipIndex))
@@ -179,6 +195,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private void copyMIPVariant(MIPMetadata variantMIP, Path target) {
         try {
             LOG.debug("cp {} {}", variantMIP, target);
+            CmdUtils.createOutputDirs(target.getParent());
             Files.copy(MIPsUtils.openInputStream(variantMIP), target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             LOG.error("Error copying {} -> {}", variantMIP, target, e);
