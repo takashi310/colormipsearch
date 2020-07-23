@@ -321,8 +321,8 @@ public class MIPsUtils {
             int nComponents = mipEntryParentPath.getNameCount();
             ancillaryMIPEntryNames = Stream.concat(
                     Stream.of(
-                            "",
-                            ancillaryMIPLocationName
+                            ancillaryMIPLocationName,
+                            ""
                     ),
                     IntStream.range(0, nComponents)
                             .map(i -> nComponents - i - 1)
