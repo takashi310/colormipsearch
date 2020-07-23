@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ import org.slf4j.LoggerFactory;
 public class MIPsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
+    private static Map<String, Set<String>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
 
     /**
      * Load a MIP image from its MIPInfo
@@ -339,27 +342,43 @@ public class MIPsUtils {
                     .map(p -> p.toString())
                     .collect(Collectors.toList());
         }
+        Set<String> ancillaryMIPEntries = getZipEntryNames(ancillaryMIPLocation);
+        return ancillaryMIPEntryNames.stream()
+                .filter(en -> ancillaryMIPEntries.contains(en))
+                .findFirst()
+                .map(en -> {
+                    MIPMetadata ancillaryMIP = new MIPMetadata();
+                    ancillaryMIP.setImageType("zipEntry");
+                    ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
+                    ancillaryMIP.setCdmPath(ancillaryMIPLocation + ":" + en);
+                    ancillaryMIP.setImageName(en);
+                    return ancillaryMIP;
+                })
+                .orElse(null);
+    }
+
+    private static Set<String> getZipEntryNames(String zipFilename) {
+        if (ARCHIVE_ENTRIES_CACHE.get(zipFilename) == null) {
+            return cacheZipEntryNames(zipFilename);
+        } else {
+            return ARCHIVE_ENTRIES_CACHE.get(zipFilename);
+        }
+    }
+
+    private static Set<String> cacheZipEntryNames(String zipFilename) {
         ZipFile archiveFile;
         try {
-            archiveFile = new ZipFile(ancillaryMIPLocation);
+            archiveFile = new ZipFile(zipFilename);
         } catch (IOException e) {
-            return null;
+            throw new UncheckedIOException(e);
         }
         try {
-            return ancillaryMIPEntryNames.stream()
-                    .map(en -> archiveFile.getEntry(en))
-                    .filter(ze -> ze != null)
+            Set<String> zipEntryNames = archiveFile.stream()
                     .filter(ze -> !ze.isDirectory())
-                    .findFirst()
-                    .map(ze -> {
-                        MIPMetadata ancillaryMIP = new MIPMetadata();
-                        ancillaryMIP.setImageType("zipEntry");
-                        ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
-                        ancillaryMIP.setCdmPath(ancillaryMIPLocation + ":" + ze.getName());
-                        ancillaryMIP.setImageName(ze.getName());
-                        return ancillaryMIP;
-                    })
-                    .orElse(null);
+                    .map(ze -> ze.getName())
+                    .collect(Collectors.toSet());
+            ARCHIVE_ENTRIES_CACHE.put(zipFilename, zipEntryNames);
+            return zipEntryNames;
         } finally {
             try {
                 archiveFile.close();
