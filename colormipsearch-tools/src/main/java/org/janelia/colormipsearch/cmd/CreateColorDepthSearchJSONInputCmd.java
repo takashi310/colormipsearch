@@ -443,7 +443,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         pageOffset,
                         pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
-                cdmipsPage.stream()
+                cdmipsPage.stream().parallel()
                         .peek(cdmip -> {
                             if (Files.notExists(Paths.get(cdmip.filepath))) {
                                 LOG.warn("No filepath {} found for {} (sample: {}, publishedName: {})", cdmip.filepath, cdmip, cdmip.sampleRef, !hasSample(cdmip) ? "no sample": cdmip.sample.publishingName);
@@ -528,6 +528,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmip.addVariant("zgap", zgapMIP.getImageArchivePath(), zgapMIP.getImageName(), zgapMIP.getImageType());
                             }
                         })
+                        .sequential()
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
