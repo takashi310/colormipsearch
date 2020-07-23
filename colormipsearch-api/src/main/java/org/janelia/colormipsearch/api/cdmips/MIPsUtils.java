@@ -7,7 +7,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -219,7 +218,7 @@ public class MIPsUtils {
     @Nullable
     private static MIPMetadata getAncillaryMIPInfoFromFilePath(Path ancillaryMIPPath, Path mipPath, Function<String, String> ancillaryMIPSuffixMapping) {
         Path mipParentPath = mipPath.getParent();
-        String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipPath.getFileName().toString(), "\\.tif(f)?$", "");
+        String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipPath.getFileName().toString(), "\\..*$", "");
         List<Path> ancillaryMIPPaths;
         if (mipParentPath == null) {
             ancillaryMIPPaths = Arrays.asList(
@@ -228,25 +227,16 @@ public class MIPsUtils {
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
-            ancillaryMIPPaths = IntStream.range(0, nComponents)
-                    .map(i -> nComponents - i - 1)
-                    .mapToObj(i -> ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString()))
-                    .reduce(new ArrayList<String>(),
-                            (a, e) -> {
-                                if (a.isEmpty()) {
-                                    a.add("");
-                                    a.add(e);
-                                } else {
-                                    String lastElement = a.get(a.size() - 1);
-                                    a.add(e + "/" + lastElement);
-                                }
-                                return a;
-                            },
-                            (a1, a2) -> {
-                                a1.addAll(a2);
-                                return a1;
-                            })
-                    .stream()
+            ancillaryMIPPaths = Stream.concat(
+                    IntStream.range(0, nComponents)
+                            .map(i -> nComponents - i - 1)
+                            .mapToObj(i -> {
+                                if (i > 0)
+                                    return mipParentPath.subpath(0, i).resolve(ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString())).toString();
+                                else
+                                    return ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString());
+                            }),
+                    Stream.of(""))
                     .flatMap(p -> Stream.of(
                             ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
                             ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
@@ -315,16 +305,40 @@ public class MIPsUtils {
 
     @Nullable
     private static MIPMetadata getAncillaryMIPInfoFromZipEntry(String ancillaryMIPLocation, String mipEntryName, Function<String, String> ancillaryMIPSuffixMapping) {
-        String mipEntryNameWithoutExtension = RegExUtils.replacePattern(mipEntryName, "\\.tif(f)?$", "");
-        Path mipEntryPath = Paths.get(mipEntryNameWithoutExtension);
-        int nComponents = mipEntryPath.getNameCount();
-        String baseAncillaryMIPEntryName = IntStream.range(0, nComponents)
-                .mapToObj(i -> i < nComponents-1 ? ancillaryMIPSuffixMapping.apply(mipEntryPath.getName(i).toString()) : mipEntryPath.getName(i).toString())
-                .reduce("", (p, pc) -> StringUtils.isBlank(p) ? pc : p + "/" + pc);
-        List<String> ancillaryMIPEntryNames = Arrays.asList(
-                baseAncillaryMIPEntryName + ".png",
-                baseAncillaryMIPEntryName + ".tif"
-        );
+        String ancillaryMIPLocationName = RegExUtils.replacePattern(Paths.get(ancillaryMIPLocation).getFileName().toString(), "\\..*$", "");
+        Path mipEntryPath = Paths.get(mipEntryName);
+        Path mipEntryParentPath = mipEntryPath.getParent();
+        String mipEntryFilenameWithoutExtension = RegExUtils.replacePattern(mipEntryPath.getFileName().toString(), "\\..*$", "");
+        List<String> ancillaryMIPEntryNames;
+        if (mipEntryParentPath == null) {
+            ancillaryMIPEntryNames = Arrays.asList(
+                    mipEntryFilenameWithoutExtension + ".png",
+                    mipEntryFilenameWithoutExtension + ".tif",
+                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutExtension + ".png",
+                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutExtension + ".tif"
+            );
+        } else {
+            int nComponents = mipEntryParentPath.getNameCount();
+            ancillaryMIPEntryNames = Stream.concat(
+                    Stream.of(
+                            "",
+                            ancillaryMIPLocationName
+                    ),
+                    IntStream.range(0, nComponents)
+                            .map(i -> nComponents - i - 1)
+                            .mapToObj(i -> {
+                                if (i > 0)
+                                    return mipEntryParentPath.subpath(0, i).resolve(ancillaryMIPSuffixMapping.apply(mipEntryParentPath.getName(i).toString())).toString();
+                                else
+                                    return ancillaryMIPSuffixMapping.apply(mipEntryParentPath.getName(i).toString());
+                            }))
+                    .map(p -> Paths.get(p))
+                    .flatMap(p -> Stream.of(
+                            p.resolve(mipEntryFilenameWithoutExtension + ".png"),
+                            p.resolve(mipEntryFilenameWithoutExtension + ".tif")))
+                    .map(p -> p.toString())
+                    .collect(Collectors.toList());
+        }
         ZipFile archiveFile;
         try {
             archiveFile = new ZipFile(ancillaryMIPLocation);
@@ -333,18 +347,19 @@ public class MIPsUtils {
         }
         try {
             return ancillaryMIPEntryNames.stream()
-                    .map(ancillaryMIPEntryName -> {
+                    .map(en -> archiveFile.getEntry(en))
+                    .filter(ze -> ze != null)
+                    .filter(ze -> !ze.isDirectory())
+                    .findFirst()
+                    .map(ze -> {
                         MIPMetadata ancillaryMIP = new MIPMetadata();
                         ancillaryMIP.setImageType("zipEntry");
                         ancillaryMIP.setImageArchivePath(ancillaryMIPLocation);
-                        ancillaryMIP.setCdmPath(ancillaryMIPEntryName);
-                        ancillaryMIP.setImageName(ancillaryMIPEntryName);
+                        ancillaryMIP.setCdmPath(ancillaryMIPLocation + ":" + ze.getName());
+                        ancillaryMIP.setImageName(ze.getName());
                         return ancillaryMIP;
                     })
-                    .filter(ancillaryMIP -> archiveFile.getEntry(ancillaryMIP.getImageName()) != null)
-                    .findFirst()
-                    .orElse(null)
-                    ;
+                    .orElse(null);
         } finally {
             try {
                 archiveFile.close();
