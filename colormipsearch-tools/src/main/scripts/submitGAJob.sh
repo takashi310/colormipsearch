@@ -35,7 +35,7 @@ function runGAJob {
 
     JAVA_EXEC=${JAVA_EXEC:java}
     cmd="${JAVA_EXEC} ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
-        -jar target/colormipsearch-1.1-jar-with-dependencies.jar \
+        -jar ${CDS_JAR} \
         --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
         gradientScore \
         --maskThreshold ${MASK_THRESHOLD} \
