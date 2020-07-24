@@ -22,6 +22,7 @@ import java.util.zip.ZipFile;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,6 +34,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MIPsUtils {
+
+    /**
+     * Mixin for explicitly ignoring properties that are defined MIPWithVariantsMetadata.
+     * This is needed because it conflicts with JsonAnySetter and setting variants fails because that
+     * is serialized as a dictionary.
+     */
+    @JsonIgnoreProperties({"variants", "sampleRef"})
+    private interface MIPMetadataExplicitlyIgnoredPropertiesMixIn {
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
     private static Map<String, Set<String>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
@@ -287,7 +297,8 @@ public class MIPsUtils {
     public static List<MIPMetadata> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", mipsJSONFilename);
-            List<MIPMetadata> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPMetadata>>() {
+            ObjectMapper mipMapper = mapper.copy().addMixIn(MIPMetadata.class, MIPMetadataExplicitlyIgnoredPropertiesMixIn.class);
+            List<MIPMetadata> content = mipMapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPMetadata>>() {
             });
             if (CollectionUtils.isEmpty(filter)) {
                 int from = offset > 0 ? offset : 0;

@@ -1,21 +1,66 @@
 package org.janelia.colormipsearch.api.cdmips;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class MIPsUtilsTest {
+    private ObjectMapper mapper;
+
+    @Before
+    public void setUp() {
+        mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    static class TestMIPMetadataWithVariants extends MIPMetadata {
+        @JsonProperty
+        Map<String, String> variants = null;
+        @JsonProperty
+        String sampleRef;
+    }
+
+    @Test
+    public void loadMIPsWithVariants() {
+        String[] mipFiles = new String[] {
+                "src/test/resources/colormipsearch/api/cdmips/mipsWithVariants.json"
+        };
+        for (String mipFile : mipFiles) {
+            List<MIPMetadata> mips = MIPsUtils.readMIPsFromJSON(mipFile, 0, -1, null, mapper);
+            Assert.assertTrue(mips.size() > 0);
+            try {
+                List<TestMIPMetadataWithVariants> mipsWithVariants = mapper.readValue(
+                        new File(mipFile), new TypeReference<List<TestMIPMetadataWithVariants>>() {
+                });
+                Assert.assertEquals(mips.size(), mipsWithVariants.size());
+                for (TestMIPMetadataWithVariants mip : mipsWithVariants) {
+                    Assert.assertTrue(mip.variants.size() > 0);
+                    Assert.assertNotNull(mip.sampleRef);
+                }
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
+        }
+    }
 
     @Test
     public void ancillaryMIPsCandidates() {
