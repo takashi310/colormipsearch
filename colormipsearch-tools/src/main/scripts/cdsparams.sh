@@ -81,7 +81,7 @@ export TOP_RESULTS=300
 export SAMPLES_PER_LINE=0
 
 # FIRST_JOB and LAST_JOB specify the job range - if not set they default to first and last job respectivelly
-FIRST_JOB=${FIRST_JOB:}
-LAST_JOB=${LAST_JOB:}
+FIRST_JOB=${FIRST_JOB:-}
+LAST_JOB=${LAST_JOB:-}
 # use localRun to run on the host on which the command is invoked or gridRun to invoke it using bsub
 RUN_CMD="localRun"
