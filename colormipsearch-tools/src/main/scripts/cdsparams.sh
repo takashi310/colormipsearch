@@ -1,24 +1,25 @@
-WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/em-fl-run
-MASK_NAME=flyem_hemibrain_with_fl
-LIBRARY_NAME=flylight_gen1_mcfo_published
-GA_PRECOMPUTED_FILES_LOCATION=/nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease.zip
+WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/em_1_1-fl-run
+INPUT_DIR=/groups/scicompsoft/informatics/data/release_libraries
+MASK_NAME=flyem_hemibrain_1_1_with_fl
+LIBRARY_NAME=all_flylight_split_gal4
+GA_PRECOMPUTED_FILES_LOCATION=/nrs/scicompsoft/otsuna/SS_vol
 
 # MASKS_FILES and LIBRARIES_FILES are - comma or space separated - json files
 # created with the "createColorDepthSearchJSONInput" command
-export MASKS_FILES="$WORKING_DIR/mips/flyem_hemibrain_with_fl.json"
-export LIBRARIES_FILES="$WORKING_DIR/mips/flylight_gen1_mcfo_published_gamma1_4.json"
+export MASKS_FILES="${INPUT_DIR}/flyem_hemibrain_1_1_with_fl.json"
+export LIBRARIES_FILES="${INPUT_DIR}/flylight_split_gal4_published.json ${INPUT_DIR}/flylight_split_gal4_drivers_missing_from_published.json"
 
 # to get the value for TOTAL_MASKS we can simply run `grep imageURL "$WORKING_DIR/mips/flyem_hemibrain_with_fl.json | wc`
-export TOTAL_MASKS=47454
+export TOTAL_MASKS=44593
 # to get the value for TOTAL_LIBRARIES we can simply run `grep imageURL "$WORKING_DIR/mips/flylight_gen1_mcfo_published_gamma1_4.json | wc`
-export TOTAL_LIBRARIES=177894
+export TOTAL_LIBRARIES=7391
 # the selection of the number of masks or libraries per job is empirical based on the size of the libraries and/or masks
-export MASKS_PER_JOB=7909
-export LIBRARIES_PER_JOB=9883
+export MASKS_PER_JOB=7391
+export LIBRARIES_PER_JOB=44593
 # this is the partition value used both for CDS and GA so it might need to be set differently for GA than it is for CDS
 # for CDS the recommended value is between 100-500
 # for GA the recommended value is between 5-50
-export PROCESSING_PARTITION_SIZE=17
+export PROCESSING_PARTITION_SIZE=500
 
 export CORES_RESOURCE=20
 export CPU_RESERVE=1
@@ -37,9 +38,9 @@ export RESULTS_SUBDIR_FOR_LIBRARIES="${LIBRARY_NAME}-vs-${MASK_NAME}"
 
 CDSGA_SUBDIR=cdsresults.ga
 export CDGAS_RESULTS_DIR=${WORKING_DIR}/${CDSGA_SUBDIR}
-export CDGA_GRADIENTS_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/40x_MCFO_Segmented_PackBits-forPublicRelease_gradient
-export CDGA_ZGAP_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/40x_MCFO_Segmented_PackBits-forPublicRelease_20pxRGBMAX
-export CDGA_ZGAP_SUFFIX=_20pxRGBMAX
+export CDGA_GRADIENTS_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/SSnew_05202020_gradient.zip
+export CDGA_ZGAP_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/SSnew_05202020_RGB20px.zip
+export CDGA_ZGAP_SUFFIX=_RGB20px
 
 export LOGCONFIGFILE=
 
@@ -52,7 +53,7 @@ ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
 export GC_OPTS="${ZGC}"
 
 # this only needs to change on a new release
-export CDS_JAR_VERSION="1.2"
+export CDS_JAR_VERSION="2.3"
 
 # Color depth search params
 export MASK_THRESHOLD=20
