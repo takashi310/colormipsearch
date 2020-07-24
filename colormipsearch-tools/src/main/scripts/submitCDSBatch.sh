@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+SCRIPT_DIR="$(dirname "$0")"
 
-source ${SCRIPT_DIR}/cdsparams.sh
+CDSPARAMS=${CDSPARAMS:-${SCRIPT_DIR}/cdsparams.sh}
+source ${CDSPARAMS}
 
 # round up the total numbers because the operations are integer divisions
 export JOBS_FOR_LIBRARIES=$((TOTAL_LIBRARIES / LIBRARIES_PER_JOB))

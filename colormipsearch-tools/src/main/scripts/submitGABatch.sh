@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+SCRIPT_DIR="$(dirname "$0")"
 
-source ${SCRIPT_DIR}/cdsparams.sh
+CDSPARAMS=${CDSPARAMS:-${SCRIPT_DIR}/cdsparams.sh}
+source ${CDSPARAMS}
 
 export CDGA_INPUT_DIR=${CDSMATCHES_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS}
 export CDGA_OUTPUT_DIR=${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS}
