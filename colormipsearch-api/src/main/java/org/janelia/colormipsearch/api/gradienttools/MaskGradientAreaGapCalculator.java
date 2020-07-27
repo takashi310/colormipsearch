@@ -28,12 +28,11 @@ public class MaskGradientAreaGapCalculator {
     public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
                                                                                                     int negativeRadius,
                                                                                                     boolean mirrorMask) {
-        ImageProcessing clearLabels = ImageProcessing.create(
-                ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION));
-        ImageProcessing negativeRadiusDilation = clearLabels.mask(maskThreshold).maxFilter(negativeRadius);
+        ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
+        ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels).mask(maskThreshold).maxFilter(negativeRadius);
         return (ImageArray maskImageArray) -> {
             long startTime = System.currentTimeMillis();
-            LImage maskImage = LImageUtils.create(maskImageArray);
+            LImage maskImage = LImageUtils.create(maskImageArray).mapi(clearLabels);
             LImage maskForRegionsWithTooMuchExpression = LImageUtils.lazyCombine2(
                     maskImage.mapi(ImageTransformation.maxFilter(60)).reduce(), // eval immediately
                     maskImage.mapi(ImageTransformation.maxFilter(20)).reduce(), // eval immediately
@@ -59,7 +58,7 @@ public class MaskGradientAreaGapCalculator {
     private final LImage maskForUnwantedExpression; // pix(x,y) = 1 if there's too much expression surrounding x,y
     private final int maskThreshold;
     private final boolean withMaskMirroring;
-    private final ImageProcessing labelsClearing;
+    private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
 
     private MaskGradientAreaGapCalculator(LImage mask,
@@ -67,14 +66,14 @@ public class MaskGradientAreaGapCalculator {
                                           LImage maskForUnwantedExpression,
                                           int maskThreshold,
                                           boolean withMaskMirroring,
-                                          ImageProcessing labelsClearing,
+                                          ImageTransformation clearLabels,
                                           ImageProcessing negativeRadiusDilation) {
         this.mask = mask;
         this.maskIntensityValues = maskIntensityValues;
         this.maskForUnwantedExpression = maskForUnwantedExpression;
         this.maskThreshold = maskThreshold;
         this.withMaskMirroring = withMaskMirroring;
-        this.labelsClearing = labelsClearing;
+        this.clearLabels = clearLabels;
         this.negativeRadiusDilation = negativeRadiusDilation;
     }
 
@@ -124,7 +123,7 @@ public class MaskGradientAreaGapCalculator {
         );
         LImage overExpressedRegions = LImageUtils.lazyCombine2(
                 maskForUnwantedExpression.mapi(maskTransformation),
-                labelsClearing.applyTo(inputImage),
+                inputImage.mapi(clearLabels),
                 (p1s, p2s) -> {
                     int p1 = p1s.get();
                     if (p1 == 0) {
