@@ -208,23 +208,30 @@ public class MIPsUtils {
      * The typical pattern is that the image file name is the same but the path to it has a certain suffix
      * such as '_gradient' or '_20pxRGBMAX'
      * @param mipInfo
-     * @param ancillaryMIPLocation
+     * @param ancillaryMIPLocations
      * @param ancillaryMIPSuffixMapping specifies how the mapping changes from the mipInfo to the ancillary mip
      * @return
      */
     @Nullable
-    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, String ancillaryMIPLocation, Function<String, String> ancillaryMIPSuffixMapping) {
-        if (StringUtils.isBlank(ancillaryMIPLocation)) {
+    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, List<String> ancillaryMIPLocations, Function<String, String> ancillaryMIPSuffixMapping) {
+        if (CollectionUtils.isEmpty(ancillaryMIPLocations)) {
             return null;
         } else {
-            Path ancillaryMIPPath = Paths.get(ancillaryMIPLocation);
-            if (Files.isDirectory(ancillaryMIPPath)) {
-                return getAncillaryMIPInfoFromFilePath(ancillaryMIPPath, Paths.get(mipInfo.getImageName()), ancillaryMIPSuffixMapping);
-            } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPLocation, ".zip")) {
-                return getAncillaryMIPInfoFromZipEntry(ancillaryMIPLocation, mipInfo.getImageName(), ancillaryMIPSuffixMapping);
-            } else {
-                return null;
-            }
+            return ancillaryMIPLocations.stream()
+                    .filter(StringUtils::isNotBlank)
+                    .map(Paths::get)
+                    .map(ancillaryMIPPath -> {
+                        if (Files.isDirectory(ancillaryMIPPath)) {
+                            return getAncillaryMIPInfoFromFilePath(ancillaryMIPPath, Paths.get(mipInfo.getImageName()), ancillaryMIPSuffixMapping);
+                        } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPPath.getFileName().toString(), ".zip")) {
+                            return getAncillaryMIPInfoFromZipEntry(ancillaryMIPPath.toString(), mipInfo.getImageName(), ancillaryMIPSuffixMapping);
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(ancillaryMIP -> ancillaryMIP != null)
+                    .findFirst()
+                    .orElse(null);
         }
     }
 

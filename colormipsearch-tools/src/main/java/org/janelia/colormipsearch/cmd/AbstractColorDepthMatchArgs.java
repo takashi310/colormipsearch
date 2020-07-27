@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,14 +41,14 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--librarySuffix"}, description = "Library suffix")
     String librarySuffix;
 
-    @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location")
-    String gradientPath;
+    @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location", variableArity = true)
+    List<String> gradientPaths;
 
     @Parameter(names = {"--gradientSuffix"}, description = "Gradient suffix")
     String gradientSuffix = "_gradient";
 
-    @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location")
-    String zgapPath;
+    @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location", variableArity = true)
+    List<String> zgapPaths;
 
     @Parameter(names = {"--zgapSuffix"}, description = "ZGap suffix")
     String zgapSuffix;

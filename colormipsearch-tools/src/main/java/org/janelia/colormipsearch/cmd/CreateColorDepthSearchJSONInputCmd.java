@@ -499,7 +499,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .peek(cdmip -> {
                             MIPMetadata gradientMIP = MIPsUtils.getAncillaryMIPInfo(
                                     cdmip,
-                                    libraryGradientsPath,
+                                    Collections.singletonList(libraryGradientsPath),
                                     nc -> {
                                         String suffix = StringUtils.defaultIfBlank(libraryGradientSuffix, "");
                                         if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
@@ -515,7 +515,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .peek(cdmip -> {
                             MIPMetadata zgapMIP = MIPsUtils.getAncillaryMIPInfo(
                                     cdmip,
-                                    libraryZGapPath,
+                                    Collections.singletonList(libraryZGapPath),
                                     nc -> {
                                         String suffix = StringUtils.defaultIfBlank(libraryZGapSuffix, "");
                                         if (StringUtils.isNotBlank(librarySegmentationSuffix)) {

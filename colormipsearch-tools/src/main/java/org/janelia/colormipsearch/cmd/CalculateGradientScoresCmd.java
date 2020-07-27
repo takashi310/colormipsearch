@@ -122,9 +122,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                     maskAreaGapCalculatorProvider,
                                     f,
                                     args.librarySuffix,
-                                    args.gradientPath,
+                                    args.gradientPaths,
                                     args.gradientSuffix,
-                                    args.zgapPath,
+                                    args.zgapPaths,
                                     StringUtils.defaultString(args.zgapSuffix, ""),
                                     args.numberOfBestLines,
                                     args.numberOfBestSamplesPerLine,
@@ -166,9 +166,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                         maskAreaGapCalculatorProvider,
                                         f,
                                         args.librarySuffix,
-                                        args.gradientPath,
+                                        args.gradientPaths,
                                         args.gradientSuffix,
-                                        args.zgapPath,
+                                        args.zgapPaths,
                                         StringUtils.defaultString(args.zgapSuffix, ""),
                                         args.numberOfBestLines,
                                         args.numberOfBestSamplesPerLine,
@@ -197,9 +197,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
             MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
             File inputResultsFile,
             String librarySuffix,
-            String gradientsLocation,
+            List<String> gradientsLocations,
             String gradientSuffix,
-            String zgapsLocation,
+            List<String> zgapsLocations,
             String zgapsSuffix,
             int numberOfBestLinesToSelect,
             int numberOfBestSamplesPerLineToSelect,
@@ -228,9 +228,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 resultsEntry.getKey(),
                                 resultsEntry.getValue(),
                                 librarySuffix,
-                                gradientsLocation,
+                                gradientsLocations,
                                 gradientSuffix,
-                                zgapsLocation,
+                                zgapsLocations,
                                 zgapsSuffix,
                                 maskAreaGapCalculatorProvider,
                                 executor))
@@ -260,9 +260,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                                                                                          MIPMetadata inputMaskMIP,
                                                                                                          List<ColorMIPSearchMatchMetadata> selectedCDSResultsForInputMIP,
                                                                                                          String librarySuffix,
-                                                                                                         String gradientsLocation,
+                                                                                                         List<String> gradientsLocations,
                                                                                                          String gradientSuffix,
-                                                                                                         String zgapsLocation,
+                                                                                                         List<String> zgapsLocations,
                                                                                                          String zgapsSuffix,
                                                                                                          MaskGradientAreaGapCalculatorProvider maskAreaGapCalculatorProvider,
                                                                                                          Executor executor) {
@@ -285,7 +285,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
                     MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
                             matchedMIP,
-                            gradientsLocation,
+                            gradientsLocations,
                             nc -> {
                                 String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
                                 if (StringUtils.isNotBlank(librarySuffix)) {
@@ -296,7 +296,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             }));
                     MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
                             matchedMIP,
-                            zgapsLocation,
+                            zgapsLocations,
                             nc -> {
                                 String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
                                 if (StringUtils.isNotBlank(librarySuffix)) {
