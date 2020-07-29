@@ -27,8 +27,8 @@ public class ImageProcessing {
         return new ImageProcessing(imageTransformation.fmap(ColorTransformation.mask(threshold)));
     }
 
-    public ImageProcessing toGray16(boolean withGammaCorrection) {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16(withGammaCorrection)));
+    public ImageProcessing toGray16() {
+        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16WithNoGammaCorrection()));
     }
 
     public ImageProcessing toBinary8(int threshold) {

@@ -77,15 +77,13 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         return (int) (gray / oldMax * newMax);
     }
 
-    static ColorTransformation toGray8(boolean withGammaCorrection) {
+    static ColorTransformation toGray8WithNoGammaCorrection() {
         return new ColorTransformation(pt -> ImageType.GRAY8) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return withGammaCorrection
-                                ? ColorTransformation.rgbToGrayWithGammaCorrection(pv, 255)
-                                : ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
+                        return ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
                     case GRAY8:
                         return pv;
                     case GRAY16:
@@ -96,15 +94,13 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         };
     }
 
-    public static ColorTransformation toGray16(boolean withGammaCorrection) {
+    public static ColorTransformation toGray16WithNoGammaCorrection() {
         return new ColorTransformation(pt -> ImageType.GRAY16) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {
                 switch (pt) {
                     case RGB:
-                        return withGammaCorrection
-                            ? ColorTransformation.rgbToGrayWithGammaCorrection(pv, 255)
-                            : ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
+                        return ColorTransformation.rgbToGrayNoGammaCorrection(pv, 255);
                     case GRAY8:
                         return scaleGray(pv, 255, 65535);
                     case GRAY16:
@@ -136,11 +132,11 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     static ColorTransformation toBinary16(int threshold) {
-        return ColorTransformation.toGray16(false).thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary16(pv, threshold));
+        return ColorTransformation.toGray16WithNoGammaCorrection().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary16(pv, threshold));
     }
 
     static ColorTransformation toBinary8(int threshold) {
-        return ColorTransformation.toGray8(false).thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
+        return ColorTransformation.toGray8WithNoGammaCorrection().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary8(pv, threshold));
     }
 
     public static ColorTransformation toSignalRegions(int threshold) {

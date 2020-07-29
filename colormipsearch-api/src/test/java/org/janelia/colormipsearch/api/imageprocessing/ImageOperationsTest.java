@@ -98,7 +98,7 @@ public class ImageOperationsTest {
         ImageConverter ic = new ImageConverter(testImage);
         ic.convertToGray8();
 
-        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray8(false)).toImageArray();
+        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray8WithNoGammaCorrection()).toImageArray();
         ImageProcessor convertedImageProcessor = testImage.getProcessor();
 
         for (int i = 0; i < convertedImageProcessor.getPixelCount(); i++) {
@@ -116,7 +116,7 @@ public class ImageOperationsTest {
         ImageConverter ic = new ImageConverter(testImage);
         ic.convertToGray16();
 
-        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray16(false)).toImageArray();
+        ImageArray grayImage = LImageUtils.create(testMIP).map(ColorTransformation.toGray16WithNoGammaCorrection()).toImageArray();
         ImageProcessor convertedImageProcessor = testImage.getProcessor();
 
         for (int i = 0; i < convertedImageProcessor.getPixelCount(); i++) {
@@ -148,7 +148,7 @@ public class ImageOperationsTest {
         ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray signalImage = ImageProcessing.create()
-                .toGray16(false)
+                .toGray16()
                 .toSignalRegions(0)
                 .applyTo(testMIP)
                 .toImageArray();
