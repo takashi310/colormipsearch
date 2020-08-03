@@ -88,7 +88,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    @Parameters(commandDescription = "Grooup MIPs by published name")
+    @Parameters(commandDescription = "Groop MIPs by published name")
     static class CreateColorDepthSearchJSONInputArgs extends AbstractCmdArgs {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
                 description = "JACS data service base URL", required = true)
@@ -170,6 +170,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             this.commonArgs = commonArgs;
         }
 
+        @Override
         List<String> validate() {
             return Collections.emptyList();
         }
@@ -254,6 +255,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     return lpaths;
                 }
         ).forEach(lpaths -> {
+            System.out.println("!!!!!");
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
                     lpaths,
