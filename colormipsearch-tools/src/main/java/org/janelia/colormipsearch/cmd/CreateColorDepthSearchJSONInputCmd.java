@@ -239,12 +239,14 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             excludedMips = Collections.emptySet();
         }
 
+        System.out.println("!!!!! 1");
         Map<String, List<MIPVariantArg>> libraryVariants;
         if (CollectionUtils.isEmpty(args.libraryVariants)) {
             libraryVariants = Collections.emptyMap();
         } else {
             libraryVariants = args.libraryVariants.stream().collect(Collectors.groupingBy(lv -> lv.libraryName, Collectors.toList()));
         }
+        System.out.println("!!!!! 2");
         Streams.zip(
                 IntStream.range(0, args.libraries.size()).boxed(),
                 args.libraries.stream(),
@@ -255,7 +257,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     return lpaths;
                 }
         ).forEach(lpaths -> {
-            System.out.println("!!!!!");
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
                     lpaths,
