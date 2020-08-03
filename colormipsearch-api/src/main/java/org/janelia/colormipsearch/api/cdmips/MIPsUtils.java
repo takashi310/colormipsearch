@@ -249,7 +249,7 @@ public class MIPsUtils {
             ancillaryMIPPaths = Arrays.asList(
                     ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
                     ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif"),
-                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"),
+                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"), // search ancillary based on the transformation of the original mip
                     ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".tiff")
             );
         } else {
