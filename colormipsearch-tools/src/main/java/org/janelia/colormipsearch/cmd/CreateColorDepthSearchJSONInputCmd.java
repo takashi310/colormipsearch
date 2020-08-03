@@ -114,7 +114,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         "A library variant contains library name, variant type, location and suffix separated by colon , e.g., " +
                         "flylight_gen1_mcfo_published:segmentation:/libDir/mcfo/segmentation:_CDM",
                 converter = MIPVariantArg.MIPVariantArgConverter.class,
-                validateValueWith = MIPVariantArg.MIPVariantArgValidator.class,
+                validateValueWith = MIPVariantArg.ListMIPVariantArgValidator.class,
                 variableArity = true)
         List<MIPVariantArg> libraryVariants;
 

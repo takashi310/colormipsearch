@@ -26,6 +26,17 @@ class MIPVariantArg {
         }
     }
 
+    public static class ListMIPVariantArgValidator implements IValueValidator<List<MIPVariantArg>> {
+        private final MIPVariantArgValidator singleValueValidator = new MIPVariantArgValidator();
+
+        @Override
+        public void validate(String name, List<MIPVariantArg> listValue) throws ParameterException {
+            for (MIPVariantArg value: listValue) {
+                singleValueValidator.validate(name, value);
+            }
+        }
+    }
+
     static class MIPVariantArgConverter implements IStringConverter<MIPVariantArg> {
         @Override
         public MIPVariantArg convert(String value) {
