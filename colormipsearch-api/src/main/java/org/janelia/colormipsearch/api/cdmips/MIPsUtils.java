@@ -249,8 +249,8 @@ public class MIPsUtils {
             ancillaryMIPPaths = Arrays.asList(
                     ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
                     ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif"),
-                    ancillaryMIPPath.resolve(sourceMIPNameWithoutExtension + ".png"),
-                    ancillaryMIPPath.resolve(sourceMIPNameWithoutExtension + ".tiff")
+                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"),
+                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".tiff")
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
