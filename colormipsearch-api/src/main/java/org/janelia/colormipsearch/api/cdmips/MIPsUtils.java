@@ -222,7 +222,11 @@ public class MIPsUtils {
                     .map(Paths::get)
                     .map(ancillaryMIPPath -> {
                         if (Files.isDirectory(ancillaryMIPPath)) {
-                            return getAncillaryMIPInfoFromFilePath(ancillaryMIPPath, Paths.get(mipInfo.getImageName()), ancillaryMIPSuffixMapping);
+                            return getAncillaryMIPInfoFromFilePath(
+                                    ancillaryMIPPath,
+                                    Paths.get(mipInfo.getImageName()),
+                                    Paths.get(mipInfo.getCdmName()).getFileName().toString(),
+                                    ancillaryMIPSuffixMapping);
                         } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPPath.getFileName().toString(), ".zip")) {
                             return getAncillaryMIPInfoFromZipEntry(ancillaryMIPPath.toString(), mipInfo.getImageName(), ancillaryMIPSuffixMapping);
                         } else {
@@ -236,14 +240,17 @@ public class MIPsUtils {
     }
 
     @Nullable
-    private static MIPMetadata getAncillaryMIPInfoFromFilePath(Path ancillaryMIPPath, Path mipPath, Function<String, String> ancillaryMIPSuffixMapping) {
-        Path mipParentPath = mipPath.getParent();
-        String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipPath.getFileName().toString(), "\\..*$", "");
+    private static MIPMetadata getAncillaryMIPInfoFromFilePath(Path ancillaryMIPPath, Path mipImagePath, String sourceCDMName, Function<String, String> ancillaryMIPSuffixMapping) {
+        Path mipParentPath = mipImagePath.getParent();
+        String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipImagePath.getFileName().toString(), "\\..*$", "");
         List<Path> ancillaryMIPPaths;
         if (mipParentPath == null) {
+            String sourceMIPNameWithoutExtension = RegExUtils.replacePattern(sourceCDMName, "\\..*$", "");
             ancillaryMIPPaths = Arrays.asList(
                     ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
-                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif")
+                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif"),
+                    ancillaryMIPPath.resolve(sourceMIPNameWithoutExtension + ".png"),
+                    ancillaryMIPPath.resolve(sourceMIPNameWithoutExtension + ".tiff")
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
