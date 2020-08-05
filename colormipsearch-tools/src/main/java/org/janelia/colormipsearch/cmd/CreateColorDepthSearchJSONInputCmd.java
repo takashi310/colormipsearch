@@ -362,7 +362,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             Pair<String, Map<String, List<String>>> segmentedImages;
             String librarySegmentationPath = libraryPaths.getLibrarySegmentationPath(segmentationVariantType);
             if (isEmLibrary(libraryPaths.library.input)) {
-                Pattern skeletonRegExPattern = Pattern.compile("([0-9]+)[_-].*");
+                Pattern skeletonRegExPattern = Pattern.compile("([0-9]{7,})[_-].*");
                 segmentedImages = getSegmentedImages(skeletonRegExPattern, librarySegmentationPath);
             } else {
                 Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
