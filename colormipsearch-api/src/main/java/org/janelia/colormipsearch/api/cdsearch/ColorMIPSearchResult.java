@@ -108,6 +108,15 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setPublishedName(maskMIP.getPublishedName());
         srMetadata.setImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setImageName(maskMIP.getImageName());
+
+        srMetadata.setSlideCode(maskMIP.getSlideCode());
+        srMetadata.setObjective(maskMIP.getObjective());
+        srMetadata.setGender(maskMIP.getGender());
+        srMetadata.setAnatomicalArea(maskMIP.getAnatomicalArea());
+        srMetadata.setAlignmentSpace(maskMIP.getAlignmentSpace());
+        srMetadata.setChannel(maskMIP.getChannel());
+        srMetadata.setMountingProtocol(maskMIP.getMountingProtocol());
+
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
@@ -133,6 +142,15 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setImageName(libraryMIP.getImageName());
         srMetadata.setImageType(libraryMIP.getImageType());
+
+        srMetadata.setSlideCode(libraryMIP.getSlideCode());
+        srMetadata.setObjective(libraryMIP.getObjective());
+        srMetadata.setGender(libraryMIP.getGender());
+        srMetadata.setAnatomicalArea(libraryMIP.getAnatomicalArea());
+        srMetadata.setAlignmentSpace(libraryMIP.getAlignmentSpace());
+        srMetadata.setChannel(libraryMIP.getChannel());
+        srMetadata.setMountingProtocol(libraryMIP.getMountingProtocol());
+
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
