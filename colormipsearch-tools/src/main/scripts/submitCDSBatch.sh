@@ -3,6 +3,7 @@
 SCRIPT_DIR="$(dirname "$0")"
 
 CDSPARAMS=${CDSPARAMS:-${SCRIPT_DIR}/cdsparams.sh}
+source ${SCRIPT_DIR}/cdsparams.sh
 source ${CDSPARAMS}
 
 # round up the total numbers because the operations are integer divisions

@@ -3,6 +3,7 @@
 SCRIPT_DIR="$(dirname "$0")"
 
 CDSPARAMS=${CDSPARAMS:-${SCRIPT_DIR}/cdsparams.sh}
+source ${SCRIPT_DIR}/cdsparams.sh
 source ${CDSPARAMS}
 
 export CDGA_INPUT_DIR=${CDSMATCHES_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS}

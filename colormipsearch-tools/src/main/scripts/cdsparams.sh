@@ -53,7 +53,7 @@ ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
 export GC_OPTS="${ZGC}"
 
 # this only needs to change on a new release
-export CDS_JAR_VERSION="2.3"
+export CDS_JAR_VERSION="2.4"
 export CDS_JAR=${CDS_JAR:-target/colormipsearch-${CDS_JAR_VERSION}-jar-with-dependencies.jar}
 
 # Color depth search params
