@@ -8,8 +8,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -30,18 +32,14 @@ import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReplaceURLsCmd extends AbstractCmd {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplaceURLsCmd.class);
+public class ReplaceMIPsAttributesCmd extends AbstractCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(ReplaceMIPsAttributesCmd.class);
 
     @Parameters(commandDescription = "Replace image URLs from the source MIPs to the URLs from the target MIPs")
     static class ReplaceURLsArgs extends AbstractCmdArgs {
-        @Parameter(names = {"--source-mips", "-src"}, required = true,
-                description = "File containing the MIPS whose image URLs will change")
-        private String sourceMIPsFilename;
-        
-        @Parameter(names = {"--target-mips", "-target"}, required = true,
+        @Parameter(names = {"--new-mips-attributes", "-attrs"}, required = true,
                 description = "File containing the MIPS with the image URLs")
-        private String targetMIPsFilename;
+        String targetMIPsFilename;
         
         @Parameter(names = {"--input-dirs"}, variableArity = true, description = "Directory with JSON files whose image URLs have to be changed")
         List<String> inputDirs;
@@ -49,15 +47,11 @@ public class ReplaceURLsCmd extends AbstractCmd {
         @Parameter(names = {"--input-files"}, variableArity = true, description = "JSON file whose image URLs have to be changed")
         List<String> inputFiles;
 
-        @Parameter(names = {"--result-id-field"}, required = true,
-                description = "Result ID field name; for MIPs this is 'id' for results is 'matchedId'")
-        String resultIDField;
+        @Parameter(names = {"--id-field"}, required = true, description = "ID field name")
+        String idFieldName;
 
-        @Parameter(names = {"--image-url-field"}, description = "Image URL field")
-        String imageURLField = "imageURL";
-
-        @Parameter(names = {"--thumbnail-url-field"}, description = "Thumbnail URL field")
-        String thumbnailURLField = "thumbnailURL";
+        @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated", variableArity = true)
+        Set<String> fieldsToUpdate = new HashSet<>();
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -88,7 +82,7 @@ public class ReplaceURLsCmd extends AbstractCmd {
 
     private final ReplaceURLsArgs args;
 
-    ReplaceURLsCmd(String commandName, CommonArgs commonArgs) {
+    ReplaceMIPsAttributesCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         args =  new ReplaceURLsArgs(commonArgs);
     }
@@ -107,14 +101,6 @@ public class ReplaceURLsCmd extends AbstractCmd {
     private void replaceMIPsURLs(ReplaceURLsArgs args) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        Map<String, MIPMetadata> indexedSourceMIPs = MIPsUtils.readMIPsFromJSON(args.sourceMIPsFilename, 0, -1, Collections.emptySet(), mapper)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                r -> r.get(0))));
 
         Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
@@ -142,23 +128,19 @@ public class ReplaceURLsCmd extends AbstractCmd {
         } else {
             inputFileNames = Collections.emptyList();
         }
-        replaceMIPsURLs(
+        replaceMIPsMetadataAttributes(
                 inputFileNames,
-                args.resultIDField,
-                args.imageURLField,
-                args.thumbnailURLField,
-                indexedSourceMIPs,
+                args.idFieldName,
+                args.fieldsToUpdate,
                 indexedTargetMIPs,
                 args.getOutputDir());
     }
 
-    private void replaceMIPsURLs(List<String> inputFileNames,
-                                 String resultIdFieldName,
-                                 String imageURLFieldName,
-                                 String thumbnailURLFieldName,
-                                 Map<String, MIPMetadata> indexedSourceMIPs,
-                                 Map<String, MIPMetadata> indexedTargetMIPs,
-                                 Path outputDir) {
+    private void replaceMIPsMetadataAttributes(List<String> inputFileNames,
+                                               String idFieldName,
+                                               Set<String> atributeNames,
+                                               Map<String, MIPMetadata> indexedTargetMIPs,
+                                               Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -167,45 +149,16 @@ public class ReplaceURLsCmd extends AbstractCmd {
                     File f = new File(fn);
                     JsonNode jsonContent = readJSONFile(f, mapper);
                     streamJSONNodes(jsonContent).forEach(jsonNode -> {
-                        String id = getFieldValue(jsonNode, resultIdFieldName);
+                        String id = getFieldValue(jsonNode, idFieldName);
                         if (id == null) {
                             return; // No <id> field found
                         }
-                        String imageURL = getFieldValue(jsonNode, imageURLFieldName);
-                        String thumbnailURL = getFieldValue(jsonNode, thumbnailURLFieldName);
                         MIPMetadata targetMIP = indexedTargetMIPs.get(id);
                         if (targetMIP == null) {
-                            LOG.warn("No target URLs found for {}", id);
-                        } else if (StringUtils.isBlank(targetMIP.getImageURL()) || StringUtils.isBlank(targetMIP.getThumbnailURL())) {
-                            LOG.warn("Not all target image URLs are available for {} -> {}, {}", id, targetMIP.getImageURL(), targetMIP.getThumbnailURL());
+                            LOG.warn("No MIP with new attributes found for {}", id);
                         } else {
-                            MIPMetadata srcMIP = indexedSourceMIPs.get(id);
-                            if (srcMIP == null) {
-                                LOG.warn("No source URLS found for {} for validation", id);
-                            } else {
-                                // update image URL
-                                if (StringUtils.isBlank(imageURL)) {
-                                    // the URL is not set in the source so set it
-                                    LOG.debug("Setting the URL for {} because it was not set in the source", id);
-                                    jsonNode.put(imageURLFieldName, targetMIP.getImageURL());
-                                } else if (StringUtils.equals(imageURL, srcMIP.getImageURL())) {
-                                    // source is the same so it's OK to update
-                                    jsonNode.put(imageURLFieldName, targetMIP.getImageURL());
-                                } else {
-                                    LOG.info("Source image URL is different for {}: expected {} but was {}", id, srcMIP.getImageURL(), imageURL);
-                                }
-                                // update thumnail URL
-                                if (StringUtils.isBlank(thumbnailURL)) {
-                                    // the URL is not set in the source so set it
-                                    LOG.debug("Setting thumbnail URL for {} because it was not set in the source", id);
-                                    jsonNode.put(thumbnailURLFieldName, targetMIP.getThumbnailURL());
-                                } else if (StringUtils.equals(thumbnailURL, srcMIP.getThumbnailURL())) {
-                                    // source is the same so it's OK to update
-                                    jsonNode.put(thumbnailURLFieldName, targetMIP.getThumbnailURL());
-                                } else {
-                                    LOG.info("Source thumbnail URL is different for {}: expected {} but was {}", id, srcMIP.getThumbnailURL(), thumbnailURL);
-                                }
-                            }
+                            ObjectNode newAttributesNode = mapper.valueToTree(targetMIP);
+                            atributeNames.forEach(a -> replaceMIPsAttributes(id, newAttributesNode, a, jsonNode));
                         }
                     });
                     writeJSONFile(jsonContent, CmdUtils.getOutputFile(outputDir, f), mapper);
@@ -245,6 +198,14 @@ public class ReplaceURLsCmd extends AbstractCmd {
                     .map(jsonNode -> (ArrayNode) jsonNode)
                     .flatMap(resultsNode -> StreamSupport.stream(resultsNode.spliterator(), false))
                     .map(jsonNode -> (ObjectNode) jsonNode);
+        }
+    }
+
+    private void replaceMIPsAttributes(String id, ObjectNode srcAttributes, String attributeName, ObjectNode toUpdate) {
+        String attributeValue = getFieldValue(srcAttributes, attributeName);
+        if (StringUtils.isNotBlank(attributeValue)) {
+            LOG.debug("Setting {} for {} to {}", id, attributeValue);
+            toUpdate.put(attributeName, attributeValue);
         }
     }
 

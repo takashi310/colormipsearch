@@ -5,7 +5,6 @@ import java.util.List;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 
@@ -31,7 +30,7 @@ public class Main {
         AbstractCmd[] cmds = new AbstractCmd[] {
                 new CreateColorDepthSearchJSONInputCmd("createColorDepthSearchJSONInput", commonArgs),
                 new GroupMIPsByPublishedNameCmd("groupMIPsByPublishedName", commonArgs),
-                new ReplaceURLsCmd("replaceImageURLs", commonArgs),
+                new ReplaceMIPsAttributesCmd("replaceAttributes", commonArgs),
                 new ColorDepthSearchJSONInputCmd("searchFromJSON", commonArgs),
                 new ColorDepthSearchLocalMIPsCmd("searchLocalFiles", commonArgs),
                 new CalculateGradientScoresCmd("gradientScore", commonArgs),

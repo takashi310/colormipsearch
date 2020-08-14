@@ -264,11 +264,11 @@ Update image URLs for the lines:
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    replaceImageURLs \
-    -src local/testData/mips/flylight_gen1_mcfo_published.json \
-    -target local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    replaceAttributes \
+    -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/mips/gen1_mcfo_lines \
-    --result-id-field id \
+    --id-field id \
+    --fields-toUpdate imageURL,thumbnailURL \
     -od local/testData/mips.gamma1.4/gen1_mcfo_lines
 ```
 
@@ -276,13 +276,11 @@ Update image URLs for the input MIPs:
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    replaceImageURLs \
-    -src local/testData/mips/flylight_gen1_mcfo_published.json \
-    -target local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    replaceAttributes \
+    -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-file local/testData/mips/flylight_gen1_mcfo_published.json \
-    --image-url-field imageURL \
-    --thumbnail-url-field thumbnailURL \
-    --result-id-field id \
+    --id-field id \
+    --fields-toUpdate imageURL,thumbnailURL \
     -od local/testData/mips.gamma1.4
 ```
 
@@ -293,11 +291,11 @@ a match is "matchedId"
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    replaceImageURLs \
-    -src local/testData/cdsresult/flylight_gen1_mcfo_published.json \
-    -target local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
+    replaceAttributes \
+    -attrs local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
-    --result-id-field matchedId  \
+    --id-field id  \
+    --fields-toUpdate imageURL,thumbnailURL \
     -od local/testData/cdsresults/flyem_hemibrain.gamma1_4
 ```
 
