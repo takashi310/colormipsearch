@@ -12,14 +12,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(UpdateGradientScoresFromReverseSearchResultsCmd.class);
+    private static final String DEFAULT_CDSRESULTS_EXT = ".json";
 
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
@@ -121,30 +128,22 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        Map<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = new ConcurrentHashMap<>();
-        try {
-            LOG.info("Read reverse results directory {}", args.reverseResultsDir);
-            Files.find(Paths.get(args.reverseResultsDir), 1, (p, fa) -> fa.isRegularFile()).parallel()
-                    .forEach(p -> {
-                        String fn = p.getFileName().toString();
-                        int extseparator = fn.lastIndexOf('.');
-                        String id;
-                        if (extseparator != -1) {
-                            id = fn.substring(0, extseparator);
+        LOG.info("Prepare cache loader for {}", args.reverseResultsDir);
+        LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = CacheBuilder.newBuilder()
+                .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
+                    @Override
+                    public List<ColorMIPSearchMatchMetadata> load(String cdsMatchesId) {
+                        File cdsMatchesFile = new File(args.reverseResultsDir, cdsMatchesId + DEFAULT_CDSRESULTS_EXT);
+                        if (!cdsMatchesFile.exists()) {
+                            return Collections.emptyList();
                         } else {
-                            id = fn;
+                            return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile,mapper)
+                                    .results.stream()
+                                    .filter(r -> r.getGradientAreaGap() != -1)
+                                    .collect(Collectors.toList());
                         }
-                        reverseResultsCache.put(
-                                id,
-                                ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(
-                                        p.toFile(), mapper).results.stream().filter(r -> r.getGradientAreaGap() != -1).collect(Collectors.toList())
-                        );
-                    });
-            LOG.info("Finished reading reverse {} results from {}", reverseResultsCache.size(), args.reverseResultsDir);
-        } catch (IOException e) {
-            LOG.error("Error reading {}", args.reverseResultsDir);
-            throw new UncheckedIOException(e);
-        }
+                    }
+                });
 
         Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
@@ -185,10 +184,17 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 });
     }
 
-    private Map<String, List<ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults) {
+    private Map<String, List<ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache) {
         return matchIds.stream().parallel()
-                .flatMap(matchId -> streamMatchResultsWithGradientScore(reverseResults.get(matchId), ids))
-                .collect(Collectors.groupingBy(csr -> csr.getId(), Collectors.toList()));
+                .flatMap(matchId -> {
+                    try {
+                        return streamMatchResultsWithGradientScore(reverseResultsCache.get(matchId), ids);
+                    } catch (ExecutionException e) {
+                        LOG.error("Error retrieving results for {}", matchId);
+                        throw new IllegalStateException(e);
+                    }
+                })
+                .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()));
     }
 
     private Stream<ColorMIPSearchMatchMetadata> streamMatchResultsWithGradientScore(List<ColorMIPSearchMatchMetadata> content, Set<String> ids) {
