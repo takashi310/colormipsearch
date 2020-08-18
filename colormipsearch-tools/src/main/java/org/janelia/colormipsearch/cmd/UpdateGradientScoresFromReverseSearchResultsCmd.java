@@ -137,7 +137,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         if (!cdsMatchesFile.exists()) {
                             return Collections.emptyList();
                         } else {
-                            return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile,mapper)
+                            LOG.info("Read reverse results from {}", cdsMatchesFile);
+                            return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile, mapper)
                                     .results.stream()
                                     .filter(r -> r.getGradientAreaGap() != -1)
                                     .collect(Collectors.toList());
