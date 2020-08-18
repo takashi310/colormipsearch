@@ -185,7 +185,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private Map<String, List<ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache) {
-        return matchIds.stream().parallel()
+        return matchIds.stream()
                 .flatMap(matchId -> {
                     try {
                         return streamMatchResultsWithGradientScore(reverseResultsCache.get(matchId), ids);
