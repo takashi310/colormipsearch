@@ -111,11 +111,38 @@ public interface LImage {
      * @return
      */
     default ImageArray toImageArray() {
-        int[] pixels = new int[height() * width()];
-        return new ImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {
-            pa[y * width() + x] = pv;
-            return pa;
-        }));
+        ImageType type = getPixelType();
+        ImageArray ret = null;
+        switch (type) {
+            case GRAY8:
+                {
+                    byte[] pixels = new byte[height() * width()];
+                    ret = new ByteImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {
+                        pa[y * width() + x] = pv.byteValue();
+                        return pa;
+                    }));
+                }
+                break;
+            case GRAY16:
+                {
+                    short[] pixels = new short[height() * width()];
+                    ret = new ShortImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {
+                        pa[y * width() + x] = pv.shortValue();
+                        return pa;
+                    }));
+                }
+                break;
+            case RGB:
+                {
+                    int[] pixels = new int[height() * width()];
+                    ret = new ColorImageArray(getPixelType(), width(), height(), foldi(pixels, (x, y, pv, pa) -> {
+                        pa[y * width() + x] = pv;
+                        return pa;
+                    }));
+                }
+                break;
+        }
+        return ret;
     }
 
 }

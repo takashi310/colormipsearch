@@ -45,6 +45,33 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
         } else {
             negMirrorTargetMasksList = null;
         }
+
+        int maskpos_st = query.getWidth() * query.getHeight();
+        int maskpos_ed = 0;
+        for (int i = 0; i < targetMasksList.length; i++) {
+            if (targetMasksList[i][0] < maskpos_st) maskpos_st = targetMasksList[i][0];
+            if (targetMasksList[i][targetMasksList[i].length-1] > maskpos_ed) maskpos_ed = targetMasksList[i][targetMasksList[i].length-1];
+        }
+        if (mirrorMask) {
+            for (int i = 0; i < mirrorTargetMasksList.length; i++) {
+                if (mirrorTargetMasksList[i][0] < maskpos_st) maskpos_st = mirrorTargetMasksList[i][0];
+                if (mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1] > maskpos_ed) maskpos_ed = mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1];
+            }
+        }
+        if (negQueryImage != null) {
+            for (int i = 0; i < negTargetMasksList.length; i++) {
+                if (negTargetMasksList[i][0] < maskpos_st) maskpos_st = negTargetMasksList[i][0];
+                if (negTargetMasksList[i][negTargetMasksList[i].length-1] > maskpos_ed) maskpos_ed = negTargetMasksList[i][negTargetMasksList[i].length-1];
+            }
+            if (mirrorNegMask) {
+                for (int i = 0; i < negMirrorTargetMasksList.length; i++) {
+                    if (negMirrorTargetMasksList[i][0] < maskpos_st) maskpos_st = negMirrorTargetMasksList[i][0];
+                    if (negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1] > maskpos_ed) maskpos_ed = negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1];
+                }
+            }
+        }
+        setMaskStartPosition(maskpos_st);
+        setMaskEndPosition(maskpos_ed);
     }
 
     @Override
@@ -155,18 +182,21 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
     private int calculateScore(ImageArray src, int[] scrPositions, ImageArray tar, int[] targetPositions) {
         int masksize = scrPositions.length <= targetPositions.length ? scrPositions.length : targetPositions.length;
         int posi = 0;
+
+        byte[] srcarr = (byte[])src.getPixels();
+        byte[] tararr = (byte[])tar.getPixels();
         for (int masksig = 0; masksig < masksize; masksig++) {
             if (scrPositions[masksig] == -1 || targetPositions[masksig] == -1) continue;
 
-            int pix1 = src.get(scrPositions[masksig]);
-            int red1 = (pix1 >>> 16) & 0xff;
-            int green1 = (pix1 >>> 8) & 0xff;
-            int blue1 = pix1 & 0xff;
+            int p = scrPositions[masksig]*3;
+            int red1 = srcarr[p] & 0xff;
+            int green1 = srcarr[p+1] & 0xff;
+            int blue1 = srcarr[p+2] & 0xff;
 
-            int pix2 = tar.get(targetPositions[masksig]);
-            int red2 = (pix2 >>> 16) & 0xff;
-            int green2 = (pix2 >>> 8) & 0xff;
-            int blue2 = pix2 & 0xff;
+            p = targetPositions[masksig]*3;
+            int red2 = tararr[p] & 0xff;
+            int green2 = tararr[p+1] & 0xff;
+            int blue2 = tararr[p+2] & 0xff;
 
             if (red2 > searchThreshold || green2 > searchThreshold || blue2 > searchThreshold) {
                 double pxGap = calculatePixelGap(red1, green1, blue1, red2, green2, blue2);
@@ -175,6 +205,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
                 }
             }
         }
+
         return posi;
     }
 

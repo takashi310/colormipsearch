@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api.imageprocessing;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
+import ij.process.ColorProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
@@ -24,7 +25,11 @@ public class ImageOperationsTest {
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
 
-            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+            ColorProcessor asColorProcessor = (ColorProcessor)testImage.getProcessor();
+
+            for (int j = 0; j < asColorProcessor.getPixelCount(); j++) {
+                Assert.assertEquals((asColorProcessor.get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            }
         }
     }
 
@@ -44,7 +49,11 @@ public class ImageOperationsTest {
             maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
             testImage.getProcessor().flipHorizontal();
 
-            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+            ColorProcessor asColorProcessor = (ColorProcessor)testImage.getProcessor();
+
+            for (int j = 0; j < asColorProcessor.getPixelCount(); j++) {
+                Assert.assertEquals((asColorProcessor.get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            }
         }
     }
 
@@ -63,7 +72,11 @@ public class ImageOperationsTest {
             maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
             testImage.getProcessor().flipHorizontal();
 
-            Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), maxFilteredImage.pixels);
+            ColorProcessor asColorProcessor = (ColorProcessor)testImage.getProcessor();
+
+            for (int j = 0; j < asColorProcessor.getPixelCount(); j++) {
+                Assert.assertEquals((asColorProcessor.get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            }
         }
     }
 
@@ -138,7 +151,11 @@ public class ImageOperationsTest {
 
         testImage.getProcessor().flipHorizontal();
 
-        Assert.assertArrayEquals((int[]) testImage.getProcessor().getPixels(), mirroredImage.pixels);
+        ColorProcessor asColorProcessor = (ColorProcessor)testImage.getProcessor();
+
+        for (int j = 0; j < asColorProcessor.getPixelCount(); j++) {
+            Assert.assertEquals((asColorProcessor.get(j) & 0x00FFFFFF), mirroredImage.get(j) & 0x00FFFFFF);
+        }
     }
 
     @Test
