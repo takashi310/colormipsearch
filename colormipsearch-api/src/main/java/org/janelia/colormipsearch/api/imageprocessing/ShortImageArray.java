@@ -14,7 +14,7 @@ public class ShortImageArray extends ImageArray {
 
     public int get(int pi)
     {
-        return (int)pixels[pi];
+        return pixels[pi] & 0xFFFF;
     }
 
     public void set(int pi, int pixel)
@@ -29,7 +29,7 @@ public class ShortImageArray extends ImageArray {
     public int getPixel(int x, int y)
     {
         if (x >= 0 && x < width && y >= 0 && y < height) {
-            return (int)pixels[y * width + x];
+            return (int)pixels[y * width + x] & 0xFFFF;
         } else {
             return 0;
         }
