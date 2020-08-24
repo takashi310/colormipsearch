@@ -19,7 +19,7 @@ public class ShortImageArray extends ImageArray {
 
     public void set(int pi, int pixel)
     {
-        pixels[pi] = (short)pixel;
+        pixels[pi] = (short)(pixel & 0xFFFF);
     }
 
     public Object getPixels() {

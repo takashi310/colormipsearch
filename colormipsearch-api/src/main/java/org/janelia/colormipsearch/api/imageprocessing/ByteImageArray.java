@@ -18,7 +18,7 @@ public class ByteImageArray extends ImageArray {
 
     public void set(int pi, int pixel)
     {
-        pixels[pi] = (byte)pixel;
+        pixels[pi] = (byte)(pixel & 0xFF);
     }
 
     public Object getPixels() {
@@ -28,7 +28,7 @@ public class ByteImageArray extends ImageArray {
     public int getPixel(int x, int y)
     {
         if (x >= 0 && x < width && y >= 0 && y < height) {
-            return (int)pixels[y * width + x];
+            return (int)(pixels[y * width + x] & 0xFF);
         } else {
             return 0;
         }
