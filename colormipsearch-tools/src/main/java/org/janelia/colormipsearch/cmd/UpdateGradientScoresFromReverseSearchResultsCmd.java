@@ -147,7 +147,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         if (!cdsMatchesFile.exists()) {
                             return Collections.emptyList();
                         } else {
-                            LOG.info("Read reverse results from {}", cdsMatchesFile);
+                            LOG.debug("Read reverse results from {}", cdsMatchesFile);
                             return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile, mapper)
                                     .results.stream()
                                     .filter(r -> r.getGradientAreaGap() != -1)
@@ -167,9 +167,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                 if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
                                     Set<String> sourceIds = cdsMatches.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
                                     Set<String> matchedIds = cdsMatches.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
-                                    LOG.info("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
+                                    LOG.debug("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
                                     Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
-                                    LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
+                                    LOG.debug("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsMatches.results.stream()
                                             .forEach(csr -> {
