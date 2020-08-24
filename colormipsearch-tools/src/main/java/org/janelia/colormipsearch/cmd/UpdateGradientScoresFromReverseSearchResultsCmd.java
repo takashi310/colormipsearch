@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,18 +86,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private final UpdateGradientScoresArgs args;
-    private final long cacheSize;
-    private final long cacheExpirationInSeconds;
+    private final Supplier<Long> cacheSizeSupplier;
+    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final ObjectMapper mapper;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
                                                     CommonArgs commonArgs,
-                                                    long cacheSize,
-                                                    long cacheExpirationInSeconds) {
+                                                    Supplier<Long> cacheSizeSupplier,
+                                                    Supplier<Long> cacheExpirationInSecondsSupplier) {
         super(commandName);
         this.args = new UpdateGradientScoresArgs(commonArgs);
-        this.cacheSize = cacheSize;
-        this.cacheExpirationInSeconds = cacheExpirationInSeconds;
+        this.cacheSizeSupplier = cacheSizeSupplier;
+        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -137,11 +138,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
         Path outputDir = args.getOutputDir();
         LOG.info("Prepare cache loader for {} with cache size={} and cache expiration={}s",
-                args.reverseResultsDir, cacheSize, cacheExpirationInSeconds);
+                args.reverseResultsDir, cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
         LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = CacheBuilder.newBuilder()
                 .concurrencyLevel(16)
-                .expireAfterAccess(Duration.ofSeconds(cacheExpirationInSeconds))
-                .maximumSize(cacheSize)
+                .expireAfterAccess(Duration.ofSeconds(cacheExpirationInSecondsSupplier.get()))
+                .maximumSize(cacheSizeSupplier.get())
                 .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                     @Override
                     public List<ColorMIPSearchMatchMetadata> load(String cdsMatchesId) {

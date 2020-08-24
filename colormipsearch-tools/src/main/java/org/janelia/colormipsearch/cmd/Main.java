@@ -37,8 +37,8 @@ public class Main {
                 new UpdateGradientScoresFromReverseSearchResultsCmd(
                         "gradientScoresFromMatchedResults",
                         commonArgs,
-                        mainArgs.cacheSize,
-                        mainArgs.cacheExpirationInSeconds),
+                        () -> mainArgs.cacheSize,
+                        () -> mainArgs.cacheExpirationInSeconds),
                 new MergeResultsCmd("mergeResults", commonArgs),
                 new NormalizeGradientScoresCmd("normalizeGradientScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)
