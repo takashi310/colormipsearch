@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +44,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
-    static class GradientScoreResultsArgs extends AbstractCmdArgs {
+    static class UpdateGradientScoresArgs extends AbstractCmdArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Results directory for which the gradients need to be set")
         private ListArg resultsDir;
@@ -60,7 +61,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        GradientScoreResultsArgs(CommonArgs commonArgs) {
+        UpdateGradientScoresArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
@@ -83,18 +84,25 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
     }
 
-    private final GradientScoreResultsArgs args;
+    private final UpdateGradientScoresArgs args;
+    private final long cacheSize;
+    private final long cacheExpirationInSeconds;
     private final ObjectMapper mapper;
 
-    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName, CommonArgs commonArgs) {
+    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
+                                                    CommonArgs commonArgs,
+                                                    long cacheSize,
+                                                    long cacheExpirationInSeconds) {
         super(commandName);
-        this.args = new GradientScoreResultsArgs(commonArgs);
+        this.args = new UpdateGradientScoresArgs(commonArgs);
+        this.cacheSize = cacheSize;
+        this.cacheExpirationInSeconds = cacheExpirationInSeconds;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override
-    GradientScoreResultsArgs getArgs() {
+    UpdateGradientScoresArgs getArgs() {
         return args;
     }
 
@@ -104,7 +112,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         updateGradientScores(args);
     }
 
-    private void updateGradientScores(GradientScoreResultsArgs args) {
+    private void updateGradientScores(UpdateGradientScoresArgs args) {
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             filesToProcess = args.resultsFiles;
@@ -130,6 +138,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         LOG.info("Prepare cache loader for {}", args.reverseResultsDir);
         LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = CacheBuilder.newBuilder()
+                .expireAfterAccess(Duration.ofSeconds(cacheExpirationInSeconds))
+                .maximumSize(cacheSize)
                 .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                     @Override
                     public List<ColorMIPSearchMatchMetadata> load(String cdsMatchesId) {
