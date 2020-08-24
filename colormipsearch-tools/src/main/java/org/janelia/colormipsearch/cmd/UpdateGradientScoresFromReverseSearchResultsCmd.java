@@ -136,8 +136,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        LOG.info("Prepare cache loader for {}", args.reverseResultsDir);
+        LOG.info("Prepare cache loader for {} with cache size={} and cache expiration={}s",
+                args.reverseResultsDir, cacheSize, cacheExpirationInSeconds);
         LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache = CacheBuilder.newBuilder()
+                .concurrencyLevel(16)
                 .expireAfterAccess(Duration.ofSeconds(cacheExpirationInSeconds))
                 .maximumSize(cacheSize)
                 .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
