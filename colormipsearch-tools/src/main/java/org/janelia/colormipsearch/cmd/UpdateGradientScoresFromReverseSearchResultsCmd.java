@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -138,7 +139,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             LOG.debug("Read results from {}", cdsResultsFile);
             InputStream cdsResultsStream = null;
             try {
-                cdsResultsStream = new FileInputStream(cdsResultsFile);
+                cdsResultsStream = new BufferedInputStream(new FileInputStream(cdsResultsFile));
                 return ColorMIPSearchResultUtils.readCDSMatchesFromJSONStream(cdsResultsStream, mapper)
                         .results.stream()
                         .filter(r -> r.getGradientAreaGap() != -1)
@@ -161,7 +162,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             Map<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesMap = new LinkedHashMap<String, List<ColorMIPSearchMatchMetadata>>((int) cacheSize) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, List<ColorMIPSearchMatchMetadata>> eldest) {
-                    LOG.debug("Remove {}", eldest.getKey());
+                    LOG.info("Remove {}", eldest.getKey());
                     return size() > cacheSize;
                 }
             };
