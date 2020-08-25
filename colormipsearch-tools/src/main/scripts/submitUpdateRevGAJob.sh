@@ -7,6 +7,7 @@ function updateRevGAJob {
     CDGA_OUTPUT_PARAM=$1
     shift
 
+    MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
     if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
         echo "Using Log config: ${LOGCONFIGFILE}"
         LOG_OPTS="-Dlog4j.configuration=file://${LOGCONFIGFILE}"
