@@ -199,7 +199,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private Optional<ColorMIPSearchMatchMetadata> findReverserseResult(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier) {
         List<ColorMIPSearchMatchMetadata> matches = cdsResultsSupplier.apply(cdsr.getId());
-        return matches.stream()
+        return matches.stream().parallel()
                 .filter(csr -> csr.matches(cdsr))
                 .findFirst();
     }
