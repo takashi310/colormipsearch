@@ -131,7 +131,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
         Path outputDir = args.getOutputDir();
         LOG.info("Prepare results loader for {}", args.reverseResultsDir);
-        Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader = (String mipId) -> {
+        Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
             File cdsResultsFile = new File(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
             if (!cdsResultsFile.exists()) {
                 return Collections.emptyList();
@@ -143,16 +143,21 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .collect(Collectors.toList());
             }
         };
-        LoadingCache<String, List<ColorMIPSearchMatchMetadata>> cdsResultsCache = CacheBuilder.newBuilder()
-                .concurrencyLevel(40)
-                .maximumSize(cacheSizeSupplier.get())
-                .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
-                    @Override
-                    public List<ColorMIPSearchMatchMetadata> load(String mipId) {
-                        return cdsResultsLoader.apply(mipId);
-                    }
-                });
-
+        long cacheSize = cacheSizeSupplier.get();
+        Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader;
+        if (cacheSize > 0) {
+            cdsResultsLoader = CacheBuilder.newBuilder()
+                    .concurrencyLevel(40)
+                    .maximumSize(cacheSizeSupplier.get())
+                    .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
+                        @Override
+                        public List<ColorMIPSearchMatchMetadata> load(String mipId) {
+                            return cdsResultsFileLoader.apply(mipId);
+                        }
+                    });
+        } else {
+            cdsResultsLoader = cdsResultsFileLoader;
+        }
         List<CompletableFuture<CDSMatches>> allUpdateComputations = Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .flatMap(fileList -> fileList.stream()
                         .map(File::new)
