@@ -161,6 +161,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             Map<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesMap = new LinkedHashMap<String, List<ColorMIPSearchMatchMetadata>>((int) cacheSize) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, List<ColorMIPSearchMatchMetadata>> eldest) {
+                    LOG.debug("Remove {}", eldest.getKey());
                     return size() > cacheSize;
                 }
             };
