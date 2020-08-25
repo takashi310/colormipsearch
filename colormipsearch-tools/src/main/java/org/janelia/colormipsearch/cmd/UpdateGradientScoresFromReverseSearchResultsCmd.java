@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -133,14 +135,24 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         LOG.info("Prepare results loader for {}", args.reverseResultsDir);
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
             File cdsResultsFile = new File(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
-            if (!cdsResultsFile.exists()) {
-                return Collections.emptyList();
-            } else {
-                LOG.debug("Read results from {}", cdsResultsFile);
-                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsResultsFile, mapper)
+            LOG.debug("Read results from {}", cdsResultsFile);
+            InputStream cdsResultsStream = null;
+            try {
+                cdsResultsStream = new FileInputStream(cdsResultsFile);
+                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONStream(cdsResultsStream, mapper)
                         .results.stream()
                         .filter(r -> r.getGradientAreaGap() != -1)
                         .collect(Collectors.toList());
+            } catch (Exception e) {
+                LOG.error("Error reading CDS results from {}", cdsResultsFile, e);
+                return Collections.emptyList();
+            } finally {
+                if (cdsResultsStream != null) {
+                    try {
+                        cdsResultsStream.close();
+                    } catch (IOException ignore) {
+                    }
+                }
             }
         };
         long cacheSize = cacheSizeSupplier.get();

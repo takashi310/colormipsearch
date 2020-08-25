@@ -2,7 +2,9 @@ package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +79,17 @@ public class ColorMIPSearchResultUtils {
             LOG.error("Error reading CDS results from json file {}", f, e);
             throw new UncheckedIOException(e);
         }
+    }
+
+    /**
+     * Read CDS matches from the specified JSON formatted file.
+     *
+     * @param istream
+     * @param mapper
+     * @return
+     */
+    public static CDSMatches readCDSMatchesFromJSONStream(InputStream istream, ObjectMapper mapper) throws IOException {
+        return mapper.readValue(istream, CDSMatches.class);
     }
 
     static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
