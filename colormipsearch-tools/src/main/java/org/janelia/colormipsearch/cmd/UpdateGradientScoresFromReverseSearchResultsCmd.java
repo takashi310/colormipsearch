@@ -171,7 +171,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     Set<String> sourceIds = cdsMatches.results.stream().map(ColorMIPSearchMatchMetadata::getSourceId).collect(Collectors.toSet());
                                     Set<String> matchedIds = cdsMatches.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
                                     LOG.debug("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-                                    Map<String, Map<String, ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
+                                    Map<String, List<ColorMIPSearchMatchMetadata>> reverseResults = readMatchIdResults(sourceIds, matchedIds, reverseResultsCache);
                                     LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
                                             matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
                                     cdsMatches.results.stream().parallel()
@@ -198,7 +198,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 });
     }
 
-    private Map<String, Map<String, ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache) {
+    private Map<String, List<ColorMIPSearchMatchMetadata>> readMatchIdResults(Set<String> ids, Set<String> matchIds, LoadingCache<String, List<ColorMIPSearchMatchMetadata>> reverseResultsCache) {
         return matchIds.stream().parallel()
                 .flatMap(matchId -> {
                     try {
@@ -208,7 +208,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         throw new IllegalStateException(e);
                     }
                 })
-                .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toMap(ColorMIPSearchMatchMetadata::getSourceId, cdsm -> cdsm)));
+                .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()));
     }
 
     private Stream<ColorMIPSearchMatchMetadata> streamMatchResultsWithGradientScore(List<ColorMIPSearchMatchMetadata> content, Set<String> ids) {
@@ -222,12 +222,15 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
     }
 
-    private ColorMIPSearchMatchMetadata findReverserseResult(ColorMIPSearchMatchMetadata result, Map<String, Map<String, ColorMIPSearchMatchMetadata>> indexedResults) {
-        Map<String, ColorMIPSearchMatchMetadata> matches = indexedResults.get(result.getSourceId());
+    private ColorMIPSearchMatchMetadata findReverserseResult(ColorMIPSearchMatchMetadata result, Map<String, List<ColorMIPSearchMatchMetadata>> indexedResults) {
+        List<ColorMIPSearchMatchMetadata> matches = indexedResults.get(result.getSourceId());
         if (matches == null) {
             return null;
         } else {
-            return matches.get(result.getId());
+            return matches.stream()
+                    .filter(csr -> csr.matches(result))
+                    .findFirst()
+                    .orElse(null);
         }
     }
 }
