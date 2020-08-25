@@ -153,22 +153,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                     }
                 });
 
-        Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(fileList -> {
-                    long startProcessingPartitionTime = System.currentTimeMillis();
-                    fileList.stream()
-                            .map(File::new)
-                            .forEach(f -> {
-                                updateGradientScoresForFile(f, cdsResultsCache, outputDir, executor);
-                            });
-                    LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.);
-                });
+        List<CompletableFuture<CDSMatches>> allUpdateComputations = Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .flatMap(fileList -> fileList.stream()
+                        .map(File::new)
+                        .map(f -> updateGradientScoresForFile(f, cdsResultsCache, outputDir, executor)))
+                .collect(Collectors.toList());
+        CompletableFuture.allOf(allUpdateComputations.toArray(new CompletableFuture<?>[0])).join();
     }
 
-    private void updateGradientScoresForFile(File f, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier, Path outputDir, Executor executor) {
-        long startTime = System.currentTimeMillis();
+    private CompletableFuture<CDSMatches> updateGradientScoresForFile(File f, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier, Path outputDir, Executor executor) {
         CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
         if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
+            long startTime = System.currentTimeMillis();
             List<CompletableFuture<ColorMIPSearchMatchMetadata>> updateScoresComputations = cdsMatches.results.stream()
                     .map(cdsr -> CompletableFuture.supplyAsync(() -> {
                         findReverserseResult(cdsr, cdsResultsSupplier)
@@ -180,14 +176,19 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         return cdsr;
                     }, executor))
                     .collect(Collectors.toList());
-            CompletableFuture.allOf(updateScoresComputations.toArray(new CompletableFuture<?>[0])).join();
-            LOG.info("Finished updating {} results from {} in {}ms",
-                    cdsMatches.results.size(), f, System.currentTimeMillis() - startTime);
-            ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
-            ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                    cdsMatches,
-                    CmdUtils.getOutputFile(outputDir, f),
-                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+            return CompletableFuture.allOf(updateScoresComputations.toArray(new CompletableFuture<?>[0]))
+                .thenApply(vr -> {
+                    LOG.info("Finished updating {} results from {} in {}ms",
+                            cdsMatches.results.size(), f, System.currentTimeMillis() - startTime);
+                    ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
+                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                            cdsMatches,
+                            CmdUtils.getOutputFile(outputDir, f),
+                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    return cdsMatches;
+                });
+        } else {
+            return CompletableFuture.completedFuture(cdsMatches);
         }
     }
 
