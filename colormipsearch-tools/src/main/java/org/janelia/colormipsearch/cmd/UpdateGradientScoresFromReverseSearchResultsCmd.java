@@ -156,7 +156,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         List<CompletableFuture<CDSMatches>> allUpdateComputations = Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .flatMap(fileList -> fileList.stream()
                         .map(File::new)
-                        .map(f -> updateGradientScoresForFile(f, cdsResultsCache, outputDir, executor)))
+                        .map(f -> updateGradientScoresForFile(f, cdsResultsLoader, outputDir, executor)))
                 .collect(Collectors.toList());
         CompletableFuture.allOf(allUpdateComputations.toArray(new CompletableFuture<?>[0])).join();
     }
