@@ -13,7 +13,7 @@ function updateRevGAJob {
     if [ ${CONCURRENCY} -lt 0 ] ; then
         CONCURRENCY=0
     fi
-    CONCURRENCY_OPTS="--cdsConcurrency ${CONCURRENCY}"
+    CONCURRENCY_OPTS=${CONCURRENCY_OPTS:-"--cdsConcurrency ${CONCURRENCY}"}
 
     MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
     if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
