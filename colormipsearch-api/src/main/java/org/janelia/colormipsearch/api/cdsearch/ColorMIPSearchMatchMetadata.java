@@ -194,8 +194,8 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     }
 
     public boolean matches(ColorMIPSearchMatchMetadata that) {
-        return this.getSourceId() != null && this.getSourceId().equals(that.getId()) &&
-                this.getId() != null && this.getId().equals(that.getSourceId());
+        return this.getId() != null && this.getId().equals(that.getSourceId()) &&
+                this.getSourceId() != null && this.getSourceId().equals(that.getId());
     }
 
     @Override

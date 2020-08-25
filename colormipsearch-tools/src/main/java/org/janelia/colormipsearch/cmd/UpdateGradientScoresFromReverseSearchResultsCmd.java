@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -23,7 +24,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -147,7 +147,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader;
         if (cacheSize > 0) {
             cdsResultsLoader = CacheBuilder.newBuilder()
-                    .concurrencyLevel(40)
+                    .concurrencyLevel(args.commonArgs.cdsConcurrency > 0 ? args.commonArgs.cdsConcurrency : Runtime.getRuntime().availableProcessors())
                     .maximumSize(cacheSizeSupplier.get())
                     .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                         @Override
@@ -158,33 +158,32 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         } else {
             cdsResultsLoader = cdsResultsFileLoader;
         }
-        List<CompletableFuture<CDSMatches>> allUpdateComputations = Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+        CompletableFuture.allOf(Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .flatMap(fileList -> fileList.stream()
                         .map(File::new)
-                        .map(f -> updateGradientScoresForFile(f, cdsResultsLoader, outputDir, executor)))
-                .collect(Collectors.toList());
-        CompletableFuture.allOf(allUpdateComputations.toArray(new CompletableFuture<?>[0])).join();
+                        .map(f -> updateGradientScoresForFile(f, cdsResultsLoader, outputDir, executor))).toArray(CompletableFuture<?>[]::new)).join();
     }
 
     private CompletableFuture<CDSMatches> updateGradientScoresForFile(File f, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier, Path outputDir, Executor executor) {
         CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
         if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
-            long startTime = System.currentTimeMillis();
-            List<CompletableFuture<ColorMIPSearchMatchMetadata>> updateScoresComputations = cdsMatches.results.stream()
+            AtomicLong startTime = new AtomicLong(0L);
+            return CompletableFuture.allOf(cdsMatches.results.stream()
                     .map(cdsr -> CompletableFuture.supplyAsync(() -> {
+                        long startSingleResultUpdate = System.currentTimeMillis();
+                        startTime.compareAndSet(0L, startSingleResultUpdate);
                         findReverserseResult(cdsr, cdsResultsSupplier)
                                 .ifPresent(reverseCdsr -> {
-                                    LOG.debug("Set gradient area gap for {} from {} to {}", cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap());
+                                    LOG.debug("Set gradient area gap for {} from {} to {} in {}ms",
+                                            cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), System.currentTimeMillis() - startSingleResultUpdate);
                                     cdsr.setGradientAreaGap(reverseCdsr.getGradientAreaGap());
                                     cdsr.setNormalizedGapScore(reverseCdsr.getNormalizedGapScore());
                                 });
                         return cdsr;
-                    }, executor))
-                    .collect(Collectors.toList());
-            return CompletableFuture.allOf(updateScoresComputations.toArray(new CompletableFuture<?>[0]))
+                    }, executor)).toArray(CompletableFuture<?>[]::new))
                 .thenApply(vr -> {
                     LOG.info("Finished updating {} results from {} in {}ms",
-                            cdsMatches.results.size(), f, System.currentTimeMillis() - startTime);
+                            cdsMatches.results.size(), f, System.currentTimeMillis() - startTime.get());
                     ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
                     ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                             cdsMatches,
@@ -199,7 +198,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private Optional<ColorMIPSearchMatchMetadata> findReverserseResult(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier) {
         List<ColorMIPSearchMatchMetadata> matches = cdsResultsSupplier.apply(cdsr.getId());
-        return matches.stream().parallel()
+        return matches.stream()
                 .filter(csr -> csr.matches(cdsr))
                 .findFirst();
     }
