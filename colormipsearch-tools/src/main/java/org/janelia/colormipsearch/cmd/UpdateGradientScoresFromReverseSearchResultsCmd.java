@@ -86,17 +86,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private final UpdateGradientScoresArgs args;
     private final Supplier<Long> cacheSizeSupplier;
-    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final ObjectMapper mapper;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
                                                     CommonArgs commonArgs,
-                                                    Supplier<Long> cacheSizeSupplier,
-                                                    Supplier<Long> cacheExpirationInSecondsSupplier) {
+                                                    Supplier<Long> cacheSizeSupplier) {
         super(commandName);
         this.args = new UpdateGradientScoresArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
-        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
