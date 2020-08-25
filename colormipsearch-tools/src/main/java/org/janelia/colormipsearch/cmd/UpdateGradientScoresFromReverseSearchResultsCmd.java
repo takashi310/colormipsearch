@@ -85,11 +85,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private final UpdateGradientScoresArgs args;
+    private final Supplier<Long> cacheSizeSupplier;
+    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final ObjectMapper mapper;
 
-    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName, CommonArgs commonArgs) {
+    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
+                                                    CommonArgs commonArgs,
+                                                    Supplier<Long> cacheSizeSupplier,
+                                                    Supplier<Long> cacheExpirationInSecondsSupplier) {
         super(commandName);
         this.args = new UpdateGradientScoresArgs(commonArgs);
+        this.cacheSizeSupplier = cacheSizeSupplier;
+        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -143,13 +150,22 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .collect(Collectors.toList());
             }
         };
+        LoadingCache<String, List<ColorMIPSearchMatchMetadata>> cdsResultsCache = CacheBuilder.newBuilder()
+                .maximumSize(cacheSizeSupplier.get())
+                .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
+                    @Override
+                    public List<ColorMIPSearchMatchMetadata> load(String mipId) {
+                        return cdsResultsLoader.apply(mipId);
+                    }
+                });
+
         Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     fileList.stream()
                             .map(File::new)
                             .forEach(f -> {
-                                updateGradientScoresForFile(f, cdsResultsLoader, outputDir, executor);
+                                updateGradientScoresForFile(f, cdsResultsCache, outputDir, executor);
                             });
                     LOG.info("Finished a batch of {} in {}s", fileList.size(), (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.);
                 });
