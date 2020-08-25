@@ -87,7 +87,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         if (args.useSpark()) {
             colorMIPSearchDriver = new SparkColorMIPSearch(args.appName, colorMIPSearch);
         } else {
-            colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
+            colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args.commonArgs));
         }
 
         try {

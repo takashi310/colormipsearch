@@ -108,7 +108,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 MaskGradientAreaGapCalculator.createMaskGradientAreaGapCalculatorProvider(
                         args.maskThreshold, args.negativeRadius, args.mirrorMask
                 );
-        Executor executor = CmdUtils.createCDSExecutor(args);
+        Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Path outputDir = args.getOutputDir();

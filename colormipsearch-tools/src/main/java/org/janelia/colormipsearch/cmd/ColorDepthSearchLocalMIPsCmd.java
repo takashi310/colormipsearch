@@ -58,7 +58,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                 args.xyShift,
                 args.mirrorMask,
                 args.pctPositivePixels);
-        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args));
+        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args.commonArgs));
         try {
             List<MIPMetadata> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
                     args.libraryMIPsLocation.input,

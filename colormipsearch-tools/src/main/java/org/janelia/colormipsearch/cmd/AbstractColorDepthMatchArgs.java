@@ -56,9 +56,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--libraryPartitionSize", "-lps"}, description = "Library partition size")
     int libraryPartitionSize = 100;
 
-    @Parameter(names = {"--cdsConcurrency", "-cdc"}, description = "CDS concurrency - number of CDS tasks run concurrently")
-    int cdsConcurrency;
-
     @ParametersDelegate
     final CommonArgs commonArgs;
 

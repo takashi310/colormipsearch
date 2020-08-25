@@ -34,11 +34,7 @@ public class Main {
                 new ColorDepthSearchJSONInputCmd("searchFromJSON", commonArgs),
                 new ColorDepthSearchLocalMIPsCmd("searchLocalFiles", commonArgs),
                 new CalculateGradientScoresCmd("gradientScore", commonArgs),
-                new UpdateGradientScoresFromReverseSearchResultsCmd(
-                        "gradientScoresFromMatchedResults",
-                        commonArgs,
-                        () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds),
+                new UpdateGradientScoresFromReverseSearchResultsCmd("gradientScoresFromMatchedResults", commonArgs),
                 new MergeResultsCmd("mergeResults", commonArgs),
                 new NormalizeGradientScoresCmd("normalizeGradientScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)

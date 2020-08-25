@@ -13,6 +13,9 @@ class CommonArgs {
     @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
     String outputDir;
 
+    @Parameter(names = {"--cdsConcurrency", "-cdc"}, description = "CDS concurrency - number of CDS tasks run concurrently")
+    int cdsConcurrency;
+
     @Parameter(names = "--no-pretty-print", description = "Do not pretty print the results", arity = 0)
     boolean noPrettyPrint = false;
 
