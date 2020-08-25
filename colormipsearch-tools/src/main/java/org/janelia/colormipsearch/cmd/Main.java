@@ -6,7 +6,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 
 /**
  * Perform color depth mask search on a Spark cluster.
@@ -31,9 +30,21 @@ public class Main {
                 new CreateColorDepthSearchJSONInputCmd("createColorDepthSearchJSONInput", commonArgs),
                 new GroupMIPsByPublishedNameCmd("groupMIPsByPublishedName", commonArgs),
                 new ReplaceMIPsAttributesCmd("replaceAttributes", commonArgs),
-                new ColorDepthSearchJSONInputCmd("searchFromJSON", commonArgs),
-                new ColorDepthSearchLocalMIPsCmd("searchLocalFiles", commonArgs),
-                new CalculateGradientScoresCmd("gradientScore", commonArgs),
+                new ColorDepthSearchJSONInputCmd(
+                        "searchFromJSON",
+                        commonArgs,
+                        () -> mainArgs.cacheSize,
+                        () -> mainArgs.cacheExpirationInSeconds),
+                new ColorDepthSearchLocalMIPsCmd(
+                        "searchLocalFiles",
+                        commonArgs,
+                        () -> mainArgs.cacheSize,
+                        () -> mainArgs.cacheExpirationInSeconds),
+                new CalculateGradientScoresCmd(
+                        "gradientScore",
+                        commonArgs,
+                        () -> mainArgs.cacheSize,
+                        () -> mainArgs.cacheExpirationInSeconds),
                 new UpdateGradientScoresFromReverseSearchResultsCmd(
                         "gradientScoresFromMatchedResults",
                         commonArgs,
@@ -76,8 +87,6 @@ public class Main {
             cmdline.getConsole().println(sb.toString());
             System.exit(1);
         }
-        // initialize the cache
-        CachedMIPsUtils.initializeCache(mainArgs.cacheSize, mainArgs.cacheExpirationInSeconds);
         // invoke the appropriate command
         for (AbstractCmd cmd : cmds) {
             if (cmd.matches(cmdline.getParsedCommand())) {

@@ -1,18 +1,20 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
-import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
-import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
+import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +35,17 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     }
 
     private final LocalMIPFilesSearchArgs args;
+    private final Supplier<Long> cacheSizeSupplier;
+    private final Supplier<Long> cacheExpirationInSecondsSupplier;
 
-    ColorDepthSearchLocalMIPsCmd(String commandName, CommonArgs commonArgs) {
+    ColorDepthSearchLocalMIPsCmd(String commandName,
+                                 CommonArgs commonArgs,
+                                 Supplier<Long> cacheSizeSupplier,
+                                 Supplier<Long> cacheExpirationInSecondsSupplier) {
         super(commandName);
         this.args = new LocalMIPFilesSearchArgs(commonArgs);
+        this.cacheSizeSupplier = cacheSizeSupplier;
+        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
     }
 
     @Override
@@ -47,6 +56,8 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     @Override
     void execute() {
         CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
+        // initialize the cache
+        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
         runSearchForLocalMIPFiles(args);
     }
 

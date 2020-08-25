@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -86,10 +87,17 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private final GradientScoreResultsArgs args;
+    private final Supplier<Long> cacheSizeSupplier;
+    private final Supplier<Long> cacheExpirationInSecondsSupplier;
 
-    CalculateGradientScoresCmd(String commandName, CommonArgs commonArgs) {
+    CalculateGradientScoresCmd(String commandName,
+                               CommonArgs commonArgs,
+                               Supplier<Long> cacheSizeSupplier,
+                               Supplier<Long> cacheExpirationInSecondsSupplier) {
         super(commandName);
         this.args = new GradientScoreResultsArgs(commonArgs);
+        this.cacheSizeSupplier = cacheSizeSupplier;
+        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
     }
 
     @Override
@@ -100,6 +108,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     @Override
     void execute() {
         CmdUtils.createOutputDirs(args.getOutputDir());
+        // initialize the cache
+        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
         calculateGradientAreaScore(args);
     }
 

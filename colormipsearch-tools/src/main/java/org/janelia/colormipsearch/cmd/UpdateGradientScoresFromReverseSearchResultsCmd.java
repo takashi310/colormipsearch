@@ -6,14 +6,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -31,7 +28,6 @@ import com.google.common.cache.LoadingCache;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
-import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
@@ -148,6 +144,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
         };
         LoadingCache<String, List<ColorMIPSearchMatchMetadata>> cdsResultsCache = CacheBuilder.newBuilder()
+                .concurrencyLevel(40)
                 .maximumSize(cacheSizeSupplier.get())
                 .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                     @Override
