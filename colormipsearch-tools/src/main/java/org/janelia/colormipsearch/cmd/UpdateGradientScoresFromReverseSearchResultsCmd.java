@@ -173,9 +173,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
             Set<String> matchedIds = cdsMatches.results.stream().map(AbstractMetadata::getId).collect(Collectors.toSet());
             LOG.debug("Reading {} reverse results for {} from {}", matchedIds.size(), f, args.reverseResultsDir);
-            LOG.info("Finished reading {} reverse results for {} from {} in {}ms",
-                    matchedIds.size(), f, args.reverseResultsDir, System.currentTimeMillis() - startTime);
-            cdsMatches.results.stream()
+            cdsMatches.results.stream().parallel()
                     .forEach(cdsr -> {
                         findReverserseResult(cdsr, reverseResultsCache)
                                 .ifPresent(reverseCdsr -> {
