@@ -8,7 +8,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -22,8 +24,6 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -146,15 +146,20 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long cacheSize = cacheSizeSupplier.get();
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader;
         if (cacheSize > 0) {
-            cdsResultsLoader = CacheBuilder.newBuilder()
-                    .concurrencyLevel(args.commonArgs.cdsConcurrency > 0 ? args.commonArgs.cdsConcurrency : Runtime.getRuntime().availableProcessors())
-                    .maximumSize(cacheSizeSupplier.get())
-                    .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
-                        @Override
-                        public List<ColorMIPSearchMatchMetadata> load(String mipId) {
-                            return cdsResultsFileLoader.apply(mipId);
-                        }
-                    });
+            Map<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesMap = new LinkedHashMap<String, List<ColorMIPSearchMatchMetadata>>((int) cacheSize) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, List<ColorMIPSearchMatchMetadata>> eldest) {
+                    return size() > cacheSize;
+                }
+            };
+            cdsResultsLoader = (String mipId) -> {
+                List<ColorMIPSearchMatchMetadata> matches = cdsMatchesMap.get(mipId);
+                if (matches == null) {
+                    matches = cdsResultsFileLoader.apply(mipId);
+                    cdsMatchesMap.put(mipId, matches);
+                }
+                return matches;
+            };
         } else {
             cdsResultsLoader = cdsResultsFileLoader;
         }
