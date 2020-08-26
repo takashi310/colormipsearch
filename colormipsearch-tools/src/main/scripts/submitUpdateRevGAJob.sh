@@ -34,6 +34,8 @@ function updateRevGAJob {
          --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
          gradientScoresFromMatchedResults \
         ${CONCURRENCY_OPTS} \
+        --topPublishedNameMatches ${TOP_RESULTS} \
+        --topPublishedSampleMatches ${SAMPLES_PER_LINE} \
          -revd ${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS} \
          -rd ${CDGA_INPUT_PARAM} \
          -od ${CDGA_OUTPUT_PARAM} \

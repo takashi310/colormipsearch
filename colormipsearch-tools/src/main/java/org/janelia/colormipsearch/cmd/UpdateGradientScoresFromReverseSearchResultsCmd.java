@@ -12,10 +12,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,7 +30,9 @@ import com.google.common.cache.RemovalListener;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
@@ -57,6 +58,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
         @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 100;
+
+        @Parameter(names = {"--topPublishedNameMatches"},
+                description = "If set only calculate the gradient score for the specified number of best lines color depth search results")
+        int numberOfBestLines;
+
+        @Parameter(names = {"--topPublishedSampleMatches"},
+                description = "If set select the specified numnber of best samples for each line to calculate the gradient score")
+        int numberOfBestSamplesPerLine;
+
+        @Parameter(names = {"--topMatchesPerSample"},
+                description = "Number of best matches for each line to be used for gradient scoring (defaults to 1)")
+        int numberOfBestMatchesPerSample;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -137,7 +150,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         LOG.info("Prepare results loader for {}", args.reverseResultsDir);
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
             File cdsResultsFile = new File(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
-            LOG.info("Read results from {}", cdsResultsFile);
+            LOG.debug("Read results from {}", cdsResultsFile);
             InputStream cdsResultsStream = null;
             try {
                 cdsResultsStream = new BufferedInputStream(new FileInputStream(cdsResultsFile));
@@ -149,7 +162,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 LOG.error("Error reading CDS results from {}", cdsResultsFile, e);
                 return Collections.emptyList();
             } finally {
-                LOG.info("Finished reading results from {}", cdsResultsFile);
+                LOG.debug("Finished reading results from {}", cdsResultsFile);
                 if (cdsResultsStream != null) {
                     try {
                         cdsResultsStream.close();
@@ -178,42 +191,63 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         } else {
             cdsResultsLoader = cdsResultsFileLoader;
         }
-        CompletableFuture.allOf(Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .flatMap(fileList -> fileList.stream()
+        Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(fileList -> fileList.stream()
                         .map(File::new)
-                        .map(f -> updateGradientScoresForFile(f, cdsResultsLoader, outputDir, executor))).toArray(CompletableFuture<?>[]::new)).join();
+                        .forEach(f -> updateGradientScoresForResultsFile(f,
+                                cdsResultsLoader,
+                                args.numberOfBestLines,
+                                args.numberOfBestSamplesPerLine,
+                                args.numberOfBestMatchesPerSample,
+                                outputDir))
+                );
     }
 
-    private CompletableFuture<CDSMatches> updateGradientScoresForFile(File f, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier, Path outputDir, Executor executor) {
-        CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
-        if (CollectionUtils.isNotEmpty(cdsMatches.results)) {
-            AtomicLong startTime = new AtomicLong(0L);
-            return CompletableFuture.allOf(cdsMatches.results.stream()
-                    .map(cdsr -> CompletableFuture.supplyAsync(() -> {
-                        long startSingleResultUpdate = System.currentTimeMillis();
-                        startTime.compareAndSet(0L, startSingleResultUpdate);
-                        findReverserseResult(cdsr, cdsResultsSupplier)
-                                .ifPresent(reverseCdsr -> {
-                                    LOG.debug("Set gradient area gap for {} from {} to {} in {}ms",
-                                            cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), System.currentTimeMillis() - startSingleResultUpdate);
-                                    cdsr.setGradientAreaGap(reverseCdsr.getGradientAreaGap());
-                                    cdsr.setNormalizedGapScore(reverseCdsr.getNormalizedGapScore());
-                                });
-                        return cdsr;
-                    }, executor)).toArray(CompletableFuture<?>[]::new))
-                .thenApply(vr -> {
-                    LOG.info("Finished updating {} results from {} in {}ms",
-                            cdsMatches.results.size(), f, System.currentTimeMillis() - startTime.get());
-                    ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
-                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                            cdsMatches,
-                            CmdUtils.getOutputFile(outputDir, f),
-                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                    return cdsMatches;
-                });
-        } else {
-            return CompletableFuture.completedFuture(cdsMatches);
+    private void updateGradientScoresForResultsFile(File cdsMatchesFile,
+                                                    Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier,
+                                                    int numberOfBestLinesToSelect,
+                                                    int numberOfBestSamplesPerLineToSelect,
+                                                    int numberOfBestMatchesPerSampleToSelect,
+                                                    Path outputDir) {
+        CDSMatches cdsMatchesContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile, mapper);
+        if (CollectionUtils.isEmpty(cdsMatchesContent.results)) {
+            LOG.error("No color depth search results found in {}", cdsMatchesFile);
+            return;
         }
+        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
+                cdsMatchesContent.results,
+                numberOfBestLinesToSelect,
+                numberOfBestSamplesPerLineToSelect,
+                numberOfBestMatchesPerSampleToSelect);
+        LOG.info("Read {} entries ({} distinct IDs) from {}", cdsMatchesContent.results.size(), resultsGroupedById.size(), cdsMatchesFile);
+        long startTime = System.currentTimeMillis();
+        Map<String, List<ColorMIPSearchMatchMetadata>> reverseCDSMatches = resultsGroupedById.entrySet().stream()
+                .flatMap(entry -> entry.getValue().stream())
+                .map(cdsr -> cdsr.getId())
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toSet(),
+                        matchedMIPsIds -> matchedMIPsIds.stream().parallel()
+                                .map(mipId -> ImmutablePair.of(mipId, cdsResultsSupplier.apply(mipId)))
+                                .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight))));
+        LOG.info("Read all reverse matches for {} in {}ms", cdsMatchesContent, System.currentTimeMillis()-startTime);
+        int nUpdates = cdsMatchesContent.results.stream()
+                .mapToInt(cdsr -> findReverserseResult(cdsr, reverseCDSMatches::get)
+                        .map(reverseCdsr -> {
+                            LOG.debug("Set gradient area gap for {} from {} to {}",
+                                    cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap());
+                            cdsr.setGradientAreaGap(reverseCdsr.getGradientAreaGap());
+                            cdsr.setNormalizedGapScore(reverseCdsr.getNormalizedGapScore());
+                            return 1;
+                        })
+                        .orElse(0))
+                .sum();
+        LOG.info("Finished updating {} results out of {} from {} in {}ms",
+                nUpdates, cdsMatchesContent.results.size(), cdsMatchesFile, System.currentTimeMillis()-startTime);
+        ColorMIPSearchResultUtils.sortCDSResults(cdsMatchesContent.results);
+        ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                cdsMatchesContent,
+                CmdUtils.getOutputFile(outputDir, cdsMatchesFile),
+                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
     }
 
     private Optional<ColorMIPSearchMatchMetadata> findReverserseResult(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier) {
