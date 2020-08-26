@@ -92,10 +92,9 @@ public class ColorMIPSearchResultUtils {
      * @param mapper
      * @return
      */
-    public static CDSMatches readCDSMatchesFromJSONFileWithLock(Path jsonFile, ObjectMapper mapper) throws IOException {
+    public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper) throws IOException {
         try (FileChannel channel = FileChannel.open(jsonFile, StandardOpenOption.READ)) {
             LOG.debug("Reading {}", jsonFile);
-            channel.lock(0, Long.MAX_VALUE, true); // shared lock, released by channel close
             return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
         }
     }

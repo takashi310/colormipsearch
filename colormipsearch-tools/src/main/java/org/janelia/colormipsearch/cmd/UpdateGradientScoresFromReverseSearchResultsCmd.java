@@ -152,7 +152,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             Path cdsResultsFile = Paths.get(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
             LOG.debug("Read results from {}", cdsResultsFile);
             try {
-                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFileWithLock(cdsResultsFile, mapper)
+                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(cdsResultsFile, mapper)
                         .results.stream()
                         .filter(r -> r.getGradientAreaGap() != -1)
                         .collect(Collectors.toList());
