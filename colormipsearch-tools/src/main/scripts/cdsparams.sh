@@ -45,12 +45,13 @@ export CDGA_ZGAP_SUFFIX=_RGB20px
 export LOGCONFIGFILE=
 
 # JAVA OPTS
-# ${HOME}/tools/jdk-14.0.1
-export JAVA_HOME=${HOME}/tools/jdk-14.0.1
-export JAVA_EXEC=${JAVA_HOME}/bin/java
+# if needed one can set java runtime like this:
+# export JAVA_HOME=${HOME}/tools/jdk-14.0.1
+# export JAVA_EXEC=${JAVA_HOME}/bin/java
 
-ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
-export GC_OPTS="${ZGC}"
+# ZGC option if jdk14 is used
+# ZGC="-XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
+export GC_OPTS=
 
 # this only needs to change on a new release
 export CDS_JAR_VERSION="2.4"
