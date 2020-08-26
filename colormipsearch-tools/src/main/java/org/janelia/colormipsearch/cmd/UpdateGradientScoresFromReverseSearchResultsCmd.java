@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -125,10 +126,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             return new File(fp);
         }
 
-        synchronized CDSMatches getCdsMatches(ObjectMapper mapper) {
+        synchronized CDSMatches getCdsMatches(ObjectMapper mapper, Predicate<ColorMIPSearchMatchMetadata> filter) {
             if (cdsMatches == null) {
                 try {
-                    cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(Paths.get(fp), mapper);
+                    cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(Paths.get(fp), mapper, filter);
                 } catch (IOException e) {
                     LOG.error("Error reading {}", fp, e);
                     throw new UncheckedIOException(e);
@@ -190,7 +191,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     if (oppositeCDSMatchesProvider == null) {
                                         oppositeCDSMatches =  null;
                                     } else {
-                                        oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper);
+                                        oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper, cdsr -> cdsr.getGradientAreaGap() != -1);
                                     }
                                     if (oppositeCDSMatches == null) {
                                         return Collections.emptyList();
@@ -227,7 +228,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private void updateGradientScoresForCDSMatches(ColorDepthSearchMatchesProvider cdsMatchesProvider,
                                                    Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier,
                                                    Path outputDir) {
-        CDSMatches cdsMatches = cdsMatchesProvider.getCdsMatches(mapper);
+        CDSMatches cdsMatches = cdsMatchesProvider.getCdsMatches(mapper, null);
         if (cdsMatches == null || CollectionUtils.isEmpty(cdsMatches.results)) {
             return; // either something went wrong or there's really nothing to do
         }

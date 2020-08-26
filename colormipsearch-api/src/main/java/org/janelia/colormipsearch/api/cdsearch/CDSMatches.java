@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -96,5 +97,9 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
 
     public String getMaskImageURL() {
         return maskImageURL;
+    }
+
+    public CDSMatches filterMatches(Predicate<ColorMIPSearchMatchMetadata> filter) {
+        return new CDSMatches(maskId, maskPublishedName, maskLibraryName, maskImageURL, results.stream().filter(filter).collect(Collectors.toList()));
     }
 }

@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -89,10 +90,15 @@ public class ColorMIPSearchResultUtils {
      * @param mapper
      * @return
      */
-    public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper) throws IOException {
+    public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper, Predicate<ColorMIPSearchMatchMetadata> filter) throws IOException {
         try (FileChannel channel = FileChannel.open(jsonFile)) {
             LOG.debug("Reading {}", jsonFile);
-            return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
+            CDSMatches cdsMatches = mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
+            if (filter != null) {
+                return cdsMatches.filterMatches(filter);
+            } else {
+                return cdsMatches;
+            }
         }
     }
 
