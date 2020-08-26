@@ -2,13 +2,10 @@ package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +15,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.sun.nio.file.ExtendedOpenOption;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -93,7 +91,7 @@ public class ColorMIPSearchResultUtils {
      * @return
      */
     public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper) throws IOException {
-        try (FileChannel channel = FileChannel.open(jsonFile, StandardOpenOption.READ)) {
+        try (FileChannel channel = FileChannel.open(jsonFile, ExtendedOpenOption.NOSHARE_READ)) {
             LOG.debug("Reading {}", jsonFile);
             return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
         }
