@@ -1,9 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -26,15 +23,10 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.RemovalListener;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.Utils;
-import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
@@ -105,7 +97,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
         ColorDepthSearchMatchesProvider(String fp) {
             this.fp = fp;
-            this.cdsMatches =  null;
+            this.cdsMatches = null;
         }
 
         String getMipId() {
@@ -171,7 +163,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         LOG.info("Prepare opposite results cache from {}", args.reverseResultsDir);
         Map<String, ColorDepthSearchMatchesProvider> oppositeResultsCache = streamCDSMatchesFromFiles(getFileToProcessFromDir(args.reverseResultsDir, 0, -1))
                 .collect(Collectors.toMap(cdsMatches -> cdsMatches.getMipId(), cdsMatches -> cdsMatches));
-        LOG.info("Done preparing opposite results cache from {} in {}ms", args.reverseResultsDir,System.currentTimeMillis()-startTime);
+        LOG.info("Done preparing opposite results cache from {} in {}ms", args.reverseResultsDir, System.currentTimeMillis() - startTime);
 
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
@@ -189,7 +181,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     CDSMatches oppositeCDSMatches;
                                     ColorDepthSearchMatchesProvider oppositeCDSMatchesProvider = oppositeResultsCache.get(mipId);
                                     if (oppositeCDSMatchesProvider == null) {
-                                        oppositeCDSMatches =  null;
+                                        oppositeCDSMatches = null;
                                     } else {
                                         oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper, cdsr -> cdsr.getGradientAreaGap() != -1);
                                     }
