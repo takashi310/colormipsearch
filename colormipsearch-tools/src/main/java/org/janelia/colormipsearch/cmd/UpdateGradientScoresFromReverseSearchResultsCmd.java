@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -150,12 +149,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         LOG.info("Prepare results loader for {}", args.reverseResultsDir);
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
             long startTime = System.currentTimeMillis();
-            File cdsResultsFile = new File(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
+            Path cdsResultsFile = Paths.get(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
             LOG.debug("Read results from {}", cdsResultsFile);
-            InputStream cdsResultsStream = null;
             try {
-                cdsResultsStream = new BufferedInputStream(new FileInputStream(cdsResultsFile));
-                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONStream(cdsResultsStream, mapper)
+                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFileWithLock(cdsResultsFile, mapper)
                         .results.stream()
                         .filter(r -> r.getGradientAreaGap() != -1)
                         .collect(Collectors.toList());
@@ -163,13 +160,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 LOG.error("Error reading CDS results from {}", cdsResultsFile, e);
                 return Collections.emptyList();
             } finally {
-                LOG.debug("Finished reading results from {} in {}ms", cdsResultsFile, System.currentTimeMillis()-startTime);
-                if (cdsResultsStream != null) {
-                    try {
-                        cdsResultsStream.close();
-                    } catch (IOException ignore) {
-                    }
-                }
+                LOG.debug("Finished reading results from {} in {}ms", cdsResultsFile, System.currentTimeMillis() - startTime);
             }
         };
         long cacheSize = cacheSizeSupplier.get();
@@ -237,7 +228,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 reverseCDSMatches.size(),
                 cdsMatchesContent.results.size(),
                 cdsMatchesFile,
-                System.currentTimeMillis()-startTime);
+                System.currentTimeMillis() - startTime);
         int nUpdates = cdsMatchesContent.results.stream()
                 .mapToInt(cdsr -> findReverserseResult(cdsr, reverseCDSMatches::get)
                         .map(reverseCdsr -> {
@@ -250,7 +241,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .orElse(0))
                 .sum();
         LOG.info("Finished updating {} results out of {} from {} in {}ms",
-                nUpdates, cdsMatchesContent.results.size(), cdsMatchesFile, System.currentTimeMillis()-startTime);
+                nUpdates, cdsMatchesContent.results.size(), cdsMatchesFile, System.currentTimeMillis() - startTime);
         ColorMIPSearchResultUtils.sortCDSResults(cdsMatchesContent.results);
         ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                 cdsMatchesContent,

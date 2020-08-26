@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -84,12 +88,16 @@ public class ColorMIPSearchResultUtils {
     /**
      * Read CDS matches from the specified JSON formatted file.
      *
-     * @param istream
+     * @param jsonFile
      * @param mapper
      * @return
      */
-    public static CDSMatches readCDSMatchesFromJSONStream(InputStream istream, ObjectMapper mapper) throws IOException {
-        return mapper.readValue(istream, CDSMatches.class);
+    public static CDSMatches readCDSMatchesFromJSONFileWithLock(Path jsonFile, ObjectMapper mapper) throws IOException {
+        try (FileChannel channel = FileChannel.open(jsonFile, StandardOpenOption.READ)) {
+            LOG.debug("Reading {}", jsonFile);
+            channel.lock(0, Long.MAX_VALUE, true); // shared lock, released by channel close
+            return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
+        }
     }
 
     static Results<List<ColorMIPSearchMatchMetadata>> readCDSResultsFromJSONFile(File f, ObjectMapper mapper) {
