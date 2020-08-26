@@ -228,7 +228,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             return; // either something went wrong or there's really nothing to do
         }
         long startTime = System.currentTimeMillis();
-        int nUpdates = cdsMatches.results.stream()
+        int nUpdates = cdsMatches.results.stream().parallel()
                 .mapToInt(cdsr -> findReverserseResult(cdsr, cdsResultsSupplier)
                         .map(reverseCdsr -> {
                             LOG.debug("Set gradient area gap for {} from {} to {}",
