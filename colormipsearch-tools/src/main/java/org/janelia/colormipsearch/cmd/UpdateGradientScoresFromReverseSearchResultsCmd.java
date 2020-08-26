@@ -117,6 +117,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
         }
 
+        String getCdsFilename() {
+            return fp;
+        }
+
         File getCdsFile() {
             return new File(fp);
         }
@@ -228,6 +232,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             return; // either something went wrong or there's really nothing to do
         }
         long startTime = System.currentTimeMillis();
+        LOG.info("Start processing {} for updating gradient scores", cdsMatchesProvider.getCdsFilename());
         int nUpdates = cdsMatches.results.stream().parallel()
                 .mapToInt(cdsr -> findReverserseResult(cdsr, cdsResultsSupplier)
                         .map(reverseCdsr -> {
@@ -240,7 +245,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .orElse(0))
                 .sum();
         LOG.info("Finished updating {} results out of {} from {} in {}ms",
-                nUpdates, cdsMatches.results.size(), cdsMatches.getMaskId(), System.currentTimeMillis() - startTime);
+                nUpdates, cdsMatches.results.size(), cdsMatchesProvider.getCdsFilename(), System.currentTimeMillis() - startTime);
         ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
         ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                 cdsMatches,
