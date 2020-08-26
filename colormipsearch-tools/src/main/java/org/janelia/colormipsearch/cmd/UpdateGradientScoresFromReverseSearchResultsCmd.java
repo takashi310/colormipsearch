@@ -13,10 +13,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -96,6 +98,43 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
     }
 
+    static class ColorDepthSearchMatchesProvider {
+        private final String fp;
+        private CDSMatches cdsMatches;
+
+        ColorDepthSearchMatchesProvider(String fp) {
+            this.fp = fp;
+            this.cdsMatches =  null;
+        }
+
+        String getMipId() {
+            String fn = Paths.get(fp).getFileName().toString();
+            int extseparator = fn.lastIndexOf('.');
+            if (extseparator != -1) {
+                return fn.substring(0, extseparator);
+            } else {
+                return fn;
+            }
+        }
+
+        File getCdsFile() {
+            return new File(fp);
+        }
+
+        synchronized CDSMatches getCdsMatches(ObjectMapper mapper) {
+            if (cdsMatches == null) {
+                try {
+                    cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(Paths.get(fp), mapper);
+                } catch (IOException e) {
+                    LOG.error("Error reading {}", fp, e);
+                    throw new UncheckedIOException(e);
+                }
+            }
+            return cdsMatches;
+        }
+
+    }
+
     private final UpdateGradientScoresArgs args;
     private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
@@ -119,118 +158,78 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     void execute() {
         CmdUtils.createOutputDirs(args.getOutputDir());
         Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
-        updateGradientScores(args, executor);
+        updateGradientScores(args);
     }
 
-    private void updateGradientScores(UpdateGradientScoresArgs args, Executor executor) {
+    private void updateGradientScores(UpdateGradientScoresArgs args) {
+        long startTime = System.currentTimeMillis();
+        LOG.info("Prepare opposite results cache from {}", args.reverseResultsDir);
+        Map<String, ColorDepthSearchMatchesProvider> oppositeResultsCache = streamCDSMatchesFromFiles(getFileToProcessFromDir(args.reverseResultsDir, 0, -1))
+                .collect(Collectors.toMap(cdsMatches -> cdsMatches.getMipId(), cdsMatches -> cdsMatches));
+        LOG.info("Done preparing opposite results cache from {} in {}ms", args.reverseResultsDir,System.currentTimeMillis()-startTime);
+
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             filesToProcess = args.resultsFiles;
         } else if (args.resultsDir != null) {
-            try {
-                int from = Math.max(args.resultsDir.offset, 0);
-                int length = args.resultsDir.length;
-                List<String> filenamesList = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
-                        .skip(from)
-                        .map(Path::toString)
-                        .collect(Collectors.toList());
-                if (length > 0 && length < filenamesList.size()) {
-                    filesToProcess = filenamesList.subList(0, length);
-                } else {
-                    filesToProcess = filenamesList;
-                }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            filesToProcess = getFileToProcessFromDir(args.resultsDir.input, args.resultsDir.offset, args.resultsDir.length);
         } else {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        LOG.info("Prepare results loader for {}", args.reverseResultsDir);
-        Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
-            long startTime = System.currentTimeMillis();
-            Path cdsResultsFile = Paths.get(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
-            LOG.debug("Read results from {}", cdsResultsFile);
-            try {
-                return ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(cdsResultsFile, mapper)
-                        .results.stream()
-                        .filter(r -> r.getGradientAreaGap() != -1)
-                        .collect(Collectors.toList());
-            } catch (Exception e) {
-                LOG.error("Error reading CDS results from {}", cdsResultsFile, e);
-                return Collections.emptyList();
-            } finally {
-                LOG.debug("Finished reading results from {} in {}ms", cdsResultsFile, System.currentTimeMillis() - startTime);
-            }
-        };
-        long cacheSize = cacheSizeSupplier.get();
-        Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader;
-        if (cacheSize > 0) {
-            cdsResultsLoader = CacheBuilder.newBuilder()
-                    .concurrencyLevel(Runtime.getRuntime().availableProcessors())
-                    .maximumSize(cacheSize)
-                    .removalListener((RemovalListener<String, List<ColorMIPSearchMatchMetadata>>) notification -> {
-                        if (notification.wasEvicted()) {
-                            LOG.info("Evicted {}", notification.getKey());
-                        }
-                    })
-                    .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
-                        @Override
-                        public List<ColorMIPSearchMatchMetadata> load(String mipId) {
-                            return cdsResultsFileLoader.apply(mipId);
-                        }
-                    });
-        } else {
-            cdsResultsLoader = cdsResultsFileLoader;
-        }
         Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(fileList -> fileList.stream()
-                        .map(File::new)
-                        .forEach(f -> updateGradientScoresForResultsFile(f,
-                                cdsResultsLoader,
-                                args.numberOfBestLines,
-                                args.numberOfBestSamplesPerLine,
-                                args.numberOfBestMatchesPerSample,
-                                outputDir))
-                );
+                .forEach(fileList -> streamCDSMatchesFromFiles(fileList)
+                        .forEach(cdsMatches -> updateGradientScoresForCDSMatches(cdsMatches,
+                                mipId -> {
+                                    CDSMatches oppositeCDSMatches;
+                                    ColorDepthSearchMatchesProvider oppositeCDSMatchesProvider = oppositeResultsCache.get(mipId);
+                                    if (oppositeCDSMatchesProvider == null) {
+                                        oppositeCDSMatches =  null;
+                                    } else {
+                                        oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper);
+                                    }
+                                    if (oppositeCDSMatches == null) {
+                                        return Collections.emptyList();
+                                    } else {
+                                        return oppositeCDSMatches.results;
+                                    }
+                                },
+                                outputDir)));
     }
 
-    private void updateGradientScoresForResultsFile(File cdsMatchesFile,
-                                                    Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier,
-                                                    int numberOfBestLinesToSelect,
-                                                    int numberOfBestSamplesPerLineToSelect,
-                                                    int numberOfBestMatchesPerSampleToSelect,
-                                                    Path outputDir) {
-        CDSMatches cdsMatchesContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsMatchesFile, mapper);
-        if (CollectionUtils.isEmpty(cdsMatchesContent.results)) {
-            LOG.error("No color depth search results found in {}", cdsMatchesFile);
-            return;
+    private List<String> getFileToProcessFromDir(String dirName, int offsetParam, int lengthParam) {
+        try {
+            int from = Math.max(offsetParam, 0);
+            List<String> filenamesList = Files.find(Paths.get(dirName), 1, (p, fa) -> fa.isRegularFile())
+                    .skip(from)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            if (lengthParam > 0 && lengthParam < filenamesList.size()) {
+                return filenamesList.subList(0, lengthParam);
+            } else {
+                return filenamesList;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedById = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
-                cdsMatchesContent.results,
-                numberOfBestLinesToSelect,
-                numberOfBestSamplesPerLineToSelect,
-                numberOfBestMatchesPerSampleToSelect);
-        LOG.info("Read {} entries ({} distinct mask MIPs) from {}", cdsMatchesContent.results.size(), resultsGroupedById.size(), cdsMatchesFile);
+    }
+
+    private Stream<ColorDepthSearchMatchesProvider> streamCDSMatchesFromFiles(List<String> fileList) {
+        return fileList.stream()
+                .map(ColorDepthSearchMatchesProvider::new)
+                ;
+    }
+
+    private void updateGradientScoresForCDSMatches(ColorDepthSearchMatchesProvider cdsMatchesProvider,
+                                                   Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier,
+                                                   Path outputDir) {
+        CDSMatches cdsMatches = cdsMatchesProvider.getCdsMatches(mapper);
+        if (cdsMatches == null || CollectionUtils.isEmpty(cdsMatches.results)) {
+            return; // either something went wrong or there's really nothing to do
+        }
         long startTime = System.currentTimeMillis();
-        Map<String, List<ColorMIPSearchMatchMetadata>> reverseCDSMatches = resultsGroupedById.entrySet().stream()
-                .flatMap(entry -> entry.getValue().stream())
-                .map(cdsr -> cdsr.getId())
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toSet(),
-                        matchedMIPsIds -> {
-                            LOG.info("Read {} reverse matches for {}", matchedMIPsIds.size(), cdsMatchesFile);
-                            return matchedMIPsIds.stream().parallel()
-                                    .map(mipId -> ImmutablePair.of(mipId, cdsResultsSupplier.apply(mipId)))
-                                    .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight));
-                        }));
-        LOG.info("Read {} reverse matches out of {} for {} in {}ms",
-                reverseCDSMatches.size(),
-                cdsMatchesContent.results.size(),
-                cdsMatchesFile,
-                System.currentTimeMillis() - startTime);
-        int nUpdates = cdsMatchesContent.results.stream()
-                .mapToInt(cdsr -> findReverserseResult(cdsr, reverseCDSMatches::get)
+        int nUpdates = cdsMatches.results.stream()
+                .mapToInt(cdsr -> findReverserseResult(cdsr, cdsResultsSupplier)
                         .map(reverseCdsr -> {
                             LOG.debug("Set gradient area gap for {} from {} to {}",
                                     cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap());
@@ -241,18 +240,19 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .orElse(0))
                 .sum();
         LOG.info("Finished updating {} results out of {} from {} in {}ms",
-                nUpdates, cdsMatchesContent.results.size(), cdsMatchesFile, System.currentTimeMillis() - startTime);
-        ColorMIPSearchResultUtils.sortCDSResults(cdsMatchesContent.results);
+                nUpdates, cdsMatches.results.size(), cdsMatches.getMaskId(), System.currentTimeMillis() - startTime);
+        ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
         ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                cdsMatchesContent,
-                CmdUtils.getOutputFile(outputDir, cdsMatchesFile),
+                cdsMatches,
+                CmdUtils.getOutputFile(outputDir, cdsMatchesProvider.getCdsFile()),
                 args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
     }
 
     private Optional<ColorMIPSearchMatchMetadata> findReverserseResult(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier) {
-        List<ColorMIPSearchMatchMetadata> matches = cdsResultsSupplier.apply(cdsr.getId());
-        return matches.stream()
-                .filter(csr -> csr.matches(cdsr))
+        List<ColorMIPSearchMatchMetadata> allMatchesForMatchedId = cdsResultsSupplier.apply(cdsr.getId());
+        return allMatchesForMatchedId.stream()
+                .filter(r -> r.getGradientAreaGap() != -1)
+                .filter(r -> r.matches(cdsr))
                 .findFirst();
     }
 }

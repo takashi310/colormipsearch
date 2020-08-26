@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.sun.nio.file.ExtendedOpenOption;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -91,7 +90,7 @@ public class ColorMIPSearchResultUtils {
      * @return
      */
     public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper) throws IOException {
-        try (FileChannel channel = FileChannel.open(jsonFile, ExtendedOpenOption.NOSHARE_READ)) {
+        try (FileChannel channel = FileChannel.open(jsonFile)) {
             LOG.debug("Reading {}", jsonFile);
             return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
         }
