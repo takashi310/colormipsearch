@@ -11,9 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -27,6 +25,9 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.RemovalListener;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -159,25 +160,20 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long cacheSize = cacheSizeSupplier.get();
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsLoader;
         if (cacheSize > 0) {
-            Map<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesMap = new LinkedHashMap<String, List<ColorMIPSearchMatchMetadata>>((int) cacheSize) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, List<ColorMIPSearchMatchMetadata>> eldest) {
-                    if (size() > cacheSize) {
-                        LOG.info("Remove {}", eldest.getKey());
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-            };
-            cdsResultsLoader = (String mipId) -> {
-                List<ColorMIPSearchMatchMetadata> matches = cdsMatchesMap.get(mipId);
-                if (matches == null) {
-                    matches = cdsResultsFileLoader.apply(mipId);
-                    cdsMatchesMap.put(mipId, matches);
-                }
-                return matches;
-            };
+            cdsResultsLoader = CacheBuilder.newBuilder()
+                    .concurrencyLevel(Runtime.getRuntime().availableProcessors())
+                    .maximumSize(cacheSize)
+                    .removalListener((RemovalListener<String, List<ColorMIPSearchMatchMetadata>>) notification -> {
+                        if (notification.wasEvicted()) {
+                            LOG.info("Evicted {}", notification.getKey());
+                        }
+                    })
+                    .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
+                        @Override
+                        public List<ColorMIPSearchMatchMetadata> load(String mipId) {
+                            return cdsResultsFileLoader.apply(mipId);
+                        }
+                    });
         } else {
             cdsResultsLoader = cdsResultsFileLoader;
         }
