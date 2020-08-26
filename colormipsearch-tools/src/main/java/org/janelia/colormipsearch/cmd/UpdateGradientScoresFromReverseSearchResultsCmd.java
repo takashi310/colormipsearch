@@ -149,6 +149,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         LOG.info("Prepare results loader for {}", args.reverseResultsDir);
         Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsFileLoader = (String mipId) -> {
+            long startTime = System.currentTimeMillis();
             File cdsResultsFile = new File(args.reverseResultsDir, mipId + DEFAULT_CDSRESULTS_EXT);
             LOG.debug("Read results from {}", cdsResultsFile);
             InputStream cdsResultsStream = null;
@@ -162,7 +163,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 LOG.error("Error reading CDS results from {}", cdsResultsFile, e);
                 return Collections.emptyList();
             } finally {
-                LOG.debug("Finished reading results from {}", cdsResultsFile);
+                LOG.debug("Finished reading results from {} in {}ms", cdsResultsFile, System.currentTimeMillis()-startTime);
                 if (cdsResultsStream != null) {
                     try {
                         cdsResultsStream.close();
