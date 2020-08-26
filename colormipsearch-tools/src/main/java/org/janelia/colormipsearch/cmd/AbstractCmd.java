@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import org.apache.commons.lang3.StringUtils;
 
 abstract class AbstractCmd {
+    static final long _1M = 1024 * 1024;
 
     private final String commandName;
 

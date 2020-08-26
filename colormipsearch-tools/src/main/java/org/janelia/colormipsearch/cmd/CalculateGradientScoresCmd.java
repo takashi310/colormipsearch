@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 class CalculateGradientScoresCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
-    private static final long _1M = 1024 * 1024;
 
     @Parameters(commandDescription = "Calculate gradient area score for the results")
     static class GradientScoreResultsArgs extends AbstractColorDepthMatchArgs {

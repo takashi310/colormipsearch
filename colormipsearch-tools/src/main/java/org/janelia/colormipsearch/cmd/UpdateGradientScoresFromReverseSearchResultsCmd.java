@@ -11,10 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -118,6 +116,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             return new File(fp);
         }
 
+        synchronized boolean hasCdsMatches() {
+            return cdsMatches != null;
+        }
+
         synchronized CDSMatches getCdsMatches(ObjectMapper mapper, Predicate<ColorMIPSearchMatchMetadata> filter) {
             if (cdsMatches == null) {
                 try {
@@ -129,19 +131,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
             return cdsMatches;
         }
-
     }
 
     private final UpdateGradientScoresArgs args;
-    private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
 
-    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
-                                                    CommonArgs commonArgs,
-                                                    Supplier<Long> cacheSizeSupplier) {
+    UpdateGradientScoresFromReverseSearchResultsCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new UpdateGradientScoresArgs(commonArgs);
-        this.cacheSizeSupplier = cacheSizeSupplier;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -154,7 +151,6 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     @Override
     void execute() {
         CmdUtils.createOutputDirs(args.getOutputDir());
-        Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         updateGradientScores(args);
     }
 
@@ -192,6 +188,15 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     }
                                 },
                                 outputDir)));
+        long loadedOppositeMatches = oppositeResultsCache.entrySet().stream().parallel()
+                .filter(e -> e.getValue().hasCdsMatches())
+                .count();
+        LOG.info("Completed updating gradient scores for {} files with {} opposite matches loaded out of {} in {}s - memory usage {}M",
+                filesToProcess.size(),
+                loadedOppositeMatches,
+                oppositeResultsCache.size(),
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
     }
 
     private List<String> getFileToProcessFromDir(String dirName, int offsetParam, int lengthParam) {
