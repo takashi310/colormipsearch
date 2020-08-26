@@ -219,17 +219,24 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 numberOfBestLinesToSelect,
                 numberOfBestSamplesPerLineToSelect,
                 numberOfBestMatchesPerSampleToSelect);
-        LOG.info("Read {} entries ({} distinct IDs) from {}", cdsMatchesContent.results.size(), resultsGroupedById.size(), cdsMatchesFile);
+        LOG.info("Read {} entries ({} distinct mask MIPs) from {}", cdsMatchesContent.results.size(), resultsGroupedById.size(), cdsMatchesFile);
         long startTime = System.currentTimeMillis();
         Map<String, List<ColorMIPSearchMatchMetadata>> reverseCDSMatches = resultsGroupedById.entrySet().stream()
                 .flatMap(entry -> entry.getValue().stream())
                 .map(cdsr -> cdsr.getId())
                 .collect(Collectors.collectingAndThen(
                         Collectors.toSet(),
-                        matchedMIPsIds -> matchedMIPsIds.stream().parallel()
-                                .map(mipId -> ImmutablePair.of(mipId, cdsResultsSupplier.apply(mipId)))
-                                .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight))));
-        LOG.info("Read all reverse matches for {} in {}ms", cdsMatchesContent, System.currentTimeMillis()-startTime);
+                        matchedMIPsIds -> {
+                            LOG.info("Read {} reverse matches for {}", matchedMIPsIds.size(), cdsMatchesFile);
+                            return matchedMIPsIds.stream().parallel()
+                                    .map(mipId -> ImmutablePair.of(mipId, cdsResultsSupplier.apply(mipId)))
+                                    .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight));
+                        }));
+        LOG.info("Read {} reverse matches out of {} for {} in {}ms",
+                reverseCDSMatches.size(),
+                cdsMatchesContent.results.size(),
+                cdsMatchesFile,
+                System.currentTimeMillis()-startTime);
         int nUpdates = cdsMatchesContent.results.stream()
                 .mapToInt(cdsr -> findReverserseResult(cdsr, reverseCDSMatches::get)
                         .map(reverseCdsr -> {

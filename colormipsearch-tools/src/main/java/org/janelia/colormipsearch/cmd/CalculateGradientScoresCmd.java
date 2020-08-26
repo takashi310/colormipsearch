@@ -226,7 +226,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 numberOfBestLinesToSelect,
                 numberOfBestSamplesPerLineToSelect,
                 numberOfBestMatchesPerSampleToSelect);
-        LOG.info("Read {} entries ({} distinct IDs) from {}", matchesFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
+        LOG.info("Read {} entries ({} distinct mask MIPs) from {}", matchesFileContent.results.size(), resultsGroupedById.size(), inputResultsFile);
 
         long startTime = System.currentTimeMillis();
         List<CompletableFuture<List<ColorMIPSearchMatchMetadata>>> gradientAreaGapComputations =
