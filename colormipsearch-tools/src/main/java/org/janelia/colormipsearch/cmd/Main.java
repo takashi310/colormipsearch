@@ -29,7 +29,7 @@ public class Main {
         AbstractCmd[] cmds = new AbstractCmd[] {
                 new CreateColorDepthSearchJSONInputCmd("createColorDepthSearchJSONInput", commonArgs),
                 new GroupMIPsByPublishedNameCmd("groupMIPsByPublishedName", commonArgs),
-                new ReplaceMIPsAttributesCmd("replaceAttributes", commonArgs),
+                new ReplaceMIPsMetadataAttributesCmd("replaceAttributes", commonArgs),
                 new ColorDepthSearchJSONInputCmd(
                         "searchFromJSON",
                         commonArgs,

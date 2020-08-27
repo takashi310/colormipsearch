@@ -32,13 +32,13 @@ import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReplaceMIPsAttributesCmd extends AbstractCmd {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplaceMIPsAttributesCmd.class);
+public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(ReplaceMIPsMetadataAttributesCmd.class);
 
-    @Parameters(commandDescription = "Replace image URLs from the source MIPs to the URLs from the target MIPs")
-    static class ReplaceURLsArgs extends AbstractCmdArgs {
+    @Parameters(commandDescription = "Replace metadata attributes")
+    static class ReplaceMIPsMetadataAttributesArgs extends AbstractCmdArgs {
         @Parameter(names = {"--new-mips-attributes", "-attrs"}, required = true,
-                description = "File containing the MIPS with the image URLs")
+                description = "File containing the MIPS with the new attributes")
         String targetMIPsFilename;
         
         @Parameter(names = {"--input-dirs"}, variableArity = true, description = "Directory with JSON files whose image URLs have to be changed")
@@ -56,7 +56,7 @@ public class ReplaceMIPsAttributesCmd extends AbstractCmd {
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        ReplaceURLsArgs(CommonArgs commonArgs) {
+        ReplaceMIPsMetadataAttributesArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
@@ -80,15 +80,15 @@ public class ReplaceMIPsAttributesCmd extends AbstractCmd {
 
     }
 
-    private final ReplaceURLsArgs args;
+    private final ReplaceMIPsMetadataAttributesArgs args;
 
-    ReplaceMIPsAttributesCmd(String commandName, CommonArgs commonArgs) {
+    ReplaceMIPsMetadataAttributesCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
-        args =  new ReplaceURLsArgs(commonArgs);
+        args =  new ReplaceMIPsMetadataAttributesArgs(commonArgs);
     }
 
     @Override
-    ReplaceURLsArgs getArgs() {
+    ReplaceMIPsMetadataAttributesArgs getArgs() {
         return args;
     }
 
@@ -98,7 +98,7 @@ public class ReplaceMIPsAttributesCmd extends AbstractCmd {
         replaceMIPsURLs(args);
     }
 
-    private void replaceMIPsURLs(ReplaceURLsArgs args) {
+    private void replaceMIPsURLs(ReplaceMIPsMetadataAttributesArgs args) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
