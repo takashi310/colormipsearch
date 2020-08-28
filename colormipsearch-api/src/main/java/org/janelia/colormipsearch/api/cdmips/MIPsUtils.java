@@ -333,6 +333,7 @@ public class MIPsUtils {
 
     @Nullable
     private static MIPMetadata getAncillaryMIPInfoFromZipEntry(String ancillaryMIPLocation, String mipEntryName, Function<String, String> ancillaryMIPSuffixMapping) {
+        // Lookup up entries with the same name with extension tif or png and entries that have the object number suffix removed with the same extensions (tif and png)
         String ancillaryMIPLocationName = RegExUtils.replacePattern(Paths.get(ancillaryMIPLocation).getFileName().toString(), "\\..*$", "");
         Path mipEntryPath = Paths.get(mipEntryName);
         Path mipEntryParentPath = mipEntryPath.getParent();
