@@ -163,6 +163,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         @Parameter(names = {"--output-filename"}, description = "Output file name")
         String outputFileName;
 
+        @Parameter(names = {"--append-output"}, description = "Append output if it exists", arity = 0)
+        boolean appendOutput;
+
         @ParametersDelegate
         final CommonArgs commonArgs;
 
@@ -334,7 +337,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             }
             Path outputFilePath = outputPath.resolve(outputName);
             LOG.info("Write color depth MIPs to {}", outputFilePath);
-            outputStream = new FileOutputStream(outputFilePath.toFile());
+            if (Files.exists(outputPath) && args.appendOutput) {
+                outputStream = new FileOutputStream(outputFilePath.toFile(), true);
+            } else {
+                outputStream = new FileOutputStream(outputFilePath.toFile());
+            }
         } catch (FileNotFoundException e) {
             LOG.error("Error opening the outputfile {}", outputPath, e);
             return;
