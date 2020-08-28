@@ -337,13 +337,18 @@ public class MIPsUtils {
         Path mipEntryPath = Paths.get(mipEntryName);
         Path mipEntryParentPath = mipEntryPath.getParent();
         String mipEntryFilenameWithoutExtension = RegExUtils.replacePattern(mipEntryPath.getFileName().toString(), "\\..*$", "");
+        String mipEntryFilenameWithoutObjectNum = RegExUtils.replacePattern(mipEntryFilenameWithoutExtension, "_\\d\\d*$", "");
         List<String> ancillaryMIPEntryNames;
         if (mipEntryParentPath == null) {
             ancillaryMIPEntryNames = Arrays.asList(
                     mipEntryFilenameWithoutExtension + ".png",
                     mipEntryFilenameWithoutExtension + ".tif",
+                    mipEntryFilenameWithoutObjectNum + ".png",
+                    mipEntryFilenameWithoutObjectNum + ".tif",
                     ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutExtension + ".png",
-                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutExtension + ".tif"
+                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutExtension + ".tif",
+                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutObjectNum + ".png",
+                    ancillaryMIPLocationName + "/" + mipEntryFilenameWithoutObjectNum + ".tif"
             );
         } else {
             int nComponents = mipEntryParentPath.getNameCount();
@@ -363,7 +368,10 @@ public class MIPsUtils {
                     .map(p -> Paths.get(p))
                     .flatMap(p -> Stream.of(
                             p.resolve(mipEntryFilenameWithoutExtension + ".png"),
-                            p.resolve(mipEntryFilenameWithoutExtension + ".tif")))
+                            p.resolve(mipEntryFilenameWithoutExtension + ".tif"),
+                            p.resolve(mipEntryFilenameWithoutObjectNum + ".png"),
+                            p.resolve(mipEntryFilenameWithoutObjectNum + ".tif")
+                    ))
                     .map(p -> p.toString())
                     .collect(Collectors.toList());
         }
