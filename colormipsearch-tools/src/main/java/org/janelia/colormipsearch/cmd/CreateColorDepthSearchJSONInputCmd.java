@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
+import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -326,7 +330,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             LOG.error("Error creating the output directory for {}", outputPath, e);
         }
 
-        FileOutputStream outputStream;
+        OutputStream outputStream;
         try {
             String outputName;
             String outputBasename = StringUtils.defaultIfBlank(outputFileName, libraryPaths.getLibraryName());
@@ -338,7 +342,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             Path outputFilePath = outputPath.resolve(outputName);
             LOG.info("Write color depth MIPs to {}", outputFilePath);
             if (Files.exists(outputPath) && args.appendOutput) {
-                outputStream = new FileOutputStream(outputFilePath.toFile(), true);
+                outputStream = openOutputForAppend(outputFilePath.toFile());
             } else {
                 outputStream = new FileOutputStream(outputFilePath.toFile());
             }
@@ -485,6 +489,24 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             } catch (IOException ignore) {
             }
         }
+    }
+
+    private OutputStream openOutputForAppend(File of) {
+        OutputStream outputStream;
+        try {
+            LOG.debug("Append to {}", of);
+            RandomAccessFile rf = new RandomAccessFile(of, "rw");
+            long rfLength = rf.length();
+            // position FP after the end of the last item
+            // this may not work on Windows because of the new line separator
+            // - so on windows it may need to rollback more than 4 chars
+            rf.seek(rfLength - 4);
+            return Channels.newOutputStream(rf.getChannel());
+        } catch (IOException e) {
+            LOG.error("Error creating the output stream to be appended for {}", of, e);
+            throw new UncheckedIOException(e);
+        }
+
     }
 
     private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
