@@ -178,7 +178,10 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
     private String createMIPSegmentName(String cdmPath, String imageExt, int segmentIndex) {
         String cdmName = Paths.get(cdmPath).getFileName().toString();
-        String cdmSegmentName = RegExUtils.replacePattern(cdmName, "_CDM\\..*$", "");
+        String cdmSegmentName = RegExUtils.replacePattern(
+                RegExUtils.replacePattern(cdmName, "\\" + imageExt + "$", ""),
+                "_CDM$",
+                "");
         return String.format("%s-%02d_CDM%s", cdmSegmentName, segmentIndex, imageExt);
     }
 
