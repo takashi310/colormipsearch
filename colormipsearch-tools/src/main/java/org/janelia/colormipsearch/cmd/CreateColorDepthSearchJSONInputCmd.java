@@ -517,6 +517,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             gen.useDefaultPrettyPrinter();
             gen.writeStartArray();
             rf.seek(pos);
+            rf.setLength(pos);
             return gen;
         } catch (IOException e) {
             LOG.error("Error creating the output stream to be appended for {}", of, e);
