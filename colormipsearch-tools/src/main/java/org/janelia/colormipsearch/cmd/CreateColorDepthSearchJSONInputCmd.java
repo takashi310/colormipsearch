@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import javax.imageio.stream.FileImageOutputStream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -330,7 +331,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             LOG.error("Error creating the output directory for {}", outputPath, e);
         }
 
-        OutputStream outputStream;
+        JsonGenerator gen;
         try {
             String outputName;
             String outputBasename = StringUtils.defaultIfBlank(outputFileName, libraryPaths.getLibraryName());
@@ -342,11 +343,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             Path outputFilePath = outputPath.resolve(outputName);
             LOG.info("Write color depth MIPs to {}", outputFilePath);
             if (Files.exists(outputPath) && args.appendOutput) {
-                outputStream = openOutputForAppend(outputFilePath.toFile());
+                gen = openOutputForAppend(outputFilePath.toFile());
             } else {
-                outputStream = new FileOutputStream(outputFilePath.toFile());
+                gen = openOutput(outputFilePath.toFile());
             }
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             LOG.error("Error opening the outputfile {}", outputPath, e);
             return;
         }
@@ -380,9 +381,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 segmentedImages = getSegmentedImages(slideCodeRegExPattern, librarySegmentationPath);
             }
             LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
-            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
-            gen.useDefaultPrettyPrinter();
-            gen.writeStartArray();
             for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
                 List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(
@@ -485,14 +483,25 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             LOG.error("Error writing json args for library {}", libraryPaths.library, e);
         } finally {
             try {
-                outputStream.close();
+                gen.close();
             } catch (IOException ignore) {
             }
         }
     }
 
-    private OutputStream openOutputForAppend(File of) {
-        OutputStream outputStream;
+    private JsonGenerator openOutput(File of)  {
+        try {
+            JsonGenerator gen = mapper.getFactory().createGenerator(new FileOutputStream(of), JsonEncoding.UTF8);
+            gen.useDefaultPrettyPrinter();
+            gen.writeStartArray();
+            return gen;
+        } catch (IOException e) {
+            LOG.error("Error creating the output stream for {}", of, e);
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private JsonGenerator openOutputForAppend(File of) {
         try {
             LOG.debug("Append to {}", of);
             RandomAccessFile rf = new RandomAccessFile(of, "rw");
@@ -500,13 +509,16 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             // position FP after the end of the last item
             // this may not work on Windows because of the new line separator
             // - so on windows it may need to rollback more than 4 chars
-            rf.seek(rfLength - 4);
-            return Channels.newOutputStream(rf.getChannel());
+            rf.seek(rfLength - 2);
+            OutputStream outputStream = Channels.newOutputStream(rf.getChannel());
+            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
+            gen.useDefaultPrettyPrinter();
+            gen.writeStartArray();
+            return gen;
         } catch (IOException e) {
             LOG.error("Error creating the output stream to be appended for {}", of, e);
             throw new UncheckedIOException(e);
         }
-
     }
 
     private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
