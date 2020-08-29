@@ -511,9 +511,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             // - so on windows it may need to rollback more than 4 chars
             rf.seek(rfLength - 2);
             OutputStream outputStream = Channels.newOutputStream(rf.getChannel());
+            outputStream.write(',');
+            long pos = rf.getFilePointer();
             JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
             gen.useDefaultPrettyPrinter();
             gen.writeStartArray();
+            rf.seek(pos);
             return gen;
         } catch (IOException e) {
             LOG.error("Error creating the output stream to be appended for {}", of, e);
