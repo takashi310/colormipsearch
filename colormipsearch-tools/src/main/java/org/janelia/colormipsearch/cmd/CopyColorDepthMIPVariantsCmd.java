@@ -169,20 +169,24 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                 action.accept(
                         variantSource,
                         outputPath.resolve(variantDestination)
-                                .resolve(createMIPSegmentName(mip.getCdmPath(), getImageExt(variantSource.getImagePath()), mipIndex))
+                                .resolve(createMIPVariantName(mip.getCdmPath(), variantSource.getImagePath(), mipIndex))
                 );
             }
         }
         return true;
     }
 
-    private String createMIPSegmentName(String cdmPath, String imageExt, int segmentIndex) {
+    private String createMIPVariantName(String cdmPath, String cdmImageVariantPath, int segmentIndex) {
         String cdmName = Paths.get(cdmPath).getFileName().toString();
-        String cdmSegmentName = RegExUtils.replacePattern(
-                RegExUtils.replacePattern(cdmName, "\\..*$", ""),
-                "_CDM$",
-                "");
-        return String.format("%s-%02d_CDM%s", cdmSegmentName, segmentIndex, imageExt);
+        String cdmNameWithoutExt = RegExUtils.replacePattern(cdmName, "\\..*$", "");
+        if (StringUtils.endsWith(cdmNameWithoutExt, "_CDM")) {
+            String cdmSegmentName = StringUtils.removeEnd(cdmNameWithoutExt, "_CDM");
+            return String.format("%s-%02d_CDM%s", cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
+        } else {
+            String cdmVariantName = Paths.get(cdmImageVariantPath).getFileName().toString();
+            String cdmVariantNameWithoutExt = RegExUtils.replacePattern(cdmVariantName, "\\..*$", "");
+            return String.format("%s-%02d_CDM%s", cdmVariantNameWithoutExt, segmentIndex, getImageExt(cdmImageVariantPath));
+        }
     }
 
     private String getImageExt(String imagePath) {
