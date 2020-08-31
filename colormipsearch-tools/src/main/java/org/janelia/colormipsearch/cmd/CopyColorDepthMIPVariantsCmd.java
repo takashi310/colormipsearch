@@ -141,14 +141,24 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                             .collect(Collectors.groupingBy(
                                     ImmutablePair::getLeft,
                                     Collectors.mapping(ImmutablePair::getRight, Collectors.collectingAndThen(Collectors.toSet(), Set::size))));
+
                     // handle singleton variants
                     Map<String, MIPMetadata> singletonVariants = mipsCountsByVariantType.entrySet().stream()
                             .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() == 1)
                             .map(Map.Entry::getKey)
                             .flatMap(vt -> me.getValue().stream().filter(mip -> mip.hasVariant(vt)).map(mip -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
-                            .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight));
-                    singletonVariants
-                            .forEach((variant, variantMIP) -> {
+                            .collect(Collectors.toMap(
+                                    ImmutablePair::getLeft,
+                                    ImmutablePair::getRight,
+                                    (existingValue, newValue) -> {
+                                        if (existingValue.equals(newValue)) {
+                                            return existingValue;
+                                        } else {
+                                            throw new IllegalStateException(String.format("Duplicate key %s", newValue));
+                                        }
+                                    }));
+
+                    singletonVariants.forEach((variant, variantMIP) -> {
                                 String variantDestination = args.variantMapping.get(variant);
                                 copyMIPVariantAction.accept(
                                         variantMIP,
@@ -156,6 +166,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                                 .resolve(createMIPVariantName(variantMIP.getCdmPath(), getImageExt(variantMIP.getImagePath()), -1))
                                 );
                             });
+
                     // copy non-singleton variants
                     Set<String> nonSingletonVariantTypes = mipsCountsByVariantType.entrySet().stream()
                             .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() > 1)
