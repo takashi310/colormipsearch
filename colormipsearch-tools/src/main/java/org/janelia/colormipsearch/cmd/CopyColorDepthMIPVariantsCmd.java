@@ -163,7 +163,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                 copyMIPVariantAction.accept(
                                         variantMIP,
                                         outputPath.resolve(variantDestination)
-                                                .resolve(createMIPVariantName(variantMIP.getCdmPath(), getImageExt(variantMIP.getImagePath()), -1))
+                                                .resolve(createMIPVariantName(variantMIP.getCdmPath(), variantMIP.getImagePath(), -1))
                                 );
                             });
 
@@ -217,7 +217,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                     action.accept(
                             variantMIP,
                             outputPath.resolve(variantDestination)
-                                    .resolve(createMIPVariantName(mip.getCdmPath(), getImageExt(variantMIP.getImagePath()), variantIndex))
+                                    .resolve(createMIPVariantName(mip.getCdmPath(), variantMIP.getImagePath(), variantIndex))
                     );
                 });
     }
