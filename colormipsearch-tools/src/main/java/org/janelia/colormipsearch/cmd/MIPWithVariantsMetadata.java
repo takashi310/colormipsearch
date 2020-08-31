@@ -15,6 +15,8 @@ import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 class MIPWithVariantsMetadata extends MIPMetadata {
 
+    // variants are a mapping of the variant type, such as segmentation, gradient, zgap, gamma1_4,
+    // to the corresponding image path
     private Map<String, String> variants = null;
     private String sampleRef;
 
@@ -41,6 +43,8 @@ class MIPWithVariantsMetadata extends MIPMetadata {
     MIPMetadata variantAsMIP(String variant) {
         if (hasVariant(variant)) {
             MIPMetadata variantMIP = new MIPMetadata();
+            variantMIP.setId(getId());
+            variantMIP.setCdmPath(getCdmPath());
             variantMIP.setImageName(variants.get(variant));
             variantMIP.setImageArchivePath(variants.get(variant + "ArchivePath"));
             variantMIP.setImageType(variants.get(variant + "EntryType"));

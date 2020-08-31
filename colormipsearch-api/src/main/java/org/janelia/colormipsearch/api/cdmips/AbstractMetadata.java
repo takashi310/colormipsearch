@@ -22,7 +22,7 @@ public abstract class AbstractMetadata {
     private String cdmPath;
     private String imageName;
     private String imageArchivePath;
-    private String imageType;
+    private String imageType; // file or zipEntry
     private String imageURL;
     private String thumbnailURL;
     private String slideCode;

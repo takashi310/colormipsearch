@@ -15,6 +15,8 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.Parameter;
@@ -23,13 +25,16 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.jboss.netty.channel.DownstreamChannelStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,12 +128,39 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
         inputMIPsGroupedByID.entrySet().stream().parallel()
                 .forEach(me -> {
-                    int mipIndex = 1;
-                    for (MIPWithVariantsMetadata mip : me.getValue()) {
-                        if (copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, copyMIPVariantAction)) {
-                            mipIndex++;
-                        }
-                    }
+                    // first we group all mips by variant type
+                    Map<String, Set<MIPMetadata>> mipsByVariantType = me.getValue().stream().flatMap(mip -> mip.getVariantTypes().stream().map(vt -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
+                            .collect(Collectors.groupingBy(
+                                    ImmutablePair::getLeft,
+                                    Collectors.mapping(ImmutablePair::getRight, Collectors.toSet())));
+                    // copy variant mips and rename the destination using the index;
+                    // if a certain variant type has only 1 mip, i.e., the variant is the same for all mips with the same ID
+                    // no index will be used - which is equivalent to passing in an index equal to -1
+                    mipsByVariantType.entrySet().stream()
+                            .filter(variantMIPsEntry -> args.variantMapping.get(variantMIPsEntry.getKey()) != null)
+                            .forEach(variantMIPsEntry -> {
+                                String variantDestination = args.variantMapping.get(variantMIPsEntry.getKey());
+                                int nVariantMIPs = variantMIPsEntry.getValue().size();
+                                IntStream indexStream;
+                                if (nVariantMIPs == 1)  {
+                                    indexStream = IntStream.of(-1);
+                                } else {
+                                    indexStream = IntStream.rangeClosed(1, nVariantMIPs);
+                                }
+                                Streams.zip(
+                                        indexStream.boxed(),
+                                        variantMIPsEntry.getValue().stream(),
+                                        ImmutablePair::of)
+                                        .forEach(indexedVariantMIP -> {
+                                            MIPMetadata variantMIP = indexedVariantMIP.getRight();
+                                            copyMIPVariantAction.accept(
+                                                    variantMIP,
+                                                    outputPath.resolve(variantDestination)
+                                                            .resolve(createMIPVariantName(variantMIP.getCdmPath(), variantMIP.getImagePath(), indexedVariantMIP.getLeft()))
+                                            );
+                                        });
+
+                            });
                 });
     }
 
@@ -154,38 +186,24 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
     }
 
-    private boolean copyMIPVariants(int mipIndex, MIPWithVariantsMetadata mip,
-                                    Path outputPath,
-                                    Map<String, String> variantMapping,
-                                    BiConsumer<MIPMetadata, Path> action) {
-        Set<String> mipVariantTypes = mip.getVariantTypes();
-        if (mipVariantTypes.isEmpty()) {
-            return false;
-        };
-        for (String variant : mipVariantTypes) {
-            String variantDestination = variantMapping.get(variant);
-            if (StringUtils.isNotBlank(variantDestination) && mip.hasVariant(variant)) {
-                MIPMetadata variantSource = mip.variantAsMIP(variant);
-                action.accept(
-                        variantSource,
-                        outputPath.resolve(variantDestination)
-                                .resolve(createMIPVariantName(mip.getCdmPath(), variantSource.getImagePath(), mipIndex))
-                );
-            }
-        }
-        return true;
-    }
-
     private String createMIPVariantName(String cdmPath, String cdmImageVariantPath, int segmentIndex) {
         String cdmName = Paths.get(cdmPath).getFileName().toString();
         String cdmNameWithoutExt = RegExUtils.replacePattern(cdmName, "\\..*$", "");
         if (StringUtils.endsWith(cdmNameWithoutExt, "_CDM")) {
             String cdmSegmentName = StringUtils.removeEnd(cdmNameWithoutExt, "_CDM");
-            return String.format("%s-%02d_CDM%s", cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
+            return formatSegmentName(cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
         } else {
             String cdmVariantName = Paths.get(cdmImageVariantPath).getFileName().toString();
             String cdmVariantNameWithoutExt = RegExUtils.replacePattern(cdmVariantName, "\\..*$", "");
-            return String.format("%s-%02d_CDM%s", cdmVariantNameWithoutExt, segmentIndex, getImageExt(cdmImageVariantPath));
+            return formatSegmentName(cdmVariantNameWithoutExt, segmentIndex, getImageExt(cdmImageVariantPath));
+        }
+    }
+
+    private String formatSegmentName(String segmentName, int segmentIndex, String imageExt) {
+        if (segmentIndex > 0) {
+            return String.format("%s-%02d_CDM%s", segmentName, segmentIndex, imageExt);
+        } else {
+            return String.format("%s_CDM%s", segmentName, imageExt);
         }
     }
 
