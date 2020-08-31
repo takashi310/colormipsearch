@@ -25,8 +25,10 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 
+import javassist.compiler.ast.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -128,39 +130,42 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
         inputMIPsGroupedByID.entrySet().stream().parallel()
                 .forEach(me -> {
-                    // first we group all mips by variant type
-                    Map<String, Set<MIPMetadata>> mipsByVariantType = me.getValue().stream().flatMap(mip -> mip.getVariantTypes().stream().map(vt -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
+                    // a singleton variant type is a variant type that basically has the same source for all segmentations
+                    // an example would be a gamma variant which typically is not generated from a segmented image but from the original source
+                    // because of that destination names for singleton variants will not be indexed either so first partition the variant types
+                    // into singleton variant types and non-singleton
+                    Map<String, Integer> mipsCountsByVariantType = me.getValue().stream()
+                            .flatMap(mip -> mip.getVariantTypes().stream()
+                                    .filter(vt -> args.variantMapping.get(vt) != null)
+                                    .map(vt -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
                             .collect(Collectors.groupingBy(
                                     ImmutablePair::getLeft,
-                                    Collectors.mapping(ImmutablePair::getRight, Collectors.toSet())));
-                    // copy variant mips and rename the destination using the index;
-                    // if a certain variant type has only 1 mip, i.e., the variant is the same for all mips with the same ID
-                    // no index will be used - which is equivalent to passing in an index equal to -1
-                    mipsByVariantType.entrySet().stream()
-                            .filter(variantMIPsEntry -> args.variantMapping.get(variantMIPsEntry.getKey()) != null)
-                            .forEach(variantMIPsEntry -> {
-                                String variantDestination = args.variantMapping.get(variantMIPsEntry.getKey());
-                                int nVariantMIPs = variantMIPsEntry.getValue().size();
-                                IntStream indexStream;
-                                if (nVariantMIPs == 1)  {
-                                    indexStream = IntStream.of(-1);
-                                } else {
-                                    indexStream = IntStream.rangeClosed(1, nVariantMIPs);
-                                }
-                                Streams.zip(
-                                        indexStream.boxed(),
-                                        variantMIPsEntry.getValue().stream(),
-                                        ImmutablePair::of)
-                                        .forEach(indexedVariantMIP -> {
-                                            MIPMetadata variantMIP = indexedVariantMIP.getRight();
-                                            copyMIPVariantAction.accept(
-                                                    variantMIP,
-                                                    outputPath.resolve(variantDestination)
-                                                            .resolve(createMIPVariantName(variantMIP.getCdmPath(), variantMIP.getImagePath(), indexedVariantMIP.getLeft()))
-                                            );
-                                        });
-
+                                    Collectors.mapping(ImmutablePair::getRight, Collectors.collectingAndThen(Collectors.toSet(), Set::size))));
+                    // handle singleton variants
+                    Map<String, MIPMetadata> singletonVariants = mipsCountsByVariantType.entrySet().stream()
+                            .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() == 1)
+                            .map(Map.Entry::getKey)
+                            .flatMap(vt -> me.getValue().stream().filter(mip -> mip.hasVariant(vt)).map(mip -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
+                            .collect(Collectors.toMap(ImmutablePair::getLeft, ImmutablePair::getRight));
+                    singletonVariants
+                            .forEach((variant, variantMIP) -> {
+                                String variantDestination = args.variantMapping.get(variant);
+                                copyMIPVariantAction.accept(
+                                        variantMIP,
+                                        outputPath.resolve(variantDestination)
+                                                .resolve(createMIPVariantName(variantMIP.getCdmPath(), getImageExt(variantMIP.getImagePath()), -1))
+                                );
                             });
+                    // copy non-singleton variants
+                    Set<String> nonSingletonVariantTypes = mipsCountsByVariantType.entrySet().stream()
+                            .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() > 1)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toSet());
+                    int mipIndex = 1;
+                    for (MIPWithVariantsMetadata mip : me.getValue()) {
+                        copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, nonSingletonVariantTypes, copyMIPVariantAction);
+                        mipIndex++;
+                    }
                 });
     }
 
@@ -184,6 +189,26 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
             LOG.error("Error reading {}", mipsJSONFilename, e);
             throw new UncheckedIOException(e);
         }
+    }
+
+
+    private void copyMIPVariants(int variantIndex,
+                                 MIPWithVariantsMetadata mip,
+                                 Path outputPath,
+                                 Map<String, String> variantMapping,
+                                 Set<String> variantTypes,
+                                 BiConsumer<MIPMetadata, Path> action) {
+        mip.getVariantTypes().stream()
+                .filter(variantTypes::contains)
+                .forEach(variant -> {
+                    String variantDestination = variantMapping.get(variant);
+                    MIPMetadata variantMIP = mip.variantAsMIP(variant);
+                    action.accept(
+                            variantMIP,
+                            outputPath.resolve(variantDestination)
+                                    .resolve(createMIPVariantName(mip.getCdmPath(), getImageExt(variantMIP.getImagePath()), variantIndex))
+                    );
+                });
     }
 
     private String createMIPVariantName(String cdmPath, String cdmImageVariantPath, int segmentIndex) {
