@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,8 +16,6 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.Parameter;
@@ -25,10 +24,7 @@ import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 
-import javassist.compiler.ast.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,7 +32,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
-import org.jboss.netty.channel.DownstreamChannelStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +52,9 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
         @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
         boolean simulateFlag;
+
+        @Parameter(names = {"--not-countable-variants"}, variableArity = true, description = "Not countable variants")
+        Set<String> notCountableVariants = new HashSet<>();
 
         @DynamicParameter(names = "-variantMapping", description = "Variants mapping")
         private Map<String, String> variantMapping = new HashMap<>();
@@ -130,10 +128,6 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
         inputMIPsGroupedByID.entrySet().stream().parallel()
                 .forEach(me -> {
-                    // a singleton variant type is a variant type that basically has the same source for all segmentations
-                    // an example would be a gamma variant which typically is not generated from a segmented image but from the original source
-                    // because of that destination names for singleton variants will not be indexed either so first partition the variant types
-                    // into singleton variant types and non-singleton
                     Map<String, Integer> mipsCountsByVariantType = me.getValue().stream()
                             .flatMap(mip -> mip.getVariantTypes().stream()
                                     .filter(vt -> args.variantMapping.get(vt) != null)
@@ -142,10 +136,12 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                     ImmutablePair::getLeft,
                                     Collectors.mapping(ImmutablePair::getRight, Collectors.collectingAndThen(Collectors.toSet(), Set::size))));
 
-                    // handle singleton variants
-                    Map<String, MIPMetadata> singletonVariants = mipsCountsByVariantType.entrySet().stream()
+                    // handle uncounted variants - an uncounted variant must be specified by the user as non-countable and also
+                    // there should not be more than 1 object per MIP ID for that variant type
+                    Map<String, MIPMetadata> uncountedVariants = mipsCountsByVariantType.entrySet().stream()
                             .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() == 1)
                             .map(Map.Entry::getKey)
+                            .filter(vt -> args.notCountableVariants.contains(vt))
                             .flatMap(vt -> me.getValue().stream().filter(mip -> mip.hasVariant(vt)).map(mip -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
                             .collect(Collectors.toMap(
                                     ImmutablePair::getLeft,
@@ -158,7 +154,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                         }
                                     }));
 
-                    singletonVariants.forEach((variant, variantMIP) -> {
+                    uncountedVariants.forEach((variant, variantMIP) -> {
                                 String variantDestination = args.variantMapping.get(variant);
                                 copyMIPVariantAction.accept(
                                         variantMIP,
@@ -167,14 +163,14 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                 );
                             });
 
-                    // copy non-singleton variants
-                    Set<String> nonSingletonVariantTypes = mipsCountsByVariantType.entrySet().stream()
-                            .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() > 1)
+                    // counted variants
+                    Set<String> countedVariantTypes = mipsCountsByVariantType.entrySet().stream()
+                            .filter(variantTypeCountEntry -> uncountedVariants.containsKey(variantTypeCountEntry.getKey()))
                             .map(Map.Entry::getKey)
                             .collect(Collectors.toSet());
                     int mipIndex = 1;
                     for (MIPWithVariantsMetadata mip : me.getValue()) {
-                        copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, nonSingletonVariantTypes, copyMIPVariantAction);
+                        copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, countedVariantTypes, copyMIPVariantAction);
                         mipIndex++;
                     }
                 });
