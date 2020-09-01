@@ -165,7 +165,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
                     // counted variants
                     Set<String> countedVariantTypes = mipsCountsByVariantType.entrySet().stream()
-                            .filter(variantTypeCountEntry -> uncountedVariants.containsKey(variantTypeCountEntry.getKey()))
+                            .filter(variantTypeCountEntry -> !uncountedVariants.containsKey(variantTypeCountEntry.getKey()))
                             .map(Map.Entry::getKey)
                             .collect(Collectors.toSet());
                     int mipIndex = 1;
