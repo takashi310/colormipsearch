@@ -257,6 +257,22 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         } else {
             libraryVariants = args.libraryVariants.stream().collect(Collectors.groupingBy(lv -> lv.libraryName, Collectors.toList()));
         }
+        Function<String, String> imageURLMapper = aUrl -> {
+            if (StringUtils.isBlank(aUrl)) {
+                return "";
+            } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
+                    StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
+                if (args.urlsRelativeTo >= 0) {
+                    URI uri = URI.create(aUrl);
+                    Path uriPath = Paths.get(uri.getPath());
+                    return uriPath.subpath(args.urlsRelativeTo,  uriPath.getNameCount()).toString();
+                } else {
+                    return aUrl;
+                }
+            } else {
+                return aUrl;
+            }
+        };
         Streams.zip(
                 IntStream.range(0, args.libraries.size()).boxed(),
                 args.libraries.stream(),
@@ -267,23 +283,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     return lpaths;
                 }
         ).forEach(lpaths -> {
-            Function<String, String> imageURLMapper = aUrl -> {
-                if (StringUtils.isBlank(aUrl)) {
-                    return "";
-                } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
-                        StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
-                    if (args.urlsRelativeTo >= 0) {
-                        URI uri = URI.create(aUrl);
-                        Path uriPath = Paths.get(uri.getPath());
-                        return uriPath.subpath(args.urlsRelativeTo,  uriPath.getNameCount()).toString();
-                    } else {
-                        return aUrl;
-                    }
-                } else {
-                    return aUrl;
-                }
-            };
-
             createColorDepthSearchJSONInputMIPs(
                     serverEndpoint,
                     lpaths,

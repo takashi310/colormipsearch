@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -116,6 +117,9 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
         boolean keepDuplicates;
 
+        @Parameter(names = {"--urls-relative-to"}, description = "URLs are relative to the specified component")
+        int urlsRelativeTo = -1;
+
         @ParametersDelegate
         final CommonArgs commonArgs;
 
@@ -146,6 +150,23 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
 
         Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(args.libraryMappingURL);
 
+        Function<String, String> imageURLMapper = aUrl -> {
+            if (StringUtils.isBlank(aUrl)) {
+                return "";
+            } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
+                    StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
+                if (args.urlsRelativeTo >= 0) {
+                    URI uri = URI.create(aUrl);
+                    Path uriPath = Paths.get(uri.getPath());
+                    return uriPath.subpath(args.urlsRelativeTo,  uriPath.getNameCount()).toString();
+                } else {
+                    return aUrl;
+                }
+            } else {
+                return aUrl;
+            }
+        };
+
         args.libraries.forEach(library -> {
             Path outputPath;
             if (isEmLibrary(library.input)) {
@@ -157,6 +178,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     serverEndpoint,
                     library,
                     libraryNameMapping,
+                    imageURLMapper,
                     outputPath
             );
         });
@@ -182,6 +204,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
     private void groupMIPsByPublishedName(WebTarget serverEndpoint,
                                           ListArg libraryArg,
                                           Map<String, String> libraryNamesMapping,
+                                          Function<String, String> imageURLMapper,
                                           Path outputPath) {
         // get color depth mips from JACS for the specified alignmentSpace and library
         int cdmsCount = countColorDepthMips(
@@ -230,7 +253,9 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     .filter(cdmip -> args.includeMIPsWithNoPublishedURL || hasPublishedImageURL(cdmip))
                     .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
-                    .map(cdmip -> isEmLibrary(libraryArg.input) ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor) : asLMLineMetadata(cdmip, libraryNameExtractor))
+                    .map(cdmip -> isEmLibrary(libraryArg.input)
+                            ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
+                            : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .peek(cdmip -> {
                         String cdmName = cdmip.getCdmName();
@@ -322,14 +347,16 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         return StringUtils.isNotBlank(cdmip.publicImageUrl);
     }
 
-    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip, Function<ColorDepthMIP, String> libraryNameExtractor) {
+    private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip,
+                                                Function<ColorDepthMIP, String> libraryNameExtractor,
+                                                Function<String, String> imageURLMapper) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(cdmip.publicImageUrl);
-        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
+        cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
+        cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
         cdMetadata.sourceImageRef  = cdmip.sourceImageRef;
         if (cdmip.sample != null) {
             cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
@@ -363,14 +390,17 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         cdMetadata.setSlideCode(slideCode);
     }
 
-    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip, String defaultGender, Function<ColorDepthMIP, String> libraryNameExtractor) {
+    private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip,
+                                                String defaultGender,
+                                                Function<ColorDepthMIP, String> libraryNameExtractor,
+                                                Function<String, String> imageURLMapper) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(cdmip.publicImageUrl);
-        cdMetadata.setThumbnailURL(cdmip.publicThumbnailUrl);
+        cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
+        cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
         cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
         cdMetadata.setGender(defaultGender);
         return cdMetadata;
