@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
  */
-public class MaskGradientAreaGapCalculator {
+public class MaskNegativeScoresCalculator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MaskGradientAreaGapCalculator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MaskNegativeScoresCalculator.class);
     private static final int GAP_THRESHOLD = 3;
 
     /**
@@ -25,9 +25,9 @@ public class MaskGradientAreaGapCalculator {
      * @param mirrorMask
      * @return
      */
-    public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
-                                                                                                    int negativeRadius,
-                                                                                                    boolean mirrorMask) {
+    public static MaskNegativeScoresCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
+                                                                                                   int negativeRadius,
+                                                                                                   boolean mirrorMask) {
         ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
         ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels).mask(maskThreshold).maxFilter(negativeRadius);
         return (ImageArray maskImageArray) -> {
@@ -41,7 +41,7 @@ public class MaskGradientAreaGapCalculator {
                         return p2 != -16777216 && p2 != 0 ? -16777216 : p1s.get();
                     } // mask pixels from the 60x image if they are present in the 20x image
             );
-            MaskGradientAreaGapCalculator maskGradientAreaGapCalculator = new MaskGradientAreaGapCalculator(
+            MaskNegativeScoresCalculator maskNegativeScoresCalculator = new MaskNegativeScoresCalculator(
                     maskImage,
                     maskImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(2)).reduce(),
                     maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce(),
@@ -52,28 +52,28 @@ public class MaskGradientAreaGapCalculator {
             );
 
             LOG.debug("Created gradient area gap calculator for mask in {}ms", System.currentTimeMillis() - startTime);
-            return maskGradientAreaGapCalculator;
+            return maskNegativeScoresCalculator;
         };
     }
 
     private final LImage mask;
     private final LImage maskIntensityValues;
-    private final LImage maskForOverExpressedRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
+    private final LImage maskForHighExpressionRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
     private final int maskThreshold;
     private final boolean withMaskMirroring;
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
 
-    private MaskGradientAreaGapCalculator(LImage mask,
-                                          LImage maskIntensityValues,
-                                          LImage maskForOverExpressedRegions,
-                                          int maskThreshold,
-                                          boolean withMaskMirroring,
-                                          ImageTransformation clearLabels,
-                                          ImageProcessing negativeRadiusDilation) {
+    private MaskNegativeScoresCalculator(LImage mask,
+                                         LImage maskIntensityValues,
+                                         LImage maskForHighExpressionRegions,
+                                         int maskThreshold,
+                                         boolean withMaskMirroring,
+                                         ImageTransformation clearLabels,
+                                         ImageProcessing negativeRadiusDilation) {
         this.mask = mask;
         this.maskIntensityValues = maskIntensityValues;
-        this.maskForOverExpressedRegions = maskForOverExpressedRegions;
+        this.maskForHighExpressionRegions = maskForHighExpressionRegions;
         this.maskThreshold = maskThreshold;
         this.withMaskMirroring = withMaskMirroring;
         this.clearLabels = clearLabels;
@@ -90,9 +90,9 @@ public class MaskGradientAreaGapCalculator {
      * @param inputZGapImageArray
      * @return
      */
-    public long calculateMaskAreaGap(ImageArray inputImageArray,
-                                     ImageArray inputGradientImageArray,
-                                     ImageArray inputZGapImageArray) {
+    public NegativeGradientScores calculateMaskAreaGap(ImageArray inputImageArray,
+                                                       ImageArray inputGradientImageArray,
+                                                       ImageArray inputZGapImageArray) {
         long startTime = System.currentTimeMillis();
         LImage inputImage = LImageUtils.create(inputImageArray).mapi(clearLabels);
         LImage inputGradientImage = LImageUtils.create(inputGradientImageArray);
@@ -100,20 +100,20 @@ public class MaskGradientAreaGapCalculator {
                 ? LImageUtils.create(inputZGapImageArray)
                 : negativeRadiusDilation.applyTo(inputImage.map(ColorTransformation.mask(maskThreshold))).reduce(); // eval immediately
 
-        long areaGap = calculateAreaGap(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.IDENTITY);
+        NegativeGradientScores negativeScores = calculateNegativeScores(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.IDENTITY);
 
         if (withMaskMirroring) {
             LOG.trace("Start calculating area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
-            long mirrorAreaGap = calculateAreaGap(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.horizontalMirror());
+            NegativeGradientScores mirrorNegativeScores = calculateNegativeScores(inputImage, inputGradientImage, inputZGapImage, ImageTransformation.horizontalMirror());
             LOG.trace("Completed area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
-            if (mirrorAreaGap < areaGap) {
-                return mirrorAreaGap;
+            if (mirrorNegativeScores.getCumulatedScore() < negativeScores.getCumulatedScore()) {
+                return mirrorNegativeScores;
             }
         }
-        return areaGap;
+        return negativeScores;
     }
 
-    private long calculateAreaGap(LImage inputImage, LImage inputGradientImage, LImage inputZGapImage, ImageTransformation maskTransformation) {
+    private NegativeGradientScores calculateNegativeScores(LImage inputImage, LImage inputGradientImage, LImage inputZGapImage, ImageTransformation maskTransformation) {
         long startTime = System.currentTimeMillis();
         LImage gaps = LImageUtils.lazyCombine3(
                 LImageUtils.combine2(
@@ -124,9 +124,9 @@ public class MaskGradientAreaGapCalculator {
                 inputZGapImage.mapi(maskTransformation),
                 GradientAreaGapUtils.PIXEL_GAP_OP.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
-        LImage overExpressedRegions = LImageUtils.lazyCombine2(
+        LImage highExpressionRegions = LImageUtils.lazyCombine2(
                 inputImage,
-                maskForOverExpressedRegions.mapi(maskTransformation),
+                maskForHighExpressionRegions.mapi(maskTransformation),
                 (p1s, p2s) -> {
                     int p2 = p2s.get();
                     if (p2 == 1) {
@@ -142,11 +142,9 @@ public class MaskGradientAreaGapCalculator {
                 });
         long gradientAreaGap = gaps.fold(0L, (p, s) -> s + p);
         LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
-        long tooMuchExpression = overExpressedRegions.fold(0L, (p, s) -> p + s);
-        LOG.trace("Overexpressed area: {} (calculated in {}ms)", tooMuchExpression, System.currentTimeMillis() - startTime);
-        long areaGapScore = gradientAreaGap + tooMuchExpression / 2;
-        LOG.trace("Area gap score {} computed in {}ms", areaGapScore, System.currentTimeMillis() - startTime);
-        return areaGapScore;
+        long highExpressionArea = highExpressionRegions.fold(0L, (p, s) -> p + s);
+        LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
+        return new NegativeGradientScores(gradientAreaGap, highExpressionArea);
     }
 
 }

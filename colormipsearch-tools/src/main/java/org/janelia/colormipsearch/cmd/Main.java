@@ -40,7 +40,7 @@ public class Main {
                         commonArgs,
                         () -> mainArgs.cacheSize,
                         () -> mainArgs.cacheExpirationInSeconds),
-                new CalculateGradientScoresCmd(
+                new CalculateNegativeScoresCmd(
                         "gradientScore",
                         commonArgs,
                         () -> mainArgs.cacheSize,
@@ -49,7 +49,7 @@ public class Main {
                         "gradientScoresFromMatchedResults",
                         commonArgs),
                 new MergeResultsCmd("mergeResults", commonArgs),
-                new NormalizeGradientScoresCmd("normalizeGradientScores", commonArgs),
+                new NormalizeScoresCmd("normalizeScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()

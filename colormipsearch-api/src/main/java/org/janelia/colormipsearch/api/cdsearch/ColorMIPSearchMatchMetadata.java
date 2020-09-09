@@ -32,6 +32,8 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private double matchingRatio;
     @JsonProperty
     private Long gradientAreaGap;
+    @JsonProperty
+    private Long highExpressionArea;
     private Double normalizedGapScore;
     private Double artificialShapeScore;
 
@@ -146,6 +148,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setGradientAreaGap(long gradientAreaGap) {
         this.gradientAreaGap = gradientAreaGap >= 0 ? gradientAreaGap : null;
+    }
+
+    @JsonIgnore
+    public long getHighExpressionArea() {
+        return highExpressionArea == null ?  -1 : highExpressionArea;
+    }
+
+    public void setHighExpressionArea(long highExpressionArea) {
+        this.highExpressionArea = highExpressionArea >= 0 ?  highExpressionArea : null;
     }
 
     public Double getNormalizedGapScore() {

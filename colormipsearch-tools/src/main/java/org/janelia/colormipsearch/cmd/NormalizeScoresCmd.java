@@ -27,8 +27,8 @@ import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class NormalizeGradientScoresCmd extends AbstractCmd {
-    private static final Logger LOG = LoggerFactory.getLogger(NormalizeGradientScoresCmd.class);
+class NormalizeScoresCmd extends AbstractCmd {
+    private static final Logger LOG = LoggerFactory.getLogger(NormalizeScoresCmd.class);
 
     @Parameters(commandDescription = "Normalize gradient score for the search results - " +
             "if the area gap is not available consider it as if there was a perfect shape match, i.e., areagap = 0")
@@ -81,7 +81,7 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
     private final NormalizeGradientScoresArgs args;
     private final ObjectMapper mapper;
 
-    NormalizeGradientScoresCmd(String commandName, CommonArgs commonArgs) {
+    NormalizeScoresCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         args = new NormalizeGradientScoresArgs(commonArgs);
         this.mapper = new ObjectMapper()
