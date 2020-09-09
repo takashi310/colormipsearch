@@ -442,7 +442,7 @@ java \
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    normalizeGradientScores \
+    normalizeScores \
     -rd local/testData/updateURLS/cdsresults/flyem_hemibrain-vs-flylight \
     --pctPositivePixels 2.0 \
     -cleanup \
@@ -452,7 +452,7 @@ java \
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    normalizeGradientScores \
+    normalizeScores \
     -rd local/testData/cdsresults.ga/flylight_split_gal4_published \
     --pctPositivePixels 2.0 \
     -cleanup \
@@ -462,7 +462,7 @@ java \
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    normalizeGradientScores \
+    normalizeScores \
     -rd local/testData/cdsresults.ga/flylight_gen1_mcfo_published \
     --pctPositivePixels 2.0 \
     -cleanup \
