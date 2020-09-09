@@ -139,21 +139,21 @@ class NormalizeScoresCmd extends AbstractCmd {
             } else {
                 cdsResults = cdsMatchesFromJSONFile.results;
             }
-            long maxAreaGap;
+            long maxNegativeScore;
             int maxMatchingPixels;
             if (args.reNormalize) {
-                maxAreaGap = cdsResults.stream().parallel()
-                        .map(ColorMIPSearchMatchMetadata::getGradientAreaGap)
+                maxNegativeScore = cdsResults.stream().parallel()
+                        .map(ColorMIPSearchMatchMetadata::getNegativeScore)
                         .max(Long::compare)
                         .orElse(-1L);
-                LOG.info("Max area gap for {}  -> {}", fn, maxAreaGap);
+                LOG.info("Max negative score for {}  -> {}", fn, maxNegativeScore);
                 maxMatchingPixels = cdsResults.stream().parallel()
                         .map(ColorMIPSearchMatchMetadata::getMatchingPixels)
                         .max(Integer::compare)
                         .orElse(0);
                 LOG.info("Max pixel match for {}  -> {}", fn, maxMatchingPixels);
             } else {
-                maxAreaGap = -1L;
+                maxNegativeScore = -1L;
                 maxMatchingPixels = -1;
             }
             List<ColorMIPSearchMatchMetadata> cdsResultsWithNormalizedScore = cdsResults.stream().parallel()
@@ -161,13 +161,12 @@ class NormalizeScoresCmd extends AbstractCmd {
                     .map(csr -> args.cleanup ? ColorMIPSearchMatchMetadata.create(csr) : csr)
                     .peek(csr -> {
                         if (args.reNormalize) {
-                            long areaGap = csr.getGradientAreaGap();
-                            double normalizedGapScore = GradientAreaGapUtils.calculateAreaGapScore(
-                                    csr.getGradientAreaGap(), maxAreaGap, csr.getMatchingPixels(), csr.getMatchingRatio(), maxMatchingPixels
+                            double normalizedGapScore = GradientAreaGapUtils.calculateNormalizedScore(
+                                    csr.getGradientAreaGap(), csr.getHighExpressionArea(), maxNegativeScore, csr.getMatchingPixels(), csr.getMatchingRatio(), maxMatchingPixels
                             );
-                            if (areaGap >= 0) {
-                                LOG.debug("Update normalized score for {}: matchingPixels {}, matchingPixelsToMaskRatio {}, areaGap {}, current score {} -> updated score {}",
-                                        csr, csr.getMatchingPixels(), csr.getMatchingRatio(), areaGap, csr.getNormalizedGapScore(), normalizedGapScore);
+                            if (normalizedGapScore >= 0) {
+                                LOG.debug("Update normalized score for {}: matchingPixels {}, matchingPixelsToMaskRatio {}, areaGap {}, highExpressionArea {}, current score {} -> updated score {}",
+                                        csr, csr.getMatchingPixels(), csr.getMatchingRatio(), csr.getGradientAreaGap(),  csr.getHighExpressionArea(), csr.getNormalizedGapScore(), normalizedGapScore);
                                 csr.setNormalizedGapScore(normalizedGapScore);
                             } else {
                                 csr.setArtificialShapeScore(normalizedGapScore);

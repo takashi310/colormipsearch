@@ -214,68 +214,37 @@ public class GradientAreaGapUtils {
     }
 
     /**
-     * The method calculates the normalized gradient score given the gradient area gap and the pixel match values
-     * using the maximum area gap and maximum pixel match for normalization.
+     * The method calculates the normalized score given the gradient area gap the high expression area and the pixel match values
+     * using the maximum negative score and maximum pixel match for normalization.
      *
      * @param gradientAreaGap - gradient area gap
-     * @param maxAreaGap - maximum area gap from the current data set
+     * @param highExpressionArea - area of regions with high expression
+     * @param maxNegativeScore - maximum area gap from the current data set
      * @param pixelMatch - pixel match size
      * @param pixelMatchRatio - pixel match size to mask size ratio
      * @param maxPixelMatch - maximum pixel size of the current data set.
      * @return
      */
-    public static double calculateAreaGapScore(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchRatio, long maxPixelMatch) {
-        return calculateAreaGapScore1(gradientAreaGap, maxAreaGap, pixelMatch, pixelMatchRatio, maxPixelMatch);
-    }
-
-    private static double calculateAreaGapScore1(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchPct == 0) {
+    public static double calculateNormalizedScore(long gradientAreaGap, long highExpressionArea, long maxNegativeScore, long pixelMatch, double pixelMatchRatio, long maxPixelMatch) {
+        if (pixelMatch == 0 || pixelMatchRatio == 0) {
             return 0;
         } else {
-            if (maxAreaGap <= 0) {
+            if (gradientAreaGap < 0 || maxNegativeScore <= 0) {
                 return pixelMatch;
             }
-            double areaGapScore;
-            if (gradientAreaGap < 0) {
-                return 0;
+            double negativeScore;
+            if (gradientAreaGap < 0 && highExpressionArea < 0) {
+                negativeScore = 0;
+            } else if (highExpressionArea < 0) {
+                negativeScore = gradientAreaGap;
+            } else if (gradientAreaGap < 0) {
+                negativeScore = highExpressionArea / 3;
+            }  else {
+                negativeScore = gradientAreaGap + highExpressionArea / 3;
             }
-            if (gradientAreaGap == 0) {
-                areaGapScore = 0.;
-            } else {
-                areaGapScore = (double) gradientAreaGap / maxAreaGap;
-            }
-            double normAreaGapScore = Math.min(Math.max(areaGapScore * 2.5, 0.002), 1.);
-            return (double)pixelMatch / (double)maxPixelMatch / normAreaGapScore * 100;
-        }
-    }
-
-    private static double calculateAreaGapScore2(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchPct == 0) {
-            return 0;
-        } else {
-            double areaGapScore;
-            if (gradientAreaGap < 0) {
-                areaGapScore = 3 * pixelMatchPct; // 3 times larger than pixel match ratio
-            } else if (gradientAreaGap == 0) {
-                areaGapScore = 0.002; // make it small
-            } else {
-                areaGapScore = gradientAreaGap * pixelMatchPct / pixelMatch;
-            }
-            return (double) pixelMatch / areaGapScore;
-        }
-    }
-
-    private static double calculateAreaGapScore3(long gradientAreaGap, long maxAreaGap, long pixelMatch, double pixelMatchPct, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchPct == 0) {
-            return 0;
-        } else {
-            double shapeMatchScore;
-            if (gradientAreaGap < 0) {
-                shapeMatchScore =  maxAreaGap > 0 ? 1 : 0;
-            } else {
-                shapeMatchScore = 1 - gradientAreaGap * pixelMatchPct / pixelMatch; // area gap / masksize where masksize = pixelMatch/pixelPct
-            }
-            return (double) pixelMatch * shapeMatchScore / 2.5 * 100;
+            double normalizedNegativeScore = negativeScore / maxNegativeScore;
+            double boundedNegativeScore = Math.min(Math.max(normalizedNegativeScore * 2.5, 0.002), 1.);
+            return (double)pixelMatch / (double)maxPixelMatch / boundedNegativeScore * 100;
         }
     }
 

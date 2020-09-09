@@ -179,7 +179,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     if (oppositeCDSMatchesProvider == null) {
                                         oppositeCDSMatches = null;
                                     } else {
-                                        oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper, cdsr -> cdsr.getGradientAreaGap() != -1);
+                                        oppositeCDSMatches = oppositeCDSMatchesProvider.getCdsMatches(mapper, cdsr -> cdsr.getNegativeScore() != -1);
                                     }
                                     if (oppositeCDSMatches == null) {
                                         return Collections.emptyList();
@@ -234,9 +234,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         int nUpdates = cdsMatches.results.stream().parallel()
                 .mapToInt(cdsr -> findReverserseResult(cdsr, cdsResultsSupplier)
                         .map(reverseCdsr -> {
-                            LOG.debug("Set gradient area gap for {} from {} to {}",
-                                    cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap());
+                            LOG.debug("Set negative scores for {} from {} to {}, {}",
+                                    cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), reverseCdsr.getHighExpressionArea());
                             cdsr.setGradientAreaGap(reverseCdsr.getGradientAreaGap());
+                            cdsr.setHighExpressionArea(reverseCdsr.getHighExpressionArea());
                             cdsr.setNormalizedGapScore(reverseCdsr.getNormalizedGapScore());
                             return 1;
                         })
@@ -254,7 +255,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private Optional<ColorMIPSearchMatchMetadata> findReverserseResult(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier) {
         List<ColorMIPSearchMatchMetadata> allMatchesForMatchedId = cdsResultsSupplier.apply(cdsr.getId());
         return allMatchesForMatchedId.stream()
-                .filter(r -> r.getGradientAreaGap() != -1)
+                .filter(r -> r.getNegativeScore() != -1)
                 .filter(r -> r.matches(cdsr))
                 .findFirst();
     }

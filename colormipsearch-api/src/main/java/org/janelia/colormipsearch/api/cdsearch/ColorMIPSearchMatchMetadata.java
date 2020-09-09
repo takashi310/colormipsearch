@@ -159,6 +159,19 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.highExpressionArea = highExpressionArea >= 0 ?  highExpressionArea : null;
     }
 
+    @JsonIgnore
+    public long getNegativeScore() {
+        if (gradientAreaGap !=  null && highExpressionArea != null) {
+            return gradientAreaGap +  highExpressionArea / 3;
+        } else if (gradientAreaGap != null) {
+            return gradientAreaGap;
+        }  else if (highExpressionArea != null) {
+            return highExpressionArea / 3;
+        } else {
+            return -1;
+        }
+    }
+
     public Double getNormalizedGapScore() {
         return normalizedGapScore;
     }
@@ -225,6 +238,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
         that.setGradientAreaGap(this.getGradientAreaGap());
+        that.setHighExpressionArea(this.getHighExpressionArea());
         that.setNormalizedGapScore(this.getNormalizedGapScore());
         that.setArtificialShapeScore(this.getArtificialShapeScore());
     }

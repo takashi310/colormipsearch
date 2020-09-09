@@ -282,7 +282,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             MIPImage inputMaskImage = MIPsUtils.loadMIP(inputMaskMIP); // no caching for the mask
             return maskNegativeScoresCalculatorProvider.createMaskNegativeScoresCalculator(inputMaskImage.getImageArray());
         }, executor);
-        List<CompletableFuture<Long>> areaGapComputations = Streams.zip(
+        List<CompletableFuture<Long>> negativeScoresComputations = Streams.zip(
                 IntStream.range(0, Integer.MAX_VALUE).boxed(),
                 selectedCDSResultsForInputMIP.stream(),
                 (i, csr) -> ImmutablePair.of(i + 1, csr))
@@ -339,7 +339,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                     return negativeScore;
                 }, executor))
                 .collect(Collectors.toList());
-        return CompletableFuture.allOf(areaGapComputations.toArray(new CompletableFuture<?>[0]))
+        return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(vr -> {
                     LOG.info("Normalize gradient area scores for {} ({})", resultIDIndex, inputMaskMIP);
                     Integer maxMatchingPixels = selectedCDSResultsForInputMIP.stream()
@@ -348,21 +348,22 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             .orElse(0);
                     LOG.info("Max pixel percentage score for the {} selected matches of entry {} ({}) -> {}",
                             selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxMatchingPixels);
-                    List<Long> areaGaps = areaGapComputations.stream()
-                            .map(areaGapComputation -> areaGapComputation.join())
+                    List<Long> negativeScores = negativeScoresComputations.stream()
+                            .map(CompletableFuture::join)
                             .collect(Collectors.toList());
-                    long maxAreaGap = areaGaps.stream()
+                    long maxNegativeScore = negativeScores.stream()
                             .max(Long::compare)
                             .orElse(-1L);
-                    LOG.info("Max area gap for the {} selected matches of entry {} ({}) -> {}",
-                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxAreaGap);
+                    LOG.info("Max negative score for the {} selected matches of entry {} ({}) -> {}",
+                            selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP, maxNegativeScore);
                     // set the normalized area gap values
-                    if (maxAreaGap >= 0 && maxMatchingPixels > 0) {
+                    if (maxNegativeScore >= 0 && maxMatchingPixels > 0) {
                         selectedCDSResultsForInputMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
                                 .forEach(csr -> {
-                                    csr.setNormalizedGapScore(GradientAreaGapUtils.calculateAreaGapScore(
+                                    csr.setNormalizedGapScore(GradientAreaGapUtils.calculateNormalizedScore(
                                             csr.getGradientAreaGap(),
-                                            maxAreaGap,
+                                            csr.getHighExpressionArea(),
+                                            maxNegativeScore,
                                             csr.getMatchingPixels(),
                                             csr.getMatchingRatio(),
                                             maxMatchingPixels));
