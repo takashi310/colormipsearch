@@ -73,7 +73,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         String dataServiceURL;
 
         @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
-        String libraryMappingURL = "http://config.int.janelia.org/config/cdm_libraries";
+        String libraryMappingURL = "http://config.int.janelia.org/config/cdm_library";
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;

@@ -41,7 +41,7 @@ class MergeResultsCmd extends AbstractCmd {
         Double pctPositivePixels = 0.0;
 
         @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
-        private boolean cleanup = false;
+        boolean cleanup = false;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
