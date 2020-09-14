@@ -28,12 +28,13 @@ import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProvider;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
-import org.janelia.colormipsearch.api.gradienttools.MaskNegativeScoresCalculator;
-import org.janelia.colormipsearch.api.gradienttools.MaskNegativeScoresCalculatorProvider;
-import org.janelia.colormipsearch.api.gradienttools.NegativeGradientScores;
+import org.janelia.colormipsearch.api.cdsearch.GradientAreaGapUtils;
+import org.janelia.colormipsearch.api.cdsearch.NegativeColorDepthMatchScore;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,8 +115,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     }
 
     private void calculateGradientAreaScore(NegativeScoreResultsArgs args) {
-        MaskNegativeScoresCalculatorProvider maskNegativeScoresCalculatorProvider =
-                MaskNegativeScoresCalculator.createMaskGradientAreaGapCalculatorProvider(
+        ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider =
+                ColorDepthSearchAlgorithmProviderFactory.createNegativeMatchCDSAlgorithmProvider(
                         args.maskThreshold, args.negativeRadius, args.mirrorMask
                 );
         Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
@@ -129,7 +130,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         inputFiles.forEach(inputArg -> {
                             File f = new File(inputArg.input);
                             CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
-                                    maskNegativeScoresCalculatorProvider,
+                                    negativeMatchCDSArgorithmProvider,
                                     f,
                                     args.librarySuffix,
                                     args.gradientPaths,
@@ -173,7 +174,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             fileList.forEach(fn -> {
                                 File f = new File(fn);
                                 CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
-                                        maskNegativeScoresCalculatorProvider,
+                                        negativeMatchCDSArgorithmProvider,
                                         f,
                                         args.librarySuffix,
                                         args.gradientPaths,
@@ -204,7 +205,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     }
 
     private CDSMatches calculateGradientAreaScoreForResultsFile(
-            MaskNegativeScoresCalculatorProvider maskNegativeScoresCalculatorProvider,
+            ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
             File inputResultsFile,
             String librarySuffix,
             List<String> gradientsLocations,
@@ -242,7 +243,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                 gradientSuffix,
                                 zgapsLocations,
                                 zgapsSuffix,
-                                maskNegativeScoresCalculatorProvider,
+                                negativeMatchCDSArgorithmProvider,
                                 executor))
                         .collect(Collectors.toList());
         // wait for all results to complete
@@ -274,13 +275,13 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                                                                                       String gradientSuffix,
                                                                                                       List<String> zgapsLocations,
                                                                                                       String zgapsSuffix,
-                                                                                                      MaskNegativeScoresCalculatorProvider maskNegativeScoresCalculatorProvider,
+                                                                                                      ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
                                                                                                       Executor executor) {
         LOG.info("Calculate gradient score for {} matches of mip entry {} - {}", selectedCDSResultsForInputMIP.size(), resultIDIndex, inputMaskMIP);
-        CompletableFuture<MaskNegativeScoresCalculator> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore>> gradientGapCalculatorPromise = CompletableFuture.supplyAsync(() -> {
             LOG.info("Load input mask {}", inputMaskMIP);
             MIPImage inputMaskImage = MIPsUtils.loadMIP(inputMaskMIP); // no caching for the mask
-            return maskNegativeScoresCalculatorProvider.createMaskNegativeScoresCalculator(inputMaskImage.getImageArray());
+            return negativeMatchCDSArgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(inputMaskImage.getImageArray());
         }, executor);
         List<CompletableFuture<Long>> negativeScoresComputations = Streams.zip(
                 IntStream.range(0, Integer.MAX_VALUE).boxed(),
@@ -293,7 +294,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                     matchedMIP.setImageName(indexedCsr.getRight().getImageName());
                     matchedMIP.setImageType(indexedCsr.getRight().getImageType());
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
+                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                             matchedMIP,
                             gradientsLocations,
                             nc -> {
@@ -304,7 +305,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     return nc + suffix;
                                 }
                             }));
-                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getAncillaryMIPInfo(
+                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                             matchedMIP,
                             zgapsLocations,
                             nc -> {
@@ -322,15 +323,15 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         // only calculate the area gap if the gradient exist
                         LOG.debug("Calculate area gap for {}:{} ({}:{})",
                                 resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP);
-                        NegativeGradientScores negativeScores = gradientGapCalculator.calculateMaskAreaGap(
-                                matchedImage.getImageArray(),
-                                matchedGradientImage.getImageArray(),
-                                matchedZGapImage != null ? matchedZGapImage.getImageArray() : null);
-                        indexedCsr.getRight().setGradientAreaGap(negativeScores.gradientAreaGap);
-                        indexedCsr.getRight().setHighExpressionArea(negativeScores.highExpressionArea);
+                        NegativeColorDepthMatchScore negativeScores = gradientGapCalculator.calculateMatchingScore(
+                                MIPsUtils.getImageArray(matchedImage),
+                                MIPsUtils.getImageArray(matchedGradientImage),
+                                MIPsUtils.getImageArray(matchedZGapImage));
+                        indexedCsr.getRight().setGradientAreaGap(negativeScores.getGradientAreaGap());
+                        indexedCsr.getRight().setHighExpressionArea(negativeScores.getHighExpressionArea());
                         LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",
                                 resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
-                        negativeScore = negativeScores.getCumulatedScore();
+                        negativeScore = negativeScores.getScore();
                     } else {
                         indexedCsr.getRight().setGradientAreaGap(-1);
                         indexedCsr.getRight().setHighExpressionArea(-1);

@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmsdrivers;
 
 import java.util.List;
 import java.util.Spliterators;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -14,6 +15,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -28,11 +30,26 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
     private final ColorMIPSearch colorMIPSearch;
+    private final int libraryPartitionSize;
+    private final List<String> gradientsLocations;
+    private final Function<String, String> gradientVariantSuffixMapping;
+    private final List<String> zgapMasksLocations;
+    private final Function<String, String> zgapMaskVariantSuffixMapping;
     private transient final JavaSparkContext sparkContext;
 
     public SparkColorMIPSearch(String appName,
-                               ColorMIPSearch colorMIPSearch) {
+                               ColorMIPSearch colorMIPSearch,
+                               int libraryPartitionSize,
+                               List<String> gradientsLocations,
+                               Function<String, String> gradientVariantSuffixMapping,
+                               List<String> zgapMasksLocations,
+                               Function<String, String> zgapMaskVariantSuffixMapping) {
         this.colorMIPSearch = colorMIPSearch;
+        this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
+        this.gradientsLocations = gradientsLocations;
+        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
+        this.zgapMasksLocations = zgapMasksLocations;
+        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
@@ -52,17 +69,32 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
                 .filter(MIPsUtils::exists);
         LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
 
-        JavaPairRDD<MIPImage, MIPMetadata> librariesMasksPairsRDD = librariesRDD.cartesian(masksRDD);
-        LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, librariesMasksPairsRDD.getNumPartitions());
+        JavaPairRDD<MIPMetadata, MIPImage> masksLibrariesPairsRDD = masksRDD.cartesian(librariesRDD);
+        LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, masksLibrariesPairsRDD.getNumPartitions());
 
-        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = librariesMasksPairsRDD
-                .groupBy(lms -> lms._2) // group by mask
+        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = masksLibrariesPairsRDD
+                .groupBy(lms -> lms._1) // group by mask
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
                             MIPImage maskMIP = MIPsUtils.loadMIP(mls._1);
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(lmPair -> colorMIPSearch.runImageComparison(lmPair._1, maskMIP))
-                                    .filter(srByMask -> srByMask.isMatch() || srByMask.isError())
+                                    .map(maskLibraryPair -> {
+                                        MIPImage libraryImage = maskLibraryPair._2;
+                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                libraryImage.getMipInfo(),
+                                                gradientsLocations,
+                                                gradientVariantSuffixMapping));
+                                        MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                libraryImage.getMipInfo(),
+                                                zgapMasksLocations,
+                                                zgapMaskVariantSuffixMapping));
+                                        return colorMIPSearch.runColorDepthSearch(
+                                                maskMIP,
+                                                libraryImage,
+                                                libraryGradientImage,
+                                                libraryZGapMaskImage);
+                                    })
+                                    .filter(srByMask -> srByMask.isMatch() || srByMask.hasErrors())
                                     .sorted(colorMIPSearch.getColorMIPSearchResultComparator())
                                     .collect(Collectors.toList());
                             return new Tuple2<>(mls._1, srsByMask);

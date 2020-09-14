@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -31,7 +30,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.imageio.stream.FileImageOutputStream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -477,7 +475,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 if (mipVariantArg.variantType.equals(segmentationVariantType)) {
                                     continue; // skip segmentation variant because it was already handled
                                 }
-                                MIPMetadata variantMIP = MIPsUtils.getAncillaryMIPInfo(
+                                MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
                                         cdmip,
                                         Collections.singletonList(mipVariantArg.variantPath),
                                         nc -> {

@@ -23,7 +23,7 @@ import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.api.gradienttools.GradientAreaGapUtils;
+import org.janelia.colormipsearch.api.cdsearch.GradientAreaGapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

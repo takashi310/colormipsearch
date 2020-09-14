@@ -7,32 +7,37 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
 
 /**
- * ColorMIPMaskCompare encapsulates a mask and it provides a method to compare
- * the enclosed mask with other mips.
+ * Common methods that can be used by various ColorDepthQuerySearchAlgorithm implementations.
+ * @param <S> score type
  */
-public abstract class ColorMIPMaskCompare {
+public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> implements ColorDepthSearchAlgorithm<S> {
 
     final ImageArray queryImage;
     final ImageArray negQueryImage;
-    final int[] maskPositions;
-    final int[] negMaskPositions;
-    final int searchThreshold;
+    final int[] queryPositions;
+    final int[] negQueryPositions;
+    final int targetThreshold;
     final double zTolerance;
 
-    protected ColorMIPMaskCompare(ImageArray query, int maskThreshold,
-                                  ImageArray negquery, int negMaskThreshold,
-                                  int searchThreshold, double zTolerance) {
+    protected AbstractColorDepthSearchAlgorithm(ImageArray query, int queryThreshold,
+                                                ImageArray negquery, int negQueryThreshold,
+                                                int targetThreshold, double zTolerance) {
         this.queryImage = query;
         this.negQueryImage = negquery;
-        this.searchThreshold = searchThreshold;
+        this.targetThreshold = targetThreshold;
         this.zTolerance = zTolerance;
 
-        this.maskPositions = getMaskPosArray(queryImage, maskThreshold);
+        this.queryPositions = getMaskPosArray(queryImage, queryThreshold);
         if (negQueryImage != null) {
-            this.negMaskPositions = getMaskPosArray(negQueryImage, negMaskThreshold);
+            this.negQueryPositions = getMaskPosArray(negQueryImage, negQueryThreshold);
         } else {
-            negMaskPositions = null;
+            negQueryPositions = null;
         }
+    }
+
+    @Override
+    public ImageArray getQueryImage() {
+        return queryImage;
     }
 
     private int[] getMaskPosArray(ImageArray msk, int thresm) {
@@ -57,17 +62,6 @@ public abstract class ColorMIPMaskCompare {
         }
         return pos.stream().mapToInt(i -> i).toArray();
     }
-
-    /**
-     * Run the color depth search between the current mask (the one from the context of the current comparator) and
-     * the targetImage parameter. The method compares each pixel from the mask that is above a given mask threshold with the
-     * corresponding pixel from the target that is above a data threshold. The method also may use mirroring and/or x-y translation
-     * to search for a map in additional natching candidate positions.
-     *
-     * @param targetImage
-     * @return
-     */
-    public abstract ColorMIPCompareOutput runSearch(ImageArray targetImage);
 
     /**
      * Calculate the Z-gap between two RGB pixels
@@ -318,7 +312,6 @@ public abstract class ColorMIPMaskCompare {
                 }
             }
         }//2 color advance core
-
         return pxGap;
     }
 

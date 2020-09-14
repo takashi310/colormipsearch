@@ -4,14 +4,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPCompareOutput;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPMaskCompare;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
@@ -35,17 +36,30 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
     private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
     private final int libraryPartitionSize;
+    private final List<String> gradientsLocations;
+    private final Function<String, String> gradientVariantSuffixMapping;
+    private final List<String> zgapMasksLocations;
+    private final Function<String, String> zgapMaskVariantSuffixMapping;
 
     public LocalColorMIPSearch(ColorMIPSearch colorMIPSearch,
                                int libraryPartitionSize,
+                               List<String> gradientsLocations,
+                               Function<String, String> gradientVariantSuffixMapping,
+                               List<String> zgapMasksLocations,
+                               Function<String, String> zgapMaskVariantSuffixMapping,
                                Executor cdsExecutor) {
         this.colorMIPSearch = colorMIPSearch;
         this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
+        this.gradientsLocations = gradientsLocations;
+        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
+        this.zgapMasksLocations = zgapMasksLocations;
+        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
         this.cdsExecutor = cdsExecutor;
     }
 
     @Override
-    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> maskMIPS, List<MIPMetadata> libraryMIPS) {
+    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> maskMIPS,
+                                                               List<MIPMetadata> libraryMIPS) {
         long startTime = System.currentTimeMillis();
         int nmasks = maskMIPS.size();
         int nlibraries = libraryMIPS.size();
@@ -76,9 +90,11 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
         return allSearchResults;
     }
 
-    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex, MIPMetadata maskMIP, List<MIPMetadata> libraryMIPs) {
+    private List<CompletableFuture<List<ColorMIPSearchResult>>> submitMaskSearches(long mIndex,
+                                                                                   MIPMetadata maskMIP,
+                                                                                   List<MIPMetadata> libraryMIPs) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
-        ColorMIPMaskCompare maskComparator = colorMIPSearch.createMaskComparatorWithDefaultThreshold(maskImage);
+        ColorDepthSearchAlgorithm<ColorMIPMatchScore> maskColorDepthSearch = colorMIPSearch.createMaskColorDepthSearch(maskImage, null);
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
                 .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
@@ -87,22 +103,35 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         List<ColorMIPSearchResult> srs = libraryMIPsPartition.stream()
                                 .filter(MIPsUtils::exists)
                                 .map(libraryMIP -> {
-                                    MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
-                                    ColorMIPCompareOutput sr = colorMIPSearch.runImageComparison(maskComparator, libraryImage);
-                                    if (colorMIPSearch.isMatch(sr)) {
+                                    try {
+                                        MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
+                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                libraryMIP,
+                                                gradientsLocations,
+                                                gradientVariantSuffixMapping));
+                                        MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                libraryMIP,
+                                                zgapMasksLocations,
+                                                zgapMaskVariantSuffixMapping));
+                                        ColorMIPMatchScore colorMIPMatchScore = maskColorDepthSearch.calculateMatchingScore(
+                                                MIPsUtils.getImageArray(libraryImage),
+                                                MIPsUtils.getImageArray(libraryGradientImage),
+                                                MIPsUtils.getImageArray(libraryZGapMaskImage));
+                                        boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
                                         return new ColorMIPSearchResult(
                                                 maskMIP,
                                                 libraryMIP,
-                                                sr.getMatchingPixNum(),
-                                                sr.getMatchingPixNumToMaskRatio(),
-                                                true,
-                                                false
-                                        );
-                                    } else {
+                                                colorMIPMatchScore,
+                                                isMatch,
+                                                false);
+                                    } catch (Throwable e) {
+                                        LOG.warn("Error comparing mask {} with {}", maskMIP,  libraryMIP, e);
                                         return new ColorMIPSearchResult(
                                                 maskMIP,
                                                 libraryMIP,
-                                                0, 0, false, false);
+                                                ColorMIPMatchScore.NO_MATCH,
+                                                false,
+                                                true);
                                     }
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)

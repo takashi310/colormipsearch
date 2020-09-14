@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,14 @@ public class MIPsUtils {
                 LOG.trace("Loaded MIP {} in {}ms", mip, System.currentTimeMillis() - startTime);
             }
         }
+    }
+
+    public static ImageArray getImageArray(MIPImage mipImage) {
+        return mipImage != null ? mipImage.getImageArray() : null;
+    }
+
+    public static MIPMetadata getMIPMetadata(MIPImage mipImage) {
+        return mipImage != null ? mipImage.getMipInfo() : null;
     }
 
     public static boolean exists(MIPMetadata mip) {
@@ -208,27 +217,27 @@ public class MIPsUtils {
      * The typical pattern is that the image file name is the same but the path to it has a certain suffix
      * such as '_gradient' or '_20pxRGBMAX'
      * @param mipInfo
-     * @param ancillaryMIPLocations
-     * @param ancillaryMIPSuffixMapping specifies how the mapping changes from the mipInfo to the ancillary mip
+     * @param mipVariantLocations
+     * @param mipVariantSuffixMapping specifies how the mapping changes from the mipInfo to the ancillary mip
      * @return
      */
     @Nullable
-    public static MIPMetadata getAncillaryMIPInfo(MIPMetadata mipInfo, List<String> ancillaryMIPLocations, Function<String, String> ancillaryMIPSuffixMapping) {
-        if (CollectionUtils.isEmpty(ancillaryMIPLocations)) {
+    public static MIPMetadata getMIPVariantInfo(MIPMetadata mipInfo, List<String> mipVariantLocations, Function<String, String> mipVariantSuffixMapping) {
+        if (CollectionUtils.isEmpty(mipVariantLocations)) {
             return null;
         } else {
-            return ancillaryMIPLocations.stream()
+            return mipVariantLocations.stream()
                     .filter(StringUtils::isNotBlank)
                     .map(Paths::get)
                     .map(ancillaryMIPPath -> {
                         if (Files.isDirectory(ancillaryMIPPath)) {
-                            return getAncillaryMIPInfoFromFilePath(
+                            return getMIPVariantInfoFromFilePath(
                                     ancillaryMIPPath,
                                     Paths.get(mipInfo.getImageName()),
                                     Paths.get(mipInfo.getCdmName()).getFileName().toString(),
-                                    ancillaryMIPSuffixMapping);
+                                    mipVariantSuffixMapping);
                         } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPPath.getFileName().toString(), ".zip")) {
-                            return getAncillaryMIPInfoFromZipEntry(ancillaryMIPPath.toString(), mipInfo.getImageName(), ancillaryMIPSuffixMapping);
+                            return getAncillaryMIPInfoFromZipEntry(ancillaryMIPPath.toString(), mipInfo.getImageName(), mipVariantSuffixMapping);
                         } else {
                             return null;
                         }
@@ -240,36 +249,36 @@ public class MIPsUtils {
     }
 
     @Nullable
-    private static MIPMetadata getAncillaryMIPInfoFromFilePath(Path ancillaryMIPPath, Path mipImagePath, String sourceCDMName, Function<String, String> ancillaryMIPSuffixMapping) {
+    private static MIPMetadata getMIPVariantInfoFromFilePath(Path mipVariantPath, Path mipImagePath, String sourceCDMName, Function<String, String> mipVariantSuffixMapping) {
         Path mipParentPath = mipImagePath.getParent();
         String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipImagePath.getFileName().toString(), "\\..*$", "");
-        List<Path> ancillaryMIPPaths;
+        List<Path> mipVariantPaths;
         if (mipParentPath == null) {
             String sourceMIPNameWithoutExtension = RegExUtils.replacePattern(sourceCDMName, "\\..*$", "");
-            ancillaryMIPPaths = Arrays.asList(
-                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".png"),
-                    ancillaryMIPPath.resolve(mipFilenameWithoutExtension + ".tif"),
-                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"), // search ancillary based on the transformation of the original mip
-                    ancillaryMIPPath.resolve(ancillaryMIPSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".tiff")
+            mipVariantPaths = Arrays.asList(
+                    mipVariantPath.resolve(mipFilenameWithoutExtension + ".png"),
+                    mipVariantPath.resolve(mipFilenameWithoutExtension + ".tif"),
+                    mipVariantPath.resolve(mipVariantSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"), // search ancillary based on the transformation of the original mip
+                    mipVariantPath.resolve(mipVariantSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".tiff")
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
-            ancillaryMIPPaths = Stream.concat(
+            mipVariantPaths = Stream.concat(
                     IntStream.range(0, nComponents)
                             .map(i -> nComponents - i - 1)
                             .mapToObj(i -> {
                                 if (i > 0)
-                                    return mipParentPath.subpath(0, i).resolve(ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString())).toString();
+                                    return mipParentPath.subpath(0, i).resolve(mipVariantSuffixMapping.apply(mipParentPath.getName(i).toString())).toString();
                                 else
-                                    return ancillaryMIPSuffixMapping.apply(mipParentPath.getName(i).toString());
+                                    return mipVariantSuffixMapping.apply(mipParentPath.getName(i).toString());
                             }),
                     Stream.of(""))
                     .flatMap(p -> Stream.of(
-                            ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
-                            ancillaryMIPPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
+                            mipVariantPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
+                            mipVariantPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
                     .collect(Collectors.toList());
         }
-        return ancillaryMIPPaths.stream()
+        return mipVariantPaths.stream()
                 .filter(p -> Files.exists(p)).filter(p -> Files.isRegularFile(p))
                 .findFirst()
                 .map(Path::toString)

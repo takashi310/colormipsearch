@@ -5,7 +5,6 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 /**
@@ -19,18 +18,24 @@ public class ColorMIPSearchResult implements Serializable {
     private final MIPMetadata libraryMIP;
     private final int matchingPixels;
     private final double matchingRatio;
-    private final boolean isMatch;
-    private final boolean isError;
-    private long gradientAreaGap;
+    private final long gradientAreaGap;
+    private final long highExpressionArea;
+    private final boolean matchAbovePctPositivePixels;
+    private final boolean errorsFound;
 
-    public ColorMIPSearchResult(MIPMetadata maskMIP, MIPMetadata libraryMIP, int matchingPixels, double matchingRatio, boolean isMatch, boolean isError) {
+    public ColorMIPSearchResult(MIPMetadata maskMIP,
+                                MIPMetadata libraryMIP,
+                                ColorMIPMatchScore cdsScore,
+                                boolean matchAbovePctPositivePixels,
+                                boolean errorsFound) {
         this.maskMIP = maskMIP;
         this.libraryMIP = libraryMIP;
-        this.matchingPixels = matchingPixels;
-        this.matchingRatio = matchingRatio;
-        this.isMatch = isMatch;
-        this.isError = isError;
-        this.gradientAreaGap = -1;
+        this.matchingPixels = cdsScore.getMatchingPixNum();
+        this.matchingRatio = cdsScore.getMatchingPixNumToMaskRatio();
+        this.gradientAreaGap = cdsScore.getGradientAreaGap();
+        this.highExpressionArea = cdsScore.getHighExpressionArea();
+        this.matchAbovePctPositivePixels = matchAbovePctPositivePixels;
+        this.errorsFound = errorsFound;
     }
 
     public String getLibraryId() {
@@ -46,11 +51,11 @@ public class ColorMIPSearchResult implements Serializable {
     }
 
     public boolean isMatch() {
-        return isMatch;
+        return !errorsFound && matchAbovePctPositivePixels;
     }
 
-    public boolean isError() {
-        return isError;
+    public boolean hasErrors() {
+        return errorsFound;
     }
 
     @Override
@@ -85,8 +90,9 @@ public class ColorMIPSearchResult implements Serializable {
                 .append("matchingPixels", matchingPixels)
                 .append("matchingPixelsPct", matchingRatio)
                 .append("areaGap", gradientAreaGap)
-                .append("isMatch", isMatch)
-                .append("isError", isError)
+                .append("highExpressionArea", highExpressionArea)
+                .append("matchAbovePctPositivePixels", matchAbovePctPositivePixels)
+                .append("errorsFound", errorsFound)
                 .toString();
     }
 
@@ -120,6 +126,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
+        srMetadata.setHighExpressionArea(highExpressionArea);
         return srMetadata;
     }
 
@@ -154,6 +161,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
         srMetadata.setGradientAreaGap(gradientAreaGap);
+        srMetadata.setHighExpressionArea(highExpressionArea);
         return srMetadata;
     }
 

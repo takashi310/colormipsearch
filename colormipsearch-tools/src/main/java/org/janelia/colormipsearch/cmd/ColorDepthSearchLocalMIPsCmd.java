@@ -6,9 +6,13 @@ import java.util.function.Supplier;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProvider;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProviderFactory;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
@@ -62,14 +66,49 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     }
 
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
-        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.maskThreshold,
-                args.dataThreshold,
-                args.pixColorFluctuation,
-                args.xyShift,
-                args.mirrorMask,
-                args.pctPositivePixels);
-        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args.commonArgs));
+        ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
+        if (CollectionUtils.isNotEmpty(args.gradientPaths)) {
+            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
+                    args.maskThreshold,
+                    args.mirrorMask,
+                    args.dataThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift,
+                    args.negativeRadius
+            );
+        } else {
+            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
+                    args.maskThreshold,
+                    args.mirrorMask,
+                    args.dataThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift
+            );
+        }
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
+        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(
+                        colorMIPSearch,
+                        args.libraryPartitionSize,
+                        args.gradientPaths,
+                        gradPathComponent -> {
+                            String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
+                            if (StringUtils.isNotBlank(args.librarySuffix)) {
+                                return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
+                            } else {
+                                return gradPathComponent + suffix;
+                            }
+                        },
+                        args.zgapPaths,
+                        zgapPathComponent -> {
+                            String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
+                            if (StringUtils.isNotBlank(args.librarySuffix)) {
+                                return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
+                            } else {
+                                return zgapPathComponent + suffix;
+                            }
+
+                        },
+                        CmdUtils.createCDSExecutor(args.commonArgs));
         try {
             List<MIPMetadata> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
                     args.libraryMIPsLocation.input,

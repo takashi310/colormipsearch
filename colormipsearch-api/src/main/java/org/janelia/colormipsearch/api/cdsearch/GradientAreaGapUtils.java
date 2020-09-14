@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api.gradienttools;
+package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.function.Supplier;
 
@@ -9,7 +9,6 @@ import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
  */
 public class GradientAreaGapUtils {
 
-    private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private enum Color {
         BLACK,
         RED,
@@ -17,22 +16,7 @@ public class GradientAreaGapUtils {
         BLUE
     }
 
-    static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, maskPixSupplier, dilatedPixSupplier) -> {
-        int maskPix = maskPixSupplier.get();
-        if (maskPix != -16777216) {
-            int dilatedPix = dilatedPixSupplier.get();
-            if (dilatedPix != -16777216) {
-                int pxGapSlice = calculateSliceGap(maskPix, dilatedPix);
-                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                    // negative score value
-                    return pxGapSlice - DEFAULT_COLOR_FLUX;
-                }
-            }
-        }
-        return gradScorePixSupplier.get();
-    };
-
-    private static int calculateSliceGap(int rgb1, int rgb2) {
+    static int calculateSliceGap(int rgb1, int rgb2) {
 
         int max1stvalMASK = 0, max2ndvalMASK = 0, max1stvalDATA = 0, max2ndvalDATA = 0, maskslinumber = 0, dataslinumber = 0;
         Color mask1stMaxColor = Color.BLACK, mask2ndMaxColor = Color.BLACK, data1stMaxColor = Color.BLACK, data2ndMaxColor = Color.BLACK;

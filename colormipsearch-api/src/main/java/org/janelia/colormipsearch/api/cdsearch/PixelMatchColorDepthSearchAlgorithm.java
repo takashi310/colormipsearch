@@ -3,42 +3,46 @@ package org.janelia.colormipsearch.api.cdsearch;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 /**
- * ArrayColorMIPMaskCompare - implements the color depth mip comparison
+ * PixelMatchColorDepthQuerySearchAlgorithm - implements the color depth mip comparison
  * using internal arrays containg the positions from the mask that are above the mask threshold
  * and the positions after applying the specified x-y shift and mirroring transformations.
+ * The mask pixels are compared against the target pixels tht
  */
-public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
+public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearchAlgorithm<ColorMIPMatchScore> {
 
     private final int[][] targetMasksList;
     private final int[][] mirrorTargetMasksList;
     private final int[][] negTargetMasksList;
     private final int[][] negMirrorTargetMasksList;
 
-    public ArrayColorMIPMaskCompare(ImageArray query, int maskThreshold, boolean mirrorMask,
-                                    ImageArray negquery, int negMaskThreshold,
-                                    boolean mirrorNegMask, int searchThreshold,
-                                    double zTolerance, int xyshift) {
-        super(query, maskThreshold, negquery, negMaskThreshold, searchThreshold, zTolerance);
+    public PixelMatchColorDepthSearchAlgorithm(ImageArray query, int queryThreshold, boolean mirrorQuery,
+                                               ImageArray negQuery, int negQueryThreshold,
+                                               boolean mirrorNegQuery, int targetThreshold,
+                                               double zTolerance, int xyshift) {
+        super(query, queryThreshold, negQuery, negQueryThreshold, targetThreshold, zTolerance);
         // shifting
-        targetMasksList = generateShiftedMasks(maskPositions, xyshift, query.getWidth(), query.getHeight());
+        targetMasksList = generateShiftedMasks(queryPositions, xyshift, query.getWidth(), query.getHeight());
         if (negQueryImage != null) {
-            negTargetMasksList = generateShiftedMasks(negMaskPositions, xyshift, query.getWidth(), query.getHeight());
+            negTargetMasksList = generateShiftedMasks(negQueryPositions, xyshift, query.getWidth(), query.getHeight());
         } else {
             negTargetMasksList = null;
         }
 
         // mirroring
-        if (mirrorMask) {
+        if (mirrorQuery) {
             mirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < targetMasksList.length; i++)
                 mirrorTargetMasksList[i] = mirrorMask(targetMasksList[i], query.getWidth());
         } else {
             mirrorTargetMasksList = null;
         }
-        if (mirrorNegMask && negQueryImage != null) {
+        if (mirrorNegQuery && negQueryImage != null) {
             negMirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < negTargetMasksList.length; i++)
                 negMirrorTargetMasksList[i] = mirrorMask(negTargetMasksList[i], query.getWidth());
@@ -48,14 +52,16 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
     }
 
     @Override
-    public ColorMIPCompareOutput runSearch(ImageArray targetImage) {
+    public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
+                                                     @Nullable ImageArray targetGradientImageArray,
+                                                     @Nullable ImageArray targetZGapMaskImageArray) {
         int posi = 0;
         double posipersent = 0.0;
-        int masksize = maskPositions.length;
-        int negmasksize = negMaskPositions != null ? negMaskPositions.length : 0;
+        int masksize = queryPositions.length;
+        int negmasksize = negQueryPositions != null ? negQueryPositions.length : 0;
 
         for (int[] ints : targetMasksList) {
-            int tmpposi = calculateScore(queryImage, maskPositions, targetImage, ints);
+            int tmpposi = calculateScore(queryImage, queryPositions, targetImageArray, ints);
             if (tmpposi > posi) {
                 posi = tmpposi;
                 posipersent = (double) posi / (double) masksize;
@@ -65,7 +71,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
             int nega = 0;
             double negapersent = 0.0;
             for (int[] ints : negTargetMasksList) {
-                int tmpnega = calculateScore(negQueryImage, negMaskPositions, targetImage, ints);
+                int tmpnega = calculateScore(negQueryImage, negQueryPositions, targetImageArray, ints);
                 if (tmpnega > nega) {
                     nega = tmpnega;
                     negapersent = (double) nega / (double) negmasksize;
@@ -79,7 +85,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
             int mirror_posi = 0;
             double mirror_posipersent = 0.0;
             for (int[] ints : mirrorTargetMasksList) {
-                int tmpposi = calculateScore(queryImage, maskPositions, targetImage, ints);
+                int tmpposi = calculateScore(queryImage, queryPositions, targetImageArray, ints);
                 if (tmpposi > mirror_posi) {
                     mirror_posi = tmpposi;
                     mirror_posipersent = (double) mirror_posi / (double) masksize;
@@ -89,7 +95,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
                 int nega = 0;
                 double negapersent = 0.0;
                 for (int[] ints : negMirrorTargetMasksList) {
-                    int tmpnega = calculateScore(negQueryImage, negMaskPositions, targetImage, ints);
+                    int tmpnega = calculateScore(negQueryImage, negQueryPositions, targetImageArray, ints);
                     if (tmpnega > nega) {
                         nega = tmpnega;
                         negapersent = (double) nega / (double) negmasksize;
@@ -104,7 +110,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
             }
         }
 
-        return new ColorMIPCompareOutput(posi, posipersent);
+        return new ColorMIPMatchScore(posi, posipersent, null);
     }
 
 
@@ -168,7 +174,7 @@ public class ArrayColorMIPMaskCompare extends ColorMIPMaskCompare {
             int green2 = (pix2 >>> 8) & 0xff;
             int blue2 = pix2 & 0xff;
 
-            if (red2 > searchThreshold || green2 > searchThreshold || blue2 > searchThreshold) {
+            if (red2 > targetThreshold || green2 > targetThreshold || blue2 > targetThreshold) {
                 double pxGap = calculatePixelGap(red1, green1, blue1, red2, green2, blue2);
                 if (pxGap <= zTolerance) {
                     posi++;

@@ -9,12 +9,16 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProvider;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
@@ -83,24 +87,78 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         // initialize the cache
         CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
-        runSearchFromJSONInput(args);
+        runColorDepthSearchFromJSONInput(args);
     }
 
-    private void runSearchFromJSONInput(JsonMIPsSearchArgs args) {
+    private void runColorDepthSearchFromJSONInput(JsonMIPsSearchArgs args) {
         ColorMIPSearchDriver colorMIPSearchDriver;
-        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(
-                args.maskThreshold,
-                args.dataThreshold,
-                args.pixColorFluctuation,
-                args.xyShift,
-                args.mirrorMask,
-                args.pctPositivePixels);
-        if (args.useSpark()) {
-            colorMIPSearchDriver = new SparkColorMIPSearch(args.appName, colorMIPSearch);
+        ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
+        if (CollectionUtils.isNotEmpty(args.gradientPaths)) {
+            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
+                    args.maskThreshold,
+                    args.mirrorMask,
+                    args.dataThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift,
+                    args.negativeRadius
+            );
         } else {
-            colorMIPSearchDriver = new LocalColorMIPSearch(colorMIPSearch, args.libraryPartitionSize, CmdUtils.createCDSExecutor(args.commonArgs));
+            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
+                    args.maskThreshold,
+                    args.mirrorMask,
+                    args.dataThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift
+            );
         }
-
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
+        if (args.useSpark()) {
+            colorMIPSearchDriver = new SparkColorMIPSearch(
+                    args.appName,
+                    colorMIPSearch,
+                    args.libraryPartitionSize,
+                    args.gradientPaths,
+                    gradPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return gradPathComponent + suffix;
+                        }
+                    },
+                    args.zgapPaths,
+                    zgapPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return zgapPathComponent + suffix;
+                        }
+                    });
+        } else {
+            colorMIPSearchDriver = new LocalColorMIPSearch(
+                    colorMIPSearch,
+                    args.libraryPartitionSize,
+                    args.gradientPaths,
+                    gradPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return gradPathComponent + suffix;
+                        }
+                    },
+                    args.zgapPaths,
+                    zgapPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return zgapPathComponent + suffix;
+                        }
+                    },
+                    CmdUtils.createCDSExecutor(args.commonArgs));
+        }
         try {
             ObjectMapper mapper = new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

@@ -1,0 +1,139 @@
+package org.janelia.colormipsearch.api.cdsearch;
+
+import java.util.function.Supplier;
+
+import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
+import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
+import org.janelia.colormipsearch.api.imageprocessing.LImage;
+import org.janelia.colormipsearch.api.imageprocessing.LImageUtils;
+import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
+ */
+public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GradientBasedNegativeScoreColorDepthSearchAlgorithm.class);
+    private static final int DEFAULT_COLOR_FLUX = 40; // 40um
+    private static final int GAP_THRESHOLD = 3;
+
+    private static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, maskPixSupplier, dilatedPixSupplier) -> {
+        int maskPix = maskPixSupplier.get();
+        if (maskPix != -16777216) {
+            int dilatedPix = dilatedPixSupplier.get();
+            if (dilatedPix != -16777216) {
+                int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(maskPix, dilatedPix);
+                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+                    // negative score value
+                    return pxGapSlice - DEFAULT_COLOR_FLUX;
+                }
+            }
+        }
+        return gradScorePixSupplier.get();
+    };
+
+    private final LImage queryImage;
+    private final LImage queryIntensityValues;
+    private final LImage queryMaskForHighExpressionRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
+    private final int queryThreshold;
+    private final boolean mirrorQuery;
+    private final ImageTransformation clearLabels;
+    private final ImageProcessing negativeRadiusDilation;
+
+    GradientBasedNegativeScoreColorDepthSearchAlgorithm(LImage queryImage,
+                                                        LImage queryIntensityValues,
+                                                        LImage queryMaskForHighExpressionRegions,
+                                                        int queryThreshold,
+                                                        boolean mirrorQuery,
+                                                        ImageTransformation clearLabels,
+                                                        ImageProcessing negativeRadiusDilation) {
+        this.queryImage = queryImage;
+        this.queryIntensityValues = queryIntensityValues;
+        this.queryMaskForHighExpressionRegions = queryMaskForHighExpressionRegions;
+        this.queryThreshold = queryThreshold;
+        this.mirrorQuery = mirrorQuery;
+        this.clearLabels = clearLabels;
+        this.negativeRadiusDilation = negativeRadiusDilation;
+    }
+
+    @Override
+    public ImageArray getQueryImage() {
+        return queryImage.toImageArray();
+    }
+
+    /**
+     * Calculate area gap between the encapsulated mask and the given image with the corresponding image gradients and zgaps.
+     * The gradient image must be non-null but the z-gap image can be null in which case it is calculated using
+     * a dilation transformation.
+     *
+     * @param targetImageArray
+     * @param targetGradientImageArray
+     * @param targetZGapMaskImageArray
+     * @return
+     */
+    @Override
+    public NegativeColorDepthMatchScore calculateMatchingScore(ImageArray targetImageArray,
+                                                               ImageArray targetGradientImageArray,
+                                                               ImageArray targetZGapMaskImageArray) {
+        if (targetGradientImageArray == null) {
+            return new NegativeColorDepthMatchScore(-1, -1);
+        }
+        long startTime = System.currentTimeMillis();
+        LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
+        LImage targetGradientImage = LImageUtils.create(targetGradientImageArray);
+        LImage targetZGapMaskImage = targetZGapMaskImageArray != null
+                ? LImageUtils.create(targetZGapMaskImageArray)
+                : negativeRadiusDilation.applyTo(targetImage.map(ColorTransformation.mask(queryThreshold))).reduce(); // eval immediately
+
+        NegativeColorDepthMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY);
+
+        if (mirrorQuery) {
+            LOG.trace("Start calculating area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
+            NegativeColorDepthMatchScore mirrorNegativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.horizontalMirror());
+            LOG.trace("Completed area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
+            if (mirrorNegativeScores.getScore() < negativeScores.getScore()) {
+                return mirrorNegativeScores;
+            }
+        }
+        return negativeScores;
+    }
+
+    private NegativeColorDepthMatchScore calculateNegativeScores(LImage inputImage, LImage inputGradientImage, LImage inputZGapImage, ImageTransformation maskTransformation) {
+        long startTime = System.currentTimeMillis();
+        LImage gaps = LImageUtils.lazyCombine3(
+                LImageUtils.combine2(
+                        queryIntensityValues.mapi(maskTransformation),
+                        inputGradientImage,
+                        (p1, p2) -> p1 * p2),
+                queryImage.mapi(maskTransformation),
+                inputZGapImage.mapi(maskTransformation),
+                PIXEL_GAP_OP.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
+        );
+        LImage highExpressionRegions = LImageUtils.lazyCombine2(
+                inputImage,
+                queryMaskForHighExpressionRegions.mapi(maskTransformation),
+                (p1s, p2s) -> {
+                    int p2 = p2s.get();
+                    if (p2 == 1) {
+                        int p1 = p1s.get();
+                        int r1 = (p1 >>> 16) & 0xff;
+                        int g1 = (p1 >>> 8) & 0xff;
+                        int b1 = p1 & 0xff;
+                        if (r1 > queryThreshold || g1 > queryThreshold || b1 > queryThreshold) {
+                            return 1;
+                        }
+                    }
+                    return 0;
+                });
+        long gradientAreaGap = gaps.fold(0L, (p, s) -> s + p);
+        LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
+        long highExpressionArea = highExpressionRegions.fold(0L, (p, s) -> p + s);
+        LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
+        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea);
+    }
+
+}
