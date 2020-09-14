@@ -71,6 +71,10 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--perLibrarySubdir"}, description = "Results subdirectory for results grouped by library MIP ID")
     String perLibrarySubdir;
 
+    @Parameter(names = {"--query-roi-mask"}, description = "Global ROI mask applied to all query images. " +
+            "For example this could be the hemibrain mask when searching against hemibrain libraries.")
+    String queryROIMaskName;
+
     AbstractColorDepthMatchArgs(CommonArgs commonArgs) {
         this.commonArgs = commonArgs;
     }

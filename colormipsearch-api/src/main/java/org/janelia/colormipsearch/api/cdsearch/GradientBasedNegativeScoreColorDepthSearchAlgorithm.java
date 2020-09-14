@@ -38,7 +38,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
 
     private final LImage queryImage;
     private final LImage queryIntensityValues;
-    private final LImage queryMaskForHighExpressionRegions; // pix(x,y) = 1 if there's too much expression surrounding x,y
+    private final LImage queryHighExpressionMask; // pix(x,y) = 1 if there's too much expression surrounding x,y
+    private final LImage queryROIMaskImage;
     private final int queryThreshold;
     private final boolean mirrorQuery;
     private final ImageTransformation clearLabels;
@@ -46,14 +47,16 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
 
     GradientBasedNegativeScoreColorDepthSearchAlgorithm(LImage queryImage,
                                                         LImage queryIntensityValues,
-                                                        LImage queryMaskForHighExpressionRegions,
+                                                        LImage queryHighExpressionMask,
+                                                        LImage queryROIMaskImage,
                                                         int queryThreshold,
                                                         boolean mirrorQuery,
                                                         ImageTransformation clearLabels,
                                                         ImageProcessing negativeRadiusDilation) {
         this.queryImage = queryImage;
         this.queryIntensityValues = queryIntensityValues;
-        this.queryMaskForHighExpressionRegions = queryMaskForHighExpressionRegions;
+        this.queryHighExpressionMask = queryHighExpressionMask;
+        this.queryROIMaskImage = queryROIMaskImage;
         this.queryThreshold = queryThreshold;
         this.mirrorQuery = mirrorQuery;
         this.clearLabels = clearLabels;
@@ -102,20 +105,38 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         return negativeScores;
     }
 
-    private NegativeColorDepthMatchScore calculateNegativeScores(LImage inputImage, LImage inputGradientImage, LImage inputZGapImage, ImageTransformation maskTransformation) {
+    private NegativeColorDepthMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation) {
         long startTime = System.currentTimeMillis();
+        LImage queryROIImage;
+        LImage queryIntensitiesROIImage;
+        LImage queryHighExpressionMaskROIImage;
+        if (queryROIMaskImage == null) {
+            queryROIImage = queryImage.mapi(maskTransformation);
+            queryIntensitiesROIImage = queryIntensityValues.mapi(maskTransformation);
+            queryHighExpressionMaskROIImage = queryHighExpressionMask.mapi(maskTransformation);
+        } else {
+            queryROIImage = LImageUtils.combine2(
+                    queryImage.mapi(maskTransformation),
+                    queryROIMaskImage,
+                    (p1, p2) -> ColorTransformation.mask(queryImage.getPixelType(), p1, p2));
+            queryIntensitiesROIImage = LImageUtils.combine2(
+                    queryIntensityValues.mapi(maskTransformation),
+                    queryROIMaskImage,
+                    (p1, p2) -> ColorTransformation.mask(queryIntensityValues.getPixelType(), p1, p2));
+            queryHighExpressionMaskROIImage = LImageUtils.combine2(
+                    queryHighExpressionMask.mapi(maskTransformation),
+                    queryROIMaskImage,
+                    (p1, p2) -> ColorTransformation.mask(queryHighExpressionMask.getPixelType(), p1, p2));
+        }
         LImage gaps = LImageUtils.lazyCombine3(
-                LImageUtils.combine2(
-                        queryIntensityValues.mapi(maskTransformation),
-                        inputGradientImage,
-                        (p1, p2) -> p1 * p2),
-                queryImage.mapi(maskTransformation),
-                inputZGapImage.mapi(maskTransformation),
+                LImageUtils.combine2(queryIntensitiesROIImage, targetGradientImage, (p1, p2) -> p1 * p2),
+                queryROIImage,
+                targetZGapMaskImage.mapi(maskTransformation),
                 PIXEL_GAP_OP.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
         LImage highExpressionRegions = LImageUtils.lazyCombine2(
-                inputImage,
-                queryMaskForHighExpressionRegions.mapi(maskTransformation),
+                targetImage,
+                queryHighExpressionMaskROIImage,
                 (p1s, p2s) -> {
                     int p2 = p2s.get();
                     if (p2 == 1) {

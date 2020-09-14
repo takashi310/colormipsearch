@@ -74,7 +74,8 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                     args.dataThreshold,
                     args.pixColorFluctuation,
                     args.xyShift,
-                    args.negativeRadius
+                    args.negativeRadius,
+                    loadQueryROIMask(args.queryROIMaskName)
             );
         } else {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(

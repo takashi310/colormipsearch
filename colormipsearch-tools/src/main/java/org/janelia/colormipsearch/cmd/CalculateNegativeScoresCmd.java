@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api.cdsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.api.cdsearch.NegativeColorDepthMatchScore;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,8 +119,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     private void calculateGradientAreaScore(NegativeScoreResultsArgs args) {
         ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider =
                 ColorDepthSearchAlgorithmProviderFactory.createNegativeMatchCDSAlgorithmProvider(
-                        args.maskThreshold, args.negativeRadius, args.mirrorMask
-                );
+                        args.maskThreshold,
+                        args.mirrorMask,
+                        args.negativeRadius,
+                        loadQueryROIMask(args.queryROIMaskName));
         Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -201,6 +205,19 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             } catch (IOException e) {
                 LOG.error("Error listing {}", args.resultsDir, e);
             }
+        }
+    }
+
+    private ImageArray loadQueryROIMask(String queryROIMask) {
+        if (StringUtils.isBlank(queryROIMask)) {
+            return null;
+        } else {
+            List<MIPMetadata> queryROIMIPs = MIPsUtils.readMIPsFromLocalFiles(queryROIMask, 0, 1, Collections.emptySet());
+            return queryROIMIPs.stream()
+                    .findFirst()
+                    .map(MIPsUtils::loadMIP)
+                    .map(MIPImage::getImageArray)
+                    .orElse(null);
         }
     }
 

@@ -131,6 +131,17 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         };
     }
 
+    public static int mask(ImageType pt, int p, int m) {
+        if ((m & 0xFFFFFF) == 0) {
+            switch (pt) {
+                case RGB: return -16777216;
+                default: return 0;
+            }
+        } else {
+            return p;
+        }
+    }
+
     static ColorTransformation toBinary16(int threshold) {
         return ColorTransformation.toGray16WithNoGammaCorrection().thenApplyColorTransformation(pv -> ColorTransformation.grayToBinary16(pv, threshold));
     }
