@@ -64,7 +64,7 @@ public class ColorMIPSearch implements Serializable {
                     isMatch,
                     false);
         } catch (Throwable e) {
-            LOG.warn("Error comparing mask {} with {}", maskMIPImage,  targetMIPImage, e);
+            LOG.error("Error comparing mask {} with {}", maskMIPImage,  targetMIPImage, e);
             return new ColorMIPSearchResult(
                     MIPsUtils.getMIPMetadata(maskMIPImage),
                     MIPsUtils.getMIPMetadata(targetMIPImage),
