@@ -102,9 +102,6 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         @Parameter(names = {"--lines-directory", "-lmdir"}, description = "LM lines sub-directory")
         String linesOutput = "by_line";
 
-        @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
-        boolean includeMIPsWithNoPublishedURL;
-
         @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flag for include MIPs without publishing name: " +
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
@@ -250,7 +247,6 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     pageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
-                    .filter(cdmip -> args.includeMIPsWithNoPublishedURL || hasPublishedImageURL(cdmip))
                     .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
                     .map(cdmip -> isEmLibrary(libraryArg.input)
@@ -341,10 +337,6 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
 
             }
         }
-    }
-
-    private boolean hasPublishedImageURL(ColorDepthMIP cdmip) {
-        return StringUtils.isNotBlank(cdmip.publicImageUrl);
     }
 
     private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip,

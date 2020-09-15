@@ -135,9 +135,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 description = "The entry name in the variants dictionary for segmented images")
         String segmentationVariantName;
 
-        @Parameter(names = "--include-mips-with-missing-urls", description = "Include MIPs that do not have a valid URL", arity = 0)
-        boolean includeMIPsWithNoPublishedURL;
-
         @Parameter(names = "--include-mips-without-publishing-name", description = "Bitmap flag for include MIPs without publishing name: " +
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
@@ -418,7 +415,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 LOG.warn("No filepath {} found for {} (sample: {}, publishedName: {})", cdmip.filepath, cdmip, cdmip.sampleRef, !hasSample(cdmip) ? "no sample": cdmip.sample.publishingName);
                             }
                         })
-                        .filter(cdmip -> args.includeMIPsWithNoPublishedURL || hasPublishedImageURL(cdmip))
                         .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                         .filter(cdmip -> isEmLibrary(libraryPaths.getLibraryName()) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
                         .map(cdmip -> isEmLibrary(libraryPaths.getLibraryName())
@@ -718,10 +714,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
             }
         }
-    }
-
-    private boolean hasPublishedImageURL(ColorDepthMIP cdmip) {
-        return StringUtils.isNotBlank(cdmip.publicImageUrl);
     }
 
     private ColorDepthMetadata asLMLineMetadata(ColorDepthMIP cdmip,
