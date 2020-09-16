@@ -128,6 +128,9 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int xyShift,
             int negativeRadius,
             ImageArray roiMaskImageArray) {
+        if (negativeRadius <= 0) {
+            throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
+        }
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
 
             @Override
@@ -145,13 +148,9 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray queryImageArray, ColorDepthSearchParams cdsParams) {
                 ColorDepthSearchAlgorithm<ColorMIPMatchScore> posScoreCDSAlg =
                         createPixMatchCDSAlgorithmProvider(maskThreshold, mirrorMask, targetThreshold, zTolerance, xyShift).createColorDepthQuerySearchAlgorithm(queryImageArray, cdsParams);
-                if (negativeRadius > 0) {
-                    ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSAlg =
-                            createNegativeMatchCDSAlgorithmProvider(maskThreshold, mirrorMask, negativeRadius, roiMaskImageArray).createColorDepthQuerySearchAlgorithm(queryImageArray, cdsParams);
-                    return new PixelMatchWithNegativeScoreColorDepthSearchAlgorithm(posScoreCDSAlg, negScoreCDSAlg);
-                } else {
-                    return posScoreCDSAlg;
-                }
+                ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSAlg =
+                        createNegativeMatchCDSAlgorithmProvider(maskThreshold, mirrorMask, negativeRadius, roiMaskImageArray).createColorDepthQuerySearchAlgorithm(queryImageArray, cdsParams);
+                return new PixelMatchWithNegativeScoreColorDepthSearchAlgorithm(posScoreCDSAlg, negScoreCDSAlg);
             }
         };
     }
