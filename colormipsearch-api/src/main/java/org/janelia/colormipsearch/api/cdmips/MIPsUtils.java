@@ -84,11 +84,11 @@ public class MIPsUtils {
         }
     }
 
-    public static ImageArray getImageArray(MIPImage mipImage) {
+    public static ImageArray getImageArray(@Nullable MIPImage mipImage) {
         return mipImage != null ? mipImage.getImageArray() : null;
     }
 
-    public static MIPMetadata getMIPMetadata(MIPImage mipImage) {
+    public static MIPMetadata getMIPMetadata(@Nullable MIPImage mipImage) {
         return mipImage != null ? mipImage.getMipInfo() : null;
     }
 

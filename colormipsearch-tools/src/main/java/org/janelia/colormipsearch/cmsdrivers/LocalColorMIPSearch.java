@@ -1,7 +1,12 @@
 package org.janelia.colormipsearch.cmsdrivers;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -13,6 +18,7 @@ import com.google.common.collect.Streams;
 
 import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
@@ -94,7 +100,13 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                                                                    MIPMetadata maskMIP,
                                                                                    List<MIPMetadata> libraryMIPs) {
         MIPImage maskImage = MIPsUtils.loadMIP(maskMIP); // load image - no caching for the mask
+        if (maskImage == null) {
+            return Collections.singletonList(
+                    CompletableFuture.completedFuture(Collections.emptyList())
+            );
+        }
         ColorDepthSearchAlgorithm<ColorMIPMatchScore> maskColorDepthSearch = colorMIPSearch.createMaskColorDepthSearch(maskImage, null);
+        Set<String> requiredVariantTypes = maskColorDepthSearch.getRequiredTargetVariantTypes();
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(libraryMIPs, libraryPartitionSize).stream()
                 .map(libraryMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
@@ -105,18 +117,28 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 .map(libraryMIP -> {
                                     try {
                                         MIPImage libraryImage = CachedMIPsUtils.loadMIP(libraryMIP);
-                                        MIPImage libraryGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                libraryMIP,
-                                                gradientsLocations,
-                                                gradientVariantSuffixMapping));
-                                        MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                libraryMIP,
-                                                zgapMasksLocations,
-                                                zgapMaskVariantSuffixMapping));
+                                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+                                        if (requiredVariantTypes.contains("gradient")) {
+                                            variantImageSuppliers.put("gradient", () -> {
+                                                MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                        libraryMIP,
+                                                        gradientsLocations,
+                                                        gradientVariantSuffixMapping));
+                                                return MIPsUtils.getImageArray(gradientImage);
+                                            });
+                                        }
+                                        if (requiredVariantTypes.contains("zgap")) {
+                                            variantImageSuppliers.put("zgap", () -> {
+                                                MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                        libraryMIP,
+                                                        zgapMasksLocations,
+                                                        zgapMaskVariantSuffixMapping));
+                                                return MIPsUtils.getImageArray(libraryZGapMaskImage);
+                                            });
+                                        }
                                         ColorMIPMatchScore colorMIPMatchScore = maskColorDepthSearch.calculateMatchingScore(
                                                 MIPsUtils.getImageArray(libraryImage),
-                                                MIPsUtils.getImageArray(libraryGradientImage),
-                                                MIPsUtils.getImageArray(libraryZGapMaskImage));
+                                                variantImageSuppliers);
                                         boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
                                         return new ColorMIPSearchResult(
                                                 maskMIP,

@@ -1,5 +1,9 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -14,6 +18,11 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> {
     ImageArray getQueryImage();
 
     /**
+     * @return required variant types for calculating the score.
+     */
+    Set<String> getRequiredTargetVariantTypes();
+
+    /**
      * Score color depth matches between the current query (the one from the context of the current instance) and
      * the targetImageArray parameter.
      * An implementation must compare each pixel from the query with each pixel from the target.
@@ -25,12 +34,9 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> {
      * calculate the negative impact of certain pixels to the total matching score.
      *
      * @param targetImageArray
-     * @param targetGradientImageArray
-     * @param targetZGapMaskImageArray
+     * @param helperMaskSuppliers image supplier per variant type. The map key is the variant type and the value is
+     *                            the supplier that can provide the corresponding image.
      * @return
      */
-    S calculateMatchingScore(@Nonnull ImageArray targetImageArray,
-                             @Nullable ImageArray targetGradientImageArray,
-                             @Nullable ImageArray targetZGapMaskImageArray);
-
+    S calculateMatchingScore(@Nonnull ImageArray targetImageArray, Map<String, Supplier<ImageArray>> variantTypeSuppliers);
 }

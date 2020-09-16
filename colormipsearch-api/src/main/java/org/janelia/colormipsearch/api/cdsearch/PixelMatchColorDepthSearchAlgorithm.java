@@ -1,7 +1,11 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,9 +56,13 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     }
 
     @Override
+    public Set<String> getRequiredTargetVariantTypes() {
+        return Collections.emptySet();
+    }
+
+    @Override
     public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
-                                                     @Nullable ImageArray targetGradientImageArray,
-                                                     @Nullable ImageArray targetZGapMaskImageArray) {
+                                                     Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
         int posi = 0;
         double posipersent = 0.0;
         int masksize = queryPositions.length;

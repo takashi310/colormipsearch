@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -306,44 +308,55 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 (i, csr) -> ImmutablePair.of(i + 1, csr))
                 .map(indexedCsr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
                     long startGapCalcTime = System.currentTimeMillis();
+                    Set<String> requiredVariantTypes = gradientGapCalculator.getRequiredTargetVariantTypes();
                     MIPMetadata matchedMIP = new MIPMetadata();
                     matchedMIP.setImageArchivePath(indexedCsr.getRight().getImageArchivePath());
                     matchedMIP.setImageName(indexedCsr.getRight().getImageName());
                     matchedMIP.setImageType(indexedCsr.getRight().getImageType());
                     MIPImage matchedImage = CachedMIPsUtils.loadMIP(matchedMIP);
-                    MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                            matchedMIP,
-                            gradientsLocations,
-                            nc -> {
-                                String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
-                                if (StringUtils.isNotBlank(librarySuffix)) {
-                                    return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
-                                } else {
-                                    return nc + suffix;
-                                }
-                            }));
-                    MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                            matchedMIP,
-                            zgapsLocations,
-                            nc -> {
-                                String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
-                                if (StringUtils.isNotBlank(librarySuffix)) {
-                                    return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
-                                } else {
-                                    return nc + suffix;
-                                }
-                            }));
                     LOG.debug("Loaded images for calculating area gap for {}:{} ({} vs {}) in {}ms",
                             resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP, System.currentTimeMillis() - startGapCalcTime);
                     long negativeScore;
-                    if (matchedImage != null && matchedGradientImage != null) {
+                    if (matchedImage != null) {
                         // only calculate the area gap if the gradient exist
                         LOG.debug("Calculate area gap for {}:{} ({}:{})",
                                 resultIDIndex, indexedCsr.getLeft(), inputMaskMIP, matchedMIP);
+                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+                        if (requiredVariantTypes.contains("gradient")) {
+                            variantImageSuppliers.put("gradient", () -> {
+                                MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                        matchedMIP,
+                                        gradientsLocations,
+                                        nc -> {
+                                            String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
+                                            if (StringUtils.isNotBlank(librarySuffix)) {
+                                                return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
+                                            } else {
+                                                return nc + suffix;
+                                            }
+                                        }));
+                                return MIPsUtils.getImageArray(matchedGradientImage);
+                            });
+                        }
+                        if (requiredVariantTypes.contains("zgap")) {
+                            variantImageSuppliers.put("zgap", () -> {
+                                MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                        matchedMIP,
+                                        zgapsLocations,
+                                        nc -> {
+                                            String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
+                                            if (StringUtils.isNotBlank(librarySuffix)) {
+                                                return StringUtils.replaceIgnoreCase(nc, librarySuffix, "") + suffix;
+                                            } else {
+                                                return nc + suffix;
+                                            }
+                                        }));
+                                return MIPsUtils.getImageArray(matchedZGapImage);
+                            });
+                        }
                         NegativeColorDepthMatchScore negativeScores = gradientGapCalculator.calculateMatchingScore(
                                 MIPsUtils.getImageArray(matchedImage),
-                                MIPsUtils.getImageArray(matchedGradientImage),
-                                MIPsUtils.getImageArray(matchedZGapImage));
+                                variantImageSuppliers);
                         indexedCsr.getRight().setGradientAreaGap(negativeScores.getGradientAreaGap());
                         indexedCsr.getRight().setHighExpressionArea(negativeScores.getHighExpressionArea());
                         LOG.debug("Finished calculating area gap for {}:{} ({}:{}) in {}ms",

@@ -1,5 +1,10 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
@@ -18,6 +23,10 @@ import org.slf4j.LoggerFactory;
 public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> {
 
     private static final Logger LOG = LoggerFactory.getLogger(GradientBasedNegativeScoreColorDepthSearchAlgorithm.class);
+    private static final Set<String> REQUIRED_VARIANT_TYPES = new HashSet<String>() {{
+        add("gradient");
+        add("zgap");
+    }};
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private static final int GAP_THRESHOLD = 3;
 
@@ -68,24 +77,29 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         return queryImage.toImageArray();
     }
 
+    @Override
+    public Set<String> getRequiredTargetVariantTypes() {
+        return REQUIRED_VARIANT_TYPES;
+    }
+
     /**
      * Calculate area gap between the encapsulated mask and the given image with the corresponding image gradients and zgaps.
      * The gradient image must be non-null but the z-gap image can be null in which case it is calculated using
      * a dilation transformation.
      *
      * @param targetImageArray
-     * @param targetGradientImageArray
-     * @param targetZGapMaskImageArray
+     * @param variantTypeSuppliers
      * @return
      */
     @Override
     public NegativeColorDepthMatchScore calculateMatchingScore(ImageArray targetImageArray,
-                                                               ImageArray targetGradientImageArray,
-                                                               ImageArray targetZGapMaskImageArray) {
+                                                               Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
+        long startTime = System.currentTimeMillis();
+        ImageArray targetGradientImageArray = getVariantImageArray(variantTypeSuppliers, "gradient");
         if (targetGradientImageArray == null) {
             return new NegativeColorDepthMatchScore(-1, -1);
         }
-        long startTime = System.currentTimeMillis();
+        ImageArray targetZGapMaskImageArray = getVariantImageArray(variantTypeSuppliers, "zgap");
         LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
         LImage targetGradientImage = LImageUtils.create(targetGradientImageArray);
         LImage targetZGapMaskImage = targetZGapMaskImageArray != null
@@ -103,6 +117,16 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
             }
         }
         return negativeScores;
+    }
+
+    private ImageArray getVariantImageArray(Map<String, Supplier<ImageArray>> variantTypeSuppliers, String variantType) {
+        Supplier<ImageArray> variantImageArraySupplier = variantTypeSuppliers.get("gradient");
+        ImageArray variantImageArray;
+        if (variantImageArraySupplier != null) {
+            return variantImageArraySupplier.get();
+        } else {
+            return null;
+        }
     }
 
     private NegativeColorDepthMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation) {
