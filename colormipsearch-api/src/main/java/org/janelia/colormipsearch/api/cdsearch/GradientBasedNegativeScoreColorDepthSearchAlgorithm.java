@@ -120,8 +120,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     }
 
     private ImageArray getVariantImageArray(Map<String, Supplier<ImageArray>> variantTypeSuppliers, String variantType) {
-        Supplier<ImageArray> variantImageArraySupplier = variantTypeSuppliers.get("gradient");
-        ImageArray variantImageArray;
+        Supplier<ImageArray> variantImageArraySupplier = variantTypeSuppliers.get(variantType);
         if (variantImageArraySupplier != null) {
             return variantImageArraySupplier.get();
         } else {
