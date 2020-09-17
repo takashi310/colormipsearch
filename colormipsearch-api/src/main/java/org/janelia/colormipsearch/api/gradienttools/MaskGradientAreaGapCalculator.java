@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
  */
-public class MaskNegativeScoresCalculator {
+public class MaskGradientAreaGapCalculator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MaskNegativeScoresCalculator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MaskGradientAreaGapCalculator.class);
     private static final int GAP_THRESHOLD = 3;
 
     /**
@@ -25,9 +25,9 @@ public class MaskNegativeScoresCalculator {
      * @param mirrorMask
      * @return
      */
-    public static MaskNegativeScoresCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
-                                                                                                   int negativeRadius,
-                                                                                                   boolean mirrorMask) {
+    public static MaskGradientAreaGapCalculatorProvider createMaskGradientAreaGapCalculatorProvider(int maskThreshold,
+                                                                                                    int negativeRadius,
+                                                                                                    boolean mirrorMask) {
         ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
         ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels).mask(maskThreshold).maxFilter(negativeRadius);
         return (ImageArray maskImageArray) -> {
@@ -41,7 +41,7 @@ public class MaskNegativeScoresCalculator {
                         return p2 != -16777216 && p2 != 0 ? -16777216 : p1s.get();
                     } // mask pixels from the 60x image if they are present in the 20x image
             );
-            MaskNegativeScoresCalculator maskNegativeScoresCalculator = new MaskNegativeScoresCalculator(
+            MaskGradientAreaGapCalculator maskGradientAreaGapCalculator = new MaskGradientAreaGapCalculator(
                     maskImage,
                     maskImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(2)).reduce(),
                     maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce(),
@@ -52,7 +52,7 @@ public class MaskNegativeScoresCalculator {
             );
 
             LOG.debug("Created gradient area gap calculator for mask in {}ms", System.currentTimeMillis() - startTime);
-            return maskNegativeScoresCalculator;
+            return maskGradientAreaGapCalculator;
         };
     }
 
@@ -64,13 +64,13 @@ public class MaskNegativeScoresCalculator {
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
 
-    private MaskNegativeScoresCalculator(LImage mask,
-                                         LImage maskIntensityValues,
-                                         LImage maskForHighExpressionRegions,
-                                         int maskThreshold,
-                                         boolean withMaskMirroring,
-                                         ImageTransformation clearLabels,
-                                         ImageProcessing negativeRadiusDilation) {
+    private MaskGradientAreaGapCalculator(LImage mask,
+                                          LImage maskIntensityValues,
+                                          LImage maskForHighExpressionRegions,
+                                          int maskThreshold,
+                                          boolean withMaskMirroring,
+                                          ImageTransformation clearLabels,
+                                          ImageProcessing negativeRadiusDilation) {
         this.mask = mask;
         this.maskIntensityValues = maskIntensityValues;
         this.maskForHighExpressionRegions = maskForHighExpressionRegions;

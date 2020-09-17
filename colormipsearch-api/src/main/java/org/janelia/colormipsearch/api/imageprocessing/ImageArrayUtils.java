@@ -22,6 +22,7 @@ public class ImageArrayUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ImageArrayUtils.class);
 
     private enum ImageFormat {
+        JPG,
         PNG,
         TIFF,
         UNKNOWN
@@ -81,10 +82,11 @@ public class ImageArrayUtils {
         ImagePlus imagePlus;
         switch (format) {
             case PNG:
-                imagePlus = readPngToImagePlus(title, stream);
+            case JPG:
+                imagePlus = readImagePlusWithImageIO(title, stream);
                 break;
             case TIFF:
-                imagePlus = readTiffToImagePlus(title, stream);
+                imagePlus = readImagePlusWithTiffReader(title, stream);
                 break;
             default:
                 throw new IllegalArgumentException("Image '" + name + "' must be in PNG or TIFF format");
@@ -101,19 +103,21 @@ public class ImageArrayUtils {
 
         if (lowerCaseName.endsWith(".png")) {
             return ImageFormat.PNG;
+        } else if (lowerCaseName.endsWith(".jpg") || lowerCaseName.endsWith(".jpeg")) {
+            return ImageFormat.JPG;
         } else if (lowerCaseName.endsWith(".tiff") || lowerCaseName.endsWith(".tif")) {
             return ImageFormat.TIFF;
         }
 
-        LOG.warn("Unrecognized format from {} - so far it only supports PNG and TIFF", name);
+        LOG.warn("Unrecognized format from {} - so far it only supports JPG, PNG and TIFF", name);
         return ImageFormat.UNKNOWN;
     }
 
-    private static ImagePlus readPngToImagePlus(String title, InputStream stream) throws Exception {
+    private static ImagePlus readImagePlusWithImageIO(String title, InputStream stream) throws Exception {
         return new ImagePlus(title, ImageIO.read(stream));
     }
 
-    private static ImagePlus readTiffToImagePlus(String title, InputStream stream) throws Exception {
+    private static ImagePlus readImagePlusWithTiffReader(String title, InputStream stream) throws Exception {
         return new Opener().openTiff(stream, title);
     }
 
