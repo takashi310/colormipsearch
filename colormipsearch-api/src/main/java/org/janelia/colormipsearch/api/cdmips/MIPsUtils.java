@@ -432,7 +432,7 @@ public class MIPsUtils {
 
     private static List<MIPMetadata> readMIPsFromDirectory(Path mipsInputDirectory, Set<String> mipsFilter, int offset, int length) {
         // read mips from the specified folder
-        int from = offset > 0 ? offset : 0;
+        int from = Math.max(offset, 0);
         try {
             List<MIPMetadata> mips = Files.find(mipsInputDirectory, 1, (p, fa) -> fa.isRegularFile())
                     .filter(p -> ImageArrayUtils.isImageFile(p.getFileName().toString()))

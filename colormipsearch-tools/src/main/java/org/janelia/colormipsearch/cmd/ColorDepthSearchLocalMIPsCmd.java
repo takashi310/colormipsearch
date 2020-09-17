@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -27,11 +28,17 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
 
     @Parameters(commandDescription = "Color depth search for MIP files")
     static class LocalMIPFilesSearchArgs extends AbstractColorDepthMatchArgs {
-        @Parameter(names = "-i", required = true, converter = ListArg.ListArgConverter.class, description = "Library MIPs location")
-        ListArg libraryMIPsLocation;
+        @Parameter(names = "--search-name")
+        String cdsSearchName;
 
-        @Parameter(names = "-m", required = true, converter = ListArg.ListArgConverter.class, description = "Mask MIPs location")
-        ListArg maskMIPsLocation;
+        @Parameter(names = {"-m", "-q", "--queries"}, required = true, converter = ListArg.ListArgConverter.class, description = "Mask (or query) MIPs location")
+        List<ListArg> maskImagesLocation;
+
+        @Parameter(names = {"-i", "-t", "--targets"}, required = true, converter = ListArg.ListArgConverter.class, description = "Target MIPs location - this is typically the color depth library location")
+        List<ListArg> searchableTargetImagesLocation;
+
+        @Parameter(names = {"--viewableTargets"}, description = "location of the viewable images", variableArity = true)
+        List<String> displayableImagesLocation;
 
         LocalMIPFilesSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -111,25 +118,29 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                         },
                         CmdUtils.createCDSExecutor(args.commonArgs));
         try {
-            List<MIPMetadata> librariesMips = MIPsUtils.readMIPsFromLocalFiles(
-                    args.libraryMIPsLocation.input,
-                    args.libraryMIPsLocation.offset,
-                    args.libraryMIPsLocation.length,
-                    CommonArgs.toLowerCase(args.libraryMIPsFilter)
-            );
-            List<MIPMetadata> masksMips = MIPsUtils.readMIPsFromLocalFiles(
-                    args.maskMIPsLocation.input,
-                    args.maskMIPsLocation.offset,
-                    args.maskMIPsLocation.length,
-                    CommonArgs.toLowerCase(args.maskMIPsFilter)
-            );
-            if (librariesMips.isEmpty() || masksMips.isEmpty()) {
-                LOG.warn("Both masks ({}) and libraries ({}) must not be empty", masksMips.size(), librariesMips.size());
+            List<MIPMetadata> queryMIPs = args.maskImagesLocation.stream()
+                    .flatMap(masksLocation -> MIPsUtils.readMIPsFromLocalFiles(
+                            masksLocation.input,
+                            masksLocation.offset,
+                            masksLocation.length,
+                            CommonArgs.toLowerCase(args.maskMIPsFilter)
+                    ).stream())
+                    .collect(Collectors.toList());
+            List<MIPMetadata> targetMIPs = args.searchableTargetImagesLocation.stream()
+                    .flatMap(searchableTargetsLocation -> MIPsUtils.readMIPsFromLocalFiles(
+                            searchableTargetsLocation.input,
+                            searchableTargetsLocation.offset,
+                            searchableTargetsLocation.length,
+                            CommonArgs.toLowerCase(args.libraryMIPsFilter)
+                    ).stream())
+                    .collect(Collectors.toList());
+            if (targetMIPs.isEmpty() || queryMIPs.isEmpty()) {
+                LOG.warn("Both masks ({}) and targets ({}) must not be empty", queryMIPs.size(), targetMIPs.size());
             } else {
-                String inputName = args.libraryMIPsLocation.listArgName();
-                String maskName = args.maskMIPsLocation.listArgName();
-                saveCDSParameters(colorMIPSearch, args.getBaseOutputDir(), "masks-" + maskName + "-inputs-" + inputName + "-cdsParameters.json");
-                List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(masksMips, librariesMips);
+                saveCDSParameters(colorMIPSearch,
+                        args.getBaseOutputDir(),
+                        getCDSName(args.cdsSearchName, args.maskImagesLocation, args.searchableTargetImagesLocation));
+                List<ColorMIPSearchResult> cdsResults = colorMIPSearchDriver.findAllColorDepthMatches(queryMIPs, targetMIPs);
                 ColorMIPSearchResultsWriter.writeSearchResults(
                         args.getPerMaskDir(),
                         ColorMIPSearchResultUtils.groupResults(
@@ -148,4 +159,12 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
         }
     }
 
+    private String getCDSName(String searchName, List<ListArg> masks, List<ListArg> targets) {
+        if (StringUtils.isNotBlank(searchName)) {
+            return searchName;
+        }
+        String mask = masks.stream().map(arg -> arg.listArgName()).collect(Collectors.joining("+"));
+        String target = targets.stream().map(arg -> arg.listArgName()).collect(Collectors.joining("+"));
+        return mask + "-" + target + "-cdsparams.json";
+    }
 }
