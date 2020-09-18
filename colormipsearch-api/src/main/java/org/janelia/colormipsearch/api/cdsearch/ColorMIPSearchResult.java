@@ -104,16 +104,19 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setSourceImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setSourceImageType(libraryMIP.getImageType());
         srMetadata.setSourceImageName(libraryMIP.getImageName());
+        srMetadata.setSourceSampleRef(libraryMIP.getSampleRef());
+        srMetadata.setSourceRelatedImageRefId(libraryMIP.getRelatedImageRefId());
         srMetadata.setSourceImageURL(libraryMIP.getImageURL());
-
-        srMetadata.setImageURL(maskMIP.getImageURL());
-        srMetadata.setThumbnailURL(maskMIP.getThumbnailURL());
 
         srMetadata.setId(getMaskId());
         srMetadata.setLibraryName(maskMIP.getLibraryName());
         srMetadata.setPublishedName(maskMIP.getPublishedName());
         srMetadata.setImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setImageName(maskMIP.getImageName());
+        srMetadata.setSampleRef(maskMIP.getSampleRef());
+        srMetadata.setRelatedImageRefId(maskMIP.getRelatedImageRefId());
+        srMetadata.setImageURL(maskMIP.getImageURL());
+        srMetadata.setThumbnailURL(maskMIP.getThumbnailURL());
 
         srMetadata.setSlideCode(maskMIP.getSlideCode());
         srMetadata.setObjective(maskMIP.getObjective());
@@ -138,10 +141,9 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setSourceImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setSourceImageName(maskMIP.getImageName());
         srMetadata.setSourceImageType(maskMIP.getImageType());
+        srMetadata.setSourceSampleRef(maskMIP.getSampleRef());
+        srMetadata.setSourceRelatedImageRefId(maskMIP.getRelatedImageRefId());
         srMetadata.setSourceImageURL(maskMIP.getImageURL());
-
-        srMetadata.setImageURL(libraryMIP.getImageURL());
-        srMetadata.setThumbnailURL(libraryMIP.getThumbnailURL());
 
         srMetadata.setId(getLibraryId());
         srMetadata.setLibraryName(libraryMIP.getLibraryName());
@@ -149,6 +151,10 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setImageName(libraryMIP.getImageName());
         srMetadata.setImageType(libraryMIP.getImageType());
+        srMetadata.setSampleRef(libraryMIP.getSampleRef());
+        srMetadata.setRelatedImageRefId(libraryMIP.getRelatedImageRefId());
+        srMetadata.setImageURL(libraryMIP.getImageURL());
+        srMetadata.setThumbnailURL(libraryMIP.getThumbnailURL());
 
         srMetadata.setSlideCode(libraryMIP.getSlideCode());
         srMetadata.setObjective(libraryMIP.getObjective());

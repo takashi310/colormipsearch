@@ -326,6 +326,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             variantImageSuppliers.put("gradient", () -> {
                                 MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                         matchedMIP,
+                                        "gradient",
                                         gradientsLocations,
                                         nc -> {
                                             String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
@@ -342,6 +343,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             variantImageSuppliers.put("zgap", () -> {
                                 MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                         matchedMIP,
+                                        "zgap",
                                         zgapsLocations,
                                         nc -> {
                                             String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");

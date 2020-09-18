@@ -122,6 +122,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                                         libraryMIP,
+                                                        "gradient",
                                                         gradientsLocations,
                                                         gradientVariantSuffixMapping));
                                                 return MIPsUtils.getImageArray(gradientImage);
@@ -131,6 +132,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                             variantImageSuppliers.put("zgap", () -> {
                                                 MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                                         libraryMIP,
+                                                        "zgap",
                                                         zgapMasksLocations,
                                                         zgapMaskVariantSuffixMapping));
                                                 return MIPsUtils.getImageArray(libraryZGapMaskImage);

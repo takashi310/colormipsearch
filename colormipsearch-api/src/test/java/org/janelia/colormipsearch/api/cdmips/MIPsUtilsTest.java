@@ -32,13 +32,6 @@ public class MIPsUtilsTest {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    static class TestMIPMetadataWithVariants extends MIPMetadata {
-        @JsonProperty
-        Map<String, String> variants = null;
-        @JsonProperty
-        String sampleRef;
-    }
-
     @Test
     public void loadMIPsWithVariants() {
         String[] mipFiles = new String[] {
@@ -47,17 +40,9 @@ public class MIPsUtilsTest {
         for (String mipFile : mipFiles) {
             List<MIPMetadata> mips = MIPsUtils.readMIPsFromJSON(mipFile, 0, -1, null, mapper);
             Assert.assertTrue(mips.size() > 0);
-            try {
-                List<TestMIPMetadataWithVariants> mipsWithVariants = mapper.readValue(
-                        new File(mipFile), new TypeReference<List<TestMIPMetadataWithVariants>>() {
-                });
-                Assert.assertEquals(mips.size(), mipsWithVariants.size());
-                for (TestMIPMetadataWithVariants mip : mipsWithVariants) {
-                    Assert.assertTrue(mip.variants.size() > 0);
-                    Assert.assertNotNull(mip.sampleRef);
-                }
-            } catch (IOException e) {
-                Assert.fail(e.getMessage());
+            for (MIPMetadata mip : mips) {
+                Assert.assertTrue(mip.getVariantTypes().size() > 0);
+                Assert.assertNotNull(mip.getSampleRef());
             }
         }
     }

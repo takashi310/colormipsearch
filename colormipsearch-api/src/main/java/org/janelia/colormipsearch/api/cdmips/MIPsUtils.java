@@ -36,15 +36,6 @@ import org.slf4j.LoggerFactory;
 
 public class MIPsUtils {
 
-    /**
-     * Mixin for explicitly ignoring properties that are defined MIPWithVariantsMetadata.
-     * This is needed because it conflicts with JsonAnySetter and setting variants fails because that
-     * is serialized as a dictionary.
-     */
-    @JsonIgnoreProperties({"variants", "sampleRef"})
-    private interface MIPMetadataExplicitlyIgnoredPropertiesMixIn {
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
     private static Map<String, Set<String>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
 
@@ -217,12 +208,19 @@ public class MIPsUtils {
      * The typical pattern is that the image file name is the same but the path to it has a certain suffix
      * such as '_gradient' or '_20pxRGBMAX'
      * @param mipInfo
+     * @param variantType
      * @param mipVariantLocations
      * @param mipVariantSuffixMapping specifies how the mapping changes from the mipInfo to the ancillary mip
      * @return
      */
     @Nullable
-    public static MIPMetadata getMIPVariantInfo(MIPMetadata mipInfo, List<String> mipVariantLocations, Function<String, String> mipVariantSuffixMapping) {
+    public static MIPMetadata getMIPVariantInfo(MIPMetadata mipInfo, String variantType, List<String> mipVariantLocations, Function<String, String> mipVariantSuffixMapping) {
+        if (mipInfo.hasVariant(variantType)) {
+            MIPMetadata mipVariant = mipInfo.variantAsMIP(variantType);
+            if (mipVariant != null) {
+                return mipVariant;
+            }
+        }
         if (CollectionUtils.isEmpty(mipVariantLocations)) {
             return null;
         } else {
@@ -242,7 +240,7 @@ public class MIPsUtils {
                             return null;
                         }
                     })
-                    .filter(ancillaryMIP -> ancillaryMIP != null)
+                    .filter(variantMIP -> variantMIP != null)
                     .findFirst()
                     .orElse(null);
         }
@@ -320,8 +318,7 @@ public class MIPsUtils {
     public static List<MIPMetadata> readMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", mipsJSONFilename);
-            ObjectMapper mipMapper = mapper.copy().addMixIn(MIPMetadata.class, MIPMetadataExplicitlyIgnoredPropertiesMixIn.class);
-            List<MIPMetadata> content = mipMapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPMetadata>>() {
+            List<MIPMetadata> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPMetadata>>() {
             });
             if (CollectionUtils.isEmpty(filter)) {
                 int from = offset > 0 ? offset : 0;

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 class ColorDepthMetadata extends AbstractMetadata {
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -45,8 +46,8 @@ class ColorDepthMetadata extends AbstractMetadata {
         that.sampleRef = this.sampleRef;
     }
 
-    MIPWithVariantsMetadata asMIPWithVariants() {
-        MIPWithVariantsMetadata mipInfo = new MIPWithVariantsMetadata();
+    MIPMetadata asMIPWithVariants() {
+        MIPMetadata mipInfo = new MIPMetadata();
         this.copyTo(mipInfo);
         mipInfo.setImageType(this.getImageType());
         mipInfo.setImageArchivePath(segmentedDataBasePath);

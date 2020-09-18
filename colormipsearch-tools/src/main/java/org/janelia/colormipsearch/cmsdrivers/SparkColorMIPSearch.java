@@ -94,6 +94,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                                         MIPsUtils.getMIPMetadata(libraryImage),
+                                                        "gradient",
                                                         gradientsLocations,
                                                         gradientVariantSuffixMapping));
                                                 return MIPsUtils.getImageArray(gradientImage);
@@ -103,6 +104,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
                                             variantImageSuppliers.put("zgap", () -> {
                                                 MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                                         MIPsUtils.getMIPMetadata(libraryImage),
+                                                        "zgap",
                                                         zgapMasksLocations,
                                                         zgapMaskVariantSuffixMapping));
                                                 return MIPsUtils.getImageArray(libraryZGapMaskImage);

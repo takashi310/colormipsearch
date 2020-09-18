@@ -74,7 +74,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
 
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
-        if (CollectionUtils.isNotEmpty(args.gradientPaths)) {
+        if (args.withNegativeScores) {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
                     args.maskThreshold,
                     args.mirrorMask,

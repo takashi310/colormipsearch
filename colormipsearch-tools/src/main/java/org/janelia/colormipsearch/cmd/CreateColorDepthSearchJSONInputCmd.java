@@ -473,6 +473,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 }
                                 MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
                                         cdmip,
+                                        mipVariantArg.variantType,
                                         Collections.singletonList(mipVariantArg.variantPath),
                                         nc -> {
                                             String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantSuffix, "");

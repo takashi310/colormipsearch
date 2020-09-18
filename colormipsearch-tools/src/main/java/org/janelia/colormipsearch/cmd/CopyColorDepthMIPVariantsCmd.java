@@ -1,8 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
@@ -21,11 +19,9 @@ import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -42,7 +38,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     static class CopyColorDepthMIPVariantsArgs extends AbstractCmdArgs {
         @Parameter(names = {"--input", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "JSON input MIPs")
-        private ListArg inputMIPs;
+        ListArg inputMIPs;
 
         @Parameter(names = {"--mipsFilter"}, variableArity = true, description = "Filter for i input mips")
         Set<String> mipsFilter;
@@ -57,7 +53,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         Set<String> notCountableVariants = new HashSet<>();
 
         @DynamicParameter(names = "-variantMapping", description = "Variants mapping")
-        private Map<String, String> variantMapping = new HashMap<>();
+        private final Map<String, String> variantMapping = new HashMap<>();
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -101,7 +97,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private void copyAllMIPsVariants(CopyColorDepthMIPVariantsArgs args) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        List<MIPWithVariantsMetadata> inputMips = readGenericMIPsFromJSON(
+        List<MIPMetadata> inputMips = MIPsUtils.readMIPsFromJSON(
                 args.inputMIPs.input,
                 args.inputMIPs.offset,
                 args.inputMIPs.length,
@@ -109,7 +105,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                 mapper
         );
 
-        Map<String, List<MIPWithVariantsMetadata>> inputMIPsGroupedByID = inputMips.stream()
+        Map<String, List<MIPMetadata>> inputMIPsGroupedByID = inputMips.stream()
                 .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()));
         LOG.info("Copy variants for {} mips", inputMIPsGroupedByID.size());
 
@@ -120,9 +116,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
         BiConsumer<MIPMetadata,  Path> copyMIPVariantAction;
         if (args.simulateFlag) {
-            copyMIPVariantAction = (variantMIP, target) -> {
-                LOG.info("cp {} {}", variantMIP, target);
-            };
+            copyMIPVariantAction = (variantMIP, target) -> LOG.info("cp {} {}", variantMIP, target);
         } else {
             copyMIPVariantAction = this::copyMIPVariant;
         }
@@ -169,38 +163,15 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                             .map(Map.Entry::getKey)
                             .collect(Collectors.toSet());
                     int mipIndex = 1;
-                    for (MIPWithVariantsMetadata mip : me.getValue()) {
+                    for (MIPMetadata mip : me.getValue()) {
                         copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, countedVariantTypes, copyMIPVariantAction);
                         mipIndex++;
                     }
                 });
     }
 
-    private List<MIPWithVariantsMetadata> readGenericMIPsFromJSON(String mipsJSONFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
-        try {
-            LOG.info("Reading {}", mipsJSONFilename);
-            List<MIPWithVariantsMetadata> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPWithVariantsMetadata>>() {
-            });
-            if (CollectionUtils.isEmpty(filter)) {
-                int from = offset > 0 ? offset : 0;
-                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
-                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsJSONFilename, from, to);
-                return content.subList(from, to);
-            } else {
-                LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream()
-                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getId())))
-                        .collect(Collectors.toList());
-            }
-        } catch (IOException e) {
-            LOG.error("Error reading {}", mipsJSONFilename, e);
-            throw new UncheckedIOException(e);
-        }
-    }
-
-
     private void copyMIPVariants(int variantIndex,
-                                 MIPWithVariantsMetadata mip,
+                                 MIPMetadata mip,
                                  Path outputPath,
                                  Map<String, String> variantMapping,
                                  Set<String> variantTypes,
@@ -253,8 +224,8 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         try {
             LOG.debug("cp {} {}", variantMIP, target);
             CmdUtils.createOutputDirs(target.getParent());
-            Files.copy(MIPsUtils.openInputStream(variantMIP), target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+            Files.copy(Objects.requireNonNull(MIPsUtils.openInputStream(variantMIP)), target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
             LOG.error("Error copying {} -> {}", variantMIP, target, e);
         }
     }

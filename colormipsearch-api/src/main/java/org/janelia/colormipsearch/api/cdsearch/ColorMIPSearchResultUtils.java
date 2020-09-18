@@ -46,6 +46,8 @@ public class ColorMIPSearchResultUtils {
                                 csr.getSourceId(),
                                 csr.getSourcePublishedName(),
                                 csr.getSourceLibraryName(),
+                                csr.getSourceSampleRef(),
+                                csr.getSourceRelatedImageRefId(),
                                 csr.getSourceImageURL()
                         ),
                         Collectors.collectingAndThen(
@@ -61,6 +63,8 @@ public class ColorMIPSearchResultUtils {
                         e.getKey().getId(),
                         e.getKey().getPublishedName(),
                         e.getKey().getLibraryName(),
+                        e.getKey().getSampleRef(),
+                        e.getKey().getRelatedImageRefId(),
                         e.getKey().getImageURL(),
                         e.getValue()))
                 .collect(Collectors.toList());

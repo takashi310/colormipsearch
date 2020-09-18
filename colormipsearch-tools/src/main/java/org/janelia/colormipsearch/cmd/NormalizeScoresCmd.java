@@ -158,7 +158,7 @@ class NormalizeScoresCmd extends AbstractCmd {
             }
             List<ColorMIPSearchMatchMetadata> cdsResultsWithNormalizedScore = cdsResults.stream().parallel()
                     .filter(csr -> csr.getMatchingRatio() * 100. > args.pctPositivePixels)
-                    .map(csr -> args.cleanup ? ColorMIPSearchMatchMetadata.create(csr) : csr)
+                    .map(csr -> args.cleanup ? ColorMIPSearchMatchMetadata.createReleaseCopy(csr) : csr)
                     .peek(csr -> {
                         if (args.reNormalize) {
                             double normalizedGapScore = GradientAreaGapUtils.calculateNormalizedScore(

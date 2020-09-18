@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -11,7 +12,12 @@ import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
-    public static ColorMIPSearchMatchMetadata create(ColorMIPSearchMatchMetadata from) {
+    /**
+     * Creates a copy for the release that removes all internal attributes.
+     * @param from
+     * @return
+     */
+    public static ColorMIPSearchMatchMetadata createReleaseCopy(ColorMIPSearchMatchMetadata from) {
         ColorMIPSearchMatchMetadata cdsCopy = new ColorMIPSearchMatchMetadata();
         from.copyTo(cdsCopy);
         cdsCopy.sourceId = from.sourceId;
@@ -20,14 +26,21 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         return cdsCopy;
     }
 
-
     private String sourceId;
     private String sourcePublishedName;
     private String sourceLibraryName;
     private String sourceImageName;
     private String sourceImageArchivePath;
     private String sourceImageType;
+    private String sourceSampleRef;
+    private String sourceRelatedImageRefId;
     private String sourceImageURL;
+    private String sampleRef;
+    private String relatedImageRefId;
+    // variants are a mapping of the variant type, such as segmentation, gradient, zgap, gamma1_4,
+    // to the corresponding image path
+    @JsonProperty
+    private Map<String, String> variants = null;
     private int matchingPixels;
     private double matchingRatio;
     @JsonProperty
@@ -103,12 +116,56 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.sourceImageArchivePath = sourceImageArchivePath;
     }
 
+    public String getSourceSampleRef() {
+        return sourceSampleRef;
+    }
+
+    public void setSourceSampleRef(String sourceSampleRef) {
+        this.sourceSampleRef = sourceSampleRef;
+    }
+
+    public String getSourceRelatedImageRefId() {
+        return sourceRelatedImageRefId;
+    }
+
+    public void setSourceRelatedImageRefId(String sourceRelatedImageRefId) {
+        this.sourceRelatedImageRefId = sourceRelatedImageRefId;
+    }
+
     public String getSourceImageURL() {
         return sourceImageURL;
     }
 
     public void setSourceImageURL(String sourceImageURL) {
         this.sourceImageURL = sourceImageURL;
+    }
+
+    public String getSampleRef() {
+        return sampleRef;
+    }
+
+    public void setSampleRef(String sampleRef) {
+        this.sampleRef = sampleRef;
+    }
+
+    public String getRelatedImageRefId() {
+        return relatedImageRefId;
+    }
+
+    public void setRelatedImageRefId(String relatedImageRefId) {
+        this.relatedImageRefId = relatedImageRefId;
+    }
+
+    public boolean hasVariant(String variant) {
+        return variants != null && StringUtils.isNotBlank(variants.get(variant));
+    }
+
+    public String getVariant(String variant) {
+        if (hasVariant(variant)) {
+            return variants.get(variant);
+        } else {
+            return null;
+        }
     }
 
     public int getMatchingPixels() {
