@@ -202,13 +202,18 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                             Collectors.toList()));
         }
         args.libraries.forEach(library -> {
-            List<MIPVariantArg> lVariants = libraryVariants.get(library);
-            String librarySegmentationPath = lVariants.stream()
-                    .filter(lv -> StringUtils.isNotBlank(lv.variantPath))
-                    .filter(lv -> lv.variantType.equals(args.segmentationVariantName))
-                    .findFirst()
-                    .map(lv -> lv.variantPath)
-                    .orElse(null);
+            List<MIPVariantArg> lVariants = libraryVariants.get(library.input);
+            String librarySegmentationPath;
+            if (lVariants == null) {
+                librarySegmentationPath = null;
+            } else {
+                librarySegmentationPath = lVariants.stream()
+                        .filter(lv -> StringUtils.isNotBlank(lv.variantPath))
+                        .filter(lv -> lv.variantType.equals(args.segmentationVariantName))
+                        .findFirst()
+                        .map(lv -> lv.variantPath)
+                        .orElse(null);
+            }
             Path outputPath;
             if (isEmLibrary(library.input)) {
                 outputPath = Paths.get(args.commonArgs.outputDir, args.skeletonsOutput);
