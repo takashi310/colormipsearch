@@ -173,7 +173,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
     void execute() {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
 
-        Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(args.libraryMappingURL);
+        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
 
         Function<String, String> imageURLMapper = aUrl -> {
             if (StringUtils.isBlank(aUrl)) {
@@ -229,23 +229,6 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     outputPath
             );
         });
-    }
-
-    private Map<String, String> retrieveLibraryNameMapping(String configURL) {
-        Response response = createHttpClient().target(configURL).request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
-        }
-        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
-        Object configEntry = configJSON.get("config");
-        if (!(configEntry instanceof Map)) {
-            LOG.error("Config entry from {} is null or it's not a map", configJSON);
-            throw new IllegalStateException("Config entry not found");
-        }
-        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
-        cdmLibraryNamesMapping.putAll((Map<String, String>)configEntry);
-        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
-        return cdmLibraryNamesMapping;
     }
 
     private void groupMIPsByPublishedName(WebTarget serverEndpoint,

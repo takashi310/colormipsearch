@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -17,6 +18,12 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 
 import org.apache.commons.lang3.RegExUtils;
@@ -249,6 +256,27 @@ class MIPsHandlingUtils {
         } else {
             return StringUtils.equalsIgnoreCase(mipObjective, segmentImageObjective);
         }
+    }
+
+    static Map<String, String> retrieveLibraryNameMapping(Client httpClient, String configURL) {
+        Response response = httpClient.target(configURL).request(MediaType.APPLICATION_JSON).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
+        }
+        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
+        Object configEntry = configJSON.get("config");
+        if (!(configEntry instanceof Map)) {
+            LOG.error("Config entry from {} is null or it's not a map", configJSON);
+            throw new IllegalStateException("Config entry not found");
+        }
+        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
+        Map<String, Map<String, Object>> configEntryMap = (Map<String, Map<String, Object>>)configEntry;
+        configEntryMap.forEach((lid, ldata) -> {
+            String lname = (String) ldata.get("name");
+            cdmLibraryNamesMapping.put(lid, lname);
+        });
+        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
+        return cdmLibraryNamesMapping;
     }
 
 }
