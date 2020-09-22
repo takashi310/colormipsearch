@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +108,30 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
                 "0x2 - the mip is included even if publishedToStaging is not set")
-        int includeMIPsWithoutPublisingName;
+        int includeMIPsWithoutPublisingName = 0;
+
+        @Parameter(names = {"--librariesVariants"},
+                description = "Libraries variants descriptors. " +
+                        "A library variant contains library name, variant type, location and suffix separated by colon , e.g., " +
+                        "flylight_gen1_mcfo_published:segmentation:/libDir/mcfo/segmentation:_CDM",
+                converter = MIPVariantArg.MIPVariantArgConverter.class,
+                validateValueWith = MIPVariantArg.ListMIPVariantArgValidator.class,
+                variableArity = true)
+        List<MIPVariantArg> libraryVariants;
+
+        @Parameter(names = {"--segmented-mips-variant"},
+                description = "The entry name in the variants dictionary for segmented images")
+        String segmentationVariantName = "segmentation";
+
+        @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
+                "0 - lookup segmented images but if none is found include the original, " +
+                "0x1 - include the original MIP but only if a segmented image exists, " +
+                "0x2 - include only segmented image if it exists, " +
+                "0x4 - include both the original MIP and all its segmentations")
+        int segmentedImageHandling = 0;
+
+        @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = CreateColorDepthSearchJSONInputCmd.ChannelBaseValidator.class)
+        int segmentedImageChannelBase = 1;
 
         @Parameter(names = {"--default-gender"}, description = "Default gender")
         String defaultGender = "f";
@@ -145,7 +170,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
     void execute() {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
 
-        Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(args.libraryMappingURL);
+        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
 
         Function<String, String> imageURLMapper = aUrl -> {
             if (StringUtils.isBlank(aUrl)) {
@@ -164,7 +189,28 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
             }
         };
 
+        Map<String, List<MIPVariantArg>> libraryVariants;
+        if (CollectionUtils.isEmpty(args.libraryVariants)) {
+            libraryVariants = Collections.emptyMap();
+        } else {
+            libraryVariants = args.libraryVariants.stream()
+                    .collect(Collectors.groupingBy(
+                            lv -> lv.libraryName,
+                            Collectors.toList()));
+        }
         args.libraries.forEach(library -> {
+            List<MIPVariantArg> lVariants = libraryVariants.get(library.input);
+            String librarySegmentationPath;
+            if (lVariants == null) {
+                librarySegmentationPath = null;
+            } else {
+                librarySegmentationPath = lVariants.stream()
+                        .filter(lv -> StringUtils.isNotBlank(lv.variantPath))
+                        .filter(lv -> lv.variantType.equals(args.segmentationVariantName))
+                        .findFirst()
+                        .map(lv -> lv.variantPath)
+                        .orElse(null);
+            }
             Path outputPath;
             if (isEmLibrary(library.input)) {
                 outputPath = Paths.get(args.commonArgs.outputDir, args.skeletonsOutput);
@@ -174,6 +220,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
             groupMIPsByPublishedName(
                     serverEndpoint,
                     library,
+                    librarySegmentationPath,
                     libraryNameMapping,
                     imageURLMapper,
                     outputPath
@@ -181,25 +228,9 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         });
     }
 
-    private Map<String, String> retrieveLibraryNameMapping(String configURL) {
-        Response response = createHttpClient().target(configURL).request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
-        }
-        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
-        Object configEntry = configJSON.get("config");
-        if (!(configEntry instanceof Map)) {
-            LOG.error("Config entry from {} is null or it's not a map", configJSON);
-            throw new IllegalStateException("Config entry not found");
-        }
-        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
-        cdmLibraryNamesMapping.putAll((Map<String, String>)configEntry);
-        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
-        return cdmLibraryNamesMapping;
-    }
-
     private void groupMIPsByPublishedName(WebTarget serverEndpoint,
                                           ListArg libraryArg,
+                                          String librarySegmentationPath,
                                           Map<String, String> libraryNamesMapping,
                                           Function<String, String> imageURLMapper,
                                           Path outputPath) {
@@ -228,12 +259,13 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                 }
             }
         };
-
         try {
             Files.createDirectories(outputPath);
         } catch (IOException e) {
             LOG.error("Error creating the output directory for {}", outputPath, e);
         }
+        Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibrarySegmentedImages(libraryArg.input, librarySegmentationPath);
+
         Map<String, List<String>> cdmNameToMIPIdForDupCheck = new HashMap<>();
         for (int pageOffset = libraryArg.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
             int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -252,6 +284,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     .map(cdmip -> isEmLibrary(libraryArg.input)
                             ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                             : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
+                    .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .peek(cdmip -> {
                         String cdmName = cdmip.getCdmName();

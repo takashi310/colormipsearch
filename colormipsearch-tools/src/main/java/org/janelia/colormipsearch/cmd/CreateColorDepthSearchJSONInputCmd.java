@@ -21,14 +21,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -54,15 +49,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
@@ -77,7 +68,6 @@ import org.slf4j.LoggerFactory;
 public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CreateColorDepthSearchJSONInputCmd.class);
-    private static final int MAX_SEGMENTED_DATA_DEPTH = 5;
 
     // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
     private static final String NO_CONSENSUS = "No Consensus";
@@ -139,17 +129,17 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 "0x0 - if either the publishing name is missing or the publishedToStaging is not set the image is not included; " +
                 "0x1 - the mip is included even if publishing name is not set; " +
                 "0x2 - the mip is included even if publishedToStaging is not set")
-        int includeMIPsWithoutPublisingName;
+        int includeMIPsWithoutPublisingName = 0;
 
         @Parameter(names = "--segmented-image-handling", description = "Bit field that specifies how to handle segmented images - " +
                 "0 - lookup segmented images but if none is found include the original, " +
                 "0x1 - include the original MIP but only if a segmented image exists, " +
                 "0x2 - include only segmented image if it exists, " +
                 "0x4 - include both the original MIP and all its segmentations")
-        int segmentedImageHandling;
+        int segmentedImageHandling = 0;
 
         @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
-        int segmentedImageChannelBase = 0;
+        int segmentedImageChannelBase = 1;
 
         @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
@@ -228,7 +218,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     void execute() {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
 
-        Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(args.libraryMappingURL);
+        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
 
         Set<MIPMetadata> excludedMips;
         if (args.excludedMIPs != null) {
@@ -246,12 +236,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             excludedMips = Collections.emptySet();
         }
 
-        Map<String, List<MIPVariantArg>> libraryVariants;
-        if (CollectionUtils.isEmpty(args.libraryVariants)) {
-            libraryVariants = Collections.emptyMap();
-        } else {
-            libraryVariants = args.libraryVariants.stream().collect(Collectors.groupingBy(lv -> lv.libraryName, Collectors.toList()));
-        }
         Function<String, String> imageURLMapper = aUrl -> {
             if (StringUtils.isBlank(aUrl)) {
                 return "";
@@ -268,45 +252,31 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 return aUrl;
             }
         };
-        Streams.zip(
-                IntStream.range(0, args.libraries.size()).boxed(),
-                args.libraries.stream(),
-                (lindex, library) -> {
+        Map<String, List<MIPVariantArg>> libraryVariants;
+        if (CollectionUtils.isEmpty(args.libraryVariants)) {
+            libraryVariants = Collections.emptyMap();
+        } else {
+            libraryVariants = args.libraryVariants.stream().collect(Collectors.groupingBy(lv -> lv.libraryName, Collectors.toList()));
+        }
+        args.libraries.stream()
+                .map(library -> {
                     LibraryPathsArgs lpaths = new LibraryPathsArgs();
                     lpaths.library = library;
                     lpaths.libraryVariants = libraryVariants.get(library.input);
                     return lpaths;
-                }
-        ).forEach(lpaths -> {
-            createColorDepthSearchJSONInputMIPs(
-                    serverEndpoint,
-                    lpaths,
-                    args.segmentationVariantName,
-                    excludedMips,
-                    libraryNameMapping,
-                    imageURLMapper,
-                    Paths.get(args.commonArgs.outputDir),
-                    args.outputFileName
-            );
-
-        });
-    }
-
-    private Map<String, String> retrieveLibraryNameMapping(String configURL) {
-        Response response = createHttpClient().target(configURL).request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
-        }
-        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
-        Object configEntry = configJSON.get("config");
-        if (!(configEntry instanceof Map)) {
-            LOG.error("Config entry from {} is null or it's not a map", configJSON);
-            throw new IllegalStateException("Config entry not found");
-        }
-        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
-        cdmLibraryNamesMapping.putAll((Map<String, String>)configEntry);
-        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
-        return cdmLibraryNamesMapping;
+                })
+                .forEach(lpaths -> {
+                    createColorDepthSearchJSONInputMIPs(
+                            serverEndpoint,
+                            lpaths,
+                            args.segmentationVariantName,
+                            excludedMips,
+                            libraryNameMapping,
+                            imageURLMapper,
+                            Paths.get(args.commonArgs.outputDir),
+                            args.outputFileName
+                    );
+                });
     }
 
     private void createColorDepthSearchJSONInputMIPs(WebTarget serverEndpoint,
@@ -388,15 +358,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     }
                 });
             }
-            Pair<String, Map<String, List<String>>> segmentedImages;
             String librarySegmentationPath = libraryPaths.getLibrarySegmentationPath(segmentationVariantType);
-            if (isEmLibrary(libraryPaths.library.input)) {
-                Pattern skeletonRegExPattern = Pattern.compile("([0-9]{7,})[_-].*");
-                segmentedImages = getSegmentedImages(skeletonRegExPattern, librarySegmentationPath);
-            } else {
-                Pattern slideCodeRegExPattern = Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
-                segmentedImages = getSegmentedImages(slideCodeRegExPattern, librarySegmentationPath);
-            }
+            Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibrarySegmentedImages(libraryPaths.library.input, librarySegmentationPath);
             LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
             for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -416,11 +379,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                             }
                         })
                         .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
-                        .filter(cdmip -> isEmLibrary(libraryPaths.getLibraryName()) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
-                        .map(cdmip -> isEmLibrary(libraryPaths.getLibraryName())
+                        .filter(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName()) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
+                        .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
                                 ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                                 : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
-                        .flatMap(cdmip -> findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
+                        .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .peek(cdmip -> {
@@ -544,134 +507,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
-                                                       String segmentedImagesBasePath,
-                                                       Pair<String, Map<String, List<String>>> segmentedImages,
-                                                       int segmentedImageHandling,
-                                                       int segmentedImageChannelBase) {
-        if (StringUtils.isBlank(segmentedImagesBasePath)) {
-            return Collections.singletonList(cdmipMetadata);
-        } else {
-            List<ColorDepthMetadata> segmentedCDMIPs = lookupSegmentedImages(cdmipMetadata, segmentedImagesBasePath, segmentedImages.getLeft(), segmentedImages.getRight(), segmentedImageChannelBase);
-            if (segmentedImageHandling == 0x1) {
-                return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
-            } else if (segmentedImageHandling == 0x2) {
-                return segmentedCDMIPs;
-            } else if (segmentedImageHandling == 0x4) {
-                return Stream.concat(Stream.of(cdmipMetadata), segmentedCDMIPs.stream()).collect(Collectors.toList());
-            } else {
-                return segmentedCDMIPs.isEmpty() ? Collections.singletonList(cdmipMetadata) : segmentedCDMIPs;
-            }
-        }
-    }
-
-    private List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
-        String indexingField;
-        Predicate<String> segmentedImageMatcher;
-        if (isEmLibrary(cdmipMetadata.getLibraryName())) {
-            indexingField = cdmipMetadata.getPublishedName();
-            Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+[_-]([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
-            segmentedImageMatcher = p -> {
-                String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
-                Preconditions.checkArgument(fn.contains(indexingField));
-                String cmFN = RegExUtils.replacePattern(Paths.get(cdmipMetadata.filepath).getFileName().toString(), "\\.\\D*$", "");
-                String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
-                String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
-                return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||
-                        StringUtils.isNotBlank(cmFNState) && fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
-            };
-        } else {
-            indexingField = cdmipMetadata.getSlideCode();
-            segmentedImageMatcher = p -> {
-                String fn = Paths.get(p).getFileName().toString();
-                Preconditions.checkArgument(fn.contains(indexingField));
-                int channelFromMip = getColorChannel(cdmipMetadata);
-                int channelFromFN = extractColorChannelFromSegmentedImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
-                LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
-                String objectiveFromMip = cdmipMetadata.getObjective();
-                String objectiveFromFN = extractObjectiveFromSegmentedImageName(fn.replace(indexingField, ""));
-                return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
-                        matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
-            };
-        }
-        if (segmentedImages.get(indexingField) == null) {
-            return Collections.emptyList();
-        } else {
-            return segmentedImages.get(indexingField).stream()
-                    .filter(segmentedImageMatcher)
-                    .map(p -> {
-                        String sifn = Paths.get(p).getFileName().toString();
-                        int scIndex = sifn.indexOf(indexingField);
-                        Preconditions.checkArgument(scIndex != -1);
-                        ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
-                        cdmipMetadata.copyTo(segmentMIPMetadata);
-                        segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
-                        segmentMIPMetadata.setImageType(type);
-                        segmentMIPMetadata.segmentFilepath = p;
-                        return segmentMIPMetadata;
-                    })
-                    .collect(Collectors.toList());
-        }
-    }
-
-    private int getColorChannel(ColorDepthMetadata cdMetadata) {
-        String channel = cdMetadata.getChannel();
-        if (StringUtils.isNotBlank(channel)) {
-            return Integer.parseInt(channel) - 1; // mip channels are 1 based so make it 0 based
-        } else {
-            return -1;
-        }
-    }
-
-    private int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
-        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
-        Matcher chMatcher = regExPattern.matcher(imageName);
-        if (chMatcher.find()) {
-            String channel = chMatcher.group(1);
-            return Integer.parseInt(channel) - channelBase;
-        } else {
-            return -1;
-        }
-    }
-
-    private String extractObjectiveFromSegmentedImageName(String imageName) {
-        Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
-        Matcher objectiveMatcher = regExPattern.matcher(imageName);
-        if (objectiveMatcher.find()) {
-            return objectiveMatcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
-    private boolean matchMIPChannelWithSegmentedImageChannel(int mipChannel, int segmentImageChannel) {
-        if (mipChannel == -1 && segmentImageChannel == -1) {
-            return true;
-        } else if (mipChannel == -1)  {
-            LOG.warn("No channel info found in the mip");
-            return true;
-        } else if (segmentImageChannel == -1) {
-            LOG.warn("No channel info found in the segmented image");
-            return true;
-        } else {
-            return mipChannel == segmentImageChannel;
-        }
-    }
-
-    private boolean matchMIPObjectiveWithSegmentedImageObjective(String mipObjective, String segmentImageObjective) {
-        if (StringUtils.isBlank(mipObjective) && StringUtils.isBlank(segmentImageObjective)) {
-            return true;
-        } else if (StringUtils.isBlank(mipObjective) )  {
-            LOG.warn("No objective found in the mip");
-            return false;
-        } else if (StringUtils.isBlank(segmentImageObjective)) {
-            // if the segmented image does not have objective match it against every image
-            return true;
-        } else {
-            return StringUtils.equalsIgnoreCase(mipObjective, segmentImageObjective);
-        }
-    }
-
     private boolean checkMIPLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {
         if (CollectionUtils.isNotEmpty(includedLibraries)) {
             if (!cdmip.libraries.containsAll(includedLibraries)) {
@@ -684,10 +519,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     .count() == 0;
         }
         return true;
-    }
-
-    private boolean isEmLibrary(String lname) {
-        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
     private boolean hasSample(ColorDepthMIP cdmip) {
@@ -785,75 +616,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             return mipNameComponents[0];
         } else {
             return null;
-        }
-    }
-
-    private String extractEMNeuronStateFromName(String name, Pattern emNeuronStatePattern) {
-        Matcher matcher = emNeuronStatePattern.matcher(name);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return "";
-        }
-    }
-
-    private Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern indexingFieldRegExPattern, String segmentedMIPsBaseDir) {
-        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
-            return ImmutablePair.of("", Collections.emptyMap());
-        } else {
-            Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
-            Function<String, String> indexingFieldFromName = n -> {
-                Matcher m = indexingFieldRegExPattern.matcher(n);
-                if (m.find()) {
-                    return m.group(1);
-                } else {
-                    LOG.warn("Indexing field could not be extracted from {} - no match found using {}", n, indexingFieldRegExPattern);
-                    return null;
-                }
-            };
-
-            if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldFromName, segmentdMIPsBasePath));
-            } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldFromName, segmentdMIPsBasePath.toFile()));
-            } else {
-                return ImmutablePair.of("file", Collections.emptyMap());
-            }
-        }
-    }
-
-    private Map<String, List<String>> getSegmentedImagesFromDir(Function<String, String> indexingFieldFromName, Path segmentedMIPsBasePath) {
-        try {
-            return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
-                    (p, fa) -> fa.isRegularFile())
-                    .map(p -> p.getFileName().toString())
-                    .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
-                    .collect(Collectors.groupingBy(indexingFieldFromName));
-        } catch (IOException e) {
-            LOG.warn("Error scanning {} for segmented images", segmentedMIPsBasePath, e);
-            return Collections.emptyMap();
-        }
-    }
-
-    private Map<String, List<String>> getSegmentedImagesFromZip(Function<String, String> indexingFieldFromName, File segmentedMIPsFile) {
-        ZipFile segmentedMIPsZipFile;
-        try {
-            segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
-        } catch (Exception e) {
-            LOG.warn("Error opening segmented mips archive {}", segmentedMIPsFile, e);
-            return Collections.emptyMap();
-        }
-        try {
-            return segmentedMIPsZipFile.stream()
-                    .filter(ze -> !ze.isDirectory())
-                    .map(ZipEntry::getName)
-                    .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
-                    .collect(Collectors.groupingBy(indexingFieldFromName));
-        } finally {
-            try {
-                segmentedMIPsZipFile.close();
-            } catch (IOException ignore) {
-            }
         }
     }
 
