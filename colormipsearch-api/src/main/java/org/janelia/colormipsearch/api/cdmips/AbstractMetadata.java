@@ -218,6 +218,10 @@ public abstract class AbstractMetadata {
         that.setLibraryName(this.libraryName);
         that.setImageURL(this.imageURL);
         that.setThumbnailURL(this.thumbnailURL);
+        that.setCdmPath(this.getCdmPath());
+        that.setImageType(this.getImageType());
+        that.setImageName(this.getImageName());
+        that.setImageArchivePath(this.getImageArchivePath());
         // copy the "attributes"
         that.setSlideCode(this.slideCode);
         that.setObjective(this.objective);
