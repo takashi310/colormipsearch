@@ -242,28 +242,22 @@ public abstract class AbstractMetadata {
         }
     }
 
-    public void addVariant(String variant, String variantLocation, String variantName, String variantEntryType) {
-        if (StringUtils.isBlank(variantName)) {
+    public void addVariant(String variant, String variantLocation) {
+        if (StringUtils.isBlank(variantLocation)) {
             return;
         }
         if (StringUtils.isBlank(variant)) {
-            throw new IllegalArgumentException("Variant type for " + variantName + " cannot be blank");
+            throw new IllegalArgumentException("Variant type for " + variantLocation + " cannot be blank");
         }
         if (variants == null) {
             variants = new LinkedHashMap<>();
         }
-        if (StringUtils.equalsIgnoreCase(variantEntryType, "zipEntry")) {
-            variants.put(variant, variantName);
-            variants.put(variant + "ArchivePath", variantLocation);
-            variants.put(variant + "EntryType", "zipEntry");
-        } else {
-            if (StringUtils.isNotBlank(variantLocation)) {
-                Path variantPath  = Paths.get(variantLocation, variantName);
-                variants.put(variant, variantPath.toString());
-            } else {
-                variants.put(variant, variantName);
-            }
-        }
+        variants.put(variant, variantLocation);
+    }
+
+    public <T extends AbstractMetadata> void copyVariantsFrom(T that) {
+        that.getVariantTypes()
+                .forEach(vt -> addVariant(vt, that.getVariant(vt)));
     }
 
     /**

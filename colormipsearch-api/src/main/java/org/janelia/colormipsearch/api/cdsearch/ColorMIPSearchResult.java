@@ -128,6 +128,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setChannel(maskMIP.getChannel());
         srMetadata.setMountingProtocol(maskMIP.getMountingProtocol());
         srMetadata.setRelatedImageRefId(maskMIP.getRelatedImageRefId());
+        srMetadata.copyVariantsFrom(maskMIP);
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
@@ -168,6 +169,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setChannel(libraryMIP.getChannel());
         srMetadata.setMountingProtocol(libraryMIP.getMountingProtocol());
         srMetadata.setRelatedImageRefId(libraryMIP.getRelatedImageRefId());
+        srMetadata.copyVariantsFrom(libraryMIP);
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);

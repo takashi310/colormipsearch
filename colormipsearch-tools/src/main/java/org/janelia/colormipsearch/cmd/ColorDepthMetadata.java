@@ -29,15 +29,6 @@ class ColorDepthMetadata extends AbstractMetadata {
         this.setPublishedName(publishedName);
     }
 
-    @JsonIgnore
-    String getCdmName() {
-        if (StringUtils.isNotBlank(filepath)) {
-            return Paths.get(filepath).getFileName().toString();
-        } else {
-            return null;
-        }
-    }
-
     void copyTo(ColorDepthMetadata that) {
         super.copyTo(that);
         that.filepath = this.filepath;

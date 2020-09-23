@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -390,10 +391,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                             libraryPaths.getLibrarySegmentationVariant(segmentationVariantType)
                                     .ifPresent(librarySegmentationVariant -> {
                                         // add the image itself as a variant
-                                        cdmip.addVariant(segmentationVariantType,
+                                        addVariant(
+                                                cdmip,
+                                                segmentationVariantType,
+                                                cdmip.getImageType(),
                                                 cdmip.getImageArchivePath(),
-                                                cdmip.getImageName(),
-                                                cdmip.getImageType());
+                                                cdmip.getImageName());
                                     });
                         })
                         .peek(cdmip -> {
@@ -447,7 +450,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                             }
                                         });
                                 if (variantMIP !=  null) {
-                                    cdmip.addVariant(mipVariantArg.variantType, variantMIP.getImageArchivePath(), variantMIP.getImageName(), variantMIP.getImageType());
+                                    addVariant(cdmip, mipVariantArg.variantType, variantMIP.getImageType(), variantMIP.getImageArchivePath(), variantMIP.getImageName());
                                 }
                             }
                         })
@@ -467,6 +470,21 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             try {
                 gen.close();
             } catch (IOException ignore) {
+            }
+        }
+    }
+
+    private void addVariant(MIPMetadata cdmip, String variant, String variantType, String variantArchivePath, String variantName) {
+        if (StringUtils.equalsIgnoreCase(variantType, "zipEntry")) {
+            cdmip.addVariant(variant, variantName);
+            cdmip.addVariant(variant + "EntryType", "zipEntry");
+            cdmip.addVariant(variant + "ArchivePath", variantArchivePath);
+        } else {
+            if (StringUtils.isNotBlank(variantArchivePath)) {
+                Path variantPath  = Paths.get(variantArchivePath, variantName);
+                cdmip.addVariant(variant, variantPath.toString());
+            } else {
+                cdmip.addVariant(variant, variantName);
             }
         }
     }
