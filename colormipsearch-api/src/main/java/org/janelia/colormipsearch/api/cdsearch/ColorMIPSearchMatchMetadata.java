@@ -35,12 +35,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceSampleRef;
     private String sourceRelatedImageRefId;
     private String sourceImageURL;
-    private String sampleRef;
-    private String relatedImageRefId;
-    // variants are a mapping of the variant type, such as segmentation, gradient, zgap, gamma1_4,
-    // to the corresponding image path
-    @JsonProperty
-    private Map<String, String> variants = null;
     private int matchingPixels;
     private double matchingRatio;
     @JsonProperty
@@ -138,34 +132,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setSourceImageURL(String sourceImageURL) {
         this.sourceImageURL = sourceImageURL;
-    }
-
-    public String getSampleRef() {
-        return sampleRef;
-    }
-
-    public void setSampleRef(String sampleRef) {
-        this.sampleRef = sampleRef;
-    }
-
-    public String getRelatedImageRefId() {
-        return relatedImageRefId;
-    }
-
-    public void setRelatedImageRefId(String relatedImageRefId) {
-        this.relatedImageRefId = relatedImageRefId;
-    }
-
-    public boolean hasVariant(String variant) {
-        return variants != null && StringUtils.isNotBlank(variants.get(variant));
-    }
-
-    public String getVariant(String variant) {
-        if (hasVariant(variant)) {
-            return variants.get(variant);
-        } else {
-            return null;
-        }
     }
 
     public int getMatchingPixels() {

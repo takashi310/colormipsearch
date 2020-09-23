@@ -111,8 +111,10 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setId(getMaskId());
         srMetadata.setLibraryName(maskMIP.getLibraryName());
         srMetadata.setPublishedName(maskMIP.getPublishedName());
+        srMetadata.setCdmPath(maskMIP.getCdmPath());
         srMetadata.setImageArchivePath(maskMIP.getImageArchivePath());
         srMetadata.setImageName(maskMIP.getImageName());
+        srMetadata.setImageType(maskMIP.getImageType());
         srMetadata.setSampleRef(maskMIP.getSampleRef());
         srMetadata.setRelatedImageRefId(maskMIP.getRelatedImageRefId());
         srMetadata.setImageURL(maskMIP.getImageURL());
@@ -125,6 +127,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setAlignmentSpace(maskMIP.getAlignmentSpace());
         srMetadata.setChannel(maskMIP.getChannel());
         srMetadata.setMountingProtocol(maskMIP.getMountingProtocol());
+        srMetadata.setRelatedImageRefId(maskMIP.getRelatedImageRefId());
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
@@ -148,6 +151,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setId(getLibraryId());
         srMetadata.setLibraryName(libraryMIP.getLibraryName());
         srMetadata.setPublishedName(libraryMIP.getPublishedName());
+        srMetadata.setCdmPath(libraryMIP.getCdmPath());
         srMetadata.setImageArchivePath(libraryMIP.getImageArchivePath());
         srMetadata.setImageName(libraryMIP.getImageName());
         srMetadata.setImageType(libraryMIP.getImageType());
@@ -163,6 +167,7 @@ public class ColorMIPSearchResult implements Serializable {
         srMetadata.setAlignmentSpace(libraryMIP.getAlignmentSpace());
         srMetadata.setChannel(libraryMIP.getChannel());
         srMetadata.setMountingProtocol(libraryMIP.getMountingProtocol());
+        srMetadata.setRelatedImageRefId(libraryMIP.getRelatedImageRefId());
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);

@@ -1,7 +1,11 @@
 package org.janelia.colormipsearch.api.cdmips;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -35,6 +39,12 @@ public abstract class AbstractMetadata {
     private String channel;
     private String mountingProtocol;
     private Boolean publishedToStaging;
+    private String relatedImageRefId;
+    private String sampleRef;
+    // variants are a mapping of the variant type, such as segmentation, gradient, zgap, gamma1_4,
+    // to the corresponding image path
+    @JsonProperty
+    private Map<String, String> variants = null;
 
     @JsonProperty
     public String getId() {
@@ -69,6 +79,15 @@ public abstract class AbstractMetadata {
 
     public void setCdmPath(String cdmPath) {
         this.cdmPath = cdmPath;
+    }
+
+    @JsonIgnore
+    public String getCdmName() {
+        if (StringUtils.isNotBlank(getCdmPath())) {
+            return Paths.get(getCdmPath()).getFileName().toString();
+        } else {
+            return null;
+        }
     }
 
     public String getImageName() {
@@ -184,6 +203,67 @@ public abstract class AbstractMetadata {
 
     public void setMountingProtocol(String mountingProtocol) {
         this.mountingProtocol = mountingProtocol;
+    }
+
+    public String getRelatedImageRefId() {
+        return relatedImageRefId;
+    }
+
+    public void setRelatedImageRefId(String relatedImageRefId) {
+        this.relatedImageRefId = relatedImageRefId;
+    }
+
+    public String getSampleRef() {
+        return sampleRef;
+    }
+
+    public void setSampleRef(String sampleRef) {
+        this.sampleRef = sampleRef;
+    }
+
+    @JsonIgnore
+    public Set<String> getVariantTypes() {
+        if (variants == null) {
+            return Collections.emptySet();
+        } else {
+            return variants.keySet();
+        }
+    }
+
+    public boolean hasVariant(String variant) {
+        return variants != null && StringUtils.isNotBlank(variants.get(variant));
+    }
+
+    public String getVariant(String variant) {
+        if (hasVariant(variant)) {
+            return variants.get(variant);
+        } else {
+            return null;
+        }
+    }
+
+    public void addVariant(String variant, String variantLocation, String variantName, String variantEntryType) {
+        if (StringUtils.isBlank(variantName)) {
+            return;
+        }
+        if (StringUtils.isBlank(variant)) {
+            throw new IllegalArgumentException("Variant type for " + variantName + " cannot be blank");
+        }
+        if (variants == null) {
+            variants = new LinkedHashMap<>();
+        }
+        if (StringUtils.equalsIgnoreCase(variantEntryType, "zipEntry")) {
+            variants.put(variant, variantName);
+            variants.put(variant + "ArchivePath", variantLocation);
+            variants.put(variant + "EntryType", "zipEntry");
+        } else {
+            if (StringUtils.isNotBlank(variantLocation)) {
+                Path variantPath  = Paths.get(variantLocation, variantName);
+                variants.put(variant, variantPath.toString());
+            } else {
+                variants.put(variant, variantName);
+            }
+        }
     }
 
     /**
