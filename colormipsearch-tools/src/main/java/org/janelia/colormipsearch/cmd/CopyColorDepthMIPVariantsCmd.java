@@ -53,7 +53,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         Set<String> notCountableVariants = new HashSet<>();
 
         @DynamicParameter(names = "-variantMapping", description = "Variants mapping")
-        private final Map<String, String> variantMapping = new HashMap<>();
+        Map<String, String> variantMapping = new HashMap<>();
 
         @ParametersDelegate
         final CommonArgs commonArgs;
