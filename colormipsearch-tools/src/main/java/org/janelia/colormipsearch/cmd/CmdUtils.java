@@ -29,7 +29,7 @@ class CmdUtils {
                             .build());
         } else {
             LOG.info("Create a workstealing pool with {} worker threads", Runtime.getRuntime().availableProcessors());
-            return Executors.newWorkStealingPool();
+            return Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors() - 1);
         }
     }
 
