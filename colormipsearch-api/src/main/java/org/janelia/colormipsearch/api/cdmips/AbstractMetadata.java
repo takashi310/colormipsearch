@@ -35,6 +35,7 @@ public abstract class AbstractMetadata {
     private String channel;
     private String mountingProtocol;
     private Boolean publishedToStaging;
+    private String relatedImageRefId;
 
     @JsonProperty
     public String getId() {
@@ -69,6 +70,15 @@ public abstract class AbstractMetadata {
 
     public void setCdmPath(String cdmPath) {
         this.cdmPath = cdmPath;
+    }
+
+    @JsonIgnore
+    public String getCdmName() {
+        if (StringUtils.isNotBlank(getCdmPath())) {
+            return Paths.get(getCdmPath()).getFileName().toString();
+        } else {
+            return null;
+        }
     }
 
     public String getImageName() {
@@ -184,6 +194,14 @@ public abstract class AbstractMetadata {
 
     public void setMountingProtocol(String mountingProtocol) {
         this.mountingProtocol = mountingProtocol;
+    }
+
+    public String getRelatedImageRefId() {
+        return relatedImageRefId;
+    }
+
+    public void setRelatedImageRefId(String relatedImageRefId) {
+        this.relatedImageRefId = relatedImageRefId;
     }
 
     /**
