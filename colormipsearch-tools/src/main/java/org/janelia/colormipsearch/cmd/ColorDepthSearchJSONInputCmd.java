@@ -93,7 +93,15 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     private void runColorDepthSearchFromJSONInput(JsonMIPsSearchArgs args) {
         ColorMIPSearchDriver colorMIPSearchDriver;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
-        if (args.withNegativeScores) {
+        if (args.onlyPositiveScores()) {
+            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
+                    args.maskThreshold,
+                    args.mirrorMask,
+                    args.dataThreshold,
+                    args.pixColorFluctuation,
+                    args.xyShift
+            );
+        } else {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
                     args.maskThreshold,
                     args.mirrorMask,
@@ -102,14 +110,6 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                     args.xyShift,
                     args.negativeRadius,
                     loadQueryROIMask(args.queryROIMaskName)
-            );
-        } else {
-            cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
-                    args.maskThreshold,
-                    args.mirrorMask,
-                    args.dataThreshold,
-                    args.pixColorFluctuation,
-                    args.xyShift
             );
         }
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
