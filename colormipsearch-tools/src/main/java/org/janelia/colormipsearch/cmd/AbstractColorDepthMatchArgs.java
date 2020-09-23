@@ -38,8 +38,8 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
     Double pctPositivePixels = 0.0;
 
-    @Parameter(names = {"--no-negative-scores"}, description = "If possible calculate the negative scores as well", arity = 0)
-    boolean noNegativeScores = false;
+    @Parameter(names = {"--only-positive-scores"}, description = "If possible calculate the negative scores as well", arity = 0)
+    boolean onlyPositiveScores = false;
 
     @Parameter(names = {"--librarySuffix"}, description = "Library suffix")
     String librarySuffix;
@@ -111,6 +111,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     }
 
     boolean onlyPositiveScores() {
-        return !noNegativeScores;
+        return onlyPositiveScores;
     }
 }
