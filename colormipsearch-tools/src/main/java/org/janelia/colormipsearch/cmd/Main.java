@@ -16,11 +16,11 @@ public class Main {
 
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
-        private long cacheSize = 200000L;
+        long cacheSize = 200000L;
         @Parameter(names = "--cacheExpirationInSeconds", description = "Cache expiration in seconds")
-        private long cacheExpirationInSeconds = 60;
+        long cacheExpirationInSeconds = 60;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
-        private boolean displayHelpMessage = false;
+        boolean displayHelpMessage = false;
     }
 
     public static void main(String[] argv) {
