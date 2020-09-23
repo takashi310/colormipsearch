@@ -29,26 +29,26 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     static class JsonMIPsSearchArgs extends AbstractColorDepthMatchArgs {
         @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing images to search")
-        private List<ListArg> librariesInputs;
+        List<ListArg> librariesInputs;
 
         @Parameter(names = {"--images-index"}, description = "Input image file(s) start index")
-        private long librariesStartIndex;
+        long librariesStartIndex;
 
         @Parameter(names = {"--images-length"}, description = "Input image file(s) length")
-        private int librariesLength;
+        int librariesLength;
 
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
-        private List<ListArg> masksInputs;
+        List<ListArg> masksInputs;
 
         @Parameter(names = {"--masks-index"}, description = "Mask file(s) start index")
-        private long masksStartIndex;
+        long masksStartIndex;
 
         @Parameter(names = {"--masks-length"}, description = "Mask file(s) length")
-        private int masksLength;
+        int masksLength;
 
         @Parameter(names = "-useSpark", description = "Perform the search in the current process", arity = 0)
-        private boolean useSpark = false;
+        boolean useSpark = false;
 
         JsonMIPsSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -159,11 +159,13 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
                         ColorMIPSearchResultUtils.groupResults(
                                 cdsResults,
                                 ColorMIPSearchResult::perMaskMetadata));
-                ColorMIPSearchResultsWriter.writeSearchResults(
-                        args.getPerLibraryDir(),
-                        ColorMIPSearchResultUtils.groupResults(
-                                cdsResults,
-                                ColorMIPSearchResult::perLibraryMetadata));
+                if (StringUtils.isNotBlank(args.perLibrarySubdir)) {
+                    ColorMIPSearchResultsWriter.writeSearchResults(
+                            args.getPerLibraryDir(),
+                            ColorMIPSearchResultUtils.groupResults(
+                                    cdsResults,
+                                    ColorMIPSearchResult::perLibraryMetadata));
+                }
             }
         } finally {
             colorMIPSearchDriver.terminate();
