@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-public interface ColorDepthMatchScore {
+import java.io.Serializable;
+
+public interface ColorDepthMatchScore extends Serializable {
     /**
      * Return the score value
      * @return

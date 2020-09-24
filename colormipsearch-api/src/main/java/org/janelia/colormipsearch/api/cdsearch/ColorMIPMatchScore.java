@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.io.Serializable;
+
 import javax.annotation.Nullable;
 
 /**
@@ -12,7 +14,7 @@ public class ColorMIPMatchScore implements ColorDepthMatchScore {
     private final double matchingPixNumToMaskRatio;
     private final NegativeColorDepthMatchScore negativeScores;
 
-    ColorMIPMatchScore(int matchingPixNum,
+    public ColorMIPMatchScore(int matchingPixNum,
                        double matchingPixNumToMaskRatio,
                        @Nullable NegativeColorDepthMatchScore negativeScores) {
         this.matchingPixNum = matchingPixNum;

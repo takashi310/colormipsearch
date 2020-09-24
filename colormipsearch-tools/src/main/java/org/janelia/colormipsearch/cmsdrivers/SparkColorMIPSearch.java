@@ -86,30 +86,31 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(maskLibraryPair -> {
                                         MIPImage libraryImage = maskLibraryPair._2;
-                                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
-                                        if (requiredVariantTypes.contains("gradient")) {
-                                            variantImageSuppliers.put("gradient", () -> {
-                                                MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(libraryImage),
-                                                        "gradient",
-                                                        gradientsLocations,
-                                                        gradientVariantSuffixMapping));
-                                                return MIPsUtils.getImageArray(gradientImage);
-                                            });
-                                        }
-                                        if (requiredVariantTypes.contains("zgap")) {
-                                            variantImageSuppliers.put("zgap", () -> {
-                                                MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(libraryImage),
-                                                        "zgap",
-                                                        zgapMasksLocations,
-                                                        zgapMaskVariantSuffixMapping));
-                                                return MIPsUtils.getImageArray(libraryZGapMaskImage);
-                                            });
-                                        }
-                                        ColorMIPMatchScore colorMIPMatchScore = maskColorDepthSearch.calculateMatchingScore(
-                                                MIPsUtils.getImageArray(libraryImage),
-                                                variantImageSuppliers);
+//                                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+//                                        if (requiredVariantTypes.contains("gradient")) {
+//                                            variantImageSuppliers.put("gradient", () -> {
+//                                                MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+//                                                        MIPsUtils.getMIPMetadata(libraryImage),
+//                                                        "gradient",
+//                                                        gradientsLocations,
+//                                                        gradientVariantSuffixMapping));
+//                                                return MIPsUtils.getImageArray(gradientImage);
+//                                            });
+//                                        }
+//                                        if (requiredVariantTypes.contains("zgap")) {
+//                                            variantImageSuppliers.put("zgap", () -> {
+//                                                MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+//                                                        MIPsUtils.getMIPMetadata(libraryImage),
+//                                                        "zgap",
+//                                                        zgapMasksLocations,
+//                                                        zgapMaskVariantSuffixMapping));
+//                                                return MIPsUtils.getImageArray(libraryZGapMaskImage);
+//                                            });
+//                                        }
+//                                        ColorMIPMatchScore colorMIPMatchScore = maskColorDepthSearch.calculateMatchingScore(
+//                                                MIPsUtils.getImageArray(libraryImage),
+//                                                variantImageSuppliers);
+                                        ColorMIPMatchScore colorMIPMatchScore = new ColorMIPMatchScore(0, 0, null);
                                         boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
                                         return new ColorMIPSearchResult(
                                                 MIPsUtils.getMIPMetadata(maskImage),
