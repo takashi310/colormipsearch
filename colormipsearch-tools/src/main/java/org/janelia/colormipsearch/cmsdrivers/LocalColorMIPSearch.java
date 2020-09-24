@@ -43,16 +43,16 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
     private final Executor cdsExecutor;
     private final int libraryPartitionSize;
     private final List<String> gradientsLocations;
-    private final Function<String, String> gradientVariantSuffixMapping;
+    private final MappingFunction<String, String> gradientVariantSuffixMapping;
     private final List<String> zgapMasksLocations;
-    private final Function<String, String> zgapMaskVariantSuffixMapping;
+    private final MappingFunction<String, String> zgapMaskVariantSuffixMapping;
 
     public LocalColorMIPSearch(ColorMIPSearch colorMIPSearch,
                                int libraryPartitionSize,
                                List<String> gradientsLocations,
-                               Function<String, String> gradientVariantSuffixMapping,
+                               MappingFunction<String, String> gradientVariantSuffixMapping,
                                List<String> zgapMasksLocations,
-                               Function<String, String> zgapMaskVariantSuffixMapping,
+                               MappingFunction<String, String> zgapMaskVariantSuffixMapping,
                                Executor cdsExecutor) {
         this.colorMIPSearch = colorMIPSearch;
         this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
