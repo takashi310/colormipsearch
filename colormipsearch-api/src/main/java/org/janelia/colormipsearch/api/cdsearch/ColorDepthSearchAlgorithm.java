@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -13,7 +14,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
  * ColorMIPMaskCompare encapsulates a query image and it provides a method to search
  * the enclosed query in other target images.
  */
-public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> {
+public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> extends Serializable {
 
     ImageArray getQueryImage();
 

@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmsdrivers;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import org.apache.spark.api.java.function.MapFunction;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
@@ -77,8 +79,8 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
                             MIPImage maskImage = MIPsUtils.loadMIP(mls._1);
-//                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> maskColorDepthSearch = colorMIPSearch.createMaskColorDepthSearch(maskImage, null);
-//                            Set<String> requiredVariantTypes = maskColorDepthSearch.getRequiredTargetVariantTypes();
+                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> maskColorDepthSearch = colorMIPSearch.createMaskColorDepthSearch(maskImage, null);
+                            Set<String> requiredVariantTypes = maskColorDepthSearch.getRequiredTargetVariantTypes();
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(maskLibraryPair -> {
                                         MIPImage libraryImage = maskLibraryPair._2;
