@@ -37,7 +37,6 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
     private final ColorMIPSearch colorMIPSearch;
-    private final int libraryPartitionSize;
     private final List<String> gradientsLocations;
     private final Function<String, String> gradientVariantSuffixMapping;
     private final List<String> zgapMasksLocations;
@@ -46,13 +45,11 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver {
 
     public SparkColorMIPSearch(String appName,
                                ColorMIPSearch colorMIPSearch,
-                               int libraryPartitionSize,
                                List<String> gradientsLocations,
                                Function<String, String> gradientVariantSuffixMapping,
                                List<String> zgapMasksLocations,
                                Function<String, String> zgapMaskVariantSuffixMapping) {
         this.colorMIPSearch = colorMIPSearch;
-        this.libraryPartitionSize = libraryPartitionSize > 0 ? libraryPartitionSize : 1;
         this.gradientsLocations = gradientsLocations;
         this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
         this.zgapMasksLocations = zgapMasksLocations;

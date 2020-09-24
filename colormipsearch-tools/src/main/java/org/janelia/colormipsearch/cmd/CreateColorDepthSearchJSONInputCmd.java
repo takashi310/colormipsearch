@@ -15,15 +15,12 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -50,7 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -596,8 +592,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
-        List<String> mipNameComponents = Splitter.on('-').splitToList(cdmip.name);
-        String line = mipNameComponents.size() > 0 ? mipNameComponents.get(0) : cdmip.name;
+        String[] mipNameComponents = cdmip.name.split("-");
+        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : cdmip.name;
         // attempt to remove the PI initials
         int piSeparator = StringUtils.indexOf(line, '_');
         String lineID;
@@ -607,7 +603,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             lineID = line.substring(piSeparator + 1);
         }
         cdMetadata.setLMLinePublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
-        String slideCode = mipNameComponents.size() > 1 ? mipNameComponents.get(1) : null;
+        String slideCode = mipNameComponents.length > 1 ? mipNameComponents[1] : null;
         cdMetadata.setSlideCode(slideCode);
     }
 
