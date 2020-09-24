@@ -1,10 +1,11 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.beust.jcommander.IStringConverter;
-import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +15,9 @@ class ListArg {
     static class ListArgConverter implements IStringConverter<ListArg> {
         @Override
         public ListArg convert(String value) {
-            List<String> argComponents = Splitter.on(":").trimResults().splitToList(value);
+            List<String> argComponents = Arrays.stream(StringUtils.split(value, ':'))
+                    .map(String::trim)
+                    .collect(Collectors.toList());
             ListArg arg = new ListArg();
             if (argComponents.size() > 0) {
                 arg.input = argComponents.get(0);

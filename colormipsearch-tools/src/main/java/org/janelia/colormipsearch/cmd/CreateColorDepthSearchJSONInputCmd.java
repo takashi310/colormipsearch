@@ -592,7 +592,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
-        String[] mipNameComponents = cdmip.name.split("-");
+        String[] mipNameComponents = StringUtils.split(cdmip.name, '-');
         String line = mipNameComponents.length > 0 ? mipNameComponents[0] : cdmip.name;
         // attempt to remove the PI initials
         int piSeparator = StringUtils.indexOf(line, '_');

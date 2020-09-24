@@ -1,11 +1,12 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.ParameterException;
-import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,7 +41,9 @@ class MIPVariantArg {
     static class MIPVariantArgConverter implements IStringConverter<MIPVariantArg> {
         @Override
         public MIPVariantArg convert(String value) {
-            List<String> argComponents = Splitter.on(":").trimResults().splitToList(value);
+            List<String> argComponents = Arrays.stream(StringUtils.split(value, ':'))
+                    .map(String::trim)
+                    .collect(Collectors.toList());
             MIPVariantArg arg = new MIPVariantArg();
             if (argComponents.size() > 0) {
                 arg.libraryName = argComponents.get(0);
