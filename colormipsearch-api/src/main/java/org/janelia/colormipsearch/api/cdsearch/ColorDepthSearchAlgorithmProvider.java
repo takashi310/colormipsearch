@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.io.Serializable;
+
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 /**
@@ -7,7 +9,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
  *
  * @param <S> color depth match score type
  */
-public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScore> {
+public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScore> extends Serializable {
     /**
      * @return default color depth search parameters.
      */

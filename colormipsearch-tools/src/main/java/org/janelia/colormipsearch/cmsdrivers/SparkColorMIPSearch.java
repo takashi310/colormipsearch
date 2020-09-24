@@ -1,13 +1,8 @@
 package org.janelia.colormipsearch.cmsdrivers;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -15,15 +10,12 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -33,7 +25,7 @@ import scala.Tuple2;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
+public class SparkColorMIPSearch implements ColorMIPSearchDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
