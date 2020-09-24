@@ -11,6 +11,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.MapFunction;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
@@ -32,9 +34,9 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
 
     private final ColorMIPSearch colorMIPSearch;
     private final List<String> gradientsLocations;
-//    private final Function<String, String> gradientVariantSuffixMapping;
+    private final MapFunction<String, String> gradientVariantSuffixMapping;
     private final List<String> zgapMasksLocations;
-//    private final Function<String, String> zgapMaskVariantSuffixMapping;
+    private final MapFunction<String, String> zgapMaskVariantSuffixMapping;
     private transient final JavaSparkContext sparkContext;
 
     public SparkColorMIPSearch(String appName,
@@ -45,9 +47,9 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                Function<String, String> zgapMaskVariantSuffixMapping) {
         this.colorMIPSearch = colorMIPSearch;
         this.gradientsLocations = gradientsLocations;
-//        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
+        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping::apply;
         this.zgapMasksLocations = zgapMasksLocations;
-//        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
+        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping::apply;
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
