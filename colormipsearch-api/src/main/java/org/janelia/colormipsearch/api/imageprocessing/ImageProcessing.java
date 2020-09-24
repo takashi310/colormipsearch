@@ -1,9 +1,11 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
+import java.io.Serializable;
+
 /**
  * Wrapper for composing multiple image transformations.
  */
-public class ImageProcessing {
+public class ImageProcessing implements Serializable {
 
     public static ImageProcessing create(ImageTransformation imageTransformation) {
         return new ImageProcessing(imageTransformation);

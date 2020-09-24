@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -8,7 +9,7 @@ import java.util.stream.IntStream;
 /**
  * ImageTransformation - image transformations that take both pixel value and pixel position into consideration
  */
-public abstract class ImageTransformation {
+public abstract class ImageTransformation implements Serializable {
 
     /**
      * Identity transformation - it returns the same pixel as in the source.

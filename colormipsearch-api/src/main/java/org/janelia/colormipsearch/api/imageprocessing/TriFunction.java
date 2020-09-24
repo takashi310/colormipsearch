@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 /**
@@ -11,7 +12,7 @@ import java.util.function.Function;
  * @param <R>
  */
 @FunctionalInterface
-public interface TriFunction<S, T, U, R> {
+public interface TriFunction<S, T, U, R> extends Serializable {
     R apply(S s, T t, U u);
 
     default <V> TriFunction<S, T, U, V> andThen(Function<? super R, ? extends V> after) {
