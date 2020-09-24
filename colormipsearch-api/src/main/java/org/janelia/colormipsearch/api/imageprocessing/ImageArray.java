@@ -1,11 +1,13 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Image array representation containing image type,  image width, height and image pixel arrays.
  */
-public class ImageArray {
+public class ImageArray implements Serializable {
 
     ImageType type;
     int height;
