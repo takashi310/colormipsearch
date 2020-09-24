@@ -19,22 +19,24 @@ public class CachedMIPsUtils {
     private static LoadingCache<MIPMetadata, MIPImage> mipsImagesCache;
 
     public static void initializeCache(long maxSize, long expirationInSeconds) {
-        LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
-        CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
-                .concurrencyLevel(16);
-        if (expirationInSeconds > 0) {
-             cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
-        }
         if (maxSize > 0) {
-            cacheBuilder.maximumSize(maxSize);
+            LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
+            CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
+                    .concurrencyLevel(8)
+                    .maximumSize(maxSize);
+            if (expirationInSeconds > 0) {
+                cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
+            }
+            mipsImagesCache = cacheBuilder
+                    .build(new CacheLoader<MIPMetadata, MIPImage>() {
+                        @Override
+                        public MIPImage load(MIPMetadata mipInfo) {
+                            return MIPsUtils.loadMIP(mipInfo);
+                        }
+                    });
+        } else {
+            mipsImagesCache = null;
         }
-        mipsImagesCache = cacheBuilder
-            .build(new CacheLoader<MIPMetadata, MIPImage>() {
-                @Override
-                public MIPImage load(MIPMetadata mipInfo) {
-                    return MIPsUtils.loadMIP(mipInfo);
-                }
-            });
     }
 
     public static MIPImage loadMIP(MIPMetadata mipInfo) {

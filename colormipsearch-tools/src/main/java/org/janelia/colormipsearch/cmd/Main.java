@@ -16,7 +16,7 @@ public class Main {
 
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
-        long cacheSize = 200000L;
+        long cacheSize = 0L;
         @Parameter(names = "--cacheExpirationInSeconds", description = "Cache expiration in seconds")
         long cacheExpirationInSeconds = 60;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
