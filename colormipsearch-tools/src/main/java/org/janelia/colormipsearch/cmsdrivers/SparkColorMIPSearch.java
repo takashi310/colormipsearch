@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmsdrivers;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ import scala.Tuple2;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class SparkColorMIPSearch implements ColorMIPSearchDriver {
+public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
