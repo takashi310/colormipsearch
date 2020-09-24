@@ -34,17 +34,17 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
 
     private final ColorMIPSearch colorMIPSearch;
     private final List<String> gradientsLocations;
-    private final MapFunction<String, String> gradientVariantSuffixMapping;
+    private final Function<String, String> gradientVariantSuffixMapping;
     private final List<String> zgapMasksLocations;
-    private final MapFunction<String, String> zgapMaskVariantSuffixMapping;
+    private final Function<String, String> zgapMaskVariantSuffixMapping;
     private transient final JavaSparkContext sparkContext;
 
     public SparkColorMIPSearch(String appName,
                                ColorMIPSearch colorMIPSearch,
                                List<String> gradientsLocations,
-                               MapFunction<String, String> gradientVariantSuffixMapping,
+                               Function<String, String> gradientVariantSuffixMapping,
                                List<String> zgapMasksLocations,
-                               MapFunction<String, String> zgapMaskVariantSuffixMapping) {
+                               Function<String, String> zgapMaskVariantSuffixMapping) {
         this.colorMIPSearch = colorMIPSearch;
         this.gradientsLocations = gradientsLocations;
         this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;

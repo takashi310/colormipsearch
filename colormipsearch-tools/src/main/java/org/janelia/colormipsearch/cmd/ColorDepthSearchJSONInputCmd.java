@@ -114,23 +114,26 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         }
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
         if (args.useSpark()) {
+            String librarySuffixArg = args.librarySuffix;
+            String gradientSuffixArg = args.gradientSuffix;
+            String zgapSuffixArg = args.zgapSuffix;
             colorMIPSearchDriver = new SparkColorMIPSearch(
                     args.appName,
                     colorMIPSearch,
                     args.gradientPaths,
                     gradPathComponent -> {
-                        String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
-                        if (StringUtils.isNotBlank(args.librarySuffix)) {
-                            return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
+                        String suffix = StringUtils.defaultIfBlank(gradientSuffixArg, "");
+                        if (StringUtils.isNotBlank(librarySuffixArg)) {
+                            return StringUtils.replaceIgnoreCase(gradPathComponent, librarySuffixArg, "") + suffix;
                         } else {
                             return gradPathComponent + suffix;
                         }
                     },
                     args.zgapPaths,
                     zgapPathComponent -> {
-                        String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
-                        if (StringUtils.isNotBlank(args.librarySuffix)) {
-                            return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
+                        String suffix = StringUtils.defaultIfBlank(zgapSuffixArg, "");
+                        if (StringUtils.isNotBlank(librarySuffixArg)) {
+                            return StringUtils.replaceIgnoreCase(zgapPathComponent, librarySuffixArg, "") + suffix;
                         } else {
                             return zgapPathComponent + suffix;
                         }
