@@ -31,10 +31,10 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(SparkColorMIPSearch.class);
 
     private final ColorMIPSearch colorMIPSearch;
-//    private final List<String> gradientsLocations;
-//    private final Function<String, String> gradientVariantSuffixMapping;
-//    private final List<String> zgapMasksLocations;
-//    private final Function<String, String> zgapMaskVariantSuffixMapping;
+    private final List<String> gradientsLocations;
+    private final Function<String, String> gradientVariantSuffixMapping;
+    private final List<String> zgapMasksLocations;
+    private final Function<String, String> zgapMaskVariantSuffixMapping;
     private transient final JavaSparkContext sparkContext;
 
     public SparkColorMIPSearch(String appName,
@@ -44,10 +44,10 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                List<String> zgapMasksLocations,
                                Function<String, String> zgapMaskVariantSuffixMapping) {
         this.colorMIPSearch = colorMIPSearch;
-//        this.gradientsLocations = gradientsLocations;
-//        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
-//        this.zgapMasksLocations = zgapMasksLocations;
-//        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
+        this.gradientsLocations = gradientsLocations;
+        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
+        this.zgapMasksLocations = zgapMasksLocations;
+        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
