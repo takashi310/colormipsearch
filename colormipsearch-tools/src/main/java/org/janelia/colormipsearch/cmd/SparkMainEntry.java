@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class Main {
+public class SparkMainEntry {
 
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
@@ -27,32 +27,18 @@ public class Main {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
         AbstractCmd[] cmds = new AbstractCmd[] {
-                new CreateColorDepthSearchJSONInputCmd("createColorDepthSearchJSONInput", commonArgs),
-                new GroupMIPsByPublishedNameCmd("groupMIPsByPublishedName", commonArgs),
-                new ReplaceMIPsMetadataAttributesCmd("replaceAttributes", commonArgs),
                 new ColorDepthSearchJSONInputCmd(
                         "searchFromJSON",
                         commonArgs,
                         () -> mainArgs.cacheSize,
                         () -> mainArgs.cacheExpirationInSeconds,
-                        false),
+                        true),
                 new ColorDepthSearchLocalMIPsCmd(
                         "searchLocalFiles",
                         commonArgs,
                         () -> mainArgs.cacheSize,
                         () -> mainArgs.cacheExpirationInSeconds,
-                        false),
-                new CalculateNegativeScoresCmd(
-                        "gradientScore",
-                        commonArgs,
-                        () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds),
-                new UpdateGradientScoresFromReverseSearchResultsCmd(
-                        "gradientScoresFromMatchedResults",
-                        commonArgs),
-                new MergeResultsCmd("mergeResults", commonArgs),
-                new NormalizeScoresCmd("normalizeScores", commonArgs),
-                new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)
+                        true)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

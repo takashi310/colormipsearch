@@ -9,7 +9,6 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
@@ -51,30 +50,26 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         @Parameter(names = {"--masks-length"}, description = "Mask file(s) length")
         int masksLength;
 
-        @Parameter(names = "-useSpark", description = "Perform the search in the current process", arity = 0)
-        boolean useSpark = false;
-
         JsonMIPsSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
-        }
-
-        boolean useSpark() {
-            return useSpark;
         }
     }
 
     private final JsonMIPsSearchArgs args;
     private final Supplier<Long> cacheSizeSupplier;
     private final Supplier<Long> cacheExpirationInSecondsSupplier;
+    private final boolean useSpark;
 
     ColorDepthSearchJSONInputCmd(String commandName,
                                  CommonArgs commonArgs,
                                  Supplier<Long> cacheSizeSupplier,
-                                 Supplier<Long> cacheExpirationInSecondsSupplier) {
+                                 Supplier<Long> cacheExpirationInSecondsSupplier,
+                                 boolean useSpark) {
         super(commandName);
         this.args = new JsonMIPsSearchArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
         this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
+        this.useSpark = useSpark;
     }
 
     @Override
@@ -113,7 +108,8 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
             );
         }
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
-        if (args.useSpark()) {
+        if (useSpark) {
+            // these have to be extracted because args are not serializable - therefore not spark compatible
             String librarySuffixArg = args.librarySuffix;
             String gradientSuffixArg = args.gradientSuffix;
             String zgapSuffixArg = args.zgapSuffix;

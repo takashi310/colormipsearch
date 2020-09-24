@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
@@ -19,6 +18,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
+import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,15 +48,18 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     private final LocalMIPFilesSearchArgs args;
     private final Supplier<Long> cacheSizeSupplier;
     private final Supplier<Long> cacheExpirationInSecondsSupplier;
+    private final boolean useSpark;
 
     ColorDepthSearchLocalMIPsCmd(String commandName,
                                  CommonArgs commonArgs,
                                  Supplier<Long> cacheSizeSupplier,
-                                 Supplier<Long> cacheExpirationInSecondsSupplier) {
+                                 Supplier<Long> cacheExpirationInSecondsSupplier,
+                                 boolean useSpark) {
         super(commandName);
         this.args = new LocalMIPFilesSearchArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
         this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
+        this.useSpark = useSpark;
     }
 
     @Override
@@ -73,6 +76,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     }
 
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
+        ColorMIPSearchDriver colorMIPSearchDriver;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
         if (args.onlyPositiveScores()) {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
@@ -94,29 +98,56 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
             );
         }
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
-        ColorMIPSearchDriver colorMIPSearchDriver = new LocalColorMIPSearch(
-                        colorMIPSearch,
-                        args.libraryPartitionSize,
-                        args.gradientPaths,
-                        gradPathComponent -> {
-                            String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
-                            if (StringUtils.isNotBlank(args.librarySuffix)) {
-                                return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
-                            } else {
-                                return gradPathComponent + suffix;
-                            }
-                        },
-                        args.zgapPaths,
-                        zgapPathComponent -> {
-                            String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
-                            if (StringUtils.isNotBlank(args.librarySuffix)) {
-                                return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
-                            } else {
-                                return zgapPathComponent + suffix;
-                            }
-
-                        },
-                        CmdUtils.createCDSExecutor(args.commonArgs));
+        if (useSpark) {
+            // these have to be extracted because args are not serializable - therefore not spark compatible
+            String librarySuffixArg = args.librarySuffix;
+            String gradientSuffixArg = args.gradientSuffix;
+            String zgapSuffixArg = args.zgapSuffix;
+            colorMIPSearchDriver = new SparkColorMIPSearch(
+                    args.appName,
+                    colorMIPSearch,
+                    args.gradientPaths,
+                    gradPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(gradientSuffixArg, "");
+                        if (StringUtils.isNotBlank(librarySuffixArg)) {
+                            return StringUtils.replaceIgnoreCase(gradPathComponent, librarySuffixArg, "") + suffix;
+                        } else {
+                            return gradPathComponent + suffix;
+                        }
+                    },
+                    args.zgapPaths,
+                    zgapPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(zgapSuffixArg, "");
+                        if (StringUtils.isNotBlank(librarySuffixArg)) {
+                            return StringUtils.replaceIgnoreCase(zgapPathComponent, librarySuffixArg, "") + suffix;
+                        } else {
+                            return zgapPathComponent + suffix;
+                        }
+                    });
+        } else {
+            colorMIPSearchDriver = new LocalColorMIPSearch(
+                    colorMIPSearch,
+                    args.libraryPartitionSize,
+                    args.gradientPaths,
+                    gradPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(gradPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return gradPathComponent + suffix;
+                        }
+                    },
+                    args.zgapPaths,
+                    zgapPathComponent -> {
+                        String suffix = StringUtils.defaultIfBlank(args.zgapSuffix, "");
+                        if (StringUtils.isNotBlank(args.librarySuffix)) {
+                            return StringUtils.replaceIgnoreCase(zgapPathComponent, args.librarySuffix, "") + suffix;
+                        } else {
+                            return zgapPathComponent + suffix;
+                        }
+                    },
+                    CmdUtils.createCDSExecutor(args.commonArgs));
+        }
         try {
             List<MIPMetadata> queryMIPs = args.maskImagesLocation.stream()
                     .flatMap(masksLocation -> MIPsUtils.readMIPsFromLocalFiles(
