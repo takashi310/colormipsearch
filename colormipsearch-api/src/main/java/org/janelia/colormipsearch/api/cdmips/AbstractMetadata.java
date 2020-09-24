@@ -1,6 +1,6 @@
 package org.janelia.colormipsearch.api.cdmips;
 
-import java.nio.file.Path;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -19,7 +19,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class AbstractMetadata {
+public abstract class AbstractMetadata implements Serializable {
     private String id;
     private String publishedName;
     private String libraryName;
