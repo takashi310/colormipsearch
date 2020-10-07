@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmsdrivers;
+package org.janelia.colormipsearch.api.imageprocessing;
 
 import java.io.Serializable;
 import java.util.function.Function;

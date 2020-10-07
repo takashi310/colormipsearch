@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmsdrivers;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,23 +8,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
-import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
-import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithm;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.MappingFunction;
+import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

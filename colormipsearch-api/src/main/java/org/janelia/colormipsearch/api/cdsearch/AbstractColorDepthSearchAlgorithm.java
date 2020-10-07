@@ -1,7 +1,10 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
@@ -12,10 +15,34 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
  */
 public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> implements ColorDepthSearchAlgorithm<S> {
 
+    private static class PixelPositions implements Serializable {
+        private final int minx;
+        private final int miny;
+        private final int maxx;
+        private final int maxy;
+        private final int[] positions;
+
+        PixelPositions(int minx, int miny, int maxx, int maxy, int[] positions) {
+            this.minx = minx;
+            this.miny = miny;
+            this.maxx = maxx;
+            this.maxy = maxy;
+            this.positions = positions;
+        }
+
+        IntStream streamPositions() {
+            return Arrays.stream(positions);
+        }
+
+        int size() {
+            return positions.length;
+        }
+    }
+
     final ImageArray queryImage;
     final ImageArray negQueryImage;
-    final int[] queryPositions;
-    final int[] negQueryPositions;
+    final PixelPositions queryPositions;
+    final PixelPositions negQueryPositions;
     final int targetThreshold;
     final double zTolerance;
 
@@ -40,10 +67,14 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         return queryImage;
     }
 
-    private int[] getMaskPosArray(ImageArray msk, int thresm) {
+    private PixelPositions getMaskPosArray(ImageArray msk, int thresm) {
         int sumpx = msk.getPixelCount();
         List<Integer> pos = new ArrayList<>();
         int pix, red, green, blue;
+        int minx = msk.getWidth();
+        int miny = msk.getHeight();
+        int maxx = 0;
+        int maxy = 0;
         for (int pi = 0; pi < sumpx; pi++) {
             int x = pi % msk.getWidth();
             int y = pi / msk.getWidth();
@@ -57,10 +88,38 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             green = (pix >>> 8) & 0xff;//mask
             blue = pix & 0xff;//mask
 
-            if (red > thresm || green > thresm || blue > thresm)
+            if (red > thresm || green > thresm || blue > thresm) {
                 pos.add(pi);
+                if (x < minx) minx = x;
+                if (x + 1 > maxx) maxx = x + 1;
+                if (y < miny) miny = y;
+                if (y + 1 > maxy) maxy = y + 1;
+            }
         }
-        return pos.stream().mapToInt(i -> i).toArray();
+        return new PixelPositions(minx, miny, maxx, maxy, pos.stream().mapToInt(i -> i).toArray());
+    }
+
+    IntStream streamQueryPixelPositions() {
+        return queryPositions.streamPositions();
+    }
+
+    int querySize() {
+        return queryPositions.size();
+    }
+
+    IntStream streamNegQueryPixelPositions() {
+        if (negQueryPositions != null)
+            return negQueryPositions.streamPositions();
+        else
+            return IntStream.empty();
+    }
+
+    int negQuerySize() {
+        if (negQueryPositions != null) {
+            return negQueryPositions.size();
+        } else {
+            return 0;
+        }
     }
 
     /**

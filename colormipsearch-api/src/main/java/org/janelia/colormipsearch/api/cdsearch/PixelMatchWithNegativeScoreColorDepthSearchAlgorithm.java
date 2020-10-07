@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
