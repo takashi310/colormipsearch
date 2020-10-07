@@ -2,9 +2,7 @@ package org.janelia.colormipsearch.api.cdsearch;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
@@ -30,8 +28,8 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             this.positions = positions;
         }
 
-        IntStream streamPositions() {
-            return Arrays.stream(positions);
+        int[] pixelPositions() {
+            return positions;
         }
 
         int size() {
@@ -99,19 +97,19 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         return new PixelPositions(minx, miny, maxx, maxy, pos.stream().mapToInt(i -> i).toArray());
     }
 
-    IntStream streamQueryPixelPositions() {
-        return queryPositions.streamPositions();
+    int[] queryPixelPositions() {
+        return queryPositions.pixelPositions();
     }
 
     int querySize() {
         return queryPositions.size();
     }
 
-    IntStream streamNegQueryPixelPositions() {
+    int[] negQueryPixelPositions() {
         if (negQueryPositions != null)
-            return negQueryPositions.streamPositions();
+            return negQueryPositions.pixelPositions();
         else
-            return IntStream.empty();
+            return new int[0];
     }
 
     int negQuerySize() {
