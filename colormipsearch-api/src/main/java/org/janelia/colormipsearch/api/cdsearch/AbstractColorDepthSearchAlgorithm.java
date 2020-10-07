@@ -19,11 +19,11 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
     final int targetThreshold;
     final double zTolerance;
 
-    protected AbstractColorDepthSearchAlgorithm(ImageArray query, int queryThreshold,
-                                                ImageArray negquery, int negQueryThreshold,
+    protected AbstractColorDepthSearchAlgorithm(ImageArray queryImage, int queryThreshold,
+                                                ImageArray negQueryImage, int negQueryThreshold,
                                                 int targetThreshold, double zTolerance) {
-        this.queryImage = query;
-        this.negQueryImage = negquery;
+        this.queryImage = queryImage;
+        this.negQueryImage = negQueryImage;
         this.targetThreshold = targetThreshold;
         this.zTolerance = zTolerance;
 

@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
@@ -25,15 +24,15 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     private final int[][] negTargetMasksList;
     private final int[][] negMirrorTargetMasksList;
 
-    public PixelMatchColorDepthSearchAlgorithm(ImageArray query, int queryThreshold, boolean mirrorQuery,
-                                               ImageArray negQuery, int negQueryThreshold,
+    public PixelMatchColorDepthSearchAlgorithm(ImageArray queryImage, int queryThreshold, boolean mirrorQuery,
+                                               ImageArray negQueryImage, int negQueryThreshold,
                                                boolean mirrorNegQuery, int targetThreshold,
                                                double zTolerance, int xyshift) {
-        super(query, queryThreshold, negQuery, negQueryThreshold, targetThreshold, zTolerance);
+        super(queryImage, queryThreshold, negQueryImage, negQueryThreshold, targetThreshold, zTolerance);
         // shifting
-        targetMasksList = generateShiftedMasks(queryPositions, xyshift, query.getWidth(), query.getHeight());
+        targetMasksList = generateShiftedMasks(queryPositions, xyshift, queryImage.getWidth(), queryImage.getHeight());
         if (negQueryImage != null) {
-            negTargetMasksList = generateShiftedMasks(negQueryPositions, xyshift, query.getWidth(), query.getHeight());
+            negTargetMasksList = generateShiftedMasks(negQueryPositions, xyshift, queryImage.getWidth(), queryImage.getHeight());
         } else {
             negTargetMasksList = null;
         }
@@ -42,14 +41,14 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         if (mirrorQuery) {
             mirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < targetMasksList.length; i++)
-                mirrorTargetMasksList[i] = mirrorMask(targetMasksList[i], query.getWidth());
+                mirrorTargetMasksList[i] = mirrorMask(targetMasksList[i], queryImage.getWidth());
         } else {
             mirrorTargetMasksList = null;
         }
         if (mirrorNegQuery && negQueryImage != null) {
             negMirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < negTargetMasksList.length; i++)
-                negMirrorTargetMasksList[i] = mirrorMask(negTargetMasksList[i], query.getWidth());
+                negMirrorTargetMasksList[i] = mirrorMask(negTargetMasksList[i], negQueryImage.getWidth());
         } else {
             negMirrorTargetMasksList = null;
         }
