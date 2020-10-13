@@ -77,9 +77,9 @@ public class ColorMIPSearchResultUtils {
         try {
             LOG.debug("Reading {}", f);
             return mapper.readValue(f, CDSMatches.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.error("Error reading CDS results from json file {}", f, e);
-            throw new UncheckedIOException(e);
+            throw new IllegalStateException(e);
         }
     }
 
