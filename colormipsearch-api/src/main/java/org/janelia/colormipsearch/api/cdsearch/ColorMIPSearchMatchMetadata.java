@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,6 +22,10 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         cdsCopy.sourceId = from.sourceId;
         cdsCopy.sourcePublishedName = from.sourcePublishedName;
         cdsCopy.sourceLibraryName = from.sourceLibraryName;
+        cdsCopy.setCdmPath(null);
+        cdsCopy.setImageType(null);
+        cdsCopy.setImageName(null);
+        cdsCopy.setImageArchivePath(null);
         return cdsCopy;
     }
 
