@@ -124,7 +124,7 @@ class MergeResultsCmd extends AbstractCmd {
                             .filter(cdsResults -> CollectionUtils.isNotEmpty(cdsResults.results))
                             .flatMap(cdsResults -> cdsResults.results.stream())
                             .filter(csr -> csr.getMatchingRatio() * 100 > pctPositivePixels)
-                            .map(csr -> cleanup ? ColorMIPSearchMatchMetadata.create(csr) : csr)
+                            .map(csr -> cleanup ? ColorMIPSearchMatchMetadata.createWithEmptyPaths(csr) : csr)
                             .collect(Collectors.toList());
                     List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,

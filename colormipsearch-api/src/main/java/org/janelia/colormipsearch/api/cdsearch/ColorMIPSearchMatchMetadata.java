@@ -11,12 +11,16 @@ import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
-    public static ColorMIPSearchMatchMetadata create(ColorMIPSearchMatchMetadata from) {
+    public static ColorMIPSearchMatchMetadata createWithEmptyPaths(ColorMIPSearchMatchMetadata from) {
         ColorMIPSearchMatchMetadata cdsCopy = new ColorMIPSearchMatchMetadata();
         from.copyTo(cdsCopy);
         cdsCopy.sourceId = from.sourceId;
         cdsCopy.sourcePublishedName = from.sourcePublishedName;
         cdsCopy.sourceLibraryName = from.sourceLibraryName;
+        cdsCopy.setCdmPath(null);
+        cdsCopy.setImageType(null);
+        cdsCopy.setImageName(null);
+        cdsCopy.setImageArchivePath(null);
         return cdsCopy;
     }
 
