@@ -9,6 +9,8 @@ import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
  */
 public class GradientAreaGapUtils {
 
+    public static final int HIGH_EXPRESSION_FACTOR = 3;
+
     private enum Color {
         BLACK,
         RED,
@@ -197,6 +199,20 @@ public class GradientAreaGapUtils {
         return sliceNumber;
     }
 
+    public static long calculateNegativeScore(Long gradientAreaGap, Long highExpressionArea) {
+        long negativeScore;
+        if (gradientAreaGap != null && gradientAreaGap >= 0 && highExpressionArea != null && highExpressionArea >= 0) {
+            negativeScore = gradientAreaGap + highExpressionArea / HIGH_EXPRESSION_FACTOR;
+        } else if (gradientAreaGap != null && gradientAreaGap >= 0) {
+            negativeScore = gradientAreaGap;
+        } else if (highExpressionArea != null && highExpressionArea >= 0) {
+            negativeScore = highExpressionArea / HIGH_EXPRESSION_FACTOR;
+        }  else {
+            negativeScore = -1;
+        }
+        return negativeScore;
+    }
+
     /**
      * The method calculates the normalized score given the gradient area gap the high expression area and the pixel match values
      * using the maximum negative score and maximum pixel match for normalization.
@@ -213,18 +229,9 @@ public class GradientAreaGapUtils {
         if (pixelMatch == 0 || pixelMatchRatio == 0) {
             return 0;
         } else {
-            if (gradientAreaGap < 0 || maxNegativeScore <= 0) {
+            double negativeScore = calculateNegativeScore(gradientAreaGap, highExpressionArea);
+            if (gradientAreaGap < 0 || maxNegativeScore <= 0 || negativeScore == -1) {
                 return pixelMatch;
-            }
-            double negativeScore;
-            if (gradientAreaGap < 0 && highExpressionArea < 0) {
-                negativeScore = 0;
-            } else if (highExpressionArea < 0) {
-                negativeScore = gradientAreaGap;
-            } else if (gradientAreaGap < 0) {
-                negativeScore = highExpressionArea / 3;
-            }  else {
-                negativeScore = gradientAreaGap + highExpressionArea / 3;
             }
             double normalizedNegativeScore = negativeScore / maxNegativeScore;
             double boundedNegativeScore = Math.min(Math.max(normalizedNegativeScore * 2.5, 0.002), 1.);

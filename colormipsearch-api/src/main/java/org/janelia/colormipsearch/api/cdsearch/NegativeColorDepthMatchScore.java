@@ -21,7 +21,7 @@ public class NegativeColorDepthMatchScore implements ColorDepthMatchScore {
 
     @Override
     public long getScore() {
-        return gradientAreaGap + highExpressionArea / 3;
+        return GradientAreaGapUtils.calculateNegativeScore(gradientAreaGap, highExpressionArea);
     }
 
     @Override
