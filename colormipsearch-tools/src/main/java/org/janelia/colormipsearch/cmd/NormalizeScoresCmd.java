@@ -131,7 +131,7 @@ class NormalizeScoresCmd extends AbstractCmd {
                 cdsResults = Utils.pickBestMatches(
                         cdsMatchesFromJSONFile.results,
                         csr -> csr.getId(),
-                        csr -> (double) csr.getMatchingPixels(),
+                        ColorMIPSearchMatchMetadata::getNormalizedGapScore,
                         -1,
                         1)
                         .stream()

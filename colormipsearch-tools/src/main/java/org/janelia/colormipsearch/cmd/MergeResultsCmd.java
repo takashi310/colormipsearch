@@ -129,7 +129,7 @@ class MergeResultsCmd extends AbstractCmd {
                     List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
                             combinedResults,
                             ColorMIPSearchMatchMetadata::getId,
-                            csr -> (double) csr.getMatchingPixels(),
+                            ColorMIPSearchMatchMetadata::getNormalizedScore,
                             -1,
                             1)
                             .stream()
