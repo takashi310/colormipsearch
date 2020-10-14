@@ -8,9 +8,7 @@ import java.util.Map;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 
 /**
- * Perform color depth mask search on a Spark cluster.
- *
- * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
+ * Creates a color depth search for a given mask.
  */
 public class ColorMIPSearch implements Serializable {
 
@@ -29,9 +27,9 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createMaskColorDepthSearch(MIPImage maskMIPImage, Integer maskThresholdParam) {
-        ColorDepthSearchParams maskSpecificParams = new ColorDepthSearchParams().setParam("maskThreshold", maskThresholdParam);
-        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithm(maskMIPImage.getImageArray(), maskSpecificParams);
+    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(MIPImage queryMIPImage, Integer queryThresholdParam) {
+        ColorDepthSearchParams querySpecificParams = new ColorDepthSearchParams().setParam("maskThreshold", queryThresholdParam);
+        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithm(queryMIPImage.getImageArray(), querySpecificParams);
     }
 
     public boolean isMatch(ColorMIPMatchScore colorMIPMatchScore) {

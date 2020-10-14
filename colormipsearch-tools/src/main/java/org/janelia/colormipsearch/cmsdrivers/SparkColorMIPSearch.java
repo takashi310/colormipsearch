@@ -59,39 +59,39 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
     }
 
     @Override
-    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> maskMIPS, List<MIPMetadata> libraryMIPS) {
-        LOG.info("Searching {} masks against {} libraries", maskMIPS.size(), libraryMIPS.size());
+    public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> queryMIPS, List<MIPMetadata> targetMIPS) {
+        LOG.info("Searching {} queries against {} targets", queryMIPS.size(), targetMIPS.size());
 
-        long nlibraries = libraryMIPS.size();
-        long nmasks = maskMIPS.size();
+        long nTargets = targetMIPS.size();
+        long nQueries = queryMIPS.size();
 
-        JavaRDD<MIPImage> librariesRDD = sparkContext.parallelize(libraryMIPS)
+        JavaRDD<MIPImage> targetsRDD = sparkContext.parallelize(targetMIPS)
                 .filter(MIPsUtils::exists)
                 .map(MIPsUtils::loadMIP);
-        LOG.info("Created RDD libraries and put {} items into {} partitions", nlibraries, librariesRDD.getNumPartitions());
+        LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
 
-        JavaRDD<MIPMetadata> masksRDD = sparkContext.parallelize(maskMIPS)
+        JavaRDD<MIPMetadata> queriesRDD = sparkContext.parallelize(queryMIPS)
                 .filter(MIPsUtils::exists);
-        LOG.info("Created RDD masks and put {} items into {} partitions", nmasks, masksRDD.getNumPartitions());
+        LOG.info("Created RDD queries and put {} items into {} partitions", nQueries, queriesRDD.getNumPartitions());
 
-        JavaPairRDD<MIPMetadata, MIPImage> masksLibrariesPairsRDD = masksRDD.cartesian(librariesRDD);
-        LOG.info("Created {} library masks pairs in {} partitions", nmasks * nlibraries, masksLibrariesPairsRDD.getNumPartitions());
+        JavaPairRDD<MIPMetadata, MIPImage> queryTargetPairsRDD = queriesRDD.cartesian(targetsRDD);
+        LOG.info("Created {} query target pairs in {} partitions", nQueries * nTargets, queryTargetPairsRDD.getNumPartitions());
 
-        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = masksLibrariesPairsRDD
-                .groupBy(lms -> lms._1) // group by mask
-                .mapPartitions(mlItr -> StreamSupport.stream(Spliterators.spliterator(mlItr, Integer.MAX_VALUE, 0), false)
+        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = queryTargetPairsRDD
+                .groupBy(tq -> tq._1) // group by query
+                .mapPartitions(qtItr -> StreamSupport.stream(Spliterators.spliterator(qtItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
-                            MIPImage maskImage = MIPsUtils.loadMIP(mls._1);
-                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> maskColorDepthSearch = colorMIPSearch.createMaskColorDepthSearch(maskImage, null);
-                            Set<String> requiredVariantTypes = maskColorDepthSearch.getRequiredTargetVariantTypes();
+                            MIPImage queryImage = MIPsUtils.loadMIP(mls._1);
+                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearch(queryImage, null);
+                            Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(maskLibraryPair -> {
-                                        MIPImage libraryImage = maskLibraryPair._2;
+                                    .map(queryTargetPair -> {
+                                        MIPImage targetImage = queryTargetPair._2;
                                         Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
                                         if (requiredVariantTypes.contains("gradient")) {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(libraryImage),
+                                                        MIPsUtils.getMIPMetadata(targetImage),
                                                         "gradient",
                                                         gradientsLocations,
                                                         gradientVariantSuffixMapping));
@@ -100,21 +100,21 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                         }
                                         if (requiredVariantTypes.contains("zgap")) {
                                             variantImageSuppliers.put("zgap", () -> {
-                                                MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(libraryImage),
+                                                MIPImage targetZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                        MIPsUtils.getMIPMetadata(targetImage),
                                                         "zgap",
                                                         zgapMasksLocations,
                                                         zgapMaskVariantSuffixMapping));
-                                                return MIPsUtils.getImageArray(libraryZGapMaskImage);
+                                                return MIPsUtils.getImageArray(targetZGapMaskImage);
                                             });
                                         }
-                                        ColorMIPMatchScore colorMIPMatchScore = maskColorDepthSearch.calculateMatchingScore(
-                                                MIPsUtils.getImageArray(libraryImage),
+                                        ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
+                                                MIPsUtils.getImageArray(targetImage),
                                                 variantImageSuppliers);
                                         boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
                                         return new ColorMIPSearchResult(
-                                                MIPsUtils.getMIPMetadata(maskImage),
-                                                MIPsUtils.getMIPMetadata(libraryImage),
+                                                MIPsUtils.getMIPMetadata(queryImage),
+                                                MIPsUtils.getMIPMetadata(targetImage),
                                                 colorMIPMatchScore,
                                                 isMatch,
                                                 false);
@@ -126,7 +126,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                         })
                         .iterator())
                 .mapToPair(p -> p);
-        LOG.info("Created RDD search results for  all {} library-mask pairs in all {} partitions", nmasks * nlibraries, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
+        LOG.info("Created RDD search results for  all {} query target pairs in all {} partitions", nQueries * nTargets, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
         // write results for each mask
         return allSearchResultsPartitionedByMaskMIP.flatMapToPair(srByMask -> srByMask._2.stream().map(sr -> new Tuple2<>(srByMask._1, sr)).iterator())

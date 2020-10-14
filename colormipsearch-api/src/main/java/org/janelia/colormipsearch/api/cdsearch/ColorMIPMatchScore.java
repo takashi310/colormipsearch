@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-import java.io.Serializable;
-
 import javax.annotation.Nullable;
 
 /**
