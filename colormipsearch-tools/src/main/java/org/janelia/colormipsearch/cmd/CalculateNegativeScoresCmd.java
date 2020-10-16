@@ -404,12 +404,15 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                         csr.getMatchingRatio(),
                                         maxMatchingPixels));
                                 if (csr.getPublishedName().equals("VT029753")) {
-                                    LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {} -> {}",
-                                            inputQueryMIP, maxMatchingPixels, maxNegativeScore, csr, csr.getNormalizedGapScore());
+                                    LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {}, pix = {}, neg = {} -> {}",
+                                            inputQueryMIP, maxMatchingPixels, maxNegativeScore, csr,
+                                            csr.getMatchingPixels(),
+                                            csr.getNegativeScore(),
+                                            csr.getNormalizedGapScore());
                                 }
                             });
-                    LOG.info("Updated normalized score for {} matches with {} from {} after {}ms",
-                            selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource, System.currentTimeMillis()-startProcessingTime);
+                    LOG.info("Updated normalized score for {} matches with {} from {} after {}s",
+                            selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource, (System.currentTimeMillis()-startProcessingTime+1000)/1000);
                     return selectedCDSResultsForQueryMIP;
                 });
     }
