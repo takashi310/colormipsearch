@@ -1,9 +1,5 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-import java.util.function.Supplier;
-
-import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
-
 /**
  * Utils for calculating gradient area gap scores.
  */
