@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import javax.annotation.Nonnull;
+
 import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
@@ -93,7 +95,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
      * @return
      */
     @Override
-    public NegativeColorDepthMatchScore calculateMatchingScore(ImageArray targetImageArray,
+    public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
                                                                Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
         long startTime = System.currentTimeMillis();
         ImageArray targetGradientImageArray = getVariantImageArray(variantTypeSuppliers, "gradient");

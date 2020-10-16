@@ -119,22 +119,13 @@ public class ColorMIPSearchResultUtils {
         }
     }
 
-    public static Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
+    public static Map<String, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
                                                                                                                  int numberOfBestLinesToSelect,
                                                                                                                  int numberOfBestSamplesToSelectPerLine,
                                                                                                                  int numberOfBestMatchesToSelectPerSample) {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
-                .collect(Collectors.groupingBy(csr -> {
-                    MIPMetadata mip = new IDDominantMIPMetadata();
-                    mip.setId(csr.getSourceId());
-                    mip.setCdmPath(csr.getSourceCdmPath());
-                    mip.setImageArchivePath(csr.getSourceImageArchivePath());
-                    mip.setImageName(csr.getSourceImageName());
-                    mip.setImageType(csr.getSourceImageType());
-                    mip.setImageURL(csr.getSourceImageURL());
-                    return mip;
-                }, Collectors.collectingAndThen(
+                .collect(Collectors.groupingBy(ColorMIPSearchMatchMetadata::getSourceId, Collectors.collectingAndThen(
                         Collectors.toList(),
                         resultsForAnId -> {
                             List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(
