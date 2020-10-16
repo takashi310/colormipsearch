@@ -405,7 +405,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                         maxMatchingPixels));
                                 if (csr.getPublishedName().equals("VT029753")) {
                                     LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {}, pix = {}, neg = {} -> {}",
-                                            inputQueryMIP, maxMatchingPixels, maxNegativeScore, csr,
+                                            inputQueryMIP, csr,
+                                            maxMatchingPixels, maxNegativeScore,
                                             csr.getMatchingPixels(),
                                             csr.getNegativeScore(),
                                             csr.getNormalizedGapScore());
