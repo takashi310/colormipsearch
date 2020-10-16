@@ -226,8 +226,8 @@ public class GradientAreaGapUtils {
      * @return
      */
     public static double calculateNormalizedScore(long gradientAreaGap, long highExpressionArea, long maxNegativeScore, long pixelMatch, double pixelMatchRatio, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchRatio == 0) {
-            return 0;
+        if (pixelMatch == 0 || pixelMatchRatio == 0 || maxPixelMatch == 0 || maxNegativeScore < 0) {
+            return pixelMatch;
         } else {
             double negativeScore = calculateNegativeScore(gradientAreaGap, highExpressionArea);
             if (gradientAreaGap < 0 || maxNegativeScore <= 0 || negativeScore == -1) {

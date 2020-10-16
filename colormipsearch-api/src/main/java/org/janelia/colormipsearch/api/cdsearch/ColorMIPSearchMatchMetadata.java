@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
+import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
@@ -28,6 +29,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         cdsCopy.setImageName(null);
         cdsCopy.setImageArchivePath(null);
         return cdsCopy;
+    }
+
+    public static MIPMetadata getMatchedMIP(ColorMIPSearchMatchMetadata from) {
+        MIPMetadata matchedMIP = new MIPMetadata();
+        matchedMIP.setImageArchivePath(from.getImageArchivePath());
+        matchedMIP.setImageName(from.getImageName());
+        matchedMIP.setImageType(from.getImageType());
+        matchedMIP.setCdmPath(from.getCdmPath());
+        return matchedMIP;
     }
 
     private String sourceId;
