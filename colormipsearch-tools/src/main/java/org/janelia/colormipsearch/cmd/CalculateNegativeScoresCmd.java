@@ -378,6 +378,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                                                                        List<CompletableFuture<Long>> negativeScoresComputations,
                                                                                        long startProcessingTime,
                                                                                        Executor executor) {
+        LOG.info("Wait for all gradient computations for {} with {} matches from {} to finish to normalize score", inputQueryMIP, selectedCDSResultsForQueryMIP.size(), cdsMatchesSource);
         return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApplyAsync(vr -> {
                     LOG.info("Normalize gradient area scores for {} matches with {} from {}", selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource);
