@@ -119,13 +119,13 @@ public class ColorMIPSearchResultUtils {
         }
     }
 
-    public static Map<String, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
+    public static Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> selectCDSResultForGradientScoreCalculation(List<ColorMIPSearchMatchMetadata> cdsResults,
                                                                                                                  int numberOfBestLinesToSelect,
                                                                                                                  int numberOfBestSamplesToSelectPerLine,
                                                                                                                  int numberOfBestMatchesToSelectPerSample) {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
-                .collect(Collectors.groupingBy(ColorMIPSearchMatchMetadata::getSourceId, Collectors.collectingAndThen(
+                .collect(Collectors.groupingBy(ColorMIPSearchMatchMetadata::getQueryMIP, Collectors.collectingAndThen(
                         Collectors.toList(),
                         resultsForAnId -> {
                             List<ColorMIPSearchMatchMetadata> bestMatches = pickBestPublishedNameAndSampleMatches(

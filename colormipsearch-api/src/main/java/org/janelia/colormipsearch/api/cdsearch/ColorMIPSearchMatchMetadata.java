@@ -31,13 +31,26 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         return cdsCopy;
     }
 
-    public static MIPMetadata getMatchedMIP(ColorMIPSearchMatchMetadata from) {
-        MIPMetadata matchedMIP = new MIPMetadata();
-        matchedMIP.setImageArchivePath(from.getImageArchivePath());
-        matchedMIP.setImageName(from.getImageName());
-        matchedMIP.setImageType(from.getImageType());
-        matchedMIP.setCdmPath(from.getCdmPath());
-        return matchedMIP;
+    public static MIPMetadata getQueryMIP(ColorMIPSearchMatchMetadata cdsm) {
+        MIPMetadata mip = new MIPMetadata();
+        mip.setId(cdsm.getSourceId());
+        mip.setCdmPath(cdsm.getSourceCdmPath());
+        mip.setImageArchivePath(cdsm.getSourceImageArchivePath());
+        mip.setImageName(cdsm.getSourceImageName());
+        mip.setImageType(cdsm.getSourceImageType());
+        mip.setImageURL(cdsm.getSourceImageURL());
+        return mip;
+    }
+
+    public static MIPMetadata getTargetMIP(ColorMIPSearchMatchMetadata cdsm) {
+        MIPMetadata mip = new MIPMetadata();
+        mip.setId(cdsm.getId());
+        mip.setCdmPath(cdsm.getCdmPath());
+        mip.setImageArchivePath(cdsm.getImageArchivePath());
+        mip.setImageName(cdsm.getImageName());
+        mip.setImageType(cdsm.getImageType());
+        mip.setImageURL(cdsm.getImageURL());
+        return mip;
     }
 
     private String sourceId;
