@@ -26,8 +26,8 @@ public class GradientAreaGapUtilsTest {
             }
         }
         TestData[] testData = new TestData[] {
-                new TestData(636, 0, 1897, 679, 1108239L, 43799.83),
-                new TestData(795, 0, 93, 875, 1601264, 45428.57)
+                new TestData(636, 0, 1897, 679, 1114361L, 44041.78),
+                new TestData(795, 0, 93, 875, 1606182L, 45428.57)
         };
         for (TestData td : testData) {
             double s = GradientAreaGapUtils.calculateNormalizedScore(td.gap, td.highExpr, td.maxNeg, td.pix, td.maxPix);
