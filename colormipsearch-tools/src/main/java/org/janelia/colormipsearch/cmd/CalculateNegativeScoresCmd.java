@@ -310,7 +310,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 IntStream.range(0, Integer.MAX_VALUE).boxed(),
                 selectedCDSResultsForQueryMIP.stream(),
                 (i, csr) -> ImmutablePair.of(i + 1, csr))
-                .map(indexedCsr -> gradientGapCalculatorPromise.thenApply(gradientGapCalculator -> {
+                .map(indexedCsr -> gradientGapCalculatorPromise.thenApplyAsync(gradientGapCalculator -> {
                     long startGapCalcTime = System.currentTimeMillis();
                     Set<String> requiredVariantTypes = gradientGapCalculator.getRequiredTargetVariantTypes();
                     MIPMetadata matchedMIP = new MIPMetadata();
@@ -374,7 +374,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         negativeScore = -1;
                     }
                     return negativeScore;
-                }))
+                }, executor))
                 .collect(Collectors.toList());
         return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(vr -> {
