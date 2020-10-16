@@ -11,6 +11,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
 import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.api.imageprocessing.LImage;
 import org.janelia.colormipsearch.api.imageprocessing.LImageUtils;
+import org.janelia.colormipsearch.api.imageprocessing.QuadFunction;
 import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private final boolean mirrorQuery;
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
+    private final QuadFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> gapOp;
 
     GradientBasedNegativeScoreColorDepthSearchAlgorithm(LImage queryImage,
                                                         LImage queryIntensityValues,
@@ -68,6 +70,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         this.mirrorQuery = mirrorQuery;
         this.clearLabels = clearLabels;
         this.negativeRadiusDilation = negativeRadiusDilation;
+        gapOp = (ps1, ps2, ps3, ps4) -> PIXEL_GAP_OP.apply(() -> ps1.get() * ps2.get(), ps3, ps4);
     }
 
     @Override
@@ -102,7 +105,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         LImage targetGradientImage = LImageUtils.create(targetGradientImageArray);
         LImage targetZGapMaskImage = targetZGapMaskImageArray != null
                 ? LImageUtils.create(targetZGapMaskImageArray)
-                : negativeRadiusDilation.applyTo(targetImage.map(ColorTransformation.mask(queryThreshold))).reduce(); // eval immediately
+                : negativeRadiusDilation.applyTo(targetImage.map(ColorTransformation.mask(queryThreshold)));
 
         NegativeColorDepthMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY);
 
@@ -149,11 +152,12 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                     queryROIMaskImage,
                     (p1, p2) -> ColorTransformation.mask(queryHighExpressionMask.getPixelType(), p1, p2));
         }
-        LImage gaps = LImageUtils.lazyCombine3(
-                LImageUtils.combine2(queryIntensitiesROIImage, targetGradientImage, (p1, p2) -> p1 * p2),
+        LImage gaps = LImageUtils.lazyCombine4(
+                queryIntensitiesROIImage,
+                targetGradientImage,
                 queryROIImage,
                 targetZGapMaskImage.mapi(maskTransformation),
-                PIXEL_GAP_OP.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
+                gapOp.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
         LImage highExpressionRegions = LImageUtils.lazyCombine2(
                 targetImage,
@@ -171,9 +175,9 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                     }
                     return 0;
                 });
-        long gradientAreaGap = gaps.fold(0L, (p, s) -> s + p);
+        long gradientAreaGap = gaps.fold(0L, Long::sum);
         LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
-        long highExpressionArea = highExpressionRegions.fold(0L, (p, s) -> p + s);
+        long highExpressionArea = highExpressionRegions.fold(0L, Long::sum);
         LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
         return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea);
     }

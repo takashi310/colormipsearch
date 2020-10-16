@@ -93,19 +93,19 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 } else {
                     roiMaskImage = LImageUtils.create(roiMaskImageArray).mapi(clearLabels);
                 }
-                LImage maskImage = LImageUtils.create(queryImageArray).mapi(clearLabels);
+                LImage queryImage = LImageUtils.create(queryImageArray).mapi(clearLabels);
 
                 LImage maskForRegionsWithTooMuchExpression = LImageUtils.lazyCombine2(
-                        maskImage.mapi(ImageTransformation.maxFilter(60)).reduce(), // eval immediately for performance reasons
-                        maskImage.mapi(ImageTransformation.maxFilter(20)).reduce(), // eval immediately for performance reasons
+                        queryImage.mapi(ImageTransformation.maxFilter(60)),
+                        queryImage.mapi(ImageTransformation.maxFilter(20)),
                         (p1s, p2s) -> {
                             int p2 = p2s.get();
                             return p2 != -16777216 && p2 != 0 ? -16777216 : p1s.get();
                         } // mask pixels from the 60x image if they are present in the 20x image
                 );
                 GradientBasedNegativeScoreColorDepthSearchAlgorithm maskNegativeScoresCalculator = new GradientBasedNegativeScoreColorDepthSearchAlgorithm(
-                        maskImage,
-                        maskImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(2)).reduce(),
+                        queryImage,
+                        queryImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(2)).reduce(),
                         maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce(),
                         roiMaskImage,
                         cdsParams.getIntParam("queryThreshold", queryThreshold),
