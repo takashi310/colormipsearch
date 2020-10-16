@@ -274,7 +274,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         })
                         .collect(Collectors.toList());
         CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0])).join();
-        List<ColorMIPSearchMatchMetadata> srWithNegativeScores = negativeScoresComputations.stream()
+        List<ColorMIPSearchMatchMetadata> srWithNegativeScores = negativeScoresComputations.stream().parallel()
                 .flatMap(gsc -> gsc.join().stream())
                 .collect(Collectors.toList());
         LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
@@ -404,7 +404,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                         csr.getMatchingRatio(),
                                         maxMatchingPixels));
                                 if (csr.getPublishedName().equals("VT029753")) {
-                                    LOG.info("!!!!!!! SCORE FOR {} with {} -> {}", inputQueryMIP, csr, csr.getNormalizedGapScore());
+                                    LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {} -> {}",
+                                            inputQueryMIP, maxMatchingPixels, maxNegativeScore, csr, csr.getNormalizedGapScore());
                                 }
                             });
                     LOG.info("Updated normalized score for {} matches with {} from {} after {}ms",
