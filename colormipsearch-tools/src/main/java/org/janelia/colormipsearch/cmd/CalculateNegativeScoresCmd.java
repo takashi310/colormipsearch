@@ -270,7 +270,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     queryResultsEntry.getKey(),
                                     queryResultsEntry.getValue(),
                                     negativeScoreComputations,
-                                    negativeComputationsStartTime);
+                                    negativeComputationsStartTime,
+                                    executor);
                         })
                         .collect(Collectors.toList());
         List<ColorMIPSearchMatchMetadata> srWithNegativeScores = negativeScoresComputations.stream().parallel()
@@ -375,9 +376,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                                                                        MIPMetadata inputQueryMIP,
                                                                                        List<ColorMIPSearchMatchMetadata> selectedCDSResultsForQueryMIP,
                                                                                        List<CompletableFuture<Long>> negativeScoresComputations,
-                                                                                       long startProcessingTime) {
+                                                                                       long startProcessingTime,
+                                                                                       Executor executor) {
         return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
-                .thenApply(vr -> {
+                .thenApplyAsync(vr -> {
                     LOG.info("Normalize gradient area scores for {} matches with {} from {}", selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource);
                     List<Long> negativeScores = negativeScoresComputations.stream()
                             .map(CompletableFuture::join)
@@ -393,7 +395,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             .orElse(0);
                     LOG.info("Max pixel score for {} matches with {} from {} -> {}",
                             selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource, maxMatchingPixels);
-                    selectedCDSResultsForQueryMIP.stream().filter(csr -> csr.getGradientAreaGap() >= 0)
+                    selectedCDSResultsForQueryMIP.stream()
+                            .filter(csr -> csr.getGradientAreaGap() >= 0)
                             .forEach(csr -> {
                                 csr.setNormalizedGapScore(GradientAreaGapUtils.calculateNormalizedScore(
                                         csr.getGradientAreaGap(),
@@ -415,6 +418,6 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                     LOG.info("Updated normalized score for {} matches with {} from {} after {}s",
                             selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource, (System.currentTimeMillis()-startProcessingTime+1000)/1000);
                     return selectedCDSResultsForQueryMIP;
-                });
+                }, executor);
     }
 }
