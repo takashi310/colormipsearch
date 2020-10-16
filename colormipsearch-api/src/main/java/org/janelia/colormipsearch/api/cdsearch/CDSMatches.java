@@ -26,6 +26,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                                     csr.getSourceLibraryName(),
                                     csr.getSourceSampleRef(),
                                     csr.getSourceRelatedImageRefId(),
+                                    csr.getSourceImagePath(),
+                                    csr.getSourceCdmPath(),
                                     csr.getSourceImageURL()),
                             Collectors.toList()))
                     .entrySet().stream().map(e -> new CDSMatches(
