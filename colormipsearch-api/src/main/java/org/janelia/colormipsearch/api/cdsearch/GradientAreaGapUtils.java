@@ -9,7 +9,7 @@ import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
  */
 public class GradientAreaGapUtils {
 
-    public static final int HIGH_EXPRESSION_FACTOR = 3;
+    public static final int HIGH_EXPRESSION_FACTOR = 2;
 
     private enum Color {
         BLACK,
@@ -221,12 +221,11 @@ public class GradientAreaGapUtils {
      * @param highExpressionArea - area of regions with high expression
      * @param maxNegativeScore - maximum area gap from the current data set
      * @param pixelMatch - pixel match size
-     * @param pixelMatchRatio - pixel match size to mask size ratio
      * @param maxPixelMatch - maximum pixel size of the current data set.
      * @return
      */
-    public static double calculateNormalizedScore(long gradientAreaGap, long highExpressionArea, long maxNegativeScore, long pixelMatch, double pixelMatchRatio, long maxPixelMatch) {
-        if (pixelMatch == 0 || pixelMatchRatio == 0 || maxPixelMatch == 0 || maxNegativeScore < 0) {
+    public static double calculateNormalizedScore(long gradientAreaGap, long highExpressionArea, long maxNegativeScore, long pixelMatch, long maxPixelMatch) {
+        if (pixelMatch == 0 || maxPixelMatch == 0 || maxNegativeScore < 0) {
             return pixelMatch;
         } else {
             double negativeScore = calculateNegativeScore(gradientAreaGap, highExpressionArea);

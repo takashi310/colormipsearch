@@ -400,13 +400,14 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                         csr.getHighExpressionArea(),
                                         maxNegativeScore,
                                         csr.getMatchingPixels(),
-                                        csr.getMatchingRatio(),
                                         maxMatchingPixels));
                                 if (csr.getPublishedName().equals("VT029753")) {
-                                    LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {}, pix = {}, neg = {} -> {}",
+                                    LOG.info("!!!!!!! SCORE FOR {} with {} - maxPix = {}, maxNeg = {}, pix = {}, gap = {}, highExpr = {}, neg = {} -> {}",
                                             inputQueryMIP, csr,
                                             maxMatchingPixels, maxNegativeScore,
                                             csr.getMatchingPixels(),
+                                            csr.getGradientAreaGap(),
+                                            csr.getHighExpressionArea(),
                                             csr.getNegativeScore(),
                                             csr.getNormalizedGapScore());
                                 }
