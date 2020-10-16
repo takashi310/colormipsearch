@@ -321,7 +321,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         executor).stream())
                 .collect(Collectors.toList());
         return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
-                .thenApply(vr -> {
+                .thenApplyAsync(vr -> {
                     LOG.info("Normalize gradient area scores for {}", resultIDIndex);
                     Integer maxMatchingPixels = selectedCDSResultsForQueryMIP.stream()
                             .map(ColorMIPSearchMatchMetadata::getMatchingPixels)
@@ -352,7 +352,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                     }
                     ;
                     return selectedCDSResultsForQueryMIP;
-                });
+                }, executor);
     }
 
     private List<CompletableFuture<Long>> createNegativeScoreComputations(String resultIDIndex,
@@ -365,6 +365,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                                                           String zgapsSuffix,
                                                                           ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
                                                                           Executor executor) {
+        LOG.info("Prepare gradient score computations for {} with {} entries from {}", inputQueryMIP, selectedCDSResultsForQueryMIP.size(), resultIDIndex);
         LOG.info("Load query image {}", inputQueryMIP);
         MIPImage inputQueryImage = MIPsUtils.loadMIP(inputQueryMIP); // no caching for the mask
         if (inputQueryImage == null) {
@@ -391,38 +392,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                             resultIDIndex, inputQueryMIP, matchedMIP);
                                     Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
                                     if (requiredVariantTypes.contains("gradient")) {
-                                        variantImageSuppliers.put("gradient", () -> {
-                                            MIPImage matchedGradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                    matchedMIP,
-                                                    "gradient",
-                                                    gradientsLocations,
-                                                    nc -> {
-                                                        String suffix = StringUtils.defaultIfBlank(gradientSuffix, "");
-                                                        if (StringUtils.isNotBlank(targetSuffix)) {
-                                                            return StringUtils.replaceIgnoreCase(nc, targetSuffix, "") + suffix;
-                                                        } else {
-                                                            return nc + suffix;
-                                                        }
-                                                    }));
-                                            return MIPsUtils.getImageArray(matchedGradientImage);
-                                        });
+                                        variantImageSuppliers.put("gradient",  createVariantImageSupplier(matchedMIP, "gradient", gradientsLocations, gradientSuffix, targetSuffix));
                                     }
                                     if (requiredVariantTypes.contains("zgap")) {
-                                        variantImageSuppliers.put("zgap", () -> {
-                                            MIPImage matchedZGapImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                    matchedMIP,
-                                                    "zgap",
-                                                    zgapsLocations,
-                                                    nc -> {
-                                                        String suffix = StringUtils.defaultIfBlank(zgapsSuffix, "");
-                                                        if (StringUtils.isNotBlank(targetSuffix)) {
-                                                            return StringUtils.replaceIgnoreCase(nc, targetSuffix, "") + suffix;
-                                                        } else {
-                                                            return nc + suffix;
-                                                        }
-                                                    }));
-                                            return MIPsUtils.getImageArray(matchedZGapImage);
-                                        });
+                                        variantImageSuppliers.put("zgap",  createVariantImageSupplier(matchedMIP, "zgap", zgapsLocations, zgapsSuffix, targetSuffix));
                                     }
                                     NegativeColorDepthMatchScore negativeScores = gradientScoreCalculator.calculateMatchingScore(
                                             MIPsUtils.getImageArray(matchedImage),
@@ -442,4 +415,25 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 .collect(Collectors.toList());
     }
 
+    private Supplier<ImageArray> createVariantImageSupplier(MIPMetadata mip,
+                                                            String variant,
+                                                            List<String> variantLocations,
+                                                            String variantSuffix,
+                                                            String replacedSuffix) {
+        return  () -> {
+            MIPImage variantImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                    mip,
+                    variant,
+                    variantLocations,
+                    nc -> {
+                        String suffix = StringUtils.defaultIfBlank(variantSuffix, "");
+                        if (StringUtils.isNotBlank(replacedSuffix)) {
+                            return StringUtils.replaceIgnoreCase(nc, replacedSuffix, "") + suffix;
+                        } else {
+                            return nc + suffix;
+                        }
+                    }));
+            return MIPsUtils.getImageArray(variantImage);
+        };
+    }
 }
