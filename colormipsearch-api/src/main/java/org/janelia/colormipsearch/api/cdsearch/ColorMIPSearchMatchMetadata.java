@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.nio.file.Paths;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -120,6 +121,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setSourceImageArchivePath(String sourceImageArchivePath) {
         this.sourceImageArchivePath = sourceImageArchivePath;
+    }
+
+    @JsonIgnore
+    public String getSourceImagePath() {
+        if (StringUtils.isBlank(sourceImageArchivePath)) {
+            return sourceImageName;
+        } else {
+            return Paths.get(sourceImageArchivePath, sourceImageName).toString();
+        }
     }
 
     public String getSourceSampleRef() {
@@ -322,6 +332,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     private void copyIdentifiersToSourceIdentifiers() {
         this.sourceId = getId();
+        this.sourceCdmPath = getCdmPath();
         this.sourcePublishedName = getPublishedName();
         this.sourceLibraryName = getLibraryName();
         this.sourceImageName = getImageName();

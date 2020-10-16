@@ -20,9 +20,13 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.Results;
 import org.janelia.colormipsearch.api.ScoredEntry;
 import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.slf4j.Logger;
@@ -48,6 +52,8 @@ public class ColorMIPSearchResultUtils {
                                 csr.getSourceLibraryName(),
                                 csr.getSourceSampleRef(),
                                 csr.getSourceRelatedImageRefId(),
+                                csr.getSourceImagePath(),
+                                csr.getSourceCdmPath(),
                                 csr.getSourceImageURL()
                         ),
                         Collectors.collectingAndThen(
@@ -124,8 +130,9 @@ public class ColorMIPSearchResultUtils {
         return cdsResults.stream()
                 .peek(csr -> csr.setGradientAreaGap(-1))
                 .collect(Collectors.groupingBy(csr -> {
-                    MIPMetadata mip = new MIPMetadata();
+                    MIPMetadata mip = new IDDominantMIPMetadata();
                     mip.setId(csr.getSourceId());
+                    mip.setCdmPath(csr.getSourceCdmPath());
                     mip.setImageArchivePath(csr.getSourceImageArchivePath());
                     mip.setImageName(csr.getSourceImageName());
                     mip.setImageType(csr.getSourceImageType());
