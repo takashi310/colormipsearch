@@ -273,7 +273,6 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     negativeComputationsStartTime);
                         })
                         .collect(Collectors.toList());
-        CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0])).join();
         List<ColorMIPSearchMatchMetadata> srWithNegativeScores = negativeScoresComputations.stream().parallel()
                 .flatMap(gsc -> gsc.join().stream())
                 .collect(Collectors.toList());
