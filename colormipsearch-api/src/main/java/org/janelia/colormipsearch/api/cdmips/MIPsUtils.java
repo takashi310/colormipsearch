@@ -232,7 +232,7 @@ public class MIPsUtils {
                             return getMIPVariantInfoFromFilePath(
                                     ancillaryMIPPath,
                                     Paths.get(mipInfo.getImageName()),
-                                    Paths.get(mipInfo.getCdmName()).getFileName().toString(),
+                                    mipInfo.getCdmName(),
                                     mipVariantSuffixMapping);
                         } else if (Files.isRegularFile(ancillaryMIPPath) && StringUtils.endsWithIgnoreCase(ancillaryMIPPath.getFileName().toString(), ".zip")) {
                             return getAncillaryMIPInfoFromZipEntry(ancillaryMIPPath.toString(), mipInfo.getImageName(), mipVariantSuffixMapping);

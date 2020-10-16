@@ -32,6 +32,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceId;
     private String sourcePublishedName;
     private String sourceLibraryName;
+    private String sourceCdmPath;
     private String sourceImageName;
     private String sourceImageArchivePath;
     private String sourceImageType;
@@ -87,6 +88,14 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setSourceLibraryName(String sourceLibraryName) {
         this.sourceLibraryName = sourceLibraryName;
+    }
+
+    public String getSourceCdmPath() {
+        return sourceCdmPath;
+    }
+
+    public void setSourceCdmPath(String sourceCdmPath) {
+        this.sourceCdmPath = sourceCdmPath;
     }
 
     public String getSourceImageName() {
