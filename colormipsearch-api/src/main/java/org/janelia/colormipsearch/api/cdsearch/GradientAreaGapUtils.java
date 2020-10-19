@@ -6,6 +6,8 @@ package org.janelia.colormipsearch.api.cdsearch;
 public class GradientAreaGapUtils {
 
     public static final int HIGH_EXPRESSION_FACTOR = 2;
+    private static final double LOW_NORMALIZED_NEGATIVE_SCORE = 0.002;
+    private static final double HIGH_NORMALIZED_NEGATIVE_SCORE = 1.;
 
     private enum Color {
         BLACK,
@@ -233,7 +235,10 @@ public class GradientAreaGapUtils {
                 return pixelMatch;
             }
             double normalizedNegativeScore = negativeScore / maxNegativeScore;
-            double boundedNegativeScore = Math.min(Math.max(normalizedNegativeScore * 2.5, 0.002), 1.);
+            double boundedNegativeScore = Math.min(
+                    Math.max(normalizedNegativeScore * 2.5, LOW_NORMALIZED_NEGATIVE_SCORE),
+                    HIGH_NORMALIZED_NEGATIVE_SCORE
+            );
             return (double)pixelMatch / (double)maxPixelMatch / boundedNegativeScore * 100;
         }
     }
