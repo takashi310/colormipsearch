@@ -173,10 +173,24 @@ public class ColorMIPSearchResultUtils {
      */
     public static void sortCDSResults(List<ColorMIPSearchMatchMetadata> cdsResults) {
         Comparator<ColorMIPSearchMatchMetadata> csrComp = (csr1, csr2) -> {
-            if (csr1.getNormalizedScore() != null && csr2.getNormalizedScore() != null) {
-                return Comparator.comparingDouble(ColorMIPSearchMatchMetadata::getNormalizedScore)
-                        .compare(csr1, csr2)
-                        ;
+            if (csr1.getNormalizedGapScore() != null && csr2.getNormalizedGapScore() != null) {
+                if (csr1.getNormalizedGapScore() < csr2.getNormalizedGapScore()) {
+                    if (csr1.getId().equals(csr2.getId()) &&
+                            csr1.getMatchingPixels() > csr2.getMatchingPixels() &&
+                            csr1.getNegativeScore() < csr2.getNegativeScore()) {
+                        LOG.warn("Ranking inversion found for {} and {}", csr1, csr2);
+                    }
+                    return -1;
+                } else if (csr1.getNormalizedGapScore() > csr2.getNormalizedGapScore()) {
+                    if (csr1.getId().equals(csr2.getId()) &&
+                            csr1.getMatchingPixels() < csr2.getMatchingPixels() &&
+                            csr1.getNegativeScore() > csr2.getNegativeScore()) {
+                        LOG.warn("Ranking inversion found for {} and {}", csr1, csr2);
+                    }
+                    return 1;
+                } else {
+                    return 0;
+                }
             } else if (csr1.getNormalizedScore() == null && csr2.getNormalizedScore() == null) {
                 return Comparator.comparingInt(ColorMIPSearchMatchMetadata::getMatchingPixels)
                         .compare(csr1, csr2)
