@@ -213,14 +213,18 @@ public class GradientAreaGapUtils {
      * The method calculates the normalized score given the gradient area gap the high expression area and the pixel match values
      * using the maximum negative score and maximum pixel match for normalization.
      *
+     * @param pixelMatch - pixel match size
      * @param gradientAreaGap - gradient area gap
      * @param highExpressionArea - area of regions with high expression
-     * @param maxNegativeScore - maximum area gap from the current data set
-     * @param pixelMatch - pixel match size
      * @param maxPixelMatch - maximum pixel size of the current data set.
+     * @param maxNegativeScore - maximum area gap from the current data set
      * @return
      */
-    public static double calculateNormalizedScore(long gradientAreaGap, long highExpressionArea, long maxNegativeScore, long pixelMatch, long maxPixelMatch) {
+    public static double calculateNormalizedScore(int pixelMatch,
+                                                  long gradientAreaGap,
+                                                  long highExpressionArea,
+                                                  long maxPixelMatch,
+                                                  long maxNegativeScore) {
         if (pixelMatch == 0 || maxPixelMatch == 0 || maxNegativeScore < 0) {
             return pixelMatch;
         } else {

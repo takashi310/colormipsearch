@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,13 +15,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Streams;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -400,11 +397,12 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             .filter(csr -> csr.getGradientAreaGap() >= 0)
                             .forEach(csr -> {
                                 csr.setNormalizedGapScore(GradientAreaGapUtils.calculateNormalizedScore(
+                                        csr.getMatchingPixels(),
                                         csr.getGradientAreaGap(),
                                         csr.getHighExpressionArea(),
-                                        maxNegativeScore,
-                                        csr.getMatchingPixels(),
-                                        maxMatchingPixels));
+                                        maxMatchingPixels,
+                                        maxNegativeScore
+                                ));
                             });
                     LOG.info("Updated normalized score for {} matches with {} from {} after {}s",
                             selectedCDSResultsForQueryMIP.size(), inputQueryMIP, cdsMatchesSource, (System.currentTimeMillis()-startProcessingTime+1000)/1000);

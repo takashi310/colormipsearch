@@ -30,7 +30,7 @@ public class GradientAreaGapUtilsTest {
                 new TestData(795, 0, 93, 875, 1606182L, 45428.57)
         };
         for (TestData td : testData) {
-            double s = GradientAreaGapUtils.calculateNormalizedScore(td.gap, td.highExpr, td.maxNeg, td.pix, td.maxPix);
+            double s = GradientAreaGapUtils.calculateNormalizedScore(td.pix, td.gap, td.highExpr, td.maxPix, td.maxNeg);
             assertEquals(td.expected, s, 0.1);
         }
     }

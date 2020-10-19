@@ -162,7 +162,7 @@ class NormalizeScoresCmd extends AbstractCmd {
                     .peek(csr -> {
                         if (args.reNormalize) {
                             double normalizedGapScore = GradientAreaGapUtils.calculateNormalizedScore(
-                                    csr.getGradientAreaGap(), csr.getHighExpressionArea(), maxNegativeScore, csr.getMatchingPixels(), maxMatchingPixels
+                                    csr.getMatchingPixels(), csr.getGradientAreaGap(), csr.getHighExpressionArea(), maxMatchingPixels, maxNegativeScore
                             );
                             if (normalizedGapScore >= 0) {
                                 LOG.debug("Update normalized score for {}: matchingPixels {}, matchingPixelsToMaskRatio {}, areaGap {}, highExpressionArea {}, current score {} -> updated score {}",
