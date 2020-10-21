@@ -7,7 +7,9 @@ import java.util.Arrays;
 import javax.imageio.ImageIO;
 
 import ij.ImagePlus;
+import ij.io.FileInfo;
 import ij.io.Opener;
+import ij.io.RandomAccessStream;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -152,7 +154,7 @@ public class ImageArrayUtils {
             //pixels = new int[x * y];
             switch (format) {
                 case PNG:
-                    imagePlus = readPngToImagePlus(title, stream);
+                    imagePlus = readImagePlusWithImageIO(title, stream);
                     ret = fromImagePlus(imagePlus);
                     break;
                 case TIFF:
