@@ -22,9 +22,12 @@ public class ImageArrayUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ImageArrayUtils.class);
 
     private enum ImageFormat {
+        BMP,
+        GIF,
         JPG,
         PNG,
         TIFF,
+        WBMP,
         UNKNOWN
     }
 
@@ -57,11 +60,14 @@ public class ImageArrayUtils {
         }
         String fext = name.substring(extseparator + 1);
         switch (fext.toLowerCase()) {
+            case "bmp":
+            case "gif":
             case "jpg":
             case "jpeg":
             case "png":
             case "tif":
             case "tiff":
+            case "wbmp":
                 return true;
             default:
                 return false;
@@ -81,8 +87,11 @@ public class ImageArrayUtils {
         ImageFormat format = getImageFormat(name);
         ImagePlus imagePlus;
         switch (format) {
-            case PNG:
+            case BMP:
+            case GIF:
             case JPG:
+            case PNG:
+            case WBMP:
                 imagePlus = readImagePlusWithImageIO(title, stream);
                 break;
             case TIFF:
@@ -101,15 +110,21 @@ public class ImageArrayUtils {
     private static ImageFormat getImageFormat(String name) {
         String lowerCaseName = name.toLowerCase();
 
-        if (lowerCaseName.endsWith(".png")) {
-            return ImageFormat.PNG;
+        if (lowerCaseName.endsWith(".bmp")) {
+            return ImageFormat.BMP;
+        } else if (lowerCaseName.endsWith(".gif")) {
+            return ImageFormat.GIF;
         } else if (lowerCaseName.endsWith(".jpg") || lowerCaseName.endsWith(".jpeg")) {
             return ImageFormat.JPG;
+        } else if (lowerCaseName.endsWith(".png")) {
+            return ImageFormat.PNG;
         } else if (lowerCaseName.endsWith(".tiff") || lowerCaseName.endsWith(".tif")) {
             return ImageFormat.TIFF;
+        } else if (lowerCaseName.endsWith(".wbmp")) {
+            return ImageFormat.WBMP;
         }
 
-        LOG.warn("Unrecognized format from {} - so far it only supports JPG, PNG and TIFF", name);
+        LOG.warn("Unrecognized format from {} - so far it only supports BMP, GIF, JPG, PNG, TIFF, and WBMP", name);
         return ImageFormat.UNKNOWN;
     }
 
