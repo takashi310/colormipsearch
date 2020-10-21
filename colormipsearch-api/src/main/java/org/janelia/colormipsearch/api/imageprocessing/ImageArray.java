@@ -2,22 +2,16 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.nio.ByteBuffer;
+
 /**
  * Image array representation containing image type,  image width, height and image pixel arrays.
  */
-public class ImageArray {
+public abstract class ImageArray {
 
     ImageType type;
     int height;
     int width;
-    int[] pixels;
-
-    ImageArray(ImageType type, int width, int height, int[] pixels) {
-        this.height = height;
-        this.width = width;
-        this.type = type;
-        this.pixels = pixels;
-    }
 
     @Override
     public String toString() {
@@ -40,24 +34,14 @@ public class ImageArray {
         return height;
     }
 
-    public int get(int pi) {
-        return pixels[pi];
-    }
+    public abstract int get(int pi);
 
-    void set(int pi, int pixel) {
-        pixels[pi] = pixel;
-    }
+    public abstract void set(int pi, int pixel);
 
-    int getPixel(int x, int y) {
-        if (x >= 0 && x < width && y >= 0 && y < height) {
-            return pixels[y * width + x];
-        } else {
-            return 0;
-        }
-    }
+    public abstract int getPixel(int x, int y);
 
-    void setPixel(int x, int y, int p) {
-        pixels[y * width + x] = p;
-    }
+    public abstract Object getPixels();
+
+    public abstract void setPixel(int x, int y, int p);
 
 }

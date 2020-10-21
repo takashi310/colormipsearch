@@ -19,6 +19,9 @@ public abstract class ColorMIPMaskCompare {
     final int searchThreshold;
     final double zTolerance;
 
+    private int maskpos_st;
+    private int maskpos_ed;
+
     protected ColorMIPMaskCompare(ImageArray query, int maskThreshold,
                                   ImageArray negquery, int negMaskThreshold,
                                   int searchThreshold, double zTolerance) {
@@ -33,6 +36,9 @@ public abstract class ColorMIPMaskCompare {
         } else {
             negMaskPositions = null;
         }
+
+        maskpos_st = maskPositions[0];
+        maskpos_ed = maskPositions[maskPositions.length - 1];
     }
 
     private int[] getMaskPosArray(ImageArray msk, int thresm) {
@@ -56,6 +62,21 @@ public abstract class ColorMIPMaskCompare {
                 pos.add(pi);
         }
         return pos.stream().mapToInt(i -> i).toArray();
+    }
+
+
+    public int getMaskStartPosition() {
+        return maskpos_st;
+    }
+    public void setMaskStartPosition(int val) {
+        maskpos_st = val;
+    }
+
+    public int getMaskEndPosition() {
+        return maskpos_ed;
+    }
+    public void setMaskEndPosition(int val) {
+        maskpos_ed = val;
     }
 
     /**
