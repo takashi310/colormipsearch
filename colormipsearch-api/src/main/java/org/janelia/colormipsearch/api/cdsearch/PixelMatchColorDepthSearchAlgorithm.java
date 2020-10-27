@@ -22,8 +22,8 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     private final int[][] negTargetMasksList;
     private final int[][] negMirrorTargetMasksList;
 
-    public PixelMatchColorDepthSearchAlgorithm(ImageArray queryImage, int queryThreshold, boolean mirrorQuery,
-                                               ImageArray negQueryImage, int negQueryThreshold,
+    public PixelMatchColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold, boolean mirrorQuery,
+                                               ImageArray<?> negQueryImage, int negQueryThreshold,
                                                boolean mirrorNegQuery, int targetThreshold,
                                                double zTolerance, int xyshift) {
         super(queryImage, queryThreshold, negQueryImage, negQueryThreshold, targetThreshold, zTolerance);
@@ -105,8 +105,8 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     }
 
     @Override
-    public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
-                                                     Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
+    public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
+                                                     Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
         int maxMatchingPixels = 0;
         int querySize = querySize();
         if (querySize == 0) {
@@ -162,9 +162,9 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         return new ColorMIPMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, null);
     }
 
-    private int calculateMaxScoreForAllTargetTransformations(ImageArray srcImageArray,
+    private int calculateMaxScoreForAllTargetTransformations(ImageArray<?> srcImageArray,
                                                              int[] srcPixelCoord,
-                                                             ImageArray targetImageArray,
+                                                             ImageArray<?> targetImageArray,
                                                              int[][] targetPixelCoordSupplier) {
         int maxScore = 0;
         for (int[] targetPixelCoord : targetPixelCoordSupplier) {

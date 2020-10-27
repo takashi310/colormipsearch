@@ -7,9 +7,9 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 public class MIPImage implements Serializable {
     private final MIPMetadata mipInfo;
-    private final ImageArray imageArray;
+    private final ImageArray<?> imageArray;
 
-    public MIPImage(MIPMetadata mipInfo, ImageArray imageArray) {
+    public MIPImage(MIPMetadata mipInfo, ImageArray<?> imageArray) {
         this.mipInfo = mipInfo;
         this.imageArray = imageArray;
     }
@@ -18,7 +18,7 @@ public class MIPImage implements Serializable {
         return mipInfo;
     }
 
-    public ImageArray getImageArray() {
+    public ImageArray<?> getImageArray() {
         return imageArray;
     }
 

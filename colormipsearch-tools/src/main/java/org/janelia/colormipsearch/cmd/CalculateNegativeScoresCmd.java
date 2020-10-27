@@ -207,7 +207,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         }
     }
 
-    private ImageArray loadQueryROIMask(String queryROIMask) {
+    private ImageArray<?> loadQueryROIMask(String queryROIMask) {
         if (StringUtils.isBlank(queryROIMask)) {
             return null;
         } else {
@@ -322,7 +322,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         // only calculate the area gap if the gradient exist
                         LOG.debug("Processing {} - calculate negative score between {} and {}",
                                 cdsMatchesSource, inputQueryMIP, matchedMIP);
-                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+                        Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                         if (requiredVariantTypes.contains("gradient")) {
                             variantImageSuppliers.put("gradient", createVariantImageSupplier(matchedMIP, "gradient", gradientsLocations, gradientSuffix, targetSuffix));
                         }
@@ -347,11 +347,11 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 .collect(Collectors.toList());
     }
 
-    private Supplier<ImageArray> createVariantImageSupplier(MIPMetadata mip,
-                                                            String variant,
-                                                            List<String> variantLocations,
-                                                            String variantSuffix,
-                                                            String replacedSuffix) {
+    private Supplier<ImageArray<?>> createVariantImageSupplier(MIPMetadata mip,
+                                                               String variant,
+                                                               List<String> variantLocations,
+                                                               String variantSuffix,
+                                                               String replacedSuffix) {
         return  () -> {
             MIPImage variantImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                     mip,

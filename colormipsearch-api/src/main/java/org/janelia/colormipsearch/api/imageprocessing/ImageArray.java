@@ -5,16 +5,18 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * Image array representation containing image type,  image width, height and image pixel arrays.
+ * Image array representation containing image type, image width, height and image pixel arrays.
+ *
+ * @param <T> pixel array type
  */
-public class ImageArray implements Serializable {
+public abstract class ImageArray<T> implements Serializable {
 
     ImageType type;
     int height;
     int width;
-    int[] pixels;
+    final T pixels;
 
-    ImageArray(ImageType type, int width, int height, int[] pixels) {
+    ImageArray(ImageType type, int width, int height, T pixels) {
         this.height = height;
         this.width = width;
         this.type = type;
@@ -42,24 +44,25 @@ public class ImageArray implements Serializable {
         return height;
     }
 
-    public int get(int pi) {
-        return pixels[pi];
-    }
+    public abstract int get(int pi);
 
-    void set(int pi, int pixel) {
-        pixels[pi] = pixel;
-    }
+    public abstract void set(int pi, int pixel);
 
-    int getPixel(int x, int y) {
+    public int getPixel(int x, int y) {
+        int id = y * width + x;
         if (x >= 0 && x < width && y >= 0 && y < height) {
-            return pixels[y * width + x];
+            return get(id);
         } else {
             return 0;
         }
     }
 
-    void setPixel(int x, int y, int p) {
-        pixels[y * width + x] = p;
+    public void setPixel(int x, int y, int p) {
+        int id = y * width + x;
+        set(id, p);
     }
 
+    T getPixels() {
+        return pixels;
+    }
 }

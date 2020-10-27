@@ -61,7 +61,7 @@ public class ImageProcessing implements Serializable {
         return image.mapi(imageTransformation);
     }
 
-    public LImage applyTo(ImageArray image) {
+    public LImage applyTo(ImageArray<?> image) {
         return applyTo(LImageUtils.create(image));
     }
 }

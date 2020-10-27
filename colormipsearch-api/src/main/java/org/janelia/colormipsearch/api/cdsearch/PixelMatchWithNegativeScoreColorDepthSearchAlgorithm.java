@@ -24,7 +24,7 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
     }
 
     @Override
-    public ImageArray getQueryImage() {
+    public ImageArray<?> getQueryImage() {
         return cdsMatchScoreCalculator.getQueryImage();
     }
 
@@ -34,8 +34,8 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
     }
 
     @Override
-    public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
-                                                     Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
+    public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
+                                                     Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
         ColorMIPMatchScore cdsMatchScore = cdsMatchScoreCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);
         if (cdsMatchScore.getScore() > 0) {
             NegativeColorDepthMatchScore negativeColorDepthMatchScore = negScoreCDSearchCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);

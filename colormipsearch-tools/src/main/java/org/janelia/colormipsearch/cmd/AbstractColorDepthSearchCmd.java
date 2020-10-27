@@ -42,7 +42,7 @@ abstract class AbstractColorDepthSearchCmd extends AbstractCmd {
         }
     }
 
-    ImageArray loadQueryROIMask(String queryROIMask) {
+    ImageArray<?> loadQueryROIMask(String queryROIMask) {
         if (StringUtils.isBlank(queryROIMask)) {
             return null;
         } else {

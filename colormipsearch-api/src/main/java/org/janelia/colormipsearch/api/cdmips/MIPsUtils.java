@@ -75,7 +75,7 @@ public class MIPsUtils {
         }
     }
 
-    public static ImageArray getImageArray(@Nullable MIPImage mipImage) {
+    public static ImageArray<?> getImageArray(@Nullable MIPImage mipImage) {
         return mipImage != null ? mipImage.getImageArray() : null;
     }
 

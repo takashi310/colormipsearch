@@ -76,7 +76,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     }
 
     @Override
-    public ImageArray getQueryImage() {
+    public ImageArray<?> getQueryImage() {
         return queryImage.toImageArray();
     }
 
@@ -95,14 +95,14 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
      * @return
      */
     @Override
-    public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray targetImageArray,
-                                                               Map<String, Supplier<ImageArray>> variantTypeSuppliers) {
+    public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
+                                                               Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
         long startTime = System.currentTimeMillis();
-        ImageArray targetGradientImageArray = getVariantImageArray(variantTypeSuppliers, "gradient");
+        ImageArray<?> targetGradientImageArray = getVariantImageArray(variantTypeSuppliers, "gradient");
         if (targetGradientImageArray == null) {
             return new NegativeColorDepthMatchScore(-1, -1);
         }
-        ImageArray targetZGapMaskImageArray = getVariantImageArray(variantTypeSuppliers, "zgap");
+        ImageArray<?> targetZGapMaskImageArray = getVariantImageArray(variantTypeSuppliers, "zgap");
         LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
         LImage targetGradientImage = LImageUtils.create(targetGradientImageArray);
         LImage targetZGapMaskImage = targetZGapMaskImageArray != null
@@ -122,8 +122,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         return negativeScores;
     }
 
-    private ImageArray getVariantImageArray(Map<String, Supplier<ImageArray>> variantTypeSuppliers, String variantType) {
-        Supplier<ImageArray> variantImageArraySupplier = variantTypeSuppliers.get(variantType);
+    private ImageArray<?> getVariantImageArray(Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers, String variantType) {
+        Supplier<ImageArray<?>> variantImageArraySupplier = variantTypeSuppliers.get(variantType);
         if (variantImageArraySupplier != null) {
             return variantImageArraySupplier.get();
         } else {

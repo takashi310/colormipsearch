@@ -46,7 +46,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray queryImageArray, ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray, ColorDepthSearchParams cdsParams) {
                 return new PixelMatchColorDepthSearchAlgorithm(
                         queryImageArray,
                         cdsParams.getIntParam("maskThreshold", maskThreshold),
@@ -65,7 +65,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int queryThreshold,
             boolean mirrorMask,
             int negativeRadius,
-            ImageArray roiMaskImageArray) {
+            ImageArray<?> roiMaskImageArray) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
@@ -80,7 +80,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray queryImageArray, ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray, ColorDepthSearchParams cdsParams) {
                 ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
 
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
@@ -127,7 +127,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             double zTolerance,
             int xyShift,
             int negativeRadius,
-            ImageArray roiMaskImageArray) {
+            ImageArray<?> roiMaskImageArray) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }

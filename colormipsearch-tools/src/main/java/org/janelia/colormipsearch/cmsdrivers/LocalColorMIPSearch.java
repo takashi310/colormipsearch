@@ -115,7 +115,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 .map(targetMIP -> {
                                     try {
                                         MIPImage libraryImage = CachedMIPsUtils.loadMIP(targetMIP);
-                                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+                                        Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                         if (requiredVariantTypes.contains("gradient")) {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(

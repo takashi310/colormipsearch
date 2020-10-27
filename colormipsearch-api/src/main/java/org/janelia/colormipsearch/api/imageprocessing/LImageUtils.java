@@ -9,7 +9,7 @@ import java.util.function.Supplier;
  */
 public class LImageUtils {
 
-    public static LImage create(ImageArray imageArray) {
+    public static LImage create(ImageArray<?> imageArray) {
         return new LImageImpl(imageArray.type, imageArray.width, imageArray.height, imageArray::getPixel);
     }
 

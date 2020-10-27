@@ -37,15 +37,15 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         }
     }
 
-    final ImageArray queryImage;
-    final ImageArray negQueryImage;
+    final ImageArray<?> queryImage;
+    final ImageArray<?> negQueryImage;
     final PixelPositions queryPositions;
     final PixelPositions negQueryPositions;
     final int targetThreshold;
     final double zTolerance;
 
-    protected AbstractColorDepthSearchAlgorithm(ImageArray queryImage, int queryThreshold,
-                                                ImageArray negQueryImage, int negQueryThreshold,
+    protected AbstractColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold,
+                                                ImageArray<?> negQueryImage, int negQueryThreshold,
                                                 int targetThreshold, double zTolerance) {
         this.queryImage = queryImage;
         this.negQueryImage = negQueryImage;
@@ -61,11 +61,11 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
     }
 
     @Override
-    public ImageArray getQueryImage() {
+    public ImageArray<?> getQueryImage() {
         return queryImage;
     }
 
-    private PixelPositions getMaskPosArray(ImageArray msk, int thresm) {
+    private PixelPositions getMaskPosArray(ImageArray<?> msk, int thresm) {
         int sumpx = msk.getPixelCount();
         List<Integer> pos = new ArrayList<>();
         int pix, red, green, blue;

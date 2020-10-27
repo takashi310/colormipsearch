@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
@@ -16,7 +15,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
  */
 public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> extends Serializable {
 
-    ImageArray getQueryImage();
+    ImageArray<?> getQueryImage();
 
     /**
      * @return required variant types for calculating the score.
@@ -39,5 +38,5 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> exten
      *                            the supplier that can provide the corresponding image.
      * @return
      */
-    S calculateMatchingScore(@Nonnull ImageArray targetImageArray, Map<String, Supplier<ImageArray>> variantTypeSuppliers);
+    S calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray, Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers);
 }

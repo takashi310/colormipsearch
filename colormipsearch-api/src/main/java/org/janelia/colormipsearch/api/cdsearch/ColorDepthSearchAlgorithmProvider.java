@@ -24,9 +24,9 @@ public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScor
      *                  or global parameters
      * @return a color depth query search instance for the given query
      */
-    ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithm(ImageArray queryImage, ColorDepthSearchParams cdsParams);
+    ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImage, ColorDepthSearchParams cdsParams);
 
-    default ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithmWithDefaultParams(ImageArray queryImage) {
+    default ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithmWithDefaultParams(ImageArray<?> queryImage) {
         return createColorDepthQuerySearchAlgorithm(queryImage, new ColorDepthSearchParams());
     }
 

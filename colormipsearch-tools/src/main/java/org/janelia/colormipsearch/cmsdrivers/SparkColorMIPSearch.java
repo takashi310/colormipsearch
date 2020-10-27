@@ -87,7 +87,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(queryTargetPair -> {
                                         MIPImage targetImage = queryTargetPair._2;
-                                        Map<String, Supplier<ImageArray>> variantImageSuppliers = new HashMap<>();
+                                        Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                         if (requiredVariantTypes.contains("gradient")) {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
