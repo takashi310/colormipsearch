@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.process.ImageProcessor;
@@ -28,7 +27,6 @@ public class ImageArrayUtilsTest {
                     testImageBoundaries[1] * testImage.getProcessor().getWidth(),
                     testImageBoundaries[3] * testImage.getProcessor().getWidth() + testImageBoundaries[2]);
             ImageProcessor ip = testImage.getProcessor();
-            IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(testImageArray)), "tt" + i + ".png");
             for (int y = 0; y < ip.getHeight(); y++) {
                 if (y >= testImageBoundaries[1] && y <= testImageBoundaries[3]) {
                     for (int x = 0; x < ip.getWidth(); x++) {

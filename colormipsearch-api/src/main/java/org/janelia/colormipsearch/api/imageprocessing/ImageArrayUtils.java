@@ -178,8 +178,6 @@ public class ImageArrayUtils {
     }
 
     public static ImageArray<?> readImageArrayRangeWithTiffReader(String title, String name, InputStream stream, long start, long end) throws Exception {
-        byte[] img_bytearr = null;
-
         int maskpos_st = (int) start * 3;
         int maskpos_ed = (int) end * 3;
 
@@ -197,7 +195,7 @@ public class ImageArrayUtils {
                     int bytesPerPixel = fi_list[0].getBytesPerPixel();
                     int dsize = width * height * bytesPerPixel;
                     int ioffset = 0;
-                    img_bytearr = new byte[dsize];
+                    byte[] img_bytearr = new byte[dsize];
                     for (int i = 0; i < fi_list[0].stripOffsets.length; i++) {
                         ras.seek(fi_list[0].stripOffsets[i]);
                         byte[] byteArray = new byte[fi_list[0].stripLengths[i]];
@@ -213,8 +211,8 @@ public class ImageArrayUtils {
                             break;
                         }
                     }
+                    return new ColorImageArray(ImageType.fromImagePlusType(ImagePlus.COLOR_RGB), width, height, img_bytearr);
                 }
-                return new ColorImageArray(ImageType.fromImagePlusType(ImagePlus.COLOR_RGB), width, height, img_bytearr);
             } else {
                 return null;
             }
@@ -230,17 +228,16 @@ public class ImageArrayUtils {
         int pos = offset;
         while (pos < end && pos < output.length && index < input.length) {
             byte n = input[index++];
-            if (n>=0) { // 0 <= n <= 127
-                byte[] b = new byte[n+1];
-                for (int i=0; i<n+1; i++)
+            if (n >= 0) { // 0 <= n <= 127
+                byte[] b = new byte[n + 1];
+                for (int i = 0; i < n + 1; i++)
                     b[i] = input[index++];
                 if (pos >= start) {
-                System.arraycopy(b, 0, output, pos, b.length);
+                    System.arraycopy(b, 0, output, pos, b.length);
                 } else if (pos < start && pos + b.length >= start) {
                     System.arraycopy(b, start - pos, output, start, b.length - start + pos);
                 }
                 pos += b.length;
-                b = null;
             } else if (n != -128) { // -127 <= n <= -1
                 int len = -n + 1;
                 byte inp = input[index++];
