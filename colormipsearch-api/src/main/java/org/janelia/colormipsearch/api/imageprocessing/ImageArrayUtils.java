@@ -129,25 +129,22 @@ public class ImageArrayUtils {
      */
     public static ImageArray<?> readImageArrayRange(String title, String name, InputStream stream, long start, long end) throws Exception {
         ImageFormat format = getImageFormat(name);
-        ImagePlus imagePlus;
         switch (format) {
             case BMP:
             case GIF:
             case JPG:
             case PNG:
             case WBMP:
-                imagePlus = readImagePlusWithImageIO(title, stream);
-                break;
+                ImagePlus imagePlus = readImagePlusWithImageIO(title, stream);
+                try {
+                    return fromImagePlus(imagePlus);
+                } finally {
+                    imagePlus.close();
+                }
             case TIFF:
-                imagePlus = readImagePlusWithTiffReader(title, stream);
-                break;
+                return readImageArrayRangeWithTiffReader(title, name, stream, start, end);
             default:
                 throw new IllegalArgumentException("Image '" + name + "' must be in PNG or TIFF format");
-        }
-        try {
-            return fromImagePlus(imagePlus);
-        } finally {
-            imagePlus.close();
         }
     }
 
@@ -183,8 +180,8 @@ public class ImageArrayUtils {
     public static ImageArray<?> readImageArrayRangeWithTiffReader(String title, String name, InputStream stream, long start, long end) throws Exception {
         byte[] img_bytearr = null;
 
-        int maskpos_st = (int) start * 3;
-        int maskpos_ed = (int) end * 3;
+        int maskpos_st = 0; // (int) start * 3;
+        int maskpos_ed = maskpos_st + (int) (end - start)*3; //(int) end * 3;
 
         LocalTiffDecoder tfd = new LocalTiffDecoder(stream, title);
         RandomAccessStream ras = tfd.getRandomAccessStream();
@@ -212,7 +209,7 @@ public class ImageArrayUtils {
                             read += r;
                             left -= r;
                         }
-                        ioffset = packBitsUncompress(byteArray, img_bytearr, ioffset, maskpos_ed);
+                        ioffset = packBitsUncompress(byteArray, img_bytearr, ioffset, maskpos_st, maskpos_ed);
                         if (ioffset >= maskpos_ed) {
                             break;
                         }
@@ -228,23 +225,33 @@ public class ImageArrayUtils {
         }
     }
 
-    private static int packBitsUncompress(byte[] input, byte[] output, int offset, int bound) {
-        if (bound == 0) bound = Integer.MAX_VALUE;
+    private static int packBitsUncompress(byte[] input, byte[] output, int offset, int start, int end) {
+        if (end == 0) end = Integer.MAX_VALUE;
         int index = 0;
         int pos = offset;
-        while (pos < bound && pos < output.length && index < input.length) {
+        while (pos < end && pos < output.length && index < input.length) {
             byte n = input[index++];
             if (n >= 0) { // 0 <= n <= 127
                 byte[] b = new byte[n + 1];
                 for (int i = 0; i < n + 1; i++)
                     b[i] = input[index++];
-                System.arraycopy(b, 0, output, pos, b.length);
-                pos += (int) b.length;
+                if (pos >= start) {
+                    System.arraycopy(b, 0, output, pos, b.length);
+                } else if (pos < start && pos + b.length >= start) {
+                    System.arraycopy(b, start - pos, output, start, b.length - start + pos);
+                }
+                pos += b.length;
                 b = null;
             } else if (n != -128) { // -127 <= n <= -1
                 int len = -n + 1;
                 byte inp = input[index++];
-                for (int i = 0; i < len; i++) output[pos++] = inp;
+                for (int i = 0; i < len; i++) {
+                    if (pos >= start) {
+                        output[pos++] = inp;
+                    } else {
+                        pos++;
+                    }
+                }
             }
         }
         return pos;

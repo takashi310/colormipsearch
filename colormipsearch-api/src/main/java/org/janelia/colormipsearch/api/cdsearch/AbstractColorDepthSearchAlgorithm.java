@@ -80,11 +80,10 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
                 // label regions are not to be searched
                 continue;
             }
-            pix = msk.get(pi);//Mask
-
-            red = (pix >>> 16) & 0xff;//mask
-            green = (pix >>> 8) & 0xff;//mask
-            blue = pix & 0xff;//mask
+            pix = msk.get(pi);
+            red = (pix >>> 16) & 0xff;
+            green = (pix >>> 8) & 0xff;
+            blue = pix & 0xff;
 
             if (red > thresm || green > thresm || blue > thresm) {
                 pos.add(pi);
