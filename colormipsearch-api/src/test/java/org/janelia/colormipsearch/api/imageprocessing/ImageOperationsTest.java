@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.api.imageprocessing;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
-import ij.process.ColorProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
@@ -155,9 +154,9 @@ public class ImageOperationsTest {
     public void imageSignal() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
+        ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
-        ImageArray signalImage = ImageProcessing.create()
+        ImageArray<?> signalImage = ImageProcessing.create()
                 .toGray16()
                 .toSignalRegions(0)
                 .applyTo(testMIP)
@@ -175,9 +174,9 @@ public class ImageOperationsTest {
     public void maskRGBImage() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest1.tif", 1);
 
-        ImageArray testMIP = ImageArrayUtils.fromImagePlus(testImage);
+        ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
-        ImageArray maskedImage = ImageProcessing.create()
+        ImageArray<?> maskedImage = ImageProcessing.create()
                 .mask(250)
                 .maxFilter(10)
                 .applyTo(testMIP)
