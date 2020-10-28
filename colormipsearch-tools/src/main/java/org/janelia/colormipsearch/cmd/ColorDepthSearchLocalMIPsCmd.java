@@ -80,7 +80,6 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
         if (args.onlyPositiveScores()) {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
-                    args.maskThreshold,
                     args.mirrorMask,
                     args.dataThreshold,
                     args.pixColorFluctuation,
@@ -88,7 +87,6 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
             );
         } else {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
-                    args.maskThreshold,
                     args.mirrorMask,
                     args.dataThreshold,
                     args.pixColorFluctuation,
@@ -97,7 +95,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                     loadQueryROIMask(args.queryROIMaskName)
             );
         }
-        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, cdsAlgorithmProvider);
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, args.maskThreshold, cdsAlgorithmProvider);
         if (useSpark) {
             // these have to be extracted because args are not serializable - therefore not spark compatible
             String librarySuffixArg = args.librarySuffix;

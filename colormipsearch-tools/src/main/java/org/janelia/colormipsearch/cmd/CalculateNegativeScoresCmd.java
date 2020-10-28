@@ -118,7 +118,6 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     private void calculateGradientAreaScore(NegativeScoreResultsArgs args) {
         ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider =
                 ColorDepthSearchAlgorithmProviderFactory.createNegativeMatchCDSAlgorithmProvider(
-                        args.maskThreshold,
                         args.mirrorMask,
                         args.negativeRadius,
                         loadQueryROIMask(args.queryROIMaskName));
@@ -308,7 +307,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             return Collections.emptyList();
         }
         ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> gradientScoreCalculator =
-                negativeMatchCDSArgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(inputQueryImage.getImageArray());
+                negativeMatchCDSArgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(inputQueryImage.getImageArray(), args.maskThreshold);
         return selectedCDSResultsForQueryMIP.stream()
                 .map(csr -> CompletableFuture.supplyAsync(() -> {
                     long startGapCalcTime = System.currentTimeMillis();

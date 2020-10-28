@@ -20,14 +20,17 @@ public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScor
      * for the given query
      *
      * @param queryImage encapsulated query image
+     * @param queryThreshold query image threshold
      * @param cdsParams color depth search parameters encapsulated in the algorithm. These could be mask specific
      *                  or global parameters
      * @return a color depth query search instance for the given query
      */
-    ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImage, ColorDepthSearchParams cdsParams);
+    ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImage,
+                                                                      int queryThreshold,
+                                                                      ColorDepthSearchParams cdsParams);
 
-    default ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithmWithDefaultParams(ImageArray<?> queryImage) {
-        return createColorDepthQuerySearchAlgorithm(queryImage, new ColorDepthSearchParams());
+    default ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithmWithDefaultParams(ImageArray<?> queryImage, int queryThreshold) {
+        return createColorDepthQuerySearchAlgorithm(queryImage, queryThreshold, new ColorDepthSearchParams());
     }
 
 }

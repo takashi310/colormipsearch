@@ -177,7 +177,7 @@ public class ImageArrayUtils {
         return new Opener().openTiff(stream, title);
     }
 
-    public static ImageArray<?> readImageArrayRangeWithTiffReader(String title, String name, InputStream stream, long start, long end) throws Exception {
+    private static ImageArray<?> readImageArrayRangeWithTiffReader(String title, String name, InputStream stream, long start, long end) throws Exception {
         int maskpos_st = (int) start * 3;
         int maskpos_ed = (int) end * 3;
 

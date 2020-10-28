@@ -13,23 +13,26 @@ import org.janelia.colormipsearch.api.cdmips.MIPImage;
 public class ColorMIPSearch implements Serializable {
 
     private final ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
+    private final Integer defaultQueryThreshold;
     private final Double pctPositivePixels;
 
     public ColorMIPSearch(Double pctPositivePixels,
+                          Integer defaultQueryThreshold,
                           ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider) {
         this.pctPositivePixels = pctPositivePixels;
+        this.defaultQueryThreshold = defaultQueryThreshold;
         this.cdsAlgorithmProvider = cdsAlgorithmProvider;
     }
 
     public Map<String, Object> getCDSParameters() {
         Map<String, Object> cdsParams = new LinkedHashMap<>(cdsAlgorithmProvider.getDefaultCDSParams().asMap());
         cdsParams.put("pctPositivePixels", pctPositivePixels != null ? pctPositivePixels.toString() : null);
+        cdsParams.put("defaultMaskThreshold", defaultQueryThreshold != null ? defaultQueryThreshold.toString() : null);
         return cdsParams;
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(MIPImage queryMIPImage, Integer queryThresholdParam) {
-        ColorDepthSearchParams querySpecificParams = new ColorDepthSearchParams().setParam("maskThreshold", queryThresholdParam);
-        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithm(queryMIPImage.getImageArray(), querySpecificParams);
+    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearchWithDefaultThreshold(MIPImage queryMIPImage) {
+        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold);
     }
 
     public boolean isMatch(ColorMIPMatchScore colorMIPMatchScore) {

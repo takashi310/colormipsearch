@@ -82,7 +82,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .mapPartitions(qtItr -> StreamSupport.stream(Spliterators.spliterator(qtItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
                             MIPImage queryImage = MIPsUtils.loadMIP(mls._1);
-                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearch(queryImage, null);
+                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                             Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
                                     .map(queryTargetPair -> {

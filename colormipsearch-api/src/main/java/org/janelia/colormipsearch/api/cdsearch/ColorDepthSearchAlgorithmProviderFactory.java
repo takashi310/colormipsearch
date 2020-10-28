@@ -19,7 +19,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
     /**
      * Create a color depth query searcher that calculates only positive scores.
      *
-     * @param maskThreshold mask threshold
      * @param mirrorMask flag whether to use mirroring
      * @param targetThreshold data threshold
      * @param zTolerance z - gap tolerance - sometimes called pixel color fluctuation
@@ -27,29 +26,30 @@ public class ColorDepthSearchAlgorithmProviderFactory {
      * @return a color depth search search provider
      */
     public static ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> createPixMatchCDSAlgorithmProvider(
-            int maskThreshold,
             boolean mirrorMask,
             int targetThreshold,
             double zTolerance,
             int xyShift) {
-        LOG.debug("Create mask comparator with mirrorQuery={}, maskThreshold={}, dataThreshold={}, zTolerance={}, xyShift={}",
-                mirrorMask, maskThreshold, targetThreshold, zTolerance, xyShift);
+        LOG.debug("Create mask comparator with mirrorQuery={}, dataThreshold={}, zTolerance={}, xyShift={}",
+                mirrorMask, targetThreshold, zTolerance, xyShift);
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
+            ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
+                    .setParam("mirrorMask", mirrorMask)
+                    .setParam("dataThreshold", targetThreshold)
+                    .setParam("pixColorFluctuation", zTolerance)
+                    .setParam("xyShift", xyShift);
             @Override
             public ColorDepthSearchParams getDefaultCDSParams() {
-                return new ColorDepthSearchParams()
-                        .setParam("maskThreshold", maskThreshold)
-                        .setParam("mirrorMask", mirrorMask)
-                        .setParam("dataThreshold", targetThreshold)
-                        .setParam("pixColorFluctuation", zTolerance)
-                        .setParam("xyShift", xyShift);
+                return defaultCDSParams;
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray, ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                                      int queryThreshold,
+                                                                                                      ColorDepthSearchParams cdsParams) {
                 return new PixelMatchColorDepthSearchAlgorithm(
                         queryImageArray,
-                        cdsParams.getIntParam("maskThreshold", maskThreshold),
+                        queryThreshold,
                         cdsParams.getBoolParam("mirrorMask", mirrorMask),
                         null,
                         0,
@@ -62,7 +62,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
     }
 
     public static ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> createNegativeMatchCDSAlgorithmProvider(
-            int queryThreshold,
             boolean mirrorMask,
             int negativeRadius,
             ImageArray<?> roiMaskImageArray) {
@@ -70,21 +69,23 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
         return new ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore>() {
+            ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
+                    .setParam("mirrorMask", mirrorMask)
+                    .setParam("negativeRadius", negativeRadius);
 
             @Override
             public ColorDepthSearchParams getDefaultCDSParams() {
-                return new ColorDepthSearchParams()
-                        .setParam("maskThreshold", queryThreshold)
-                        .setParam("mirrorMask", mirrorMask)
-                        .setParam("negativeRadius", negativeRadius);
+                return defaultCDSParams;
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray, ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                                                int queryThreshold,
+                                                                                                                ColorDepthSearchParams cdsParams) {
                 ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
 
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
-                        .mask(cdsParams.getIntParam("maskThreshold", queryThreshold))
+                        .mask(queryThreshold)
                         .maxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
                 long startTime = System.currentTimeMillis();
                 LImage roiMaskImage;
@@ -121,7 +122,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
     }
 
     public static ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> createPixMatchWithNegativeScoreCDSAlgorithmProvider(
-            int maskThreshold,
             boolean mirrorMask,
             int targetThreshold,
             double zTolerance,
@@ -132,24 +132,28 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
-
-            @Override
-            public ColorDepthSearchParams getDefaultCDSParams() {
-                return new ColorDepthSearchParams()
-                        .setParam("maskThreshold", maskThreshold)
+            ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                         .setParam("mirrorMask", mirrorMask)
                         .setParam("dataThreshold", targetThreshold)
                         .setParam("pixColorFluctuation", zTolerance)
                         .setParam("xyShift", xyShift)
                         .setParam("negativeRadius", negativeRadius);
+
+            @Override
+            public ColorDepthSearchParams getDefaultCDSParams() {
+                return defaultCDSParams;
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray queryImageArray, ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                                      int queryThreshold,
+                                                                                                      ColorDepthSearchParams cdsParams) {
                 ColorDepthSearchAlgorithm<ColorMIPMatchScore> posScoreCDSAlg =
-                        createPixMatchCDSAlgorithmProvider(maskThreshold, mirrorMask, targetThreshold, zTolerance, xyShift).createColorDepthQuerySearchAlgorithm(queryImageArray, cdsParams);
+                        createPixMatchCDSAlgorithmProvider(mirrorMask, targetThreshold, zTolerance, xyShift)
+                                .createColorDepthQuerySearchAlgorithm(queryImageArray, queryThreshold, cdsParams);
                 ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSAlg =
-                        createNegativeMatchCDSAlgorithmProvider(maskThreshold, mirrorMask, negativeRadius, roiMaskImageArray).createColorDepthQuerySearchAlgorithm(queryImageArray, cdsParams);
+                        createNegativeMatchCDSAlgorithmProvider(mirrorMask, negativeRadius, roiMaskImageArray)
+                                .createColorDepthQuerySearchAlgorithm(queryImageArray, queryThreshold, cdsParams);
                 return new PixelMatchWithNegativeScoreColorDepthSearchAlgorithm(posScoreCDSAlg, negScoreCDSAlg);
             }
         };

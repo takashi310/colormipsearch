@@ -74,7 +74,9 @@ public class ColorDepthSearchParams {
     }
 
     public ColorDepthSearchParams setParam(String name, Object value) {
-        params.put(name, value);
+        if (value != null) {
+            params.put(name, value);
+        }
         return this;
     }
 

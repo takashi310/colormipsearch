@@ -96,6 +96,14 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         return new PixelPositions(minx, miny, maxx, maxy, pos.stream().mapToInt(i -> i).toArray());
     }
 
+    public int getQueryStartPixelIndex() {
+        return queryPositions.miny * getQueryImage().getWidth() * queryPositions.minx;
+    }
+
+    public int getQueryEndPixelIndex() {
+        return queryPositions.maxy * getQueryImage().getWidth() * queryPositions.maxx;
+    }
+
     int[] queryPixelPositions() {
         return queryPositions.pixelPositions();
     }
