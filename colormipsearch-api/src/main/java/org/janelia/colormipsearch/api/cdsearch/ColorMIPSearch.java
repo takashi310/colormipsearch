@@ -35,6 +35,11 @@ public class ColorMIPSearch implements Serializable {
         return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold);
     }
 
+    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(MIPImage queryMIPImage, int queryThreshold) {
+        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), queryThreshold);
+    }
+
+
     public boolean isMatch(ColorMIPMatchScore colorMIPMatchScore) {
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
         return colorMIPMatchScore.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
