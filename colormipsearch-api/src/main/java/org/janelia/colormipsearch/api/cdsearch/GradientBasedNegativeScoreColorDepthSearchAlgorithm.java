@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.api.cdsearch;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -78,6 +79,53 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     @Override
     public ImageArray<?> getQueryImage() {
         return queryImage.toImageArray();
+    }
+
+    @Override
+    public int getQueryFirstPixelIndex() {
+        return findQueryFirstPixelIndex();
+    }
+
+    private int findQueryFirstPixelIndex() {
+        return queryImage.foldi(-1, (x, y, pix, res) -> {
+            if (res == -1) {
+                int red = (pix >>> 16) & 0xff;
+                int green = (pix >>> 8) & 0xff;
+                int blue = pix & 0xff;
+
+                if (red > queryThreshold || green > queryThreshold || blue > queryThreshold) {
+                    return y * queryImage.width() + x;
+                } else {
+                    return res;
+                }
+            } else {
+                return res;
+            }
+        });
+    }
+
+    @Override
+    public int getQueryLastPixelIndex() {
+        return findQueryLastPixelIndex();
+    }
+
+    private int findQueryLastPixelIndex() {
+        return queryImage.foldi(-1, (x, y, pix, res) -> {
+            int red = (pix >>> 16) & 0xff;
+            int green = (pix >>> 8) & 0xff;
+            int blue = pix & 0xff;
+
+            if (red > queryThreshold || green > queryThreshold || blue > queryThreshold) {
+                int index = y * queryImage.width() + x;
+                if (index > res) {
+                    return index;
+                } else {
+                    return res;
+                }
+            } else {
+                return res;
+            }
+        });
     }
 
     @Override

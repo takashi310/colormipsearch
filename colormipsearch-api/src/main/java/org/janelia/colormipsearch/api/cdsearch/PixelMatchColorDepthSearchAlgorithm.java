@@ -21,6 +21,8 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     private final int[][] mirrorTargetMasksList;
     private final int[][] negTargetMasksList;
     private final int[][] negMirrorTargetMasksList;
+    private final int queryFirstPixelIndex;
+    private final int queryLastPixelIndex;
 
     public PixelMatchColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold, boolean mirrorQuery,
                                                ImageArray<?> negQueryImage, int negQueryThreshold,
@@ -34,7 +36,6 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         } else {
             negTargetMasksList = null;
         }
-
         // mirroring
         if (mirrorQuery) {
             mirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
@@ -43,6 +44,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         } else {
             mirrorTargetMasksList = null;
         }
+        // negative query mirroring
         if (mirrorNegQuery && negQueryImage != null) {
             negMirrorTargetMasksList = new int[1 + (xyshift / 2) * 8][];
             for (int i = 0; i < negTargetMasksList.length; i++)
@@ -50,6 +52,43 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         } else {
             negMirrorTargetMasksList = null;
         }
+        // set strip boundaries
+        int firstPixel = super.getQueryFirstPixelIndex();
+        int lastPixel = super.getQueryLastPixelIndex();
+        for (int i = 0; i < targetMasksList.length; i++) {
+            if (targetMasksList[i][0] < firstPixel) firstPixel = targetMasksList[i][0];
+            if (targetMasksList[i][targetMasksList[i].length-1] > lastPixel) lastPixel = targetMasksList[i][targetMasksList[i].length-1];
+        }
+        if (mirrorQuery) {
+            for (int i = 0; i < mirrorTargetMasksList.length; i++) {
+                if (mirrorTargetMasksList[i][0] < firstPixel) firstPixel = mirrorTargetMasksList[i][0];
+                if (mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1] > lastPixel) lastPixel = mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1];
+            }
+        }
+        if (negQueryImage != null) {
+            for (int i = 0; i < negTargetMasksList.length; i++) {
+                if (negTargetMasksList[i][0] < firstPixel) firstPixel = negTargetMasksList[i][0];
+                if (negTargetMasksList[i][negTargetMasksList[i].length-1] > lastPixel) lastPixel = negTargetMasksList[i][negTargetMasksList[i].length-1];
+            }
+            if (mirrorNegQuery) {
+                for (int i = 0; i < negMirrorTargetMasksList.length; i++) {
+                    if (negMirrorTargetMasksList[i][0] < firstPixel) firstPixel = negMirrorTargetMasksList[i][0];
+                    if (negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1] > lastPixel) lastPixel = negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1];
+                }
+            }
+        }
+        queryFirstPixelIndex = firstPixel;
+        queryLastPixelIndex = lastPixel;
+    }
+
+    @Override
+    public int getQueryFirstPixelIndex() {
+        return queryFirstPixelIndex;
+    }
+
+    @Override
+    public int getQueryLastPixelIndex() {
+        return queryLastPixelIndex;
     }
 
     private int[][] generateShiftedMasks(int[] pixelCoords, int xyshift, int imageWidth, int imageHeight) {
@@ -176,7 +215,10 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         return maxScore;
     }
 
-    private int calculateScore(ImageArray srcImage, int[] srcPositions, ImageArray targetImage, int[] targetPositions) {
+    private int calculateScore(ImageArray<?> srcImage,
+                               int[] srcPositions,
+                               ImageArray<?> targetImage,
+                               int[] targetPositions) {
         int size = Math.min(srcPositions.length, targetPositions.length);
         int score = 0;
         for (int i = 0; i < size; i++) {

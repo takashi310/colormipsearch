@@ -15,7 +15,20 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
  */
 public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> extends Serializable {
 
+    /**
+     * @return query image from the current context.
+     */
     ImageArray<?> getQueryImage();
+
+    /**
+     * @return the lower bound of the query image from the current context.
+     */
+    int getQueryFirstPixelIndex();
+
+    /**
+     * @return the higher bound of the query image from the current context.
+     */
+    int getQueryLastPixelIndex();
 
     /**
      * @return required variant types for calculating the score.

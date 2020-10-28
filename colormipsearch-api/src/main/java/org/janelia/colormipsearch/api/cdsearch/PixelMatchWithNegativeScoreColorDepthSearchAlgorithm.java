@@ -29,6 +29,16 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
     }
 
     @Override
+    public int getQueryFirstPixelIndex() {
+        return cdsMatchScoreCalculator.getQueryFirstPixelIndex();
+    }
+
+    @Override
+    public int getQueryLastPixelIndex() {
+        return cdsMatchScoreCalculator.getQueryLastPixelIndex();
+    }
+
+    @Override
     public Set<String> getRequiredTargetVariantTypes() {
         return requiredVariantTypes;
     }

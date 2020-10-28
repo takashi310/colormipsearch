@@ -65,6 +65,16 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         return queryImage;
     }
 
+    @Override
+    public int getQueryFirstPixelIndex() {
+        return queryPositions.miny * getQueryImage().getWidth() * queryPositions.minx;
+    }
+
+    @Override
+    public int getQueryLastPixelIndex() {
+        return queryPositions.maxy * getQueryImage().getWidth() * queryPositions.maxx;
+    }
+
     private PixelPositions getMaskPosArray(ImageArray<?> msk, int thresm) {
         int sumpx = msk.getPixelCount();
         List<Integer> pos = new ArrayList<>();
@@ -94,14 +104,6 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             }
         }
         return new PixelPositions(minx, miny, maxx, maxy, pos.stream().mapToInt(i -> i).toArray());
-    }
-
-    public int getQueryStartPixelIndex() {
-        return queryPositions.miny * getQueryImage().getWidth() * queryPositions.minx;
-    }
-
-    public int getQueryEndPixelIndex() {
-        return queryPositions.maxy * getQueryImage().getWidth() * queryPositions.maxx;
     }
 
     int[] queryPixelPositions() {
