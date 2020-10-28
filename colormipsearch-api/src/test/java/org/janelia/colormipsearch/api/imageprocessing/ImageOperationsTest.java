@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api.imageprocessing;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
+import ij.process.ColorProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import org.junit.Assert;

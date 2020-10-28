@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.nio.file.Paths;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
