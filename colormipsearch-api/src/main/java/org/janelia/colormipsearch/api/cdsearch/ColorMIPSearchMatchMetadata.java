@@ -229,15 +229,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     @JsonIgnore
     public long getNegativeScore() {
-        if (gradientAreaGap !=  null && highExpressionArea != null) {
-            return gradientAreaGap +  highExpressionArea / GradientAreaGapUtils.HIGH_EXPRESSION_FACTOR;
-        } else if (gradientAreaGap != null) {
-            return gradientAreaGap;
-        }  else if (highExpressionArea != null) {
-            return highExpressionArea / GradientAreaGapUtils.HIGH_EXPRESSION_FACTOR;
-        } else {
-            return -1;
-        }
+        return GradientAreaGapUtils.calculateNegativeScore(gradientAreaGap, highExpressionArea);
     }
 
     public Double getNormalizedGapScore() {
