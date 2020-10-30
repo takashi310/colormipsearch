@@ -102,7 +102,7 @@ the precomputed color depth search data
 The MIPs metadata as explained in [PrecomputedData.md](PrecomputedData.md) is 
 important for LM line or EM body lookup.
  
-####Generate LM SplitGal4 MIPs:
+#### Generate LM SplitGal4 MIPs:
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
@@ -115,7 +115,7 @@ java \
     -lmdir split_gal4_lines
 ```
 
-####Generate LM MCFO MIPs:
+#### Generate LM MCFO MIPs:
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
@@ -128,7 +128,7 @@ java \
     -lmdir gen1_mcfo_lines
 ```
 
-####Generate EM MIPs:
+#### Generate EM MIPs:
 ```bash
 java \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
