@@ -237,6 +237,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             LOG.error("No color depth search results found in {}", inputResultsFile);
             return matchesFileContent;
         }
+        LOG.info("Select best matches: {}", numberOfBestLinesToSelect);
         Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedByQuery = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
                 matchesFileContent.results,
                 numberOfBestLinesToSelect,
