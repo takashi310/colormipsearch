@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -152,8 +153,11 @@ public class ColorMIPSearchResultUtils {
                 numberOfBestPublishedNamesToSelect > 0
                         ? "Top " + numberOfBestMatchesToSelectPerSample
                         : "All",
-                topResultsByPublishedName.stream()
-                        .map(se -> se.getName() + ":" + se.getScore())
+                IntStream.range(0, topResultsByPublishedName.size()).boxed()
+                        .map(index -> {
+                            ScoredEntry<List<ColorMIPSearchMatchMetadata>> scoredEntry = topResultsByPublishedName.get(index);
+                            return (index + 1) + ":" + scoredEntry.getName() + ":" + scoredEntry.getScore();
+                        })
                         .collect(Collectors.toList()));
         return topResultsByPublishedName.stream()
                 .flatMap(se -> Utils.pickBestMatches(
