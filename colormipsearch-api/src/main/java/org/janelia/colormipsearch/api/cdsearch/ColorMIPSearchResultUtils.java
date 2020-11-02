@@ -151,7 +151,7 @@ public class ColorMIPSearchResultUtils {
                 -1);
         LOG.info("{} selected names: {}",
                 numberOfBestPublishedNamesToSelect > 0
-                        ? "Top " + numberOfBestMatchesToSelectPerSample
+                        ? "Top " + numberOfBestPublishedNamesToSelect
                         : "All",
                 IntStream.range(0, topResultsByPublishedName.size()).boxed()
                         .map(index -> {
