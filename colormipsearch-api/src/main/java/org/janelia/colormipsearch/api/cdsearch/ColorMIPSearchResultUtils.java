@@ -148,7 +148,10 @@ public class ColorMIPSearchResultUtils {
                 ColorMIPSearchMatchMetadata::getMatchingPixels,
                 numberOfBestPublishedNamesToSelect,
                 -1);
-        LOG.info("Selected Lines: {}",
+        LOG.info("{} selected names: {}",
+                numberOfBestPublishedNamesToSelect > 0
+                        ? "Top " + numberOfBestMatchesToSelectPerSample
+                        : "All",
                 topResultsByPublishedName.stream()
                         .map(se -> se.getName() + ":" + se.getScore())
                         .collect(Collectors.toList()));
