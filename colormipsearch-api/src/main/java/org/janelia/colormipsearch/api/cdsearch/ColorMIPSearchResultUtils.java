@@ -151,12 +151,12 @@ public class ColorMIPSearchResultUtils {
                 -1);
         LOG.info("{} selected names: {}",
                 numberOfBestPublishedNamesToSelect > 0
-                        ? "Top " + numberOfBestPublishedNamesToSelect
-                        : "All",
+                        ? "Top " + numberOfBestPublishedNamesToSelect + " out of " + cdsResults.size()
+                        : "All " + cdsResults.size(),
                 IntStream.range(0, topResultsByPublishedName.size()).boxed()
                         .map(index -> {
                             ScoredEntry<List<ColorMIPSearchMatchMetadata>> scoredEntry = topResultsByPublishedName.get(index);
-                            return (index + 1) + ":" + scoredEntry.getName() + ":" + scoredEntry.getScore();
+                            return "(" + (index + 1) + ") " + scoredEntry.getName() + ":" + scoredEntry.getScore();
                         })
                         .collect(Collectors.toList()));
         return topResultsByPublishedName.stream()
