@@ -34,6 +34,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     public static MIPMetadata getQueryMIP(ColorMIPSearchMatchMetadata cdsm) {
         MIPMetadata mip = new MIPMetadata();
         mip.setId(cdsm.getSourceId());
+        mip.setPublishedName(cdsm.getSourcePublishedName());
         mip.setCdmPath(cdsm.getSourceCdmPath());
         mip.setImageArchivePath(cdsm.getSourceImageArchivePath());
         mip.setImageName(cdsm.getSourceImageName());
@@ -45,6 +46,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     public static MIPMetadata getTargetMIP(ColorMIPSearchMatchMetadata cdsm) {
         MIPMetadata mip = new MIPMetadata();
         mip.setId(cdsm.getId());
+        mip.setPublishedName(cdsm.getPublishedName());
         mip.setCdmPath(cdsm.getCdmPath());
         mip.setImageArchivePath(cdsm.getImageArchivePath());
         mip.setImageName(cdsm.getImageName());
