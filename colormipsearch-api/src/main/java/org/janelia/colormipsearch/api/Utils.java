@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class Utils {
                                                                  int topResults,
                                                                  int limitSubResults) {
         Comparator<T> csrComparison = Comparator.comparing(scoreExtractor.andThen(n -> n.doubleValue()));
-        List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = l.stream()
+        Map<String, List<T>> groupedResults = l.stream()
                 .collect(Collectors.groupingBy(
                         val -> StringUtils.defaultIfBlank(groupingCriteria.apply(val), "UNKNOWN"),
                         Collectors.collectingAndThen(Collectors.toList(), r -> {
@@ -54,8 +55,8 @@ public class Utils {
                             } else {
                                 return r;
                             }
-                        })))
-                .entrySet().stream()
+                        })));
+        List<ScoredEntry<List<T>>> bestResultsForSpecifiedCriteria = groupedResults.entrySet().stream()
                 .map(e -> {
                     T maxValue = Collections.max(e.getValue(), csrComparison);
                     return new ScoredEntry<>(e.getKey(), scoreExtractor.apply(maxValue), e.getValue());
