@@ -1,3 +1,13 @@
+### Release Version: 2.1.1
+
+### Release Date: 2020-11-03
+
+### Notes
+
+* Fixed the merge process. There was a bug which favored matches with higher pixel score
+while merging results from EM-vs-MCFO with the results from EM-vs-SGal4 instead of the matches 
+with a higher normalized gradient score. This led to a wrong ranking of the final results.
+ 
 ### Release Version: 2.1.0
 
 ### Release Date: 2020-09-15

@@ -21,9 +21,12 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     public static ColorMIPSearchMatchMetadata createReleaseCopy(ColorMIPSearchMatchMetadata from) {
         ColorMIPSearchMatchMetadata cdsCopy = new ColorMIPSearchMatchMetadata();
         from.copyTo(cdsCopy);
-        cdsCopy.sourceId = from.sourceId;
-        cdsCopy.sourcePublishedName = from.sourcePublishedName;
-        cdsCopy.sourceLibraryName = from.sourceLibraryName;
+        // reset source image paths
+        cdsCopy.setSourceCdmPath(null);
+        cdsCopy.setSourceImageType(null);
+        cdsCopy.setSourceImageName(null);
+        cdsCopy.setSourceImageArchivePath(null);
+        // reset image paths
         cdsCopy.setCdmPath(null);
         cdsCopy.setImageType(null);
         cdsCopy.setImageName(null);
@@ -297,6 +300,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public <T extends ColorMIPSearchMatchMetadata> void copyTo(T that) {
         super.copyTo(that);
+        // copy source image
+        that.setSourceId(this.sourceId);
+        that.setSourcePublishedName(this.sourcePublishedName);
+        that.setSourceLibraryName(this.sourceLibraryName);
+        that.setSourceCdmPath(this.sourceCdmPath);
+        that.setSourceImageType(this.sourceImageType);
+        that.setSourceImageName(this.sourceImageName);
+        that.setSourceImageArchivePath(this.sourceImageArchivePath);
+        // copy score attributes
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
         that.setGradientAreaGap(this.getGradientAreaGap());
