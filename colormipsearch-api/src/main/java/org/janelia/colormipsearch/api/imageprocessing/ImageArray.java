@@ -12,14 +12,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public abstract class ImageArray<T> implements Serializable {
 
     ImageType type;
-    int height;
     int width;
+    int height;
     final T pixels;
 
     ImageArray(ImageType type, int width, int height, T pixels) {
-        this.height = height;
-        this.width = width;
         this.type = type;
+        this.width = width;
+        this.height = height;
         this.pixels = pixels;
     }
 
