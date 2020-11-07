@@ -164,7 +164,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         double gr2 = 0;
         double br2 = 0;
         double bg2 = 0;
-        double pxGap = 10000;
+        double pxGap = 10000.;
         double BrBg = 0.354862745;
         double BgGb = 0.996078431;
         double GbGr = 0.505882353;
@@ -246,8 +246,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (BR2 > 0) {//1, data
                 if (br1 > 0 && br2 > 0) {
                     if (br1 != br2) {
-                        pxGap = br2 - br1;
-                        pxGap = Math.abs(pxGap);
+                        pxGap = Math.abs(br2 - br1);
                     } else
                         pxGap = 0;
 
@@ -265,9 +264,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (BG2 > 0) {//2, data, 2,mask
                 if (bg1 > 0 && bg2 > 0) {
                     if (bg1 != bg2) {
-                        pxGap = bg2 - bg1;
-                        pxGap = Math.abs(pxGap);
-
+                        pxGap = Math.abs(bg2 - bg1);
                     } else if (bg1 == bg2)
                         pxGap = 0;
                     if (bg1 == 255 & bg2 == 255)
@@ -290,8 +287,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (GB2 > 0) {//3, data, 3mask
                 if (gb1 > 0 && gb2 > 0) {
                     if (gb1 != gb2) {
-                        pxGap = gb2 - gb1;
-                        pxGap = Math.abs(pxGap);
+                        pxGap = Math.abs(gb2 - gb1);
                     } else
                         pxGap = 0;
                     if (gb1 == 255 & gb2 == 255)
@@ -314,8 +310,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (GR2 > 0) {//4, data, 4mask
                 if (gr1 > 0 && gr2 > 0) {
                     if (gr1 != gr2) {
-                        pxGap = gr2 - gr1;
-                        pxGap = Math.abs(pxGap);
+                        pxGap = Math.abs(gr2 - gr1);
                     } else
                         pxGap = 0;
                     if (gr1 == 255 & gr2 == 255)
@@ -338,8 +333,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (RG2 > 0) {//5, data, 5mask
                 if (rg1 > 0 && rg2 > 0) {
                     if (rg1 != rg2) {
-                        pxGap = rg2 - rg1;
-                        pxGap = Math.abs(pxGap);
+                        pxGap = Math.abs(rg2 - rg1);
                     } else
                         pxGap = 0;
                     if (rg1 == 255 & rg2 == 255)
@@ -363,8 +357,7 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
             if (RB2 > 0) {//6, data, 6mask
                 if (rb1 > 0 && rb2 > 0) {
                     if (rb1 != rb2) {
-                        pxGap = rb2 - rb1;
-                        pxGap = Math.abs(pxGap);
+                        pxGap = Math.abs(rb2 - rb1);
                     } else if (rb1 == rb2)
                         pxGap = 0;
                     if (rb1 == 255 & rb2 == 255)
