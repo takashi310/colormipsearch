@@ -23,8 +23,11 @@ public class ColorImageArray extends ImageArray<byte[]> {
     }
 
     public int get(int pi) {
+        int r = pixels[pi * 3] & 0xFF;
+        int g = pixels[pi * 3 + 1] & 0xFF;
+        int b = pixels[pi * 3 + 2] & 0xFF;
         // setting the alpha value as well
-        return 0xFF000000 | (((int) pixels[pi * 3] << 16) & 0x00FF0000) | (((int) pixels[pi * 3 + 1] << 8) & 0x0000FF00) | ((int) pixels[pi * 3 + 2] & 0x000000FF);
+        return 0xFF000000 | ((r << 16) & 0x00FF0000) | ((g << 8) & 0x0000FF00) | b;
     }
 
     public void set(int pi, int pixel) {
