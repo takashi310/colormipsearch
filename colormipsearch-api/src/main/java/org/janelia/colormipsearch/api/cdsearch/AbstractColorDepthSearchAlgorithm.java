@@ -91,8 +91,8 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
                 continue;
             }
             pix = msk.get(pi);
-            red = (pix >>> 16) & 0xff;
-            green = (pix >>> 8) & 0xff;
+            red = (pix >> 16) & 0xff;
+            green = (pix >> 8) & 0xff;
             blue = pix & 0xff;
 
             if (red > thresm || green > thresm || blue > thresm) {

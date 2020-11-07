@@ -89,8 +89,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private int findQueryFirstPixelIndex() {
         return queryImage.foldi(-1, (x, y, pix, res) -> {
             if (res == -1) {
-                int red = (pix >>> 16) & 0xff;
-                int green = (pix >>> 8) & 0xff;
+                int red = (pix >> 16) & 0xff;
+                int green = (pix >> 8) & 0xff;
                 int blue = pix & 0xff;
 
                 if (red > queryThreshold || green > queryThreshold || blue > queryThreshold) {
@@ -111,8 +111,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
 
     private int findQueryLastPixelIndex() {
         return queryImage.foldi(-1, (x, y, pix, res) -> {
-            int red = (pix >>> 16) & 0xff;
-            int green = (pix >>> 8) & 0xff;
+            int red = (pix >> 16) & 0xff;
+            int green = (pix >> 8) & 0xff;
             int blue = pix & 0xff;
 
             if (red > queryThreshold || green > queryThreshold || blue > queryThreshold) {
@@ -216,8 +216,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                     int p2 = p2s.get();
                     if (p2 == 1) {
                         int p1 = p1s.get();
-                        int r1 = (p1 >>> 16) & 0xff;
-                        int g1 = (p1 >>> 8) & 0xff;
+                        int r1 = (p1 >> 16) & 0xff;
+                        int g1 = (p1 >> 8) & 0xff;
                         int b1 = p1 & 0xff;
                         if (r1 > queryThreshold || g1 > queryThreshold || b1 > queryThreshold) {
                             return 1;

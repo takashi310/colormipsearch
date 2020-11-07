@@ -228,13 +228,13 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                 continue;
             }
             int targetPix = targetImage.get(targetPos);
-            int red2 = (targetPix >>> 16) & 0xff;
-            int green2 = (targetPix >>> 8) & 0xff;
+            int red2 = (targetPix >> 16) & 0xff;
+            int green2 = (targetPix >> 8) & 0xff;
             int blue2 = targetPix & 0xff;
             if (red2 > targetThreshold || green2 > targetThreshold || blue2 > targetThreshold) {
                 int srcPixel = srcImage.get(srcPos);
-                int red1 = (srcPixel >>> 16) & 0xff;
-                int green1 = (srcPixel >>> 8) & 0xff;
+                int red1 = (srcPixel >> 16) & 0xff;
+                int green1 = (srcPixel >> 8) & 0xff;
                 int blue1 = srcPixel & 0xff;
                 double pxGap = calculatePixelGap(red1, green1, blue1, red2, green2, blue2);
                 if (pxGap <= zTolerance) {

@@ -21,12 +21,12 @@ public class GradientAreaGapUtils {
         int max1stvalMASK = 0, max2ndvalMASK = 0, max1stvalDATA = 0, max2ndvalDATA = 0, maskslinumber = 0, dataslinumber = 0;
         Color mask1stMaxColor = Color.BLACK, mask2ndMaxColor = Color.BLACK, data1stMaxColor = Color.BLACK, data2ndMaxColor = Color.BLACK;
 
-        int red1 = (rgb1 >>> 16) & 0xff;
-        int green1 = (rgb1 >>> 8) & 0xff;
+        int red1 = (rgb1 >> 16) & 0xff;
+        int green1 = (rgb1 >> 8) & 0xff;
         int blue1 = rgb1 & 0xff;
 
-        int red2 = (rgb2 >>> 16) & 0xff;
-        int green2 = (rgb2 >>> 8) & 0xff;
+        int red2 = (rgb2 >> 16) & 0xff;
+        int green2 = (rgb2 >> 8) & 0xff;
         int blue2 = rgb2 & 0xff;
 
         if (red1 >= green1 && red1 >= blue1) {
