@@ -211,11 +211,7 @@ public class ImageArrayUtils {
                             break;
                         }
                     }
-                    int[] pixels = new int[img_bytearr.length / 3];
-                    for (int i = 0; i < pixels.length; i++) {
-                        pixels[i] = 0xFF000000 | ((img_bytearr[i*3] << 16) & 0xFF0000) | ((img_bytearr[i*3+1] << 8) & 0xFF00) | (img_bytearr[i*3+2] & 0xFF);
-                    }
-                    return new ColorImageArray(ImageType.fromImagePlusType(ImagePlus.COLOR_RGB), width, height, pixels);
+                    return new ColorImageArray(ImageType.fromImagePlusType(ImagePlus.COLOR_RGB), width, height, img_bytearr);
                 }
             } else {
                 return null;
