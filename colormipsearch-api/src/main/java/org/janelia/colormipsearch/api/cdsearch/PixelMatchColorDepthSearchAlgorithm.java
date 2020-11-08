@@ -156,48 +156,46 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                 queryPixelPositions(),
                 targetImageArray,
                 targetMasksList);
-        if (xyShiftsMaxScore > maxMatchingPixels) {
-            maxMatchingPixels = xyShiftsMaxScore;
-        }
-        if (mirrorTargetMasksList != null) {
-            int mirroredXYShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
-                    queryImage,
-                    queryPixelPositions(),
-                    targetImageArray,
-                    mirrorTargetMasksList
-            );
-            if (mirroredXYShiftsMaxScore > maxMatchingPixels) {
-                maxMatchingPixels = mirroredXYShiftsMaxScore;
-            }
-        }
+        maxMatchingPixels = xyShiftsMaxScore;
         double maxMatchingPixelsRatio = (double)maxMatchingPixels / (double)querySize;
-        int negQuerySize = negQuerySize();
-        if (negQuerySize > 0) {
-            int negativeMaxMatchingPixels = 0;
-            int xyShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
-                    negQueryImage,
-                    queryPixelPositions(),
-                    targetImageArray,
-                    negTargetMasksList
-            );
-            if (xyShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
-                negativeMaxMatchingPixels = xyShiftsNegQueryMaxScore;
-            }
-            if (negMirrorTargetMasksList != null) {
-                int mirroredXYShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
-                        negQueryImage,
-                        queryPixelPositions(),
-                        targetImageArray,
-                        negMirrorTargetMasksList
-                );
-                if (mirroredXYShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
-                    negativeMaxMatchingPixels = mirroredXYShiftsNegQueryMaxScore;
-                }
-            }
-            // reduce the matching pixels by the size of the negative match
-            maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
-            maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
-        }
+//        if (mirrorTargetMasksList != null) {
+//            int mirroredXYShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
+//                    queryImage,
+//                    queryPixelPositions(),
+//                    targetImageArray,
+//                    mirrorTargetMasksList
+//            );
+//            if (mirroredXYShiftsMaxScore > maxMatchingPixels) {
+//                maxMatchingPixels = mirroredXYShiftsMaxScore;
+//            }
+//        }
+//        int negQuerySize = negQuerySize();
+//        if (negQuerySize > 0) {
+//            int negativeMaxMatchingPixels = 0;
+//            int xyShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
+//                    negQueryImage,
+//                    queryPixelPositions(),
+//                    targetImageArray,
+//                    negTargetMasksList
+//            );
+//            if (xyShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
+//                negativeMaxMatchingPixels = xyShiftsNegQueryMaxScore;
+//            }
+//            if (negMirrorTargetMasksList != null) {
+//                int mirroredXYShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
+//                        negQueryImage,
+//                        queryPixelPositions(),
+//                        targetImageArray,
+//                        negMirrorTargetMasksList
+//                );
+//                if (mirroredXYShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
+//                    negativeMaxMatchingPixels = mirroredXYShiftsNegQueryMaxScore;
+//                }
+//            }
+//            // reduce the matching pixels by the size of the negative match
+//            maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
+//            maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
+//        }
         return new ColorMIPMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, null);
     }
 
@@ -239,6 +237,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                 double pxGap = calculatePixelGap(red1, green1, blue1, red2, green2, blue2);
                 if (pxGap <= zTolerance) {
                     score++;
+                    System.out.println(String.format("%d)%d:%d|%d|%d-%d|%d|%d-%f", score, i, red1, green1, blue1, red2, green2, blue2, pxGap));
                 }
             }
         }
