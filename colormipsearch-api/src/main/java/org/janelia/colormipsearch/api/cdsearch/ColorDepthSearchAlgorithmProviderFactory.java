@@ -30,7 +30,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int targetThreshold,
             double pixColorFluctuation,
             int xyShift) {
-        LOG.debug("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
+        LOG.info("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
                 mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
