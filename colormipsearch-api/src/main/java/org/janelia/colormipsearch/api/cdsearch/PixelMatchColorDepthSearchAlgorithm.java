@@ -231,7 +231,6 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                 double pxGap = calculatePixelGap(red1, green1, blue1, red2, green2, blue2);
                 if (pxGap <= zTolerance) {
                     score++;
-                    System.out.println(String.format("%d)%d:%d|%d|%d-%d|%d|%d-%f", score, i, red1, green1, blue1, red2, green2, blue2, pxGap));
                 }
             }
         }
