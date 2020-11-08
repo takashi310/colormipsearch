@@ -21,22 +21,22 @@ public class ColorDepthSearchAlgorithmProviderFactory {
      *
      * @param mirrorMask flag whether to use mirroring
      * @param targetThreshold data threshold
-     * @param zTolerance z - gap tolerance - sometimes called pixel color fluctuation
+     * @param pixColorFluctuation z - gap tolerance - sometimes called pixel color fluctuation
      * @param xyShift - x-y translation for searching for a match
      * @return a color depth search search provider
      */
     public static ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> createPixMatchCDSAlgorithmProvider(
             boolean mirrorMask,
             int targetThreshold,
-            double zTolerance,
+            double pixColorFluctuation,
             int xyShift) {
-        LOG.debug("Create mask comparator with mirrorQuery={}, dataThreshold={}, zTolerance={}, xyShift={}",
-                mirrorMask, targetThreshold, zTolerance, xyShift);
+        LOG.debug("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
+                mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                     .setParam("mirrorMask", mirrorMask)
                     .setParam("dataThreshold", targetThreshold)
-                    .setParam("pixColorFluctuation", zTolerance)
+                    .setParam("pixColorFluctuation", pixColorFluctuation)
                     .setParam("xyShift", xyShift);
             @Override
             public ColorDepthSearchParams getDefaultCDSParams() {
@@ -47,6 +47,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
                                                                                                       int queryThreshold,
                                                                                                       ColorDepthSearchParams cdsParams) {
+                Double pixColorFluctuationParam = cdsParams.getDoubleParam("pixColorFluctuation", pixColorFluctuation);
+                double zTolerance = pixColorFluctuationParam == null ? 0. : pixColorFluctuationParam / 100;
                 return new PixelMatchColorDepthSearchAlgorithm(
                         queryImageArray,
                         queryThreshold,
@@ -55,7 +57,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                         0,
                         false,
                         cdsParams.getIntParam("dataThreshold", targetThreshold),
-                        cdsParams.getDoubleParam("pixColorFluctuation", zTolerance),
+                        zTolerance,
                         cdsParams.getIntParam("xyShift", xyShift));
             }
         };
@@ -124,7 +126,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
     public static ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> createPixMatchWithNegativeScoreCDSAlgorithmProvider(
             boolean mirrorMask,
             int targetThreshold,
-            double zTolerance,
+            double pixColorFluctuation,
             int xyShift,
             int negativeRadius,
             ImageArray<?> roiMaskImageArray) {
@@ -135,7 +137,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                         .setParam("mirrorMask", mirrorMask)
                         .setParam("dataThreshold", targetThreshold)
-                        .setParam("pixColorFluctuation", zTolerance)
+                        .setParam("pixColorFluctuation", pixColorFluctuation)
                         .setParam("xyShift", xyShift)
                         .setParam("negativeRadius", negativeRadius);
 
@@ -149,7 +151,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                                                                                                       int queryThreshold,
                                                                                                       ColorDepthSearchParams cdsParams) {
                 ColorDepthSearchAlgorithm<ColorMIPMatchScore> posScoreCDSAlg =
-                        createPixMatchCDSAlgorithmProvider(mirrorMask, targetThreshold, zTolerance, xyShift)
+                        createPixMatchCDSAlgorithmProvider(mirrorMask, targetThreshold, pixColorFluctuation, xyShift)
                                 .createColorDepthQuerySearchAlgorithm(queryImageArray, queryThreshold, cdsParams);
                 ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSAlg =
                         createNegativeMatchCDSAlgorithmProvider(mirrorMask, negativeRadius, roiMaskImageArray)

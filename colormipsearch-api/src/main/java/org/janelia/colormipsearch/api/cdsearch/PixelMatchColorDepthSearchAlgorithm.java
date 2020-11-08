@@ -146,56 +146,50 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     @Override
     public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
                                                      Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
-        int maxMatchingPixels = 0;
         int querySize = querySize();
         if (querySize == 0) {
             return new ColorMIPMatchScore(0, 0, null);
         }
-        int xyShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
+        int maxMatchingPixels = calculateMaxScoreForAllTargetTransformations(
                 queryImage,
                 queryPixelPositions(),
                 targetImageArray,
                 targetMasksList);
-        maxMatchingPixels = xyShiftsMaxScore;
+        if (mirrorTargetMasksList != null) {
+            int mirroredXYShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
+                    queryImage,
+                    queryPixelPositions(),
+                    targetImageArray,
+                    mirrorTargetMasksList
+            );
+            if (mirroredXYShiftsMaxScore > maxMatchingPixels) {
+                maxMatchingPixels = mirroredXYShiftsMaxScore;
+            }
+        }
         double maxMatchingPixelsRatio = (double)maxMatchingPixels / (double)querySize;
-//        if (mirrorTargetMasksList != null) {
-//            int mirroredXYShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
-//                    queryImage,
-//                    queryPixelPositions(),
-//                    targetImageArray,
-//                    mirrorTargetMasksList
-//            );
-//            if (mirroredXYShiftsMaxScore > maxMatchingPixels) {
-//                maxMatchingPixels = mirroredXYShiftsMaxScore;
-//            }
-//        }
-//        int negQuerySize = negQuerySize();
-//        if (negQuerySize > 0) {
-//            int negativeMaxMatchingPixels = 0;
-//            int xyShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
-//                    negQueryImage,
-//                    queryPixelPositions(),
-//                    targetImageArray,
-//                    negTargetMasksList
-//            );
-//            if (xyShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
-//                negativeMaxMatchingPixels = xyShiftsNegQueryMaxScore;
-//            }
-//            if (negMirrorTargetMasksList != null) {
-//                int mirroredXYShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
-//                        negQueryImage,
-//                        queryPixelPositions(),
-//                        targetImageArray,
-//                        negMirrorTargetMasksList
-//                );
-//                if (mirroredXYShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
-//                    negativeMaxMatchingPixels = mirroredXYShiftsNegQueryMaxScore;
-//                }
-//            }
-//            // reduce the matching pixels by the size of the negative match
-//            maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
-//            maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
-//        }
+        int negQuerySize = negQuerySize();
+        if (negQuerySize > 0) {
+            int negativeMaxMatchingPixels = calculateMaxScoreForAllTargetTransformations(
+                    negQueryImage,
+                    queryPixelPositions(),
+                    targetImageArray,
+                    negTargetMasksList
+            );
+            if (negMirrorTargetMasksList != null) {
+                int mirroredXYShiftsNegQueryMaxScore = calculateMaxScoreForAllTargetTransformations(
+                        negQueryImage,
+                        queryPixelPositions(),
+                        targetImageArray,
+                        negMirrorTargetMasksList
+                );
+                if (mirroredXYShiftsNegQueryMaxScore > negativeMaxMatchingPixels) {
+                    negativeMaxMatchingPixels = mirroredXYShiftsNegQueryMaxScore;
+                }
+            }
+            // reduce the matching pixels by the size of the negative match
+            maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
+            maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
+        }
         return new ColorMIPMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, null);
     }
 
