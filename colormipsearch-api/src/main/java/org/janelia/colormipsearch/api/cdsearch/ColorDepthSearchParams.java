@@ -1,12 +1,12 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-import java.util.HashMap;
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class ColorDepthSearchParams {
+public class ColorDepthSearchParams implements Serializable {
     private final Map<String, Object> params = new LinkedHashMap<>();
 
     public String getStringParam(String name) {
