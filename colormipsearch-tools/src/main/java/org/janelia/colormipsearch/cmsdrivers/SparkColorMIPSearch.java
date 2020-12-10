@@ -70,69 +70,50 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
 
-        JavaRDD<MIPMetadata> queriesRDD = sparkContext.parallelize(queryMIPS)
-                .filter(MIPsUtils::exists);
-        LOG.info("Created RDD queries and put {} items into {} partitions", nQueries, queriesRDD.getNumPartitions());
-
-        JavaPairRDD<MIPImage, MIPMetadata> targetQueryPairsRDD = targetsRDD.cartesian(queriesRDD);
-        LOG.info("Created {} query target pairs in {} partitions", nQueries * nTargets, targetQueryPairsRDD.getNumPartitions());
-
-        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = targetQueryPairsRDD
-                .groupBy(tq -> tq._2) // group by query
-                .mapPartitions(qtItr -> StreamSupport.stream(Spliterators.spliterator(qtItr, Integer.MAX_VALUE, 0), false)
-                        .map(mls -> {
-                            MIPImage queryImage = MIPsUtils.loadMIP(mls._1);
-                            ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
-                            Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-                            List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(targetQueryPair -> {
-                                        MIPImage targetImage = targetQueryPair._1;
-                                        Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
-                                        if (requiredVariantTypes.contains("gradient")) {
-                                            variantImageSuppliers.put("gradient", () -> {
-                                                MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(targetImage),
-                                                        "gradient",
-                                                        gradientsLocations,
-                                                        gradientVariantSuffixMapping));
-                                                return MIPsUtils.getImageArray(gradientImage);
-                                            });
-                                        }
-                                        if (requiredVariantTypes.contains("zgap")) {
-                                            variantImageSuppliers.put("zgap", () -> {
-                                                MIPImage targetZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        MIPsUtils.getMIPMetadata(targetImage),
-                                                        "zgap",
-                                                        zgapMasksLocations,
-                                                        zgapMaskVariantSuffixMapping));
-                                                return MIPsUtils.getImageArray(targetZGapMaskImage);
-                                            });
-                                        }
-                                        ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
-                                                MIPsUtils.getImageArray(targetImage),
-                                                variantImageSuppliers);
-                                        boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
-                                        return new ColorMIPSearchResult(
-                                                MIPsUtils.getMIPMetadata(queryImage),
+        return targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
+                .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
+                .flatMap(queryTargetsPair -> {
+                    MIPImage queryImage = MIPsUtils.loadMIP(queryTargetsPair._1);
+                    ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
+                    Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
+                    List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(Spliterators.spliterator(queryTargetsPair._2, Integer.MAX_VALUE, 0), true)
+                            .map(targetImage -> {
+                                Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
+                                if (requiredVariantTypes.contains("gradient")) {
+                                    variantImageSuppliers.put("gradient", () -> {
+                                        MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
                                                 MIPsUtils.getMIPMetadata(targetImage),
-                                                colorMIPMatchScore,
-                                                isMatch,
-                                                false);
-                                    })
-                                    .filter(srByMask -> srByMask.isMatch() || srByMask.hasErrors())
-                                    .sorted(colorMIPSearch.getColorMIPSearchResultComparator())
-                                    .collect(Collectors.toList());
-                            return new Tuple2<>(mls._1, srsByMask);
-                        })
-                        .iterator())
-                .mapToPair(p -> p);
-        LOG.info("Created RDD search results for  all {} query target pairs in all {} partitions",
-                nQueries * nTargets, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
-
-        // write results for each mask
-        return allSearchResultsPartitionedByMaskMIP
-                .flatMapToPair(srByMask -> srByMask._2.stream().map(sr -> new Tuple2<>(srByMask._1, sr)).iterator())
-                .map(mipWithSr -> mipWithSr._2)
+                                                "gradient",
+                                                gradientsLocations,
+                                                gradientVariantSuffixMapping));
+                                        return MIPsUtils.getImageArray(gradientImage);
+                                    });
+                                }
+                                if (requiredVariantTypes.contains("zgap")) {
+                                    variantImageSuppliers.put("zgap", () -> {
+                                        MIPImage targetZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                                                MIPsUtils.getMIPMetadata(targetImage),
+                                                "zgap",
+                                                zgapMasksLocations,
+                                                zgapMaskVariantSuffixMapping));
+                                        return MIPsUtils.getImageArray(targetZGapMaskImage);
+                                    });
+                                }
+                                ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
+                                        MIPsUtils.getImageArray(targetImage),
+                                        variantImageSuppliers);
+                                boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
+                                return new ColorMIPSearchResult(
+                                        MIPsUtils.getMIPMetadata(queryImage),
+                                        MIPsUtils.getMIPMetadata(targetImage),
+                                        colorMIPMatchScore,
+                                        isMatch,
+                                        false);
+                            })
+                            .filter(srByMask -> srByMask.isMatch() || srByMask.hasErrors())
+                            .collect(Collectors.toList());
+                    return srsByMask.iterator();
+                })
                 .collect();
     }
 
