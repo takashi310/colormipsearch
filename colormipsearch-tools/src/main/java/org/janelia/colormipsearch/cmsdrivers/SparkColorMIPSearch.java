@@ -60,10 +60,9 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
 
     @Override
     public List<ColorMIPSearchResult> findAllColorDepthMatches(List<MIPMetadata> queryMIPS, List<MIPMetadata> targetMIPS) {
-        LOG.info("Searching {} queries against {} targets", queryMIPS.size(), targetMIPS.size());
-
         long nTargets = targetMIPS.size();
         long nQueries = queryMIPS.size();
+        LOG.info("Searching {} queries against {} targets", nQueries, nTargets);
 
         JavaRDD<MIPImage> targetsRDD = sparkContext.parallelize(targetMIPS)
                 .filter(MIPsUtils::exists)
