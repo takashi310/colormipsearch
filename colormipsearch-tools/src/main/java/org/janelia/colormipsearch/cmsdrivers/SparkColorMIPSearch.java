@@ -99,16 +99,26 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                         return MIPsUtils.getImageArray(targetZGapMaskImage);
                                     });
                                 }
-                                ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
-                                        MIPsUtils.getImageArray(targetImage),
-                                        variantImageSuppliers);
-                                boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
-                                return new ColorMIPSearchResult(
-                                        MIPsUtils.getMIPMetadata(queryImage),
-                                        MIPsUtils.getMIPMetadata(targetImage),
-                                        colorMIPMatchScore,
-                                        isMatch,
-                                        false);
+                                try {
+                                    ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
+                                            MIPsUtils.getImageArray(targetImage),
+                                            variantImageSuppliers);
+                                    boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
+                                    return new ColorMIPSearchResult(
+                                            MIPsUtils.getMIPMetadata(queryImage),
+                                            MIPsUtils.getMIPMetadata(targetImage),
+                                            colorMIPMatchScore,
+                                            isMatch,
+                                            false);
+                                } catch (Exception e) {
+                                    LOG.error("Error performing color depth search between {} and {}", queryImage, targetImage);
+                                    return new ColorMIPSearchResult(
+                                            MIPsUtils.getMIPMetadata(queryImage),
+                                            MIPsUtils.getMIPMetadata(targetImage),
+                                            ColorMIPMatchScore.NO_MATCH,
+                                            false,
+                                            true);
+                                }
                             })
                             .filter(srByMask -> srByMask.isMatch() || srByMask.hasErrors())
                             .collect(Collectors.toList());
