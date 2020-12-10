@@ -74,19 +74,19 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .filter(MIPsUtils::exists);
         LOG.info("Created RDD queries and put {} items into {} partitions", nQueries, queriesRDD.getNumPartitions());
 
-        JavaPairRDD<MIPMetadata, MIPImage> queryTargetPairsRDD = queriesRDD.cartesian(targetsRDD);
-        LOG.info("Created {} query target pairs in {} partitions", nQueries * nTargets, queryTargetPairsRDD.getNumPartitions());
+        JavaPairRDD<MIPImage, MIPMetadata> targetQueryPairsRDD = targetsRDD.cartesian(queriesRDD);
+        LOG.info("Created {} query target pairs in {} partitions", nQueries * nTargets, targetQueryPairsRDD.getNumPartitions());
 
-        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = queryTargetPairsRDD
-                .groupBy(tq -> tq._1) // group by query
+        JavaPairRDD<MIPMetadata, List<ColorMIPSearchResult>> allSearchResultsPartitionedByMaskMIP = targetQueryPairsRDD
+                .groupBy(tq -> tq._2) // group by query
                 .mapPartitions(qtItr -> StreamSupport.stream(Spliterators.spliterator(qtItr, Integer.MAX_VALUE, 0), false)
                         .map(mls -> {
                             MIPImage queryImage = MIPsUtils.loadMIP(mls._1);
                             ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                             Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
                             List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(mls._2.spliterator(), false)
-                                    .map(queryTargetPair -> {
-                                        MIPImage targetImage = queryTargetPair._2;
+                                    .map(targetQueryPair -> {
+                                        MIPImage targetImage = targetQueryPair._1;
                                         Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                         if (requiredVariantTypes.contains("gradient")) {
                                             variantImageSuppliers.put("gradient", () -> {
@@ -126,10 +126,12 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                         })
                         .iterator())
                 .mapToPair(p -> p);
-        LOG.info("Created RDD search results for  all {} query target pairs in all {} partitions", nQueries * nTargets, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
+        LOG.info("Created RDD search results for  all {} query target pairs in all {} partitions",
+                nQueries * nTargets, allSearchResultsPartitionedByMaskMIP.getNumPartitions());
 
         // write results for each mask
-        return allSearchResultsPartitionedByMaskMIP.flatMapToPair(srByMask -> srByMask._2.stream().map(sr -> new Tuple2<>(srByMask._1, sr)).iterator())
+        return allSearchResultsPartitionedByMaskMIP
+                .flatMapToPair(srByMask -> srByMask._2.stream().map(sr -> new Tuple2<>(srByMask._1, sr)).iterator())
                 .map(mipWithSr -> mipWithSr._2)
                 .collect();
     }
