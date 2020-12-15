@@ -59,14 +59,28 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
         long nQueries = queryMIPS.size();
         LOG.info("Searching {} queries against {} targets", nQueries, nTargets);
         List<ColorMIPSearchResult> cdsResults = queryMIPS.stream().parallel()
-                .filter(MIPsUtils::exists)
+                .filter(query -> {
+                    if (!MIPsUtils.exists(query)) {
+                        LOG.warn("No image found for query {}", query);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
                 .flatMap(query -> {
                     LOG.info("Compare {} with {} targets", query, nTargets);
                     MIPImage queryImage = MIPsUtils.loadMIP(query);
                     ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                     Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
                     List<ColorMIPSearchResult> queryResults = sparkContext.parallelize(targetMIPS)
-                            .filter(MIPsUtils::exists)
+                            .filter(target -> {
+                                if (!MIPsUtils.exists(target)) {
+                                    LOG.warn("No image found for target {}", target);
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            })
                             .map(MIPsUtils::loadMIP)
                             .map(targetImage -> search(queryColorDepthSearch, requiredVariantTypes, query, targetImage))
                             .collect();
