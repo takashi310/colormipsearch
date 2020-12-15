@@ -71,15 +71,14 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .filter(MIPsUtils::exists)
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
-        List<ColorMIPSearchResult> cdsResults = targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator())
-                .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
-                .flatMap(queryTargetsPair -> {
-                    List<MIPImage> targetImagesList = Lists.newArrayList(queryTargetsPair._2);
-                    LOG.info("Compare {} with {} targets", queryTargetsPair._1, targetImagesList.size());
-                    MIPImage queryImage = MIPsUtils.loadMIP(queryTargetsPair._1);
+        List<ColorMIPSearchResult> cdsResults = queryMIPS.stream().parallel()
+                .filter(MIPsUtils::exists)
+                .flatMap(query -> {
+                    LOG.info("Compare {} with {} target partitions", query, targetsRDD.getNumPartitions());
+                    MIPImage queryImage = MIPsUtils.loadMIP(query);
                     ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                     Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-                    List<ColorMIPSearchResult> srsByMask = targetImagesList.stream()
+                    return targetsRDD.mapPartitions(targetsItr -> StreamSupport.stream(Spliterators.spliterator(targetsItr, Integer.MAX_VALUE, 0), true)
                             .map(targetImage -> {
                                 Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                 if (requiredVariantTypes.contains("gradient")) {
@@ -123,12 +122,11 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                             false,
                                             true);
                                 }
-                            })
-                            .filter(srByMask -> srByMask.isMatch() || srByMask.hasErrors())
-                            .collect(Collectors.toList());
-                    return srsByMask.iterator();
+                            }).iterator())
+                            .collect()
+                            .stream();
                 })
-                .collect();
+                .collect(Collectors.toList());
         LOG.info("Found {} cds results", cdsResults.size());
         return cdsResults;
     }
