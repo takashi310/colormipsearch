@@ -71,7 +71,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .filter(MIPsUtils::exists)
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
-        List<ColorMIPSearchResult> cdsResults = targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
+        List<ColorMIPSearchResult> cdsResults = targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator())
                 .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
                 .flatMap(queryTargetsPair -> {
                     List<MIPImage> targetImagesList = Lists.newArrayList(queryTargetsPair._2);
