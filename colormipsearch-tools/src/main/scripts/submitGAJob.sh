@@ -44,7 +44,7 @@ function runGAJob {
         --mirrorMask \
         --topPublishedNameMatches ${TOP_RESULTS} \
         --topPublishedSampleMatches ${SAMPLES_PER_LINE} \
-        --libraryPartitionSize ${PROCESSING_PARTITION_SIZE} \
+        --processingPartitionSize ${PROCESSING_PARTITION_SIZE} \
         ${CDGA_GRAD_OPTS} \
         ${CDGA_ZGAP_OPTS} \
         ${CONCURRENCY_OPTS} \

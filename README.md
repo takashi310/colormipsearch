@@ -318,7 +318,7 @@ java -Xmx180G -Xms180G \
     --pixColorFluctuation 1 \
     --pctPositivePixels 1 \
     --mirrorMask \
-    --libraryPartitionSize 4000 \
+    --processingPartitionSize 4000 \
     --perMaskSubdir flyem_hemibrain-vs-gen1_mcfo \
     --perLibrarySubdir flylight_gen1_mcfo_published \
     -od local/testData/cdsresults
@@ -336,7 +336,7 @@ java -Xmx180G -Xms180G \
     --pixColorFluctuation 1 \
     --pctPositivePixels 1 \
     --mirrorMask \
-    --libraryPartitionSize 4000 \
+    --processingPartitionSize 4000 \
     --perMaskSubdir flyem_hemibrain-vs-split_gal4 \
     --perLibrarySubdir flylight_split_gal4_published \
     -od local/testData/cdsresults
@@ -354,7 +354,7 @@ java -Xmx240G -Xms240G \
     --mirrorMask \
     --topPublishedNameMatches 500 \
     --topPublishedSampleMatches 0 \
-    --libraryPartitionSize 5 \
+    --processingPartitionSize 5 \
     -gp /nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease_gradient.zip \
     -zgp /nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease_20pxRGBMAX.zip --zgapSuffix _20pxRGBMAX \
     -rd local/testData/cdsresults/flyem_hemibrain-vs-gen1_mcfo:1400:20 \
@@ -372,7 +372,7 @@ java -Xmx240G -Xms240G \
     --mirrorMask \
     --topPublishedNameMatches 500 \
     --topPublishedSampleMatches 0 \
-    --libraryPartitionSize 5 \
+    --processingPartitionSize 5 \
     -gp /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_gradient \
     -zgp /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_20pxRGB --zgapSuffix _20pxRGB \
     -rd local/testData/cdsresults/flyem_hemibrain-vs-split_gal4:1400:100 \

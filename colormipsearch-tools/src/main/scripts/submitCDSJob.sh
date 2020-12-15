@@ -45,7 +45,7 @@ function runCDSJob {
         --pixColorFluctuation ${PIX_FLUCTUATION} \
         --pctPositivePixels ${PIX_PCT_MATCH} \
         --mirrorMask \
-        --libraryPartitionSize ${PROCESSING_PARTITION_SIZE} \
+        --processingPartitionSize ${PROCESSING_PARTITION_SIZE} \
         --perMaskSubdir ${RESULTS_SUBDIR_FOR_MASKS} \
         --perLibrarySubdir ${RESULTS_SUBDIR_FOR_LIBRARIES} \
         ${CONCURRENCY_OPTS} \

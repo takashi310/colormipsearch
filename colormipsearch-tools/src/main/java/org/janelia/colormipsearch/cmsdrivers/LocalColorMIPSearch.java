@@ -40,21 +40,21 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
-    private final int targetsPartitionSize;
+    private final int localProcessingPartitionSize;
     private final List<String> gradientsLocations;
     private final MappingFunction<String, String> gradientVariantSuffixMapping;
     private final List<String> zgapMasksLocations;
     private final MappingFunction<String, String> zgapMaskVariantSuffixMapping;
 
     public LocalColorMIPSearch(ColorMIPSearch colorMIPSearch,
-                               int targetsPartitionSize,
+                               int localProcessingPartitionSize,
                                List<String> gradientsLocations,
                                MappingFunction<String, String> gradientVariantSuffixMapping,
                                List<String> zgapMasksLocations,
                                MappingFunction<String, String> zgapMaskVariantSuffixMapping,
                                Executor cdsExecutor) {
         this.colorMIPSearch = colorMIPSearch;
-        this.targetsPartitionSize = targetsPartitionSize > 0 ? targetsPartitionSize : 1;
+        this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
         this.gradientsLocations = gradientsLocations;
         this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
         this.zgapMasksLocations = zgapMasksLocations;
@@ -105,7 +105,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
         }
         ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
         Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(targetMIPs, targetsPartitionSize).stream()
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionList(targetMIPs, localProcessingPartitionSize).stream()
                 .map(targetMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
                         LOG.debug("Compare query# {} - {} with {} out of {} targets", mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size());

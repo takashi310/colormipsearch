@@ -114,6 +114,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
             colorMIPSearchDriver = new SparkColorMIPSearch(
                     args.appName,
                     colorMIPSearch,
+                    args.processingPartitionSize,
                     args.gradientPaths,
                     gradPathComponent -> {
                         String suffix = StringUtils.defaultIfBlank(gradientSuffixArg, "");
@@ -135,7 +136,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         } else {
             colorMIPSearchDriver = new LocalColorMIPSearch(
                     colorMIPSearch,
-                    args.libraryPartitionSize,
+                    args.processingPartitionSize,
                     args.gradientPaths,
                     gradPathComponent -> {
                         String suffix = StringUtils.defaultIfBlank(args.gradientSuffix, "");

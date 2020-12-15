@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.api;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -32,7 +33,7 @@ public class Utils {
         return l.stream().reduce(
                 ImmutablePair.of(new ArrayList<>(), new ArrayList<>()),
                 partitionAcumulator,
-                (r1, r2) -> r2.getLeft().stream().flatMap(p -> p.stream())
+                (r1, r2) -> r2.getLeft().stream().flatMap(Collection::stream)
                         .map(s -> partitionAcumulator.apply(r1, s))
                         .reduce((first, second) -> second)
                         .orElse(r1)).getLeft()

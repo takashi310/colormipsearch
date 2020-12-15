@@ -56,8 +56,8 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--zgapSuffix"}, description = "ZGap suffix")
     String zgapSuffix;
 
-    @Parameter(names = {"--libraryPartitionSize", "-lps"}, description = "Library partition size")
-    int libraryPartitionSize = 100;
+    @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
+    int processingPartitionSize = 100;
 
     @ParametersDelegate
     final CommonArgs commonArgs;
