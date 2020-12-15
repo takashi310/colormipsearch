@@ -72,7 +72,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
 
-        return targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
+        List<ColorMIPSearchResult> cdsResults = targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
                 .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
                 .flatMap(queryTargetsPair -> {
                     List<MIPImage> targetImagesList = Lists.newArrayList(queryTargetsPair._2);
@@ -115,7 +115,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                             isMatch,
                                             false);
                                 } catch (Exception e) {
-                                    LOG.error("Error performing color depth search between {} and {}", queryImage, targetImage);
+                                    LOG.error("Error performing color depth search between {} and {}", queryImage, targetImage, e);
                                     return new ColorMIPSearchResult(
                                             MIPsUtils.getMIPMetadata(queryImage),
                                             MIPsUtils.getMIPMetadata(targetImage),
@@ -129,6 +129,8 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                     return srsByMask.iterator();
                 })
                 .collect();
+        LOG.info("Found {} cds results", cdsResults.size());
+        return cdsResults;
     }
 
     @Override
