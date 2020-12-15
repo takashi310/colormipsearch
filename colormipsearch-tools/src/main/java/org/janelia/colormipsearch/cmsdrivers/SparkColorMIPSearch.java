@@ -68,50 +68,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                     List<ColorMIPSearchResult> queryResults = sparkContext.parallelize(targetMIPS)
                             .filter(MIPsUtils::exists)
                             .map(MIPsUtils::loadMIP)
-                            .map(targetImage -> {
-                                Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
-                                if (requiredVariantTypes.contains("gradient")) {
-                                    variantImageSuppliers.put("gradient", () -> {
-                                        MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                MIPsUtils.getMIPMetadata(targetImage),
-                                                "gradient",
-                                                gradientsLocations,
-                                                gradientVariantSuffixMapping));
-                                        return MIPsUtils.getImageArray(gradientImage);
-                                    });
-                                }
-                                if (requiredVariantTypes.contains("zgap")) {
-                                    variantImageSuppliers.put("zgap", () -> {
-                                        MIPImage targetZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                MIPsUtils.getMIPMetadata(targetImage),
-                                                "zgap",
-                                                zgapMasksLocations,
-                                                zgapMaskVariantSuffixMapping));
-                                        return MIPsUtils.getImageArray(targetZGapMaskImage);
-                                    });
-                                }
-                                try {
-                                    LOG.debug("Compare query {} with target {}", queryImage, targetImage);
-                                    ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
-                                            MIPsUtils.getImageArray(targetImage),
-                                            variantImageSuppliers);
-                                    boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
-                                    return new ColorMIPSearchResult(
-                                            MIPsUtils.getMIPMetadata(queryImage),
-                                            MIPsUtils.getMIPMetadata(targetImage),
-                                            colorMIPMatchScore,
-                                            isMatch,
-                                            false);
-                                } catch (Exception e) {
-                                    LOG.error("Error performing color depth search between {} and {}", queryImage, targetImage, e);
-                                    return new ColorMIPSearchResult(
-                                            MIPsUtils.getMIPMetadata(queryImage),
-                                            MIPsUtils.getMIPMetadata(targetImage),
-                                            ColorMIPMatchScore.NO_MATCH,
-                                            false,
-                                            true);
-                                }
-                            })
+                            .map(targetImage -> search(queryColorDepthSearch, requiredVariantTypes, query, targetImage))
                             .collect();
                     LOG.info("Found {} results between {} and {} targets", queryResults.size(), query, nTargets);
                     return queryResults.stream();
@@ -119,6 +76,55 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .collect(Collectors.toList());
         LOG.info("Found {} cds results", cdsResults.size());
         return cdsResults;
+    }
+
+    private ColorMIPSearchResult search(ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch,
+                                        Set<String> requiredVariantTypes,
+                                        MIPMetadata query,
+                                        MIPImage targetImage) {
+        try {
+            LOG.info("Compare query {} with target {}", query, targetImage);
+            Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
+            if (requiredVariantTypes.contains("gradient")) {
+                variantImageSuppliers.put("gradient", () -> {
+                    MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                            MIPsUtils.getMIPMetadata(targetImage),
+                            "gradient",
+                            gradientsLocations,
+                            gradientVariantSuffixMapping));
+                    return MIPsUtils.getImageArray(gradientImage);
+                });
+            }
+            if (requiredVariantTypes.contains("zgap")) {
+                variantImageSuppliers.put("zgap", () -> {
+                    MIPImage targetZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
+                            MIPsUtils.getMIPMetadata(targetImage),
+                            "zgap",
+                            zgapMasksLocations,
+                            zgapMaskVariantSuffixMapping));
+                    return MIPsUtils.getImageArray(targetZGapMaskImage);
+                });
+            }
+
+            ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
+                    MIPsUtils.getImageArray(targetImage),
+                    variantImageSuppliers);
+            boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
+            return new ColorMIPSearchResult(
+                    query,
+                    MIPsUtils.getMIPMetadata(targetImage),
+                    colorMIPMatchScore,
+                    isMatch,
+                    false);
+        } catch (Exception e) {
+            LOG.error("Error searching {} with {}", query, targetImage, e);
+            return new ColorMIPSearchResult(
+                    query,
+                    MIPsUtils.getMIPMetadata(targetImage),
+                    ColorMIPMatchScore.NO_MATCH,
+                    false,
+                    true);
+        }
     }
 
     @Override
