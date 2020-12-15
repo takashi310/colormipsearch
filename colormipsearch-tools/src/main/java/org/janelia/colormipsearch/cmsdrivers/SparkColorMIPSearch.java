@@ -58,8 +58,6 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
         long nTargets = targetMIPS.size();
         long nQueries = queryMIPS.size();
         LOG.info("Searching {} queries against {} targets", nQueries, nTargets);
-
-        LOG.info("Created RDD for {} targets", nTargets);
         List<ColorMIPSearchResult> cdsResults = queryMIPS.stream().parallel()
                 .filter(MIPsUtils::exists)
                 .flatMap(query -> {
