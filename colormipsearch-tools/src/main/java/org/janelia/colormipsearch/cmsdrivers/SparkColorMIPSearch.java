@@ -78,7 +78,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                     MIPImage queryImage = MIPsUtils.loadMIP(query);
                     ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                     Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-                    return targetsRDD.mapPartitions(targetsItr -> StreamSupport.stream(Spliterators.spliterator(targetsItr, Integer.MAX_VALUE, 0), true)
+                    List<ColorMIPSearchResult> queryResults = targetsRDD
                             .map(targetImage -> {
                                 Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                 if (requiredVariantTypes.contains("gradient")) {
@@ -122,9 +122,10 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                             false,
                                             true);
                                 }
-                            }).iterator())
-                            .collect()
-                            .stream();
+                            })
+                            .collect();
+                    LOG.info("Found {} results between {} and {}", queryResults.size(), query, targetsRDD.count());
+                    return queryResults.stream();
                 })
                 .collect(Collectors.toList());
         LOG.info("Found {} cds results", cdsResults.size());
