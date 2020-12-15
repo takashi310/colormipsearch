@@ -10,6 +10,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -72,10 +75,12 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
         return targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
                 .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
                 .flatMap(queryTargetsPair -> {
+                    List<MIPImage> targetImagesList = Lists.newArrayList(queryTargetsPair._2);
+                    LOG.info("Compare {} with {} targets", queryTargetsPair._1, targetImagesList.size());
                     MIPImage queryImage = MIPsUtils.loadMIP(queryTargetsPair._1);
                     ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
                     Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-                    List<ColorMIPSearchResult> srsByMask = StreamSupport.stream(Spliterators.spliterator(queryTargetsPair._2, Integer.MAX_VALUE, 0), true)
+                    List<ColorMIPSearchResult> srsByMask = targetImagesList.stream()
                             .map(targetImage -> {
                                 Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                 if (requiredVariantTypes.contains("gradient")) {
