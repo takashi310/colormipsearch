@@ -71,7 +71,6 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .filter(MIPsUtils::exists)
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created RDD targets and put {} items into {} partitions", nTargets, targetsRDD.getNumPartitions());
-
         List<ColorMIPSearchResult> cdsResults = targetsRDD.mapPartitions(targetsItr -> queryMIPS.stream().map(queryMIP -> new Tuple2<>(queryMIP, targetsItr)).iterator(), true)
                 .filter(queryTargetsPair -> MIPsUtils.exists(queryTargetsPair._1))
                 .flatMap(queryTargetsPair -> {
@@ -104,6 +103,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                     });
                                 }
                                 try {
+                                    LOG.debug("Compare query {} with target {}", queryImage, targetImage);
                                     ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
                                             MIPsUtils.getImageArray(targetImage),
                                             variantImageSuppliers);
