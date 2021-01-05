@@ -68,7 +68,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
         int nQueries = queryMIPS.size();
         int nTargets = targetMIPS.size();
 
-        LOG.info("Searching {} masks against {} libraries", nQueries, nTargets);
+        LOG.info("Searching {} masks against {} targets", nQueries, nTargets);
 
         List<CompletableFuture<List<ColorMIPSearchResult>>> allColorDepthSearches = Streams.zip(
                 LongStream.range(0, queryMIPS.size()).boxed(),
@@ -77,7 +77,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        LOG.info("Submitted all {} color depth searches for {} masks with {} libraries in {}s - memory usage {}M",
+        LOG.info("Submitted all {} color depth searches for {} masks with {} targets in {}s - memory usage {}M",
                 allColorDepthSearches.size(), queryMIPS.size(), targetMIPS.size(),
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
@@ -88,7 +88,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         .collect(Collectors.toList()))
                 .join();
 
-        LOG.info("Finished all color depth searches {} masks with {} libraries in {}s - memory usage {}M",
+        LOG.info("Finished all color depth searches {} masks with {} targets in {}s - memory usage {}M",
                 queryMIPS.size(), targetMIPS.size(), (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
         return allSearchResults;
