@@ -18,7 +18,7 @@ public class Main {
         @Parameter(names = "--cacheSize", description = "Max cache size")
         long cacheSize = 0L;
         @Parameter(names = "--cacheExpirationInSeconds", description = "Cache expiration in seconds")
-        long cacheExpirationInSeconds = 60;
+        long cacheExpirationInSeconds = 300;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         boolean displayHelpMessage = false;
     }
