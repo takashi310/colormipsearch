@@ -177,8 +177,7 @@ java \
     -l flylight_gen1_mcfo_published \
     --segmented-mips-base-dir /nrs/jacs/jacsData/filestore/system/40x_MCFO_Segmented_PackBits_forPublicRelease.zip \
     --segmented-image-handling 0 \
-    -od local/testData/mips \
-    $*
+    -od local/testData/mips 
 ```
 Prepare SplitGal4 input:
 ```bash
@@ -190,8 +189,7 @@ java \
     -l flylight_split_gal4_published \
     --segmented-mips-base-dir /nrs/jacs/jacsData/filestore/system/SS_Split/SS_Split_ALL_Segmented_CDM \
     --segmented-image-handling 0 \
-    -od local/testData/mips \
-    $*
+    -od local/testData/mips
 ```
 Prepare EM input:
 ```bash
@@ -201,8 +199,7 @@ java \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flyem_hemibrain \
-    -od local/testData/mips \
-    $*
+    -od local/testData/mips
 ```
 
 #### JSON input only for new MIPs
@@ -256,8 +253,7 @@ java \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
     -l flylight_gen1_mcfo_case_1_gamma1_4 \
-    -od local/testData/mips \
-    $*
+    -od local/testData/mips
 ```
 
 Update image URLs for the lines:
