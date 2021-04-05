@@ -343,9 +343,9 @@ java -Xmx180G -Xms180G \
 java -Xmx240G -Xms240G \
     -Dlog4j.configuration=file:///groups/scicompsoft/home/goinac/Work/color-depth-spark/local/log4j.properties \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    --cacheSize 5000 --cacheExpirationInMin 1 \
+    --cacheSize 5000 --cacheExpirationInSeconds 60 \
     gradientScore \
-    --maskThreshold 20
+    --maskThreshold 20 \
     --negativeRadius 20 \
     --mirrorMask \
     --topPublishedNameMatches 500 \
@@ -361,9 +361,9 @@ java -Xmx240G -Xms240G \
 java -Xmx240G -Xms240G \
     -Dlog4j.configuration=file:///groups/scicompsoft/home/goinac/Work/color-depth-spark/local/log4j.properties \
     -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
-    --cacheSize 5000 --cacheExpirationInMin 1 \
+    --cacheSize 5000 --cacheExpirationInSeconds 60 \
     gradientScore \
-    --maskThreshold 20
+    --maskThreshold 20 \
     --negativeRadius 20 \
     --mirrorMask \
     --topPublishedNameMatches 500 \
