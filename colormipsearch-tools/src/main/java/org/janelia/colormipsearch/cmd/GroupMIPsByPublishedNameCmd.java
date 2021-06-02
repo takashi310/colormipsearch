@@ -422,6 +422,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
+        cdMetadata.setNeuronName("neuron-name-" + cdMetadata.getId());
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));

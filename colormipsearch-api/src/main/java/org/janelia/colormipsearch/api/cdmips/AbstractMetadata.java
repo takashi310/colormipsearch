@@ -31,6 +31,7 @@ public abstract class AbstractMetadata implements Serializable {
     private String thumbnailURL;
     private String slideCode;
     private String objective;
+    private String neuronName;
     // use a default for the gender for now
     // LM should override this attribute and for EM will default to "female"
     private String gender = "f";
@@ -163,6 +164,14 @@ public abstract class AbstractMetadata implements Serializable {
 
     public void setObjective(String objective) {
         this.objective = objective;
+    }
+
+    public String getNeuronName() {
+        return neuronName;
+    }
+
+    public void setNeuronName(String neuronName) {
+        this.neuronName = neuronName;
     }
 
     public String getGender() {
@@ -299,6 +308,7 @@ public abstract class AbstractMetadata implements Serializable {
         // copy the "attributes"
         that.setSlideCode(this.slideCode);
         that.setObjective(this.objective);
+        that.setNeuronName(this.neuronName);
         that.setGender(this.gender);
         that.setAnatomicalArea(this.anatomicalArea);
         that.setAlignmentSpace(this.alignmentSpace);
@@ -326,6 +336,8 @@ public abstract class AbstractMetadata implements Serializable {
                     return this::setAlignmentSpace;
                 case "objective":
                     return this::setObjective;
+                case "neuronName":
+                    return this::setNeuronName;
                 case "channel":
                     return this::setChannel;
                 case "mountingProtocol":
@@ -368,6 +380,8 @@ public abstract class AbstractMetadata implements Serializable {
                 return "alignmentSpace";
             case "objective":
                 return "objective";
+            case "neuronName":
+                return "neuronName";
             case "channel":
                 return "channel";
             case "mounting protocol":
