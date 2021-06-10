@@ -614,7 +614,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
-        cdMetadata.setNeuronName("neuron-name-" + cdMetadata.getId());
+        cdMetadata.setNeuronType(cdmip.neuronType);
+        cdMetadata.setNeuronInstance(cdmip.neuronInstance);
         cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         cdMetadata.setLibraryName(libraryName);
         cdMetadata.filepath = cdmip.filepath;

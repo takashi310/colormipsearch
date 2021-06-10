@@ -25,6 +25,10 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     String channelNumber;
     @JsonProperty
+    String neuronType;
+    @JsonProperty
+    String neuronInstance;
+    @JsonProperty
     String publicImageUrl;
     @JsonProperty
     String publicThumbnailUrl;

@@ -31,7 +31,8 @@ public abstract class AbstractMetadata implements Serializable {
     private String thumbnailURL;
     private String slideCode;
     private String objective;
-    private String neuronName;
+    private String neuronType;
+    private String neuronInstance;
     // use a default for the gender for now
     // LM should override this attribute and for EM will default to "female"
     private String gender = "f";
@@ -166,12 +167,20 @@ public abstract class AbstractMetadata implements Serializable {
         this.objective = objective;
     }
 
-    public String getNeuronName() {
-        return neuronName;
+    public String getNeuronType() {
+        return neuronType;
     }
 
-    public void setNeuronName(String neuronName) {
-        this.neuronName = neuronName;
+    public void setNeuronType(String neuronType) {
+        this.neuronType = neuronType;
+    }
+
+    public String getNeuronInstance() {
+        return neuronInstance;
+    }
+
+    public void setNeuronInstance(String neuronInstance) {
+        this.neuronInstance = neuronInstance;
     }
 
     public String getGender() {
@@ -308,7 +317,8 @@ public abstract class AbstractMetadata implements Serializable {
         // copy the "attributes"
         that.setSlideCode(this.slideCode);
         that.setObjective(this.objective);
-        that.setNeuronName(this.neuronName);
+        that.setNeuronType(this.neuronType);
+        that.setNeuronInstance(this.neuronInstance);
         that.setGender(this.gender);
         that.setAnatomicalArea(this.anatomicalArea);
         that.setAlignmentSpace(this.alignmentSpace);
@@ -336,8 +346,10 @@ public abstract class AbstractMetadata implements Serializable {
                     return this::setAlignmentSpace;
                 case "objective":
                     return this::setObjective;
-                case "neuronName":
-                    return this::setNeuronName;
+                case "neuronType":
+                    return this::setNeuronType;
+                case "neuronInstance":
+                    return this::setNeuronInstance;
                 case "channel":
                     return this::setChannel;
                 case "mountingProtocol":

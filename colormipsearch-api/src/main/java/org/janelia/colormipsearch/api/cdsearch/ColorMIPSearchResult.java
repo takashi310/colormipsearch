@@ -123,7 +123,8 @@ public class ColorMIPSearchResult implements Serializable {
 
         srMetadata.setSlideCode(maskMIP.getSlideCode());
         srMetadata.setObjective(maskMIP.getObjective());
-        srMetadata.setNeuronName(maskMIP.getNeuronName());
+        srMetadata.setNeuronType(maskMIP.getNeuronType());
+        srMetadata.setNeuronInstance(maskMIP.getNeuronInstance());
         srMetadata.setGender(maskMIP.getGender());
         srMetadata.setAnatomicalArea(maskMIP.getAnatomicalArea());
         srMetadata.setAlignmentSpace(maskMIP.getAlignmentSpace());
@@ -166,7 +167,8 @@ public class ColorMIPSearchResult implements Serializable {
 
         srMetadata.setSlideCode(libraryMIP.getSlideCode());
         srMetadata.setObjective(libraryMIP.getObjective());
-        srMetadata.setNeuronName(libraryMIP.getNeuronName());
+        srMetadata.setNeuronType(libraryMIP.getNeuronType());
+        srMetadata.setNeuronInstance(libraryMIP.getNeuronInstance());
         srMetadata.setGender(libraryMIP.getGender());
         srMetadata.setAnatomicalArea(libraryMIP.getAnatomicalArea());
         srMetadata.setAlignmentSpace(libraryMIP.getAlignmentSpace());
