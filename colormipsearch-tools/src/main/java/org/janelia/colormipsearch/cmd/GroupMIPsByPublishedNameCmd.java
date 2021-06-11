@@ -428,14 +428,9 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
-        cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
+        cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
         cdMetadata.setGender(defaultGender);
         return cdMetadata;
-    }
-
-    private String extractEMSkeletonIdFromName(String name) {
-        List<String> mipNameComponents = Splitter.on('_').splitToList(name);
-        return mipNameComponents.size() > 0 ? mipNameComponents.get(0) : null;
     }
 
     /**

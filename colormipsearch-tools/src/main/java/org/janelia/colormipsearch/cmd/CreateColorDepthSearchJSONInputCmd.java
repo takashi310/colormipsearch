@@ -621,18 +621,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
-        cdMetadata.setEMSkeletonPublishedName(extractEMSkeletonIdFromName(cdmip.name));
+        cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
         cdMetadata.setGender(defaultGender);
         return cdMetadata;
-    }
-
-    private String extractEMSkeletonIdFromName(String name) {
-        String[] mipNameComponents = StringUtils.split(name, "-_");
-        if (mipNameComponents != null && mipNameComponents.length  > 0) {
-            return mipNameComponents[0];
-        } else {
-            return null;
-        }
     }
 
     private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets) {
