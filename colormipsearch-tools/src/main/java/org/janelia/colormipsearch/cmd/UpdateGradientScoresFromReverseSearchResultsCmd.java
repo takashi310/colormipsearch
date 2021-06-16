@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(UpdateGradientScoresFromReverseSearchResultsCmd.class);
-    private static final String DEFAULT_CDSRESULTS_EXT = ".json";
 
     @Parameters(commandDescription = "Update gradient area score from the reverse search results, " +
             "e.g set gradient score for LM to EM search results from EM to LM results or vice-versa")
@@ -42,7 +41,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 description = "Results directory for which the gradients need to be set")
         private ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be calculated")
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File(s) containing results to be calculated")
         private List<String> resultsFiles;
 
         @Parameter(names = {"--reverseResultsDir", "-revd"}, description = "Reverse results directory to be calculated")

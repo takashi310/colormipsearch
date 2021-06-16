@@ -1,5 +1,9 @@
 package org.janelia.colormipsearch.api.pppsearch;
 
+import javax.annotation.Nonnull;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class SkeletonMatch {
     private String id;
     private Double nblastScore;
@@ -14,6 +18,7 @@ public class SkeletonMatch {
         this.id = id;
     }
 
+    @Nonnull
     public Double getNblastScore() {
         return nblastScore;
     }
@@ -36,5 +41,14 @@ public class SkeletonMatch {
 
     public void setColors(short[] colors) {
         this.colors = colors;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("nblastScore", nblastScore)
+                .append("coverage", coverage)
+                .toString();
     }
 }
