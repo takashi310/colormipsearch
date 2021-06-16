@@ -2,6 +2,9 @@ package org.janelia.colormipsearch.api.pppsearch;
 
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class PPPMatch {
     private String fullEmName;
     private String neuronName; // bodyId
@@ -105,6 +108,10 @@ public class PPPMatch {
         this.aggregateCoverage = aggregateCoverage;
     }
 
+    public boolean hasSkeletonMatches() {
+        return CollectionUtils.isNotEmpty(skeletonMatches);
+    }
+
     public List<SkeletonMatch> getSkeletonMatches() {
         return skeletonMatches;
     }
@@ -119,5 +126,15 @@ public class PPPMatch {
 
     public void setMirrored(Boolean mirrored) {
         this.mirrored = mirrored;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("fullEmName", fullEmName)
+                .append("fullLmName", fullLmName)
+                .append("coverageScore", coverageScore)
+                .append("aggregateCoverage", aggregateCoverage)
+                .toString();
     }
 }
