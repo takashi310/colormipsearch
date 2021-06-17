@@ -4528,6 +4528,22 @@
             "nblast_pruned": false,
             "rank": 234
         },
+        "BJD_112G01_AE_01-20180313_62_J5_REG_UNISEX_40x": {
+            "skel_ids": "[5]",
+            "nblast_scores": "[0.5484089970080477]",
+            "coverages": "[99.99999999999999]",
+            "colors": "[[25, 200, 147]]",
+            "cov_score": -54.84089970080476,
+            "aggregate_coverage": 99.99999999999999,
+            "all_skel_ids": "[5]",
+            "all_nblast_scores": "[0.548409]",
+            "all_coverages": "[100.]",
+            "all_colors": "[[25, 200, 147]]",
+            "all_aggregate_coverage": -1.0,
+            "mirrored": false,
+            "nblast_pruned": true,
+            "rank": 235.5
+        },
         "UAH_Trh_AE_01-20181023_62_E6_REG_UNISEX_40x": {
             "skel_ids": "[]",
             "nblast_scores": "[]",

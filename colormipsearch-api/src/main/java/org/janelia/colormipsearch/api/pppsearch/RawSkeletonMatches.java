@@ -18,6 +18,7 @@ public class RawSkeletonMatches {
     @JsonProperty("aggregate_coverage")
     private Double aggregateCoverage;
     private Boolean mirrored;
+    private Double rank;
 
     public String getAllSkeletonIds() {
         return allSkeletonIds;
@@ -73,6 +74,14 @@ public class RawSkeletonMatches {
 
     public void setMirrored(Boolean mirrored) {
         this.mirrored = mirrored;
+    }
+
+    public Double getRank() {
+        return rank;
+    }
+
+    public void setRank(Double rank) {
+        this.rank = rank;
     }
 
     @Override

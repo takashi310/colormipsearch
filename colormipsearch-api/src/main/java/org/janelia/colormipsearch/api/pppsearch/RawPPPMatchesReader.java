@@ -27,7 +27,11 @@ public class RawPPPMatchesReader {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public List<PPPMatch> readPPPMatches(String fn) {
-        JsonNode jsonContent = readJSONFile(new File(fn));
+        return readPPPMatches(new File(fn));
+    }
+
+    public List<PPPMatch> readPPPMatches(File f) {
+        JsonNode jsonContent = readJSONFile(f);
         return StreamSupport.stream(Spliterators.spliterator(jsonContent.fields(), Long.MAX_VALUE, 0), false)
                 .flatMap(emMatchEntry -> getLMMatches(emMatchEntry.getKey(),emMatchEntry.getValue()))
                 .collect(Collectors.toList())
@@ -46,6 +50,7 @@ public class RawPPPMatchesReader {
                         pppMatch.setAggregateCoverage(skeletonMatch.getAggregateCoverage());
                         pppMatch.setCoverageScore(skeletonMatch.getCoverageScore());
                         pppMatch.setMirrored(skeletonMatch.getMirrored());
+                        pppMatch.setEmPPPRank(skeletonMatch.getRank());
                         pppMatch.setSkeletonMatches(getAllSkeletonMatches(skeletonMatch));
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
@@ -85,7 +90,10 @@ public class RawPPPMatchesReader {
     private String normalizeArrayString(String s) {
         return s.replaceAll("\\[\\s+", "[")
                 .replaceAll("\\s+]", "]")
-                .replaceAll("\\s+", ", ");
+                .replaceAll("\\.]", "]")
+                .replaceAll("\\s+", ", ")
+                .replaceAll("\\.,", ",")
+                ;
     }
 
     private JsonNode readJSONFile(File f) {

@@ -2,8 +2,11 @@ package org.janelia.colormipsearch.api.pppsearch;
 
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SkeletonMatch {
     private String id;
     private Double nblastScore;
