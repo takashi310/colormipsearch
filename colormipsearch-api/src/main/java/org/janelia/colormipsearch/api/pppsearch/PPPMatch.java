@@ -2,9 +2,12 @@ package org.janelia.colormipsearch.api.pppsearch;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PPPMatch {
     private String fullEmName;
     private String neuronName; // bodyId
@@ -13,12 +16,13 @@ public class PPPMatch {
     private String fullLmName;
     private String lineName;
     private String slideCode;
-    private String alignmentSpace;
     private String objective;
+    private String alignmentSpace;
     private Double coverageScore;
     private Double aggregateCoverage;
     private List<SkeletonMatch> skeletonMatches;
     private Boolean mirrored;
+    private Double emPPPRank;
 
     public String getFullEmName() {
         return fullEmName;
@@ -76,20 +80,20 @@ public class PPPMatch {
         this.slideCode = slideCode;
     }
 
-    public String getAlignmentSpace() {
-        return alignmentSpace;
-    }
-
-    public void setAlignmentSpace(String alignmentSpace) {
-        this.alignmentSpace = alignmentSpace;
-    }
-
     public String getObjective() {
         return objective;
     }
 
     public void setObjective(String objective) {
         this.objective = objective;
+    }
+
+    public String getAlignmentSpace() {
+        return alignmentSpace;
+    }
+
+    public void setAlignmentSpace(String alignmentSpace) {
+        this.alignmentSpace = alignmentSpace;
     }
 
     public Double getCoverageScore() {
@@ -126,6 +130,18 @@ public class PPPMatch {
 
     public void setMirrored(Boolean mirrored) {
         this.mirrored = mirrored;
+    }
+
+    boolean hasEmPPPRank() {
+        return emPPPRank != null;
+    }
+
+    public Double getEmPPPRank() {
+        return emPPPRank;
+    }
+
+    public void setEmPPPRank(Double emPPPRank) {
+        this.emPPPRank = emPPPRank;
     }
 
     @Override

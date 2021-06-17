@@ -52,7 +52,8 @@ public class Main {
                         commonArgs),
                 new MergeResultsCmd("mergeResults", commonArgs),
                 new NormalizeScoresCmd("normalizeScores", commonArgs),
-                new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs)
+                new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs),
+                new ConvertPPPResultsCmd("convertPPPResults", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

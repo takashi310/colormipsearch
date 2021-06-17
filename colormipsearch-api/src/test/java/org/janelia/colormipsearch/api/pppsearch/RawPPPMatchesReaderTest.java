@@ -2,6 +2,8 @@ package org.janelia.colormipsearch.api.pppsearch;
 
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.Before;
 import org.junit.Test;
 

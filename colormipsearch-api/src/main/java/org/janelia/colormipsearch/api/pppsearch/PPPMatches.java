@@ -1,14 +1,18 @@
 package org.janelia.colormipsearch.api.pppsearch;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.api.Results;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PPPMatches extends Results<List<PPPMatch>> {
 
     private static class PPPID {
@@ -51,8 +55,10 @@ public class PPPMatches extends Results<List<PPPMatch>> {
         }
     }
 
-    public static List<PPPMatches> fromListOfPPPMatches(List<PPPMatch> pppMatchList) {
+    public static List<PPPMatches> pppMatchesByNeurons(List<PPPMatch> pppMatchList) {
         if (CollectionUtils.isNotEmpty(pppMatchList)) {
+            Comparator<PPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getCoverageScore()));
+            Comparator<PPPMatch> reversePPPComparator = pppComparator.reversed();
             return pppMatchList.stream()
                     .filter(PPPMatch::hasSkeletonMatches)
                     .collect(Collectors.groupingBy(
@@ -61,7 +67,12 @@ public class PPPMatches extends Results<List<PPPMatch>> {
                                     pppMatch.getNeuronName(),
                                     pppMatch.getNeuronType(),
                                     pppMatch.getNeuronInstance()),
-                            Collectors.toList()))
+                            Collectors.collectingAndThen(
+                                    Collectors.toList(),
+                                    listOfPPPMatches -> {
+                                        listOfPPPMatches.sort(reversePPPComparator);
+                                        return listOfPPPMatches;
+                                    })))
                     .entrySet().stream().map(e -> new PPPMatches(
                             e.getKey().fullName,
                             e.getKey().name,
@@ -71,6 +82,15 @@ public class PPPMatches extends Results<List<PPPMatch>> {
                     .collect(Collectors.toList());
         } else {
             return Collections.emptyList();
+        }
+    }
+
+    public static PPPMatches pppMatchesBySingleNeuron(List<PPPMatch> pppMatchList) {
+        List<PPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
+        if (allPPPMatches.size() != 1) {
+            throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
+        } else {
+            return allPPPMatches.get(0);
         }
     }
 
