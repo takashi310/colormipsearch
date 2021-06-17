@@ -20,9 +20,9 @@ public class PPPMatch {
     private String alignmentSpace;
     private Double coverageScore;
     private Double aggregateCoverage;
-    private List<SkeletonMatch> skeletonMatches;
     private Boolean mirrored;
     private Double emPPPRank;
+    private List<SkeletonMatch> skeletonMatches;
 
     public String getFullEmName() {
         return fullEmName;
