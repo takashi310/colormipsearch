@@ -15,6 +15,8 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -247,9 +249,30 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         List<PPPMatch> neuronMatches = PPPUtils.mergeMatches(
                 pppResultsForSameNeuronFiles.stream()
                         .flatMap(f -> originalPPPMatchesReader.readPPPMatches(f.toFile()).stream())
+                        .peek(pppMatch -> fillInPPPMetadata(pppMatch))
                         .collect(Collectors.toList()),
                 Collections.emptyList());
         return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
+    }
+
+    private void fillInPPPMetadata(PPPMatch pppMatch) {
+        pppMatch.setNeuronName(extractEMBodyId(pppMatch.getFullEmName()));
+        pppMatch.setLmSampleName(extractLMSampleName(pppMatch.getFullLmName()));
+
+    }
+
+    private String extractEMBodyId(String emFulllName) {
+        Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = emRegExPattern.matcher(emFulllName);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    private String extractLMSampleName(String fullLmName) {
+        return null;
     }
 
 }

@@ -14,6 +14,7 @@ public class PPPMatch {
     private String neuronType;
     private String neuronInstance;
     private String fullLmName;
+    private String lmSampleName;
     private String lineName;
     private String slideCode;
     private String objective;
@@ -62,6 +63,14 @@ public class PPPMatch {
 
     public void setFullLmName(String fullLmName) {
         this.fullLmName = fullLmName;
+    }
+
+    public String getLmSampleName() {
+        return lmSampleName;
+    }
+
+    public void setLmSampleName(String lmSampleName) {
+        this.lmSampleName = lmSampleName;
     }
 
     public String getLineName() {
