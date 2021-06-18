@@ -28,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
@@ -79,6 +80,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             if (!inputFound) {
                 errors.add("No result file(s) or directory containing original PPP results has been specified");
             }
+            if (processingPartitionSize <= 0) {
+                errors.add("Processing partition size must be greater than 0");
+            }
             return errors;
         }
     }
@@ -124,7 +128,12 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                     .map(d -> getPPPResultsFromDir(d))
                     .collect(Collectors.toList());
         }
-        filesToProcess.stream()
+        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(this::processListOfNeuronResults);
+    }
+
+    private void processListOfNeuronResults(List<List<Path>> listOfPPPResults) {
+        listOfPPPResults.stream()
                 .map(files -> importPPPRResultsFromFiles(files))
                 .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
                         pppMatches,

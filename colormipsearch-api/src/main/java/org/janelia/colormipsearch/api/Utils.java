@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -15,6 +16,18 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
+
+    public static <T> Collection<List<T>> partitionCollection(Collection<T> l, int partitionSize) {
+        AtomicLong index = new AtomicLong(0L);
+        return l.stream().map(e -> ImmutablePair.of(index.getAndIncrement(), e))
+                .collect(Collectors.groupingBy(
+                        p -> p.getLeft() / partitionSize,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                p -> p.stream().map(e -> e.getRight()).collect(Collectors.toList()))
+                ))
+                .values();
+    }
 
     public static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
         BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
