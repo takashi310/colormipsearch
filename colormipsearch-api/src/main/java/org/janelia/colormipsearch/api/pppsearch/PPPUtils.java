@@ -40,6 +40,7 @@ public class PPPUtils {
         m.setNeuronType(m1.getNeuronType());
         m.setNeuronInstance(m1.getNeuronInstance());
         m.setFullLmName(m1.getFullLmName());
+        m.setLmSampleName(m1.getLmSampleName());
         m.setLineName(m1.getLineName());
         m.setSlideCode(m1.getSlideCode());
         m.setObjective(m1.getObjective());
