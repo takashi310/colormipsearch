@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.geometry.spherical.oned.ArcsSet;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
@@ -87,6 +89,56 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
+    private static class RangeSpliterator<T> implements Spliterator<T> {
+        private AtomicLong index;
+        private final long from;
+        private final int length;
+        private final long to;
+        private final Spliterator<T> wrapped;
+
+        RangeSpliterator(Spliterator<T> wrapped, AtomicLong index, long from, int length) {
+            this.wrapped = wrapped;
+            this.index = index;
+            this.from = Math.max(from, 0);
+            this.length = length;
+            this.to = length > 0 ? this.from + length : -1;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            if (wrapped == null) {
+                return false;
+            } else {
+                long currentIndex = index.getAndIncrement();
+                boolean hasNext = wrapped.tryAdvance(e -> {
+                    if (currentIndex >= from && (to < 0 || currentIndex < to)) {
+                        action.accept(e);
+                    }
+                });
+                return hasNext && (to < 0 || currentIndex < to);
+            }
+        }
+
+        @Override
+        public Spliterator<T> trySplit() {
+            if (wrapped == null) {
+                return null;
+            } else {
+                return new RangeSpliterator<>(wrapped.trySplit(), index, from, length);
+            }
+        }
+
+        @Override
+        public long estimateSize() {
+            return wrapped != null ? wrapped.estimateSize() : 0;
+        }
+
+        @Override
+        public int characteristics() {
+            return wrapped != null ? wrapped.characteristics() : 0;
+        }
+    }
+
     private final ObjectMapper mapper;
     private final ConvertPPPResultsArgs args;
     private final RawPPPMatchesReader originalPPPMatchesReader;
@@ -112,24 +164,34 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void convertPPPResults(ConvertPPPResultsArgs args) {
         long startTime = System.currentTimeMillis();
-        Collection<List<Path>> filesToProcess;
+        Stream<List<Path>> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = groupFilesByNeuron(args.resultsFiles.stream().map(fn -> Paths.get(fn)).collect(Collectors.toList()));
+            filesToProcess = groupFilesByNeuron(
+                    args.resultsFiles.stream().map(fn -> Paths.get(fn)).collect(Collectors.toList())
+            ).stream();
         } else {
-            List<Path> allDirsWithPPPResults = listDirsWithPPPResults(args.resultsDir.getInputPath());
-            int from = Math.max(args.resultsDir.offset, 0);
-            int to = args.resultsDir.length > 0
-                    ? Math.min(from + args.resultsDir.length, allDirsWithPPPResults.size())
-                    : allDirsWithPPPResults.size();
-            List<Path> dirsToProcess = from > 0 || to < allDirsWithPPPResults.size()
-                    ? allDirsWithPPPResults.subList(from, to)
-                    : allDirsWithPPPResults;
-            filesToProcess = dirsToProcess.stream().parallel()
-                    .map(d -> getPPPResultsFromDir(d))
-                    .collect(Collectors.toList());
+            Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
+            Stream<Path> dirsToProcess;
+            if (args.resultsDir.offset > 0 || args.resultsDir.length > 0) {
+                Spliterator<Path> rangeSpliterator =  new RangeSpliterator<>(
+                        allDirsWithPPPResults.spliterator(),
+                        new AtomicLong(0),
+                        args.resultsDir.offset,
+                        args.resultsDir.length);
+                dirsToProcess = StreamSupport.stream(rangeSpliterator, false);
+            } else {
+                dirsToProcess = allDirsWithPPPResults;
+            }
+            dirsToProcess.forEach(f -> System.out.println(f));
+//            filesToProcess = dirsToProcess.map(d -> getPPPResultsFromDir(d));
+//            int to = args.resultsDir.length > 0
+//                    ? Math.min(from + args.resultsDir.length, allDirsWithPPPResults.size())
+//                    : allDirsWithPPPResults.size();
         }
-        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(this::processListOfNeuronResults);
+        LOG.info("Got all files to process after {}s", (System.currentTimeMillis()-startTime)/1000.);
+//        filesToProcess.forEach(f -> System.out.println(f));
+//        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+//                .forEach(this::processListOfNeuronResults);
     }
 
     private void processListOfNeuronResults(List<List<Path>> listOfPPPResults) {
@@ -141,21 +203,21 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
     }
 
-    private List<Path> listDirsWithPPPResults(Path startPath) {
+    private Stream<Path> streamDirsWithPPPResults(Path startPath) {
         try {
             if (startPath.getFileName().toString().equals(args.neuronMatchesSubDirName)) {
-                return Collections.singletonList(startPath);
+                return Stream.of(startPath);
             } else {
-                return Files.list(startPath).parallel()
+                return Files.list(startPath)
                         .filter(Files::isDirectory)
                         .filter(p -> !p.getFileName().toString().startsWith("nblastScores")) // do not go into nblastScores dirs
                         .filter(p -> !p.getFileName().toString().startsWith("screenshots")) // do not go into screenshots dirs
-                        .flatMap(p -> listDirsWithPPPResults(p).stream())
-                        .collect(Collectors.toList());
+                        .flatMap(p -> streamDirsWithPPPResults(p))
+                        ;
             }
         } catch (IOException e) {
             LOG.error("Error traversing {}", startPath, e);
-            return Collections.emptyList();
+            return Stream.empty();
         }
     }
 
