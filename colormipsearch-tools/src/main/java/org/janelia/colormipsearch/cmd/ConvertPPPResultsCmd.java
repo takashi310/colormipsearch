@@ -172,26 +172,17 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         } else {
             Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
             Stream<Path> dirsToProcess;
-            if (args.resultsDir.offset > 0 || args.resultsDir.length > 0) {
-                Spliterator<Path> rangeSpliterator =  new RangeSpliterator<>(
-                        allDirsWithPPPResults.spliterator(),
-                        new AtomicLong(0),
-                        args.resultsDir.offset,
-                        args.resultsDir.length);
-                dirsToProcess = StreamSupport.stream(rangeSpliterator, false);
+            int offset = Math.max(0, args.resultsDir.offset);
+            if (args.resultsDir.length > 0) {
+                dirsToProcess = allDirsWithPPPResults.skip(offset).limit(args.resultsDir.length);
             } else {
-                dirsToProcess = allDirsWithPPPResults;
+                dirsToProcess = allDirsWithPPPResults.skip(offset);
             }
-            dirsToProcess.forEach(f -> System.out.println(f));
-//            filesToProcess = dirsToProcess.map(d -> getPPPResultsFromDir(d));
-//            int to = args.resultsDir.length > 0
-//                    ? Math.min(from + args.resultsDir.length, allDirsWithPPPResults.size())
-//                    : allDirsWithPPPResults.size();
+            filesToProcess = dirsToProcess.map(d -> getPPPResultsFromDir(d));
         }
         LOG.info("Got all files to process after {}s", (System.currentTimeMillis()-startTime)/1000.);
-//        filesToProcess.forEach(f -> System.out.println(f));
-//        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-//                .forEach(this::processListOfNeuronResults);
+        Utils.partitionStream(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(this::processListOfNeuronResults);
     }
 
     private void processListOfNeuronResults(List<List<Path>> listOfPPPResults) {

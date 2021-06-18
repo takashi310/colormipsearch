@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -17,14 +18,12 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 
-    public static <T> Collection<List<T>> partitionCollection(Collection<T> l, int partitionSize) {
+    public static <T> Collection<List<T>> partitionStream(Stream<T> stream, int partitionSize) {
         AtomicLong index = new AtomicLong(0L);
-        return l.stream().map(e -> ImmutablePair.of(index.getAndIncrement(), e))
+        return stream
                 .collect(Collectors.groupingBy(
-                        p -> p.getLeft() / partitionSize,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                p -> p.stream().map(e -> e.getRight()).collect(Collectors.toList()))
+                        e -> index.getAndIncrement() / partitionSize,
+                        Collectors.toList()
                 ))
                 .values();
     }
