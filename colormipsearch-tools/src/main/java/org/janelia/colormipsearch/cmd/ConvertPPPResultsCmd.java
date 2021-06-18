@@ -185,15 +185,18 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         LOG.info("Got all files to process after {}s", (System.currentTimeMillis()-startTime)/1000.);
         Utils.partitionStream(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(this::processListOfNeuronResults);
+        LOG.info("Processed all files in {}s", (System.currentTimeMillis()-startTime)/1000.);
     }
 
     private void processListOfNeuronResults(List<List<Path>> listOfPPPResults) {
+        long start = System.currentTimeMillis();
         listOfPPPResults.stream()
                 .map(files -> importPPPRResultsFromFiles(files))
                 .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
                         pppMatches,
                         null,
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
+        LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis()-start)/1000.);
     }
 
     private Stream<Path> streamDirsWithPPPResults(Path startPath) {
