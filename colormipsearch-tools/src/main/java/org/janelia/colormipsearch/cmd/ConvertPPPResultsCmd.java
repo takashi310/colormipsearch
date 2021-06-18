@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.beust.jcommander.Parameter;
@@ -106,53 +108,86 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void convertPPPResults(ConvertPPPResultsArgs args) {
         long startTime = System.currentTimeMillis();
-
-        List<String> filesToProcess;
+        Collection<List<Path>> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = args.resultsFiles;
+            filesToProcess = groupFilesByNeuron(args.resultsFiles.stream().map(fn -> Paths.get(fn)).collect(Collectors.toList()));
         } else {
-            filesToProcess = Collections.emptyList();
+            List<Path> allDirsWithPPPResults = listDirsWithPPPResults(args.resultsDir.getInputPath());
+            int from = Math.max(args.resultsDir.offset, 0);
+            int to = args.resultsDir.length > 0
+                    ? Math.min(from + args.resultsDir.length, allDirsWithPPPResults.size())
+                    : allDirsWithPPPResults.size();
+            List<Path> dirsToProcess = from > 0 || to < allDirsWithPPPResults.size()
+                    ? allDirsWithPPPResults.subList(from, to)
+                    : allDirsWithPPPResults;
+            filesToProcess = dirsToProcess.stream().parallel()
+                    .map(d -> getPPPResultsFromDir(d))
+                    .collect(Collectors.toList());
         }
-        Collection<PPPMatches> pppMatchesCollection = importPPPResults(filesToProcess.stream().map(fn -> new File(fn)).collect(Collectors.toList()));
-        pppMatchesCollection.forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
-                pppMatches,
-                null,
-                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
+        filesToProcess.stream()
+                .map(files -> importPPPRResultsFromFiles(files))
+                .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
+                        pppMatches,
+                        null,
+                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
     }
 
-    private List<PPPMatches> importPPPMatchesFromResultsPath(Path pppResultsForNeuronPath) {
-        if (Files.isDirectory(pppResultsForNeuronPath)) {
-            try {
-                Files.list(pppResultsForNeuronPath)
+    private List<Path> listDirsWithPPPResults(Path startPath) {
+        try {
+            if (startPath.getFileName().toString().equals(args.neuronMatchesSubDirName)) {
+                return Collections.singletonList(startPath);
+            } else {
+                return Files.list(startPath).parallel()
+                        .filter(Files::isDirectory)
+                        .filter(p -> !p.getFileName().toString().startsWith("nblastScores")) // do not go into nblastScores dirs
+                        .filter(p -> !p.getFileName().toString().startsWith("screenshots")) // do not go into screenshots dirs
+                        .flatMap(p -> listDirsWithPPPResults(p).stream())
                         .collect(Collectors.toList());
-            } catch (IOException e) {
-                LOG.error("Error traversing {}", pppResultsForNeuronPath, e);
             }
-            return Collections.emptyList(); // !!!!!!!!!
-//        } else if (Files.isRegularFile(pppResultsForNeuronPath, LinkOption.NOFOLLOW_LINKS)) {
-//            return PPPMatches.fromListOfPPPMatches(importPPPResults(pppResultsForNeuronPath.toFile()));
-        } else {
-            LOG.error("Links are not supported");
+        } catch (IOException e) {
+            LOG.error("Error traversing {}", startPath, e);
             return Collections.emptyList();
         }
     }
 
-    private Collection<PPPMatches> importPPPResults(List<File> pppResultsFiles) {
-        return pppResultsFiles.stream()
+    private List<Path> getPPPResultsFromDir(Path pppResultsDir) {
+        try {
+            return Files.list(pppResultsDir)
+                    .filter(Files::isRegularFile)
+                    .filter(p -> {
+                        String fn = p.getFileName().toString();
+                        return fn.startsWith(args.jsonPPPResultsPrefix) && fn.endsWith(".json");
+                    })
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.error("Error getting PPP JSON result file names from {}", pppResultsDir, e);
+            return Collections.emptyList();
+        }
+    }
+
+    private Collection<List<Path>> groupFilesByNeuron(List<Path> pppResultFiles) {
+        return pppResultFiles.stream()
                 .collect(Collectors.groupingBy(
-                        f -> f.getName()
+                        f -> f.getFileName().toString()
                                 .replaceAll("(_\\d+)?\\.json$", "")
                                 .replaceAll(args.jsonPPPResultsPrefix, ""),
-                        Collectors.collectingAndThen(Collectors.toList(),
-                                listOfMatches -> {
-                                    List<PPPMatch> neuronMatches = PPPUtils.mergeMatches(
-                                            listOfMatches.stream()
-                                                    .flatMap(f -> originalPPPMatchesReader.readPPPMatches(f).stream())
-                                                    .collect(Collectors.toList()),
-                                            Collections.emptyList());
-                                    return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
-                                })))
-                .values()
-                ;
+                        Collectors.toList()))
+                .values();
     }
+
+    /**
+     * Import PPP results from a list of file matches that are all for the same neuron.
+     *
+     * @param pppResultsForSameNeuronFiles
+     * @return
+     */
+    private PPPMatches importPPPRResultsFromFiles(List<Path> pppResultsForSameNeuronFiles) {
+        List<PPPMatch> neuronMatches = PPPUtils.mergeMatches(
+                pppResultsForSameNeuronFiles.stream()
+                        .flatMap(f -> originalPPPMatchesReader.readPPPMatches(f.toFile()).stream())
+                        .collect(Collectors.toList()),
+                Collections.emptyList());
+        return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
+    }
+
 }

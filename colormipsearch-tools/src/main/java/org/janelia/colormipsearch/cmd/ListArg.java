@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +48,10 @@ class ListArg {
 
     private void setLength(int length) {
         this.length = length > 0 ? length : -1;
+    }
+
+    Path getInputPath() {
+        return Paths.get(input);
     }
 
     @Override
