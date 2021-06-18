@@ -258,12 +258,11 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     private void fillInPPPMetadata(PPPMatch pppMatch) {
         pppMatch.setNeuronName(extractEMBodyId(pppMatch.getFullEmName()));
         pppMatch.setLmSampleName(extractLMSampleName(pppMatch.getFullLmName()));
-
     }
 
-    private String extractEMBodyId(String emFulllName) {
+    private String extractEMBodyId(String emFullName) {
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = emRegExPattern.matcher(emFulllName);
+        Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
             return matcher.group(1);
         } else {
@@ -271,8 +270,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private String extractLMSampleName(String fullLmName) {
-        return null;
+    private String extractLMSampleName(String lmFullName) {
+        Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = lmRegExPattern.matcher(lmFullName);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
     }
 
 }
