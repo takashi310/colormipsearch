@@ -1,37 +1,49 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math3.geometry.spherical.oned.ArcsSet;
+import org.apache.commons.math3.ml.neuralnet.Neuron;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
@@ -45,6 +57,19 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class ConvertPPPResultsArgs extends AbstractCmdArgs {
+        @Parameter(names = {"--jacs-url", "--data-url"},
+                description = "JACS data service base URL", required = true)
+        String dataServiceURL;
+
+        @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
+        String authorization;
+
+        @Parameter(names = {"--em-dataset"}, description = "EM Dataset")
+        String emDataset = "hemibrain";
+
+        @Parameter(names = {"--em-dataset-version"}, description = "EM Dataset version")
+        String emDatasetVersion = "1.2.1";
+
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Location of the original PPP results")
         private ListArg resultsDir;
@@ -166,11 +191,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void convertPPPResults(ConvertPPPResultsArgs args) {
         long startTime = System.currentTimeMillis();
-        Stream<List<Path>> filesToProcess;
+        Stream<Path> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = groupFilesByNeuron(
-                    args.resultsFiles.stream().map(fn -> Paths.get(fn)).collect(Collectors.toList())
-            ).stream();
+            filesToProcess = args.resultsFiles.stream().map(fn -> Paths.get(fn));
         } else {
             Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
             Stream<Path> dirsToProcess;
@@ -180,18 +203,18 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             } else {
                 dirsToProcess = allDirsWithPPPResults.skip(offset);
             }
-            filesToProcess = dirsToProcess.map(d -> getPPPResultsFromDir(d));
+            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d));
         }
         LOG.info("Got all files to process after {}s", (System.currentTimeMillis()-startTime)/1000.);
         Utils.partitionStream(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(this::processListOfNeuronResults);
+                .forEach(this::processPPPFiles);
         LOG.info("Processed all files in {}s", (System.currentTimeMillis()-startTime)/1000.);
     }
 
-    private void processListOfNeuronResults(List<List<Path>> listOfPPPResults) {
+    private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
         listOfPPPResults.stream()
-                .map(files -> importPPPRResultsFromFiles(files))
+                .map(pppFile -> importPPPRResultsFromFile(pppFile))
                 .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
                         pppMatches,
                         null,
@@ -217,7 +240,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private List<Path> getPPPResultsFromDir(Path pppResultsDir) {
+    private Stream<Path> getPPPResultsFromDir(Path pppResultsDir) {
         try {
             return Files.list(pppResultsDir)
                     .filter(Files::isRegularFile)
@@ -225,36 +248,51 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                         String fn = p.getFileName().toString();
                         return fn.startsWith(args.jsonPPPResultsPrefix) && fn.endsWith(".json");
                     })
-                    .collect(Collectors.toList());
+                    .filter(p -> {
+                        String fn = p.getFileName().toString();
+                        // filter out files <prefix><neuron>_01.json or <prefix><neuron>_02.json
+                        String neuronName = fn
+                                .replaceAll("(_\\d+)?\\.json$", "")
+                                .replaceAll(args.jsonPPPResultsPrefix, "");
+                        return fn.equals(args.jsonPPPResultsPrefix + neuronName + ".json");
+                    })
+                    ;
         } catch (IOException e) {
             LOG.error("Error getting PPP JSON result file names from {}", pppResultsDir, e);
-            return Collections.emptyList();
+            return Stream.empty();
         }
-    }
-
-    private Collection<List<Path>> groupFilesByNeuron(List<Path> pppResultFiles) {
-        return pppResultFiles.stream()
-                .collect(Collectors.groupingBy(
-                        f -> f.getFileName().toString()
-                                .replaceAll("(_\\d+)?\\.json$", "")
-                                .replaceAll(args.jsonPPPResultsPrefix, ""),
-                        Collectors.toList()))
-                .values();
     }
 
     /**
      * Import PPP results from a list of file matches that are all for the same neuron.
      *
-     * @param pppResultsForSameNeuronFiles
+     * @param pppResultsFile
      * @return
      */
-    private PPPMatches importPPPRResultsFromFiles(List<Path> pppResultsForSameNeuronFiles) {
-        List<PPPMatch> neuronMatches = PPPUtils.mergeMatches(
-                pppResultsForSameNeuronFiles.stream()
-                        .flatMap(f -> originalPPPMatchesReader.readPPPMatches(f.toFile()).stream())
-                        .peek(pppMatch -> fillInPPPMetadata(pppMatch))
-                        .collect(Collectors.toList()),
-                Collections.emptyList());
+    private PPPMatches importPPPRResultsFromFile(Path pppResultsFile) {
+        List<PPPMatch> neuronMatches = originalPPPMatchesReader.readPPPMatches(pppResultsFile.toFile());
+        Set<String> matchedLMSampleNames = neuronMatches.stream()
+                .peek(this::fillInPPPMetadata)
+                .map(PPPMatch::getLmSampleName)
+                .collect(Collectors.toSet());
+        Set<String> neuronNames = neuronMatches.stream()
+                .map(PPPMatch::getNeuronName)
+                .collect(Collectors.toSet());
+        Map<String, CDMIPSample> lmSamples = retrieveSamples(matchedLMSampleNames);
+        Map<String, EMNeuron> emNeurons = retrieveEMData(neuronNames);
+
+        neuronMatches.forEach(pppMatch -> {
+            CDMIPSample lmSample = lmSamples.get(pppMatch.getLmSampleName());
+            if (lmSample != null) {
+                pppMatch.setLineName(lmSample.publishingName);
+                pppMatch.setSlideCode(lmSample.slideCode);
+            }
+            EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
+            if (emNeuron != null) {
+                pppMatch.setNeuronType(emNeuron.type);
+                pppMatch.setNeuronInstance(emNeuron.instance);
+            }
+        });
         return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
     }
 
@@ -278,6 +316,83 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         if (matcher.find()) {
             pppMatch.setLmSampleName(matcher.group(1));
             pppMatch.setObjective(matcher.group(2));
+        }
+    }
+
+    private Map<String, CDMIPSample> retrieveSamples(Set<String> sampleNames) {
+        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+        WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
+                .queryParam("name", sampleNames != null ? sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+        Response response = createRequestWithCredentials(samplesEndpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + samplesEndpoint.getUri() + " -> " + response);
+        } else {
+            List<CDMIPSample> samples = response.readEntity(new GenericType<>(new TypeReference<List<CDMIPSample>>() {}.getType()));
+            return samples.stream()
+                    .filter(s -> StringUtils.isNotBlank(s.publishingName))
+                    .collect(Collectors.toMap(s -> s.name, s -> s));
+        }
+    }
+
+    private Map<String, EMNeuron> retrieveEMData(Set<String> neuronIds) {
+        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+        WebTarget samplesEndpoint = serverEndpoint.path("/emdata/dataset")
+                .path(args.emDataset)
+                .path(args.emDatasetVersion)
+                .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+        Response response = createRequestWithCredentials(samplesEndpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + samplesEndpoint.getUri() + " -> " + response);
+        } else {
+            List<EMNeuron> emNeurons = response.readEntity(new GenericType<>(new TypeReference<List<EMNeuron>>() {}.getType()));
+            return emNeurons.stream().collect(Collectors.toMap(n -> n.name, n -> n));
+        }
+    }
+
+    private Client createHttpClient() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLSv1");
+            TrustManager[] trustManagers = {
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] x509Certificates, String authType) {
+                            // Everyone is trusted
+                        }
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] x509Certificates, String authType) {
+                            // Everyone is trusted
+                        }
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    }
+            };
+            sslContext.init(null, trustManagers, new SecureRandom());
+
+            JacksonJsonProvider jsonProvider = new JacksonJaxbJsonProvider()
+                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    ;
+
+            return ClientBuilder.newBuilder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)
+                    .sslContext(sslContext)
+                    .hostnameVerifier((s, sslSession) -> true)
+                    .register(jsonProvider)
+                    .build();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private Invocation.Builder createRequestWithCredentials(Invocation.Builder requestBuilder, String credentials) {
+        if (StringUtils.isNotBlank(credentials)) {
+            return requestBuilder.header("Authorization", credentials);
+        } else {
+            return requestBuilder;
         }
     }
 
