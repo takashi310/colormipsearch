@@ -59,8 +59,7 @@ public class PPPMatches extends Results<List<PPPMatch>> {
 
     public static List<PPPMatches> pppMatchesByNeurons(List<PPPMatch> pppMatchList) {
         if (CollectionUtils.isNotEmpty(pppMatchList)) {
-            Comparator<PPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getCoverageScore()));
-            Comparator<PPPMatch> reversePPPComparator = pppComparator.reversed();
+            Comparator<PPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getEmPPPRank()));
             return pppMatchList.stream()
                     .filter(PPPMatch::hasSkeletonMatches)
                     .collect(Collectors.groupingBy(
@@ -72,7 +71,7 @@ public class PPPMatches extends Results<List<PPPMatch>> {
                             Collectors.collectingAndThen(
                                     Collectors.toList(),
                                     listOfPPPMatches -> {
-                                        listOfPPPMatches.sort(reversePPPComparator);
+                                        listOfPPPMatches.sort(pppComparator);
                                         return listOfPPPMatches;
                                     })))
                     .entrySet().stream().map(e -> new PPPMatches(
