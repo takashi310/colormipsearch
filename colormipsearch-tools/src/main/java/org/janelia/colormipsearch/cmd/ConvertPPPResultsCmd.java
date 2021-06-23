@@ -206,7 +206,6 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d));
         }
-        LOG.info("Got all files to process after {}s", (System.currentTimeMillis()-startTime)/1000.);
         Utils.partitionStream(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(this::processPPPFiles);
         LOG.info("Processed all files in {}s", (System.currentTimeMillis()-startTime)/1000.);
@@ -216,7 +215,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         long start = System.currentTimeMillis();
         Path outputPath = args.getOutputDir();
         listOfPPPResults.stream()
-                .map(pppFile -> importPPPRResultsFromFile(pppFile))
+                .map(this::importPPPRResultsFromFile)
                 .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
                         pppMatches,
                         outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),

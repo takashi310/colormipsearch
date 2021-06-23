@@ -18,11 +18,11 @@ class CmdUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CmdUtils.class);
 
     static Executor createCDSExecutor(CommonArgs args) {
-        if (args.cdsConcurrency > 0) {
+        if (args.taskConcurrency > 0) {
             LOG.info("Create a thread pool with {} worker threads ({} available processors for workstealing pool)",
-                    args.cdsConcurrency, Runtime.getRuntime().availableProcessors());
+                    args.taskConcurrency, Runtime.getRuntime().availableProcessors());
             return Executors.newFixedThreadPool(
-                    args.cdsConcurrency,
+                    args.taskConcurrency,
                     new ThreadFactoryBuilder()
                             .setNameFormat("CDSRUNNER-%d")
                             .setDaemon(true)

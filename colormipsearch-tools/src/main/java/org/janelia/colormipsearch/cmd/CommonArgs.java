@@ -10,11 +10,12 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 class CommonArgs {
-    @Parameter(names = {"--outputDir", "-od"}, description = "Output directory")
+    @Parameter(names = {"--outputDir", "--output-dir", "-od"}, description = "Output directory")
     String outputDir;
 
-    @Parameter(names = {"--cdsConcurrency", "-cdc"}, description = "CDS concurrency - number of CDS tasks run concurrently")
-    int cdsConcurrency;
+    @Parameter(names = {"--cdsConcurrency", "--task-concurrency", "-n", "-cdc"},
+               description = "Task concurrency - number of tasks to run concurrently")
+    int taskConcurrency;
 
     @Parameter(names = "--no-pretty-print", description = "Do not pretty print the results", arity = 0)
     boolean noPrettyPrint = false;
