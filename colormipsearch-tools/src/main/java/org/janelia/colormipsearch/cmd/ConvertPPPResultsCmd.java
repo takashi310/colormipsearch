@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -194,7 +196,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         Stream<Path> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = args.resultsFiles.stream().map(fn -> Paths.get(fn));
+            filesToProcess = args.resultsFiles.stream().map(Paths::get);
         } else {
             Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
             Stream<Path> dirsToProcess;
@@ -204,7 +206,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             } else {
                 dirsToProcess = allDirsWithPPPResults.skip(offset);
             }
-            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d));
+            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
         Utils.partitionStream(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(this::processPPPFiles);
@@ -241,9 +243,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private Stream<Path> getPPPResultsFromDir(Path pppResultsDir) {
+    private List<Path> getPPPResultsFromDir(Path pppResultsDir) {
         try {
-            return Files.list(pppResultsDir)
+            return StreamSupport.stream(Files.newDirectoryStream(pppResultsDir, "*.json").spliterator(), false)
                     .filter(Files::isRegularFile)
                     .filter(p -> {
                         String fn = p.getFileName().toString();
@@ -257,10 +259,11 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                                 .replaceAll(args.jsonPPPResultsPrefix, "");
                         return fn.equals(args.jsonPPPResultsPrefix + neuronName + ".json");
                     })
+                    .collect(Collectors.toList())
                     ;
         } catch (IOException e) {
             LOG.error("Error getting PPP JSON result file names from {}", pppResultsDir, e);
-            return Stream.empty();
+            return Collections.emptyList();
         }
     }
 
