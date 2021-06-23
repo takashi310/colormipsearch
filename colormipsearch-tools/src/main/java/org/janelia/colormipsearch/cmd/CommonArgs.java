@@ -13,7 +13,7 @@ class CommonArgs {
     @Parameter(names = {"--outputDir", "--output-dir", "-od"}, description = "Output directory")
     String outputDir;
 
-    @Parameter(names = {"--cdsConcurrency", "--task-concurrency", "-n", "-cdc"},
+    @Parameter(names = {"--cdsConcurrency", "--task-concurrency", "-tc", "-cdc"},
                description = "Task concurrency - number of tasks to run concurrently")
     int taskConcurrency;
 
