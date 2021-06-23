@@ -6,9 +6,9 @@ public class EMNeuron {
     @JsonProperty
     String name;
     @JsonProperty
-    String type;
+    String neuronType;
     @JsonProperty
-    String instance;
+    String neuronInstance;
     @JsonProperty
     String status;
 }

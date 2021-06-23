@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,12 +39,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.ml.neuralnet.Neuron;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
@@ -70,21 +68,24 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--em-dataset-version"}, description = "EM Dataset version")
         String emDatasetVersion = "1.2.1";
 
-        @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
+        @Parameter(names = {"--results-dir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Location of the original PPP results")
         private ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true,
+        @Parameter(names = {"--results-file", "-rf"}, variableArity = true,
                 description = "File(s) containing original PPP results. As a note these can be either ")
         private List<String> resultsFiles;
 
-        @Parameter(names = "-neuronMatchesSubDir", description = "The name of the sub-directory containing the results")
+        @Parameter(names = "--neuron-matches-sub-dir", description = "The name of the sub-directory containing the results")
         private String neuronMatchesSubDirName = "lm_cable_length_20_v4_adj_by_cov_numba_agglo_aT";
 
-        @Parameter(names = "--jsonMatchesPrefix", description = "The prefix of the JSON results file containing PPP matches")
+        @Parameter(names = "--matches-prefix", description = "The prefix of the JSON results file containing PPP matches")
         private String jsonPPPResultsPrefix = "cov_scores_";
 
-        @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
+        @Parameter(names = "--screenshots-dir", description = "The prefix of the JSON results file containing PPP matches")
+        private String screenshotsDir = "screenshots";
+
+        @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 100;
 
         @ParametersDelegate
@@ -213,11 +214,12 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
+        Path outputPath = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(pppFile -> importPPPRResultsFromFile(pppFile))
                 .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
                         pppMatches,
-                        null,
+                        outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis()-start)/1000.);
     }
@@ -282,15 +284,20 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Map<String, EMNeuron> emNeurons = retrieveEMData(neuronNames);
 
         neuronMatches.forEach(pppMatch -> {
+            if (pppMatch.getEmPPPRank() < 500) {
+                lookupScreenshots(pppResultsFile.getParent(), pppMatch);
+            }
             CDMIPSample lmSample = lmSamples.get(pppMatch.getLmSampleName());
             if (lmSample != null) {
                 pppMatch.setLineName(lmSample.publishingName);
                 pppMatch.setSlideCode(lmSample.slideCode);
+                pppMatch.setGender(lmSample.gender);
             }
             EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
             if (emNeuron != null) {
-                pppMatch.setNeuronType(emNeuron.type);
-                pppMatch.setNeuronInstance(emNeuron.instance);
+                pppMatch.setNeuronType(emNeuron.neuronType);
+                pppMatch.setNeuronInstance(emNeuron.neuronInstance);
+                pppMatch.setNeuronStatus(emNeuron.status);
             }
         });
         return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
@@ -316,6 +323,17 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         if (matcher.find()) {
             pppMatch.setLmSampleName(matcher.group(1));
             pppMatch.setObjective(matcher.group(2));
+        }
+    }
+
+    private void lookupScreenshots(Path pppResultsDir, PPPMatch pppMatch) {
+        try {
+            Files.newDirectoryStream(pppResultsDir.resolve(args.screenshotsDir), pppMatch.getFullEmName() + "*" + pppMatch.getFullLmName() + "*.png")
+                    .forEach(f -> {
+                        pppMatch.addImageVariant(f.toString());
+                    });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

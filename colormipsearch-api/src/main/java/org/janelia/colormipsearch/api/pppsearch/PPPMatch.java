@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api.pppsearch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,16 +14,19 @@ public class PPPMatch {
     private String neuronName; // bodyId
     private String neuronType;
     private String neuronInstance;
+    private String neuronStatus;
     private String fullLmName;
     private String lmSampleName;
     private String lineName;
     private String slideCode;
     private String objective;
     private String alignmentSpace;
+    private String gender;
     private Double coverageScore;
     private Double aggregateCoverage;
     private Boolean mirrored;
     private Double emPPPRank;
+    private List<PPPImageVariant> imageVariants;
     private List<SkeletonMatch> skeletonMatches;
 
     public String getFullEmName() {
@@ -55,6 +59,14 @@ public class PPPMatch {
 
     public void setNeuronInstance(String neuronInstance) {
         this.neuronInstance = neuronInstance;
+    }
+
+    public String getNeuronStatus() {
+        return neuronStatus;
+    }
+
+    public void setNeuronStatus(String neuronStatus) {
+        this.neuronStatus = neuronStatus;
     }
 
     public String getFullLmName() {
@@ -105,6 +117,14 @@ public class PPPMatch {
         this.alignmentSpace = alignmentSpace;
     }
 
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
     public Double getCoverageScore() {
         return coverageScore;
     }
@@ -119,6 +139,27 @@ public class PPPMatch {
 
     public void setAggregateCoverage(Double aggregateCoverage) {
         this.aggregateCoverage = aggregateCoverage;
+    }
+
+    public boolean addImageVariant(String imageName) {
+        PPPImageVariant.VariantType variantType = PPPImageVariant.VariantType.findVariantType(imageName);
+        if (variantType == null) {
+            return false;
+        } else {
+            if (imageVariants == null) {
+                imageVariants = new ArrayList<>();
+            }
+            imageVariants.add(new PPPImageVariant(variantType, imageName));
+            return true;
+        }
+    }
+
+    public List<PPPImageVariant> getImageVariants() {
+        return imageVariants;
+    }
+
+    public void setImageVariants(List<PPPImageVariant> imageVariants) {
+        this.imageVariants = imageVariants;
     }
 
     public boolean hasSkeletonMatches() {
