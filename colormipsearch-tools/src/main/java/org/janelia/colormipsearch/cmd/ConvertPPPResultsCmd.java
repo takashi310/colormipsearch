@@ -216,12 +216,15 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
         Path outputPath = args.getOutputDir();
-        listOfPPPResults.stream()
-                .map(this::importPPPRResultsFromFile)
-                .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
-                        pppMatches,
-                        outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
-                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
+        listOfPPPResults.forEach(
+                p -> System.out.println("!!!! " + p)
+        );
+//        listOfPPPResults.stream()
+//                .map(this::importPPPRResultsFromFile)
+//                .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
+//                        pppMatches,
+//                        outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
+//                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis()-start)/1000.);
     }
 
