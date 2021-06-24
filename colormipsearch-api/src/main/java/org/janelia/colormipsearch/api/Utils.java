@@ -6,10 +6,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,14 +19,23 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 
-    public static <T> Collection<List<T>> partitionStream(Stream<T> stream, int partitionSize) {
-        AtomicLong index = new AtomicLong(0L);
-        return stream
-                .collect(Collectors.groupingBy(
-                        e -> index.getAndIncrement() / partitionSize,
-                        Collectors.toList()
-                ))
-                .values();
+    public static <T> Stream<List<T>> partitionStream(Stream<T> stream, int partitionSize) {
+        AtomicReference<List<T>> currentReference =  new AtomicReference<>(new ArrayList<>());
+        return Stream.concat(
+                stream.flatMap(e -> {
+                    List<T> currentList = currentReference.get();
+                    if (currentList.size() == partitionSize) {
+                        List<T> newList = new ArrayList<>();
+                        newList.add(e);
+                        currentReference.set(newList);
+                        return Stream.of(currentList);
+                    } else {
+                        currentList.add(e);
+                        return Stream.empty();
+                    }
+                }),
+                IntStream.of(0).mapToObj(i -> currentReference.get()).filter(l -> !l.isEmpty())
+        );
     }
 
     public static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {

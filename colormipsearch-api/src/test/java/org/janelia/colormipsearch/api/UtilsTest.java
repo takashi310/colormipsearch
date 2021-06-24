@@ -3,14 +3,43 @@ package org.janelia.colormipsearch.api;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class UtilsTest {
+
+    @Test
+    public void partitionStream() {
+        List<List<Integer>> listOfList = Utils.partitionStream(IntStream.range(0, 100).boxed(), 36)
+                .collect(Collectors.toList());
+        assertEquals(3, listOfList.size());
+        assertEquals(36, listOfList.get(0).size());
+        assertEquals(36, listOfList.get(1).size());
+        assertEquals(28, listOfList.get(2).size());
+    }
+
+    @Test
+    public void processPartitionedStream() {
+        for (int partitionSize = 1; partitionSize < 60; partitionSize += 24) {
+            int currentPartitionSize = partitionSize;
+            Utils.partitionStream(IntStream.range(0, 100).boxed(), currentPartitionSize)
+                    .parallel()
+                    .forEach(l -> {
+                        assertNotNull(l);
+                        assertTrue(l.size() <= currentPartitionSize);
+                        assertTrue(l.size() > 0);
+
+                    });
+        }
+    }
 
     @Test
     public void pickBestResultsWithAllSubResults() {
