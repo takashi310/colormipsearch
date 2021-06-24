@@ -66,18 +66,24 @@ public class Utils {
         }
 
         @Override
-        public PartitionSpliterator trySplit() {
-            return new PartitionSpliterator(sourceSpliterator.trySplit(), currentPartition, partitionSize);
+        public PartitionSpliterator<T> trySplit() {
+            Spliterator<T> newSourceSpliterator = sourceSpliterator.trySplit();
+            return newSourceSpliterator == null
+                    ? null
+                    : new PartitionSpliterator<>(
+                            newSourceSpliterator,
+                            currentPartition,
+                            partitionSize);
         }
 
         @Override
         public long estimateSize() {
-            long s = sourceSpliterator.estimateSize();
-            if (s < Long.MAX_VALUE) {
-                return s / partitionSize + (s % partitionSize == 0 ? 0 : 1);
-            } else {
+//            long s = sourceSpliterator.estimateSize();
+//            if (s < Long.MAX_VALUE) {
+//                return s / partitionSize + (s % partitionSize == 0 ? 0 : 1);
+//            } else {
                 return Long.MAX_VALUE;
-            }
+//            }
         }
 
         @Override
@@ -87,92 +93,12 @@ public class Utils {
     }
 
     public static <T> Stream<List<T>> partitionStream(Stream<T> stream, int partitionSize) {
-        AtomicReference<List<T>> currentReference =  new AtomicReference<>(new ArrayList<>());
-//        Stream<List<T>> streamOfPartitions = stream
-//                        .flatMap(e -> {
-//                            List<T> l = currentReference.accumulateAndGet(Collections.singletonList(e), (l1, l2) -> {
-//                                if (l1.size() == partitionSize) {
-//                                    return l2;
-//                                } else {
-//                                    List<T> updatedList = new ArrayList<>(l1);
-//                                    updatedList.addAll(l2);
-//                                    return updatedList;
-//                                }
-//                            });
-//                            return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
-//                        })
-//                        ;
-//                        .filter(l -> l.size() == partitionSize);
-//        Stream<List<T>> remainder = IntStream.of(0).mapToObj(i -> currentReference.get()).filter(l -> !l.isEmpty());
         return StreamSupport.stream(() -> {
-                    return new Spliterator<List<T>>() {
-//                        boolean doneWithExactPartitions = false;
-//                        boolean done = false;
-//                        Spliterator<List<T>> partitionsSpliterator = streamOfPartitions.spliterator();
-                        private Spliterator<T> streamIterator = stream.spliterator();
-                        @Override
-                        public boolean tryAdvance(Consumer<? super List<T>> action) {
-                            boolean hasNext = streamIterator.tryAdvance((e) -> {
-                                List<T> l = currentReference.getAndAccumulate(Collections.singletonList(e), (l1, l2) -> {
-                                    if (l1.size() == partitionSize) {
-                                        return l2;
-                                    } else {
-                                        List<T> updatedList = new ArrayList<>(l1);
-                                        updatedList.addAll(l2);
-                                        return updatedList;
-                                    }
-                                });
-                                if (l.size() == partitionSize) {
-                                    action.accept(l);
-                                }
-                            });
-                            if (hasNext) {
-                                return true;
-                            } else {
-                                List<T> currentContent = currentReference.get();
-                                if (currentContent.size() > 0) {
-                                    action.accept(currentContent);
-                                }
-                                return false;
-                            }
-//                            List<T> currentContent = currentReference.get();
-//                            if (!doneWithExactPartitions) {
-//                                boolean hasNext = partitionsSpliterator.tryAdvance(action);
-//                                if (hasNext) {
-//                                    return true;
-//                                } else {
-//                                    doneWithExactPartitions = true;
-//                                    return (currentContent.size() % partitionSize) != 0;
-//                                }
-//                            } else {
-//                                action.accept(currentContent);
-//                                return false;
-//                            }
-                        }
-
-                        @Override
-                        public Spliterator<List<T>> trySplit() {
-                            return null;
-                        }
-
-                        @Override
-                        public long estimateSize() {
-                            long s = streamIterator.estimateSize();
-                            if (s < Long.MAX_VALUE) {
-                                return s / partitionSize + (s % partitionSize == 0 ? 0 : 1);
-                            } else {
-                                return Long.MAX_VALUE;
-                            }
-                        }
-
-                        @Override
-                        public int characteristics() {
-                            return 0;
-                        }
-                    };
+                    return new PartitionSpliterator<>(stream.spliterator(), new AtomicReference<>(new ArrayList<>()), partitionSize);
                 },
                 0,
-                stream.isParallel());
+                stream.isParallel())
+                ;
     }
 
     public static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {

@@ -20,16 +20,16 @@ public class UtilsTest {
     public void partitionStream() {
         int[][] testData = new int[][] {
 //                { 100, 100},
-                { 100, 25},
+//                { 100, 25},
 //                { 100, 1 },
 //                { 50, 200},
-//                { 100, 36 },
+                { 200, 36 }
         };
         for (int[] td : testData) {
             int maxValue = td[0];
             int partitionSize = td[1];
             List<List<Integer>> listOfList = Utils.partitionStream(
-                    IntStream.range(0, maxValue).parallel().boxed(),
+                    IntStream.range(0, maxValue).boxed().parallel(),
                     partitionSize)
                     .parallel()
                     .collect(Collectors.toList());
