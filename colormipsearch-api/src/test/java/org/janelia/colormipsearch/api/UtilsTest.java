@@ -18,12 +18,34 @@ public class UtilsTest {
 
     @Test
     public void partitionStream() {
-        List<List<Integer>> listOfList = Utils.partitionStream(IntStream.range(0, 100).boxed(), 36)
-                .collect(Collectors.toList());
-        assertEquals(3, listOfList.size());
-        assertEquals(36, listOfList.get(0).size());
-        assertEquals(36, listOfList.get(1).size());
-        assertEquals(28, listOfList.get(2).size());
+        int[][] testData = new int[][] {
+//                { 100, 100},
+                { 100, 25},
+//                { 100, 1 },
+//                { 50, 200},
+//                { 100, 36 },
+        };
+        for (int[] td : testData) {
+            int maxValue = td[0];
+            int partitionSize = td[1];
+            List<List<Integer>> listOfList = Utils.partitionStream(
+                    IntStream.range(0, maxValue).parallel().boxed(),
+                    partitionSize)
+                    .parallel()
+                    .collect(Collectors.toList());
+            int exactPartitionAdjustment = maxValue % partitionSize == 0 ? 0 : 1;
+            int nPartitions = maxValue / partitionSize + exactPartitionAdjustment;
+            assertEquals(nPartitions, listOfList.size());
+            for (int i = 0; i < nPartitions-1; i++) {
+                assertEquals(partitionSize, listOfList.get(i).size());
+            }
+            assertEquals(
+                    exactPartitionAdjustment == 0 ? partitionSize : maxValue % partitionSize,
+                    listOfList.get(nPartitions-1).size()
+            );
+            assertEquals(listOfList.stream().flatMap(l -> l.stream()).sorted().collect(Collectors.toList()),
+                    IntStream.range(0, maxValue).boxed().collect(Collectors.toList()));
+        }
     }
 
     @Test
@@ -31,7 +53,6 @@ public class UtilsTest {
         for (int partitionSize = 1; partitionSize < 60; partitionSize += 24) {
             int currentPartitionSize = partitionSize;
             Utils.partitionStream(IntStream.range(0, 100).boxed(), currentPartitionSize)
-                    .parallel()
                     .forEach(l -> {
                         assertNotNull(l);
                         assertTrue(l.size() <= currentPartitionSize);
