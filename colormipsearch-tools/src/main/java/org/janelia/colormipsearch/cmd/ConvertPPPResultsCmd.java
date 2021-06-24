@@ -208,8 +208,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
-        Utils.partitionStream(filesToProcess, args.processingPartitionSize).parallel()
-                .forEach(this::processPPPFiles);
+        Utils.processPartitionStream(filesToProcess, args.processingPartitionSize, this::processPPPFiles);
         LOG.info("Processed all files in {}s", (System.currentTimeMillis()-startTime)/1000.);
     }
 

@@ -1,6 +1,9 @@
 package org.janelia.colormipsearch.api;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -11,6 +14,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -19,46 +23,44 @@ public class UtilsTest {
     @Test
     public void partitionStream() {
         int[][] testData = new int[][] {
-//                { 100, 100},
-//                { 100, 25},
-//                { 100, 1 },
-//                { 50, 200},
-                { 200, 36 }
+                { 100, 100},
+                { 100, 25},
+                { 101, 26},
+                { 200, 2 },
+                { 100, 1 },
+                { 150, 200},
+                { 200, 36 },
         };
         for (int[] td : testData) {
             int maxValue = td[0];
             int partitionSize = td[1];
-            List<List<Integer>> listOfList = Utils.partitionStream(
+            List<List<Integer>> listOfList = Collections.synchronizedList(new ArrayList<>());
+            Utils.processPartitionStream(
                     IntStream.range(0, maxValue).boxed().parallel(),
-                    partitionSize)
-                    .parallel()
-                    .collect(Collectors.toList());
+                    partitionSize,
+                    l -> listOfList.add(l)
+            );
             int exactPartitionAdjustment = maxValue % partitionSize == 0 ? 0 : 1;
             int nPartitions = maxValue / partitionSize + exactPartitionAdjustment;
-            assertEquals(nPartitions, listOfList.size());
+            assertEquals("Test: " + Arrays.toString(td), nPartitions, listOfList.size());
             for (int i = 0; i < nPartitions-1; i++) {
-                assertEquals(partitionSize, listOfList.get(i).size());
+                assertEquals("Test: " + Arrays.toString(td) + ": partition: " + (i+1), partitionSize, listOfList.get(i).size());
             }
             assertEquals(
+                    "Test: " + Arrays.toString(td),
                     exactPartitionAdjustment == 0 ? partitionSize : maxValue % partitionSize,
                     listOfList.get(nPartitions-1).size()
             );
-            assertEquals(listOfList.stream().flatMap(l -> l.stream()).sorted().collect(Collectors.toList()),
-                    IntStream.range(0, maxValue).boxed().collect(Collectors.toList()));
-        }
-    }
-
-    @Test
-    public void processPartitionedStream() {
-        for (int partitionSize = 1; partitionSize < 60; partitionSize += 24) {
-            int currentPartitionSize = partitionSize;
-            Utils.partitionStream(IntStream.range(0, 100).boxed(), currentPartitionSize)
-                    .forEach(l -> {
-                        assertNotNull(l);
-                        assertTrue(l.size() <= currentPartitionSize);
-                        assertTrue(l.size() > 0);
-
-                    });
+            List<Integer> concatenatedList = listOfList.stream().flatMap(l -> l.stream()).collect(Collectors.toList());
+            assertNotEquals(
+                    "Test: " + Arrays.toString(td),
+                    IntStream.range(0, maxValue).boxed().collect(Collectors.toList()),
+                    concatenatedList);
+            concatenatedList.sort(Comparator.naturalOrder());
+            assertEquals(
+                    "Test: " + Arrays.toString(td),
+                    IntStream.range(0, maxValue).boxed().collect(Collectors.toList()),
+                    concatenatedList);
         }
     }
 
