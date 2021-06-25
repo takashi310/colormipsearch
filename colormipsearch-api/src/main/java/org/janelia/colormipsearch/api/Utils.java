@@ -40,7 +40,11 @@ public class Utils {
                 });
                 return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
             });
-            streamOfPartitions.forEach(partitionHandler);
+            if (stream.isParallel()) {
+                streamOfPartitions.parallel().forEach(partitionHandler);
+            } else {
+                streamOfPartitions.forEach(partitionHandler);
+            }
             List<T> leftContent = currentPartitionHolder.get();
             if (leftContent.size() > 0 && leftContent.size() < partitionSize) {
                 partitionHandler.accept(leftContent);
