@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -333,16 +334,29 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private Map<String, EMNeuron> retrieveEMData(Set<String> neuronIds) {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-        WebTarget samplesEndpoint = serverEndpoint.path("/emdata/dataset")
+        WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
                 .path(args.emDataset)
                 .path(args.emDatasetVersion)
                 .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        Response response = createRequestWithCredentials(samplesEndpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + samplesEndpoint.getUri() + " -> " + response);
+        if (neuronIds != null && neuronIds.size() > 1000) {
+            int s = neuronIds.size();
+            int ncalls = s / 1000;
+            return IntStream.range(0, ncalls + (s % 1000 == 0 ? 0 : 1)).boxed()
+                    .flatMap(i -> retrieveEMNeurons(
+                            emEndpoint.queryParam("offset", String.valueOf(i * 1000))
+                                    .queryParam("length", String.valueOf(1000))).stream())
+                    .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
-            List<EMNeuron> emNeurons = response.readEntity(new GenericType<>(new TypeReference<List<EMNeuron>>() {}.getType()));
-            return emNeurons.stream().collect(Collectors.toMap(n -> n.name, n -> n));
+            return retrieveEMNeurons(emEndpoint).stream().collect(Collectors.toMap(n -> n.name, n -> n));
+        }
+    }
+
+    private List<EMNeuron> retrieveEMNeurons(WebTarget endpoint) {
+        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
+        } else {
+            return response.readEntity(new GenericType<>(new TypeReference<List<EMNeuron>>() {}.getType()));
         }
     }
 
