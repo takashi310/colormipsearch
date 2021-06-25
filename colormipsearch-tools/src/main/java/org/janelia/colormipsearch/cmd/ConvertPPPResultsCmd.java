@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -16,10 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -260,8 +256,8 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Set<String> neuronNames = neuronMatches.stream()
                 .map(PPPMatch::getNeuronName)
                 .collect(Collectors.toSet());
-        Map<String, CDMIPSample> lmSamples = retrieveSamples(matchedLMSampleNames);
-        Map<String, EMNeuron> emNeurons = retrieveEMData(neuronNames);
+        Map<String, CDMIPSample> lmSamples = retrieveLMSamples(matchedLMSampleNames);
+        Map<String, EMNeuron> emNeurons = retrieveEMNeurons(neuronNames);
 
         neuronMatches.forEach(pppMatch -> {
             if (pppMatch.getEmPPPRank() < 500) {
@@ -317,62 +313,50 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private Map<String, CDMIPSample> retrieveSamples(Set<String> sampleNames) {
+    private Map<String, CDMIPSample> retrieveLMSamples(Set<String> sampleNames) {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
         WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
-                .queryParam("name", sampleNames != null ? sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        int maxSize = 500;
-        if (sampleNames != null && sampleNames.size() > maxSize) {
-            int totalSampleNames = sampleNames.size();
-            int ncalls = totalSampleNames / maxSize;
-            return IntStream.range(0, ncalls + (totalSampleNames % maxSize == 0 ? 0 : 1)).boxed()
-                    .flatMap(i -> retrieveLMSamples(
-                            samplesEndpoint.queryParam("offset", String.valueOf(i * maxSize))
-                                    .queryParam("length", String.valueOf(maxSize))).stream())
-                    .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
-                    .collect(Collectors.toMap(n -> n.name, n -> n));
-        } else {
-            return retrieveLMSamples(samplesEndpoint).stream()
-                    .filter(s -> StringUtils.isNotBlank(s.publishingName))
-                    .collect(Collectors.toMap(n -> n.name, n -> n));
-        }
+                .queryParam("name", sampleNames == null ? null : sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null));
+        int sampleChunkSize = 2000;
+        int sampleMaxSize = sampleNames == null ? 0 : sampleNames.size();
+        return retrieveDataStream(samplesEndpoint, sampleChunkSize, sampleMaxSize, new TypeReference<List<CDMIPSample>>() {})
+                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
+                .collect(Collectors.toMap(n -> n.name, n -> n));
     }
 
-    private List<CDMIPSample> retrieveLMSamples(WebTarget endpoint) {
-        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
-        } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<CDMIPSample>>() {}.getType()));
-        }
-    }
-
-    private Map<String, EMNeuron> retrieveEMData(Set<String> neuronIds) {
+    private Map<String, EMNeuron> retrieveEMNeurons(Set<String> neuronIds) {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
         WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
                 .path(args.emDataset)
                 .path(args.emDatasetVersion)
                 .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        int maxSize = 100;
-        if (neuronIds != null && neuronIds.size() > maxSize) {
-            int s = neuronIds.size();
-            int ncalls = s / maxSize;
-            return IntStream.range(0, ncalls + (s % maxSize == 0 ? 0 : 1)).boxed()
-                    .flatMap(i -> retrieveEMNeurons(
-                            emEndpoint.queryParam("offset", String.valueOf(i * maxSize))
-                                    .queryParam("length", String.valueOf(maxSize))).stream())
-                    .collect(Collectors.toMap(n -> n.name, n -> n));
+        int neuronsChunkSize = 2000;
+        int neuronsMaxSize = neuronIds == null ? 0 : neuronIds.size();
+        return retrieveDataStream(emEndpoint, neuronsChunkSize, neuronsMaxSize, new TypeReference<List<EMNeuron>>() {})
+                .collect(Collectors.toMap(n -> n.name, n -> n));
+    }
+
+    private <T> Stream<T> retrieveDataStream(WebTarget endpoint, int chunkSize, int maxSize, TypeReference<List<T>> t) {
+        if (chunkSize > 0 && maxSize > 0) {
+            int ncalls = maxSize / chunkSize;
+            return IntStream.range(0, ncalls + (maxSize % chunkSize == 0 ? 0 : 1)).boxed()
+                    .flatMap(i -> retrieveChunk(
+                            endpoint
+                                    .queryParam("offset", String.valueOf(i * maxSize))
+                                    .queryParam("length", String.valueOf(maxSize)),
+                            t).stream())
+                    ;
         } else {
-            return retrieveEMNeurons(emEndpoint).stream().collect(Collectors.toMap(n -> n.name, n -> n));
+            return retrieveChunk(endpoint, t).stream();
         }
     }
 
-    private List<EMNeuron> retrieveEMNeurons(WebTarget endpoint) {
+    private <T> List<T> retrieveChunk(WebTarget endpoint, TypeReference<List<T>> t) {
         Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<EMNeuron>>() {}.getType()));
+            return response.readEntity(new GenericType<>(t.getType()));
         }
     }
 
