@@ -5,6 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class RawSkeletonMatches {
+    @JsonProperty("skel_ids")
+    private String bestSkeletonIds;
+    @JsonProperty("nblast_scores")
+    private String bestNBlastScores;
+    @JsonProperty("coverages")
+    private String bestCoveragesScores;
+    @JsonProperty("colors")
+    private String bestColors;
     @JsonProperty("all_skel_ids")
     private String allSkeletonIds;
     @JsonProperty("all_nblast_scores")
@@ -19,6 +27,38 @@ public class RawSkeletonMatches {
     private Double aggregateCoverage;
     private Boolean mirrored;
     private Double rank;
+
+    public String getBestSkeletonIds() {
+        return bestSkeletonIds;
+    }
+
+    public void setBestSkeletonIds(String bestSkeletonIds) {
+        this.bestSkeletonIds = bestSkeletonIds;
+    }
+
+    public String getBestNBlastScores() {
+        return bestNBlastScores;
+    }
+
+    public void setBestNBlastScores(String bestNBlastScores) {
+        this.bestNBlastScores = bestNBlastScores;
+    }
+
+    public String getBestCoveragesScores() {
+        return bestCoveragesScores;
+    }
+
+    public void setBestCoveragesScores(String bestCoveragesScores) {
+        this.bestCoveragesScores = bestCoveragesScores;
+    }
+
+    public String getBestColors() {
+        return bestColors;
+    }
+
+    public void setBestColors(String bestColors) {
+        this.bestColors = bestColors;
+    }
 
     public String getAllSkeletonIds() {
         return allSkeletonIds;
