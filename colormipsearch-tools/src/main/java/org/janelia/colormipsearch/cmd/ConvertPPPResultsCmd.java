@@ -321,14 +321,29 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
         WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
                 .queryParam("name", sampleNames != null ? sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        Response response = createRequestWithCredentials(samplesEndpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + samplesEndpoint.getUri() + " -> " + response);
+        int maxSize = 500;
+        if (sampleNames != null && sampleNames.size() > maxSize) {
+            int totalSampleNames = sampleNames.size();
+            int ncalls = totalSampleNames / maxSize;
+            return IntStream.range(0, ncalls + (totalSampleNames % maxSize == 0 ? 0 : 1)).boxed()
+                    .flatMap(i -> retrieveLMSamples(
+                            samplesEndpoint.queryParam("offset", String.valueOf(i * maxSize))
+                                    .queryParam("length", String.valueOf(maxSize))).stream())
+                    .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
+                    .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
-            List<CDMIPSample> samples = response.readEntity(new GenericType<>(new TypeReference<List<CDMIPSample>>() {}.getType()));
-            return samples.stream()
+            return retrieveLMSamples(samplesEndpoint).stream()
                     .filter(s -> StringUtils.isNotBlank(s.publishingName))
-                    .collect(Collectors.toMap(s -> s.name, s -> s));
+                    .collect(Collectors.toMap(n -> n.name, n -> n));
+        }
+    }
+
+    private List<CDMIPSample> retrieveLMSamples(WebTarget endpoint) {
+        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
+        } else {
+            return response.readEntity(new GenericType<>(new TypeReference<List<CDMIPSample>>() {}.getType()));
         }
     }
 
@@ -338,13 +353,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                 .path(args.emDataset)
                 .path(args.emDatasetVersion)
                 .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        if (neuronIds != null && neuronIds.size() > 1000) {
+        int maxSize = 100;
+        if (neuronIds != null && neuronIds.size() > maxSize) {
             int s = neuronIds.size();
-            int ncalls = s / 1000;
-            return IntStream.range(0, ncalls + (s % 1000 == 0 ? 0 : 1)).boxed()
+            int ncalls = s / maxSize;
+            return IntStream.range(0, ncalls + (s % maxSize == 0 ? 0 : 1)).boxed()
                     .flatMap(i -> retrieveEMNeurons(
-                            emEndpoint.queryParam("offset", String.valueOf(i * 1000))
-                                    .queryParam("length", String.valueOf(1000))).stream())
+                            emEndpoint.queryParam("offset", String.valueOf(i * maxSize))
+                                    .queryParam("length", String.valueOf(maxSize))).stream())
                     .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
             return retrieveEMNeurons(emEndpoint).stream().collect(Collectors.toMap(n -> n.name, n -> n));
