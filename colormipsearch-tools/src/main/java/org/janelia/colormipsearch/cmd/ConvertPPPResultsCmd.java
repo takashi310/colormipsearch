@@ -236,7 +236,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                         .filter(Files::isDirectory)
                         .filter(p -> !p.getFileName().toString().startsWith("nblastScores")) // do not go into nblastScores dirs
                         .filter(p -> !p.getFileName().toString().startsWith("screenshots")) // do not go into screenshots dirs
-                        .flatMap(p -> streamDirsWithPPPResults(p))
+                        .flatMap(p -> streamDirsWithPPPResults(p).parallel())
                         ;
             }
         } catch (IOException e) {
