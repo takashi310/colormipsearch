@@ -40,6 +40,7 @@ public class UtilsTest {
                     partitionSize,
                     l -> listOfList.add(l)
             );
+
             int exactPartitionAdjustment = maxValue % partitionSize == 0 ? 0 : 1;
             int nPartitions = maxValue / partitionSize + exactPartitionAdjustment;
             assertEquals("Test: " + Arrays.toString(td), nPartitions, listOfList.size());

@@ -19,14 +19,16 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 
-    public static <T> void processPartitionStream(Stream<T> stream, int partitionSize, Consumer<List<T>> partitionHandler) {
+    public static <T> void processPartitionStream(Stream<T> stream,
+                                                  int partitionSize,
+                                                  Consumer<List<T>> partitionHandler) {
         if (partitionSize == 1) {
             // trivial cause because the other one gets messed up
             // it's here only for completion purpose
             stream.map(Collections::singletonList).forEach(partitionHandler);
         } else {
             AtomicReference<List<T>> currentPartitionHolder = new AtomicReference<>(Collections.emptyList());
-            stream.flatMap(e -> {
+            Stream<List<T>> streamOfPartitions = stream.flatMap(e -> {
                 List<T> l = currentPartitionHolder.accumulateAndGet(Collections.singletonList(e), (l1, l2) -> {
                     if (l1.size() == partitionSize) {
                         return l2;
@@ -37,12 +39,12 @@ public class Utils {
                     }
                 });
                 return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
-            }).forEach(partitionHandler);
+            });
+            streamOfPartitions.forEach(partitionHandler);
             List<T> leftContent = currentPartitionHolder.get();
             if (leftContent.size() > 0 && leftContent.size() < partitionSize) {
                 partitionHandler.accept(leftContent);
             }
-
         }
     }
 
