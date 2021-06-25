@@ -2,9 +2,13 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -119,56 +123,6 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private static class RangeSpliterator<T> implements Spliterator<T> {
-        private AtomicLong index;
-        private final long from;
-        private final int length;
-        private final long to;
-        private final Spliterator<T> wrapped;
-
-        RangeSpliterator(Spliterator<T> wrapped, AtomicLong index, long from, int length) {
-            this.wrapped = wrapped;
-            this.index = index;
-            this.from = Math.max(from, 0);
-            this.length = length;
-            this.to = length > 0 ? this.from + length : -1;
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super T> action) {
-            if (wrapped == null) {
-                return false;
-            } else {
-                long currentIndex = index.getAndIncrement();
-                boolean hasNext = wrapped.tryAdvance(e -> {
-                    if (currentIndex >= from && (to < 0 || currentIndex < to)) {
-                        action.accept(e);
-                    }
-                });
-                return hasNext && (to < 0 || currentIndex < to);
-            }
-        }
-
-        @Override
-        public Spliterator<T> trySplit() {
-            if (wrapped == null) {
-                return null;
-            } else {
-                return new RangeSpliterator<>(wrapped.trySplit(), index, from, length);
-            }
-        }
-
-        @Override
-        public long estimateSize() {
-            return wrapped != null ? wrapped.estimateSize() : 0;
-        }
-
-        @Override
-        public int characteristics() {
-            return wrapped != null ? wrapped.characteristics() : 0;
-        }
-    }
-
     private final ObjectMapper mapper;
     private final ConvertPPPResultsArgs args;
     private final RawPPPMatchesReader originalPPPMatchesReader;
@@ -229,16 +183,37 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private Stream<Path> streamDirsWithPPPResults(Path startPath) {
         try {
-            if (startPath.getFileName().toString().equals(args.neuronMatchesSubDirName)) {
-                return Stream.of(startPath);
-            } else {
-                return Files.list(startPath)
-                        .filter(Files::isDirectory)
-                        .filter(p -> !p.getFileName().toString().startsWith("nblastScores")) // do not go into nblastScores dirs
-                        .filter(p -> !p.getFileName().toString().startsWith("screenshots")) // do not go into screenshots dirs
-                        .flatMap(p -> streamDirsWithPPPResults(p).parallel())
-                        ;
-            }
+            Stream.Builder<Path> builder = Stream.builder();
+            Files.walkFileTree(startPath, new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    String name = dir.getFileName().toString();
+                    if (name.equals(args.neuronMatchesSubDirName)) {
+                        builder.add(dir);
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } else if (name.startsWith("nblastScores") || name.equals("screenshots")) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } else {
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.TERMINATE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            return builder.build();
         } catch (IOException e) {
             LOG.error("Error traversing {}", startPath, e);
             return Stream.empty();
