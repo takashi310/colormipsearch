@@ -261,7 +261,8 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
         neuronMatches.forEach(pppMatch -> {
             if (pppMatch.getEmPPPRank() < 500) {
-                lookupScreenshots(pppResultsFile.getParent(), pppMatch);
+                Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
+                lookupScreenshots(screenshotsPath, pppMatch);
             }
             CDMIPSample lmSample = lmSamples.get(pppMatch.getLmSampleName());
             if (lmSample != null) {
@@ -302,12 +303,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private void lookupScreenshots(Path pppResultsDir, PPPMatch pppMatch) {
+    private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch pppMatch) {
         try {
-            Files.newDirectoryStream(pppResultsDir.resolve(args.screenshotsDir), pppMatch.getFullEmName() + "*" + pppMatch.getFullLmName() + "*.png")
-                    .forEach(f -> {
-                        pppMatch.addImageVariant(f.toString());
-                    });
+            if (Files.exists(pppScreenshotsDir)) {
+                Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getFullEmName() + "*" + pppMatch.getFullLmName() + "*.png")
+                        .forEach(f -> {
+                            pppMatch.addImageVariant(f.toString());
+                        });
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
