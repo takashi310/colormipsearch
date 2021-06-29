@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -218,13 +219,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private List<Path> getPPPResultsFromDir(Path pppResultsDir) {
-        try {
-            return StreamSupport.stream(Files.newDirectoryStream(pppResultsDir, "*.json").spliterator(), false)
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pppResultsDir, args.jsonPPPResultsPrefix + "*.json")) {
+            return StreamSupport.stream(directoryStream.spliterator(), false)
                     .filter(Files::isRegularFile)
-                    .filter(p -> {
-                        String fn = p.getFileName().toString();
-                        return fn.startsWith(args.jsonPPPResultsPrefix) && fn.endsWith(".json");
-                    })
                     .filter(p -> {
                         String fn = p.getFileName().toString();
                         // filter out files <prefix><neuron>_01.json or <prefix><neuron>_02.json
