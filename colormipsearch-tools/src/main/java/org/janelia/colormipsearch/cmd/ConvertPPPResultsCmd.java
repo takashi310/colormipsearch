@@ -304,15 +304,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private void lookupScreenshots(Path pppScreenshotsDir, SourcePPPMatch pppMatch) {
-        try {
-            if (Files.exists(pppScreenshotsDir)) {
-                Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")
-                        .forEach(f -> {
-                            pppMatch.addSourceImageFile(f.toString());
-                        });
+        if (Files.exists(pppScreenshotsDir)) {
+            try(DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
+                screenshotsDirStream.forEach(f -> {
+                    pppMatch.addSourceImageFile(f.toString());
+                });
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
