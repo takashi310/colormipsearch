@@ -59,7 +59,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class ConvertPPPResultsArgs extends AbstractCmdArgs {
         @Parameter(names = {"--jacs-url", "--data-url"},
-                description = "JACS data service base URL", required = true)
+                description = "JACS data service base URL")
         String dataServiceURL;
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
@@ -256,6 +256,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Set<String> neuronNames = neuronMatches.stream()
                 .map(SourcePPPMatch::getNeuronName)
                 .collect(Collectors.toSet());
+
         Map<String, CDMIPSample> lmSamples = retrieveLMSamples(matchedLMSampleNames);
         Map<String, EMNeuron> emNeurons = retrieveEMNeurons(neuronNames);
 
@@ -319,26 +320,34 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private Map<String, CDMIPSample> retrieveLMSamples(Set<String> sampleNames) {
-        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-        WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
-                .queryParam("name", sampleNames == null ? null : sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null));
-        int sampleChunkSize = 2000;
-        int sampleMaxSize = sampleNames == null ? 0 : sampleNames.size();
-        return retrieveDataStream(samplesEndpoint, sampleChunkSize, sampleMaxSize, new TypeReference<List<CDMIPSample>>() {})
-                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
-                .collect(Collectors.toMap(n -> n.name, n -> n));
+        if (StringUtils.isNotBlank(args.dataServiceURL)) {
+            WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+            WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
+                    .queryParam("name", sampleNames == null ? null : sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null));
+            int sampleChunkSize = 2000;
+            int sampleMaxSize = sampleNames == null ? 0 : sampleNames.size();
+            return retrieveDataStream(samplesEndpoint, sampleChunkSize, sampleMaxSize, new TypeReference<List<CDMIPSample>>() {})
+                    .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
+                    .collect(Collectors.toMap(n -> n.name, n -> n));
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     private Map<String, EMNeuron> retrieveEMNeurons(Set<String> neuronIds) {
-        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-        WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
-                .path(args.emDataset)
-                .path(args.emDatasetVersion)
-                .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
-        int neuronsChunkSize = 2000;
-        int neuronsMaxSize = neuronIds == null ? 0 : neuronIds.size();
-        return retrieveDataStream(emEndpoint, neuronsChunkSize, neuronsMaxSize, new TypeReference<List<EMNeuron>>() {})
-                .collect(Collectors.toMap(n -> n.name, n -> n));
+        if (StringUtils.isNotBlank(args.dataServiceURL)) {
+            WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+            WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
+                    .path(args.emDataset)
+                    .path(args.emDatasetVersion)
+                    .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+            int neuronsChunkSize = 2000;
+            int neuronsMaxSize = neuronIds == null ? 0 : neuronIds.size();
+            return retrieveDataStream(emEndpoint, neuronsChunkSize, neuronsMaxSize, new TypeReference<List<EMNeuron>>() {})
+                    .collect(Collectors.toMap(n -> n.name, n -> n));
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     private <T> Stream<T> retrieveDataStream(WebTarget endpoint, int chunkSize, int maxSize, TypeReference<List<T>> t) {
