@@ -3,8 +3,6 @@ package org.janelia.colormipsearch.api.pppsearch;
 import java.io.File;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,7 +26,7 @@ public class RawPPPMatchesReaderTest {
                 "src/test/resources/colormipsearch/api/pppsearch/cov_scores_484130600-SMP145-RT_18U.json"
         };
         for (String testFile : testFiles) {
-            List<PPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatches(testFile);
+            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatches(testFile);
             assertTrue(pppMatchList.size() > 0);
 
             String testNeuron = new File(testFile).getName()
@@ -36,8 +34,8 @@ public class RawPPPMatchesReaderTest {
                     .replaceAll("cov_scores_", "");
 
             pppMatchList.forEach(pppMatch -> {
-                assertEquals(testFile, testNeuron, pppMatch.getFullEmName());
-                assertNotNull(testFile, pppMatch.getFullLmName());
+                assertEquals(testFile, testNeuron, pppMatch.getSourceEmName());
+                assertNotNull(testFile, pppMatch.getSourceLmName());
             });
         }
     }

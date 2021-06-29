@@ -46,7 +46,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
-import org.janelia.colormipsearch.api.pppsearch.PPPMatch;
+import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
 import org.janelia.colormipsearch.api.pppsearch.RawPPPMatchesReader;
@@ -248,13 +248,13 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
      * @return
      */
     private PPPMatches importPPPRResultsFromFile(Path pppResultsFile) {
-        List<PPPMatch> neuronMatches = originalPPPMatchesReader.readPPPMatches(pppResultsFile.toFile());
+        List<SourcePPPMatch> neuronMatches = originalPPPMatchesReader.readPPPMatches(pppResultsFile.toFile());
         Set<String> matchedLMSampleNames = neuronMatches.stream()
                 .peek(this::fillInPPPMetadata)
-                .map(PPPMatch::getLmSampleName)
+                .map(SourcePPPMatch::getSampleName)
                 .collect(Collectors.toSet());
         Set<String> neuronNames = neuronMatches.stream()
-                .map(PPPMatch::getNeuronName)
+                .map(SourcePPPMatch::getNeuronName)
                 .collect(Collectors.toSet());
         Map<String, CDMIPSample> lmSamples = retrieveLMSamples(matchedLMSampleNames);
         Map<String, EMNeuron> emNeurons = retrieveEMNeurons(neuronNames);
@@ -264,11 +264,13 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                 Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
                 lookupScreenshots(screenshotsPath, pppMatch);
             }
-            CDMIPSample lmSample = lmSamples.get(pppMatch.getLmSampleName());
+            CDMIPSample lmSample = lmSamples.get(pppMatch.getSampleName());
             if (lmSample != null) {
+                pppMatch.setSampleId(lmSample.id);
                 pppMatch.setLineName(lmSample.publishingName);
                 pppMatch.setSlideCode(lmSample.slideCode);
                 pppMatch.setGender(lmSample.gender);
+                pppMatch.setMountingProtocol(lmSample.mountingProtocol);
             }
             EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
             if (emNeuron != null) {
@@ -280,12 +282,12 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
     }
 
-    private void fillInPPPMetadata(PPPMatch pppMatch) {
-        fillEMMMetadata(pppMatch.getFullEmName(), pppMatch);
-        fillLMMetadata(pppMatch.getFullLmName(), pppMatch);
+    private void fillInPPPMetadata(SourcePPPMatch pppMatch) {
+        fillEMMMetadata(pppMatch.getSourceEmName(), pppMatch);
+        fillLMMetadata(pppMatch.getSourceLmName(), pppMatch);
     }
 
-    private void fillEMMMetadata(String emFullName, PPPMatch pppMatch) {
+    private void fillEMMMetadata(String emFullName, SourcePPPMatch pppMatch) {
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
@@ -294,21 +296,21 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private void fillLMMetadata(String lmFullName, PPPMatch pppMatch) {
+    private void fillLMMetadata(String lmFullName, SourcePPPMatch pppMatch) {
         Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = lmRegExPattern.matcher(lmFullName);
         if (matcher.find()) {
-            pppMatch.setLmSampleName(matcher.group(1));
+            pppMatch.setSampleName(matcher.group(1));
             pppMatch.setObjective(matcher.group(2));
         }
     }
 
-    private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch pppMatch) {
+    private void lookupScreenshots(Path pppScreenshotsDir, SourcePPPMatch pppMatch) {
         try {
             if (Files.exists(pppScreenshotsDir)) {
-                Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getFullEmName() + "*" + pppMatch.getFullLmName() + "*.png")
+                Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")
                         .forEach(f -> {
-                            pppMatch.addImageVariant(f.toString());
+                            pppMatch.addSourceImageFile(f.toString());
                         });
             }
         } catch (IOException e) {

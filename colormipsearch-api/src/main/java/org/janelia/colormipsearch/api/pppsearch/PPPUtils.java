@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
 public class PPPUtils {
     private static final Logger LOG = LoggerFactory.getLogger(PPPUtils.class);
 
-    public static List<PPPMatch> mergeMatches(List<PPPMatch> l1, List<PPPMatch> l2) {
+    public static List<SourcePPPMatch> mergeMatches(List<SourcePPPMatch> l1, List<SourcePPPMatch> l2) {
         return Stream.concat(stream(l1), stream(l2))
                 .collect(Collectors.groupingBy(
-                        pppMatch -> ImmutablePair.of(pppMatch.getFullEmName(), pppMatch.getFullLmName()),
+                        pppMatch -> ImmutablePair.of(pppMatch.getSourceEmName(), pppMatch.getSourceLmName()),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 listOfPPPMatches -> listOfPPPMatches.stream()
@@ -33,14 +33,14 @@ public class PPPUtils {
                 ;
     }
 
-    private static PPPMatch mergePPPMatch(PPPMatch m1, PPPMatch m2) {
-        PPPMatch m = new PPPMatch();
-        m.setFullEmName(m1.getFullEmName());
+    private static SourcePPPMatch mergePPPMatch(SourcePPPMatch m1, SourcePPPMatch m2) {
+        SourcePPPMatch m = new SourcePPPMatch();
+        m.setSourceEmName(m1.getSourceEmName());
         m.setNeuronName(m1.getNeuronName());
         m.setNeuronType(m1.getNeuronType());
         m.setNeuronInstance(m1.getNeuronInstance());
-        m.setFullLmName(m1.getFullLmName());
-        m.setLmSampleName(m1.getLmSampleName());
+        m.setSourceLmName(m1.getSourceLmName());
+        m.setSampleName(m1.getSampleName());
         m.setLineName(m1.getLineName());
         m.setSlideCode(m1.getSlideCode());
         m.setObjective(m1.getObjective());

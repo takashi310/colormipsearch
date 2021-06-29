@@ -1,40 +1,44 @@
 package org.janelia.colormipsearch.api.pppsearch;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.FileType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PPPMatch {
-    private String fullEmName;
+public class SourcePPPMatch {
+    private String sourceEmName;
     private String neuronName; // bodyId
     private String neuronType;
     private String neuronInstance;
     private String neuronStatus;
-    private String fullLmName;
-    private String lmSampleName;
+    private String sourceLmName;
+    private String sampleId;
+    private String sampleName;
     private String lineName;
     private String slideCode;
     private String objective;
+    private String mountingProtocol;
     private String alignmentSpace;
     private String gender;
     private Double coverageScore;
     private Double aggregateCoverage;
     private Boolean mirrored;
     private Double emPPPRank;
-    private List<PPPImageVariant> imageVariants;
+    private Map<FileType, String> files;
     private List<SkeletonMatch> skeletonMatches;
 
-    public String getFullEmName() {
-        return fullEmName;
+    public String getSourceEmName() {
+        return sourceEmName;
     }
 
-    public void setFullEmName(String fullEmName) {
-        this.fullEmName = fullEmName;
+    public void setSourceEmName(String sourceEmName) {
+        this.sourceEmName = sourceEmName;
     }
 
     public String getNeuronName() {
@@ -69,20 +73,28 @@ public class PPPMatch {
         this.neuronStatus = neuronStatus;
     }
 
-    public String getFullLmName() {
-        return fullLmName;
+    public String getSourceLmName() {
+        return sourceLmName;
     }
 
-    public void setFullLmName(String fullLmName) {
-        this.fullLmName = fullLmName;
+    public void setSourceLmName(String sourceLmName) {
+        this.sourceLmName = sourceLmName;
     }
 
-    public String getLmSampleName() {
-        return lmSampleName;
+    public String getSampleId() {
+        return sampleId;
     }
 
-    public void setLmSampleName(String lmSampleName) {
-        this.lmSampleName = lmSampleName;
+    public void setSampleId(String sampleId) {
+        this.sampleId = sampleId;
+    }
+
+    public String getSampleName() {
+        return sampleName;
+    }
+
+    public void setSampleName(String sampleName) {
+        this.sampleName = sampleName;
     }
 
     public String getLineName() {
@@ -107,6 +119,14 @@ public class PPPMatch {
 
     public void setObjective(String objective) {
         this.objective = objective;
+    }
+
+    public String getMountingProtocol() {
+        return mountingProtocol;
+    }
+
+    public void setMountingProtocol(String mountingProtocol) {
+        this.mountingProtocol = mountingProtocol;
     }
 
     public String getAlignmentSpace() {
@@ -141,25 +161,25 @@ public class PPPMatch {
         this.aggregateCoverage = aggregateCoverage;
     }
 
-    public boolean addImageVariant(String imageName) {
-        PPPImageVariant.VariantType variantType = PPPImageVariant.VariantType.findVariantType(imageName);
-        if (variantType == null) {
+    public boolean addSourceImageFile(String imageName) {
+        FileType imageFileType = FileType.findFileType(imageName);
+        if (imageFileType == null) {
             return false;
         } else {
-            if (imageVariants == null) {
-                imageVariants = new ArrayList<>();
+            if (files == null) {
+                files = new HashMap<>();
             }
-            imageVariants.add(new PPPImageVariant(variantType, imageName));
+            files.put(imageFileType, imageName);
             return true;
         }
     }
 
-    public List<PPPImageVariant> getImageVariants() {
-        return imageVariants;
+    public Map<FileType, String> getFiles() {
+        return files;
     }
 
-    public void setImageVariants(List<PPPImageVariant> imageVariants) {
-        this.imageVariants = imageVariants;
+    public void setFiles(Map<FileType, String> files) {
+        this.files = files;
     }
 
     public boolean hasSkeletonMatches() {
@@ -197,8 +217,8 @@ public class PPPMatch {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("fullEmName", fullEmName)
-                .append("fullLmName", fullLmName)
+                .append("fullEmName", sourceEmName)
+                .append("fullLmName", sourceLmName)
                 .append("coverageScore", coverageScore)
                 .append("aggregateCoverage", aggregateCoverage)
                 .toString();

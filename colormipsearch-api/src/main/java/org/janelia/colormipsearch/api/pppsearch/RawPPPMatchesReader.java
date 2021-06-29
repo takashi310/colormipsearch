@@ -12,13 +12,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.commons.lang3.RegExUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +26,11 @@ public class RawPPPMatchesReader {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    public List<PPPMatch> readPPPMatches(String fn) {
+    public List<SourcePPPMatch> readPPPMatches(String fn) {
         return readPPPMatches(new File(fn));
     }
 
-    public List<PPPMatch> readPPPMatches(File f) {
+    public List<SourcePPPMatch> readPPPMatches(File f) {
         JsonNode jsonContent = readJSONFile(f);
         return StreamSupport.stream(Spliterators.spliterator(jsonContent.fields(), Long.MAX_VALUE, 0), false)
                 .flatMap(emMatchEntry -> getLMMatches(emMatchEntry.getKey(),emMatchEntry.getValue()))
@@ -40,12 +38,12 @@ public class RawPPPMatchesReader {
                 ;
     }
 
-    private Stream<PPPMatch> getLMMatches(String emFullName, JsonNode lmMatchesNode) {
+    private Stream<SourcePPPMatch> getLMMatches(String emFullName, JsonNode lmMatchesNode) {
         return StreamSupport.stream(Spliterators.spliterator(lmMatchesNode.fields(), Long.MAX_VALUE, 0), false)
                 .map(lmMatchEntry -> {
-                    PPPMatch pppMatch = new PPPMatch();
-                    pppMatch.setFullEmName(emFullName);
-                    pppMatch.setFullLmName(lmMatchEntry.getKey());
+                    SourcePPPMatch pppMatch = new SourcePPPMatch();
+                    pppMatch.setSourceEmName(emFullName);
+                    pppMatch.setSourceLmName(lmMatchEntry.getKey());
                     try {
                         JsonNode lmMatchContent = lmMatchEntry.getValue();
                         RawSkeletonMatches skeletonMatch = objectMapper.readValue(lmMatchContent.toString(), RawSkeletonMatches.class);
