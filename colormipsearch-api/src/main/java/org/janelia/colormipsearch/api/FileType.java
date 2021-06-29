@@ -21,4 +21,8 @@ public enum FileType {
         }
         return null;
     }
+
+    public String getSuffix() {
+        return suffix;
+    }
 }

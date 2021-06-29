@@ -7,11 +7,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SkeletonMatch {
+public class PPPSkeletonMatch {
+
+    static PPPSkeletonMatch fromSourceSkeletonMatch(SourceSkeletonMatch sourceSkeletonMatch) {
+        PPPSkeletonMatch pppSkeletonMatch = new PPPSkeletonMatch();
+        pppSkeletonMatch.id = sourceSkeletonMatch.getId();
+        pppSkeletonMatch.nblastScore = sourceSkeletonMatch.getNblastScore();
+        pppSkeletonMatch.coverage = sourceSkeletonMatch.getCoverage();
+        return pppSkeletonMatch;
+    }
+
     private String id;
     private Double nblastScore;
     private Double coverage;
-    private short[] colors;
 
     public String getId() {
         return id;
@@ -36,14 +44,6 @@ public class SkeletonMatch {
 
     public void setCoverage(Double coverage) {
         this.coverage = coverage;
-    }
-
-    public short[] getColors() {
-        return colors;
-    }
-
-    public void setColors(short[] colors) {
-        this.colors = colors;
     }
 
     @Override

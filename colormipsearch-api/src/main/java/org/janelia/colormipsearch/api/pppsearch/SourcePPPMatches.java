@@ -15,7 +15,7 @@ import org.janelia.colormipsearch.api.Results;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"neuronName", "neuronType", "neuronInstance", "fullName", "results"})
-public class PPPMatches extends Results<List<SourcePPPMatch>> {
+public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
 
     private static class PPPID {
         private final String fullName;
@@ -57,7 +57,7 @@ public class PPPMatches extends Results<List<SourcePPPMatch>> {
         }
     }
 
-    public static List<PPPMatches> pppMatchesByNeurons(List<SourcePPPMatch> pppMatchList) {
+    public static List<SourcePPPMatches> pppMatchesByNeurons(List<SourcePPPMatch> pppMatchList) {
         if (CollectionUtils.isNotEmpty(pppMatchList)) {
             Comparator<SourcePPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getEmPPPRank()));
             return pppMatchList.stream()
@@ -74,7 +74,7 @@ public class PPPMatches extends Results<List<SourcePPPMatch>> {
                                         listOfPPPMatches.sort(pppComparator);
                                         return listOfPPPMatches;
                                     })))
-                    .entrySet().stream().map(e -> new PPPMatches(
+                    .entrySet().stream().map(e -> new SourcePPPMatches(
                             e.getKey().fullName,
                             e.getKey().name,
                             e.getKey().type,
@@ -86,8 +86,8 @@ public class PPPMatches extends Results<List<SourcePPPMatch>> {
         }
     }
 
-    public static PPPMatches pppMatchesBySingleNeuron(List<SourcePPPMatch> pppMatchList) {
-        List<PPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
+    public static SourcePPPMatches pppMatchesBySingleNeuron(List<SourcePPPMatch> pppMatchList) {
+        List<SourcePPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
         if (allPPPMatches.size() != 1) {
             throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
         } else {
@@ -100,11 +100,11 @@ public class PPPMatches extends Results<List<SourcePPPMatch>> {
     private final String neuronType;
     private final String neuronInstance;
 
-    PPPMatches(String fullName,
-               String neuronName,
-               String neuronType,
-               String neuronInstance,
-               List<SourcePPPMatch> results) {
+    SourcePPPMatches(String fullName,
+                     String neuronName,
+                     String neuronType,
+                     String neuronInstance,
+                     List<SourcePPPMatch> results) {
         super(results);
         this.fullName = fullName;
         this.neuronName = neuronName;

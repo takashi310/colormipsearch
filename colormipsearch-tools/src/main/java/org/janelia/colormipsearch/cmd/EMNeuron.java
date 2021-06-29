@@ -11,4 +11,6 @@ public class EMNeuron {
     String neuronInstance;
     @JsonProperty
     String status;
+    @JsonProperty
+    String datasetIdentifier;
 }

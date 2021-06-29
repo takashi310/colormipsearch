@@ -48,7 +48,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatch;
-import org.janelia.colormipsearch.api.pppsearch.PPPMatches;
+import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
 import org.janelia.colormipsearch.api.pppsearch.RawPPPMatchesReader;
 import org.slf4j.Logger;
@@ -88,6 +88,15 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
         @Parameter(names = "--screenshots-dir", description = "The prefix of the JSON results file containing PPP matches")
         private String screenshotsDir = "screenshots";
+
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
+        String alignmentSpace = "JRC2018_Unisex_20x_HR";
+
+        @Parameter(names = {"--only-best-skeleton-matches"}, description = "Include only best skeleton matches", arity = 0)
+        boolean onlyBestSkeletonMatches = false;
+
+        @Parameter(names = {"--jacs-read-batch-size"}, description = "Batch size for getting data from JACS")
+        int jacsReadBatchSize = 2000;
 
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 100;
@@ -172,7 +181,8 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Path outputPath = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
-                .forEach(pppMatches -> PPPUtils.writePPPMatchesToJSONFile(
+                .map(pppMatches -> SourcePPPMatches.pppMatchesBySingleNeuron(pppMatches))
+                .forEach(pppMatches -> PPPUtils.writeResultsToJSONFile(
                         pppMatches,
                         outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
@@ -244,8 +254,10 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
      * @param pppResultsFile
      * @return
      */
-    private PPPMatches importPPPRResultsFromFile(Path pppResultsFile) {
-        List<SourcePPPMatch> neuronMatches = originalPPPMatchesReader.readPPPMatches(pppResultsFile.toFile());
+    private List<SourcePPPMatch> importPPPRResultsFromFile(Path pppResultsFile) {
+        List<SourcePPPMatch> neuronMatches = args.onlyBestSkeletonMatches
+                ? originalPPPMatchesReader.readPPPMatchesWithBestSkeletonMatches(pppResultsFile.toString())
+                : originalPPPMatchesReader.readPPPMatchesWithAllSkeletonMatches(pppResultsFile.toString());
         Set<String> matchedLMSampleNames = neuronMatches.stream()
                 .peek(this::fillInPPPMetadata)
                 .map(SourcePPPMatch::getSampleName)
@@ -264,6 +276,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             CDMIPSample lmSample = lmSamples.get(pppMatch.getSampleName());
             if (lmSample != null) {
+                pppMatch.setSourceLmRelease(lmSample.releaseLabel);
                 pppMatch.setSampleId(lmSample.id);
                 pppMatch.setLineName(lmSample.publishingName);
                 pppMatch.setSlideCode(lmSample.slideCode);
@@ -272,15 +285,17 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
             if (emNeuron != null) {
+                pppMatch.setSourceEmLibrary(emNeuron.datasetIdentifier);
                 pppMatch.setNeuronType(emNeuron.neuronType);
                 pppMatch.setNeuronInstance(emNeuron.neuronInstance);
                 pppMatch.setNeuronStatus(emNeuron.status);
             }
         });
-        return PPPMatches.pppMatchesBySingleNeuron(neuronMatches);
+        return neuronMatches;
     }
 
     private void fillInPPPMetadata(SourcePPPMatch pppMatch) {
+        pppMatch.setAlignmentSpace(args.alignmentSpace);
         fillEMMMetadata(pppMatch.getSourceEmName(), pppMatch);
         fillLMMetadata(pppMatch.getSourceLmName(), pppMatch);
     }
@@ -317,12 +332,12 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private Map<String, CDMIPSample> retrieveLMSamples(Set<String> sampleNames) {
         if (StringUtils.isNotBlank(args.dataServiceURL)) {
+            LOG.debug("Read LM metadata for {} samples", sampleNames.size());
             WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
             WebTarget samplesEndpoint = serverEndpoint.path("/data/samples")
                     .queryParam("name", sampleNames == null ? null : sampleNames.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null));
-            int sampleChunkSize = 2000;
             int sampleMaxSize = sampleNames == null ? 0 : sampleNames.size();
-            return retrieveDataStream(samplesEndpoint, sampleChunkSize, sampleMaxSize, new TypeReference<List<CDMIPSample>>() {})
+            return retrieveDataStream(samplesEndpoint, args.jacsReadBatchSize, sampleMaxSize, new TypeReference<List<CDMIPSample>>() {})
                     .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
                     .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
@@ -332,6 +347,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private Map<String, EMNeuron> retrieveEMNeurons(Set<String> neuronIds) {
         if (StringUtils.isNotBlank(args.dataServiceURL)) {
+            LOG.debug("Read EM metadata for {} neurons", neuronIds.size());
             WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
             WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
                     .path(args.emDataset)
@@ -339,7 +355,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                     .queryParam("name", neuronIds != null ? neuronIds.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
             int neuronsChunkSize = 2000;
             int neuronsMaxSize = neuronIds == null ? 0 : neuronIds.size();
-            return retrieveDataStream(emEndpoint, neuronsChunkSize, neuronsMaxSize, new TypeReference<List<EMNeuron>>() {})
+            return retrieveDataStream(emEndpoint, args.jacsReadBatchSize, neuronsMaxSize, new TypeReference<List<EMNeuron>>() {})
                     .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
             return Collections.emptyMap();
@@ -350,11 +366,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         if (chunkSize > 0 && maxSize > 0) {
             int ncalls = maxSize / chunkSize;
             return IntStream.range(0, ncalls + (maxSize % chunkSize == 0 ? 0 : 1)).boxed()
-                    .flatMap(i -> retrieveChunk(
-                            endpoint
-                                    .queryParam("offset", String.valueOf(i * maxSize))
-                                    .queryParam("length", String.valueOf(maxSize)),
-                            t).stream())
+                    .flatMap(i -> {
+                        LOG.debug("Get {} elements from JACS:{}", chunkSize, i * chunkSize);
+                        return retrieveChunk(
+                                endpoint
+                                        .queryParam("offset", String.valueOf(i * chunkSize))
+                                        .queryParam("length", String.valueOf(chunkSize)),
+                                t).stream();
+                    })
                     ;
         } else {
             return retrieveChunk(endpoint, t).stream();

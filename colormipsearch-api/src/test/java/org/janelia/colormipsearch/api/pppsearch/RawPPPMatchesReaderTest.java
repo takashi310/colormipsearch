@@ -20,13 +20,34 @@ public class RawPPPMatchesReaderTest {
     }
 
     @Test
-    public void readRawPPPMatchFile() {
+    public void readRawPPPMatchFileWithAllSkeletonMatches() {
         String[] testFiles = new String[] {
                 "src/test/resources/colormipsearch/api/pppsearch/cov_scores_1599747200-PFNp_c-RT_18U.json",
                 "src/test/resources/colormipsearch/api/pppsearch/cov_scores_484130600-SMP145-RT_18U.json"
         };
         for (String testFile : testFiles) {
-            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatches(testFile);
+            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithAllSkeletonMatches(testFile);
+            assertTrue(pppMatchList.size() > 0);
+
+            String testNeuron = new File(testFile).getName()
+                    .replaceAll("\\.json", "")
+                    .replaceAll("cov_scores_", "");
+
+            pppMatchList.forEach(pppMatch -> {
+                assertEquals(testFile, testNeuron, pppMatch.getSourceEmName());
+                assertNotNull(testFile, pppMatch.getSourceLmName());
+            });
+        }
+    }
+
+    @Test
+    public void readRawPPPMatchFileWithBestSkeletonMatches() {
+        String[] testFiles = new String[] {
+                "src/test/resources/colormipsearch/api/pppsearch/cov_scores_1599747200-PFNp_c-RT_18U.json",
+                "src/test/resources/colormipsearch/api/pppsearch/cov_scores_484130600-SMP145-RT_18U.json"
+        };
+        for (String testFile : testFiles) {
+            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithBestSkeletonMatches(testFile);
             assertTrue(pppMatchList.size() > 0);
 
             String testNeuron = new File(testFile).getName()

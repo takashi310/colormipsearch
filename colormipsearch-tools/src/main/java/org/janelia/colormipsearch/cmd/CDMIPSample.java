@@ -35,4 +35,6 @@ class CDMIPSample {
     String sampleRef;
     @JsonProperty
     String status;
+    @JsonProperty
+    String releaseLabel;
 }

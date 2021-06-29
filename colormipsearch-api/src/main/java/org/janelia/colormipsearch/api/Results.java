@@ -11,4 +11,8 @@ public class Results<T> {
     public Results(@JsonProperty("results") T results) {
         this.results = results;
     }
+
+    public T getResults() {
+        return results;
+    }
 }
