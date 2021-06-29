@@ -10,17 +10,20 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.FileType;
 
+/**
+ * These are the source PPP matches as they are imported from the original matches
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SourcePPPMatch {
     private String sourceEmName;
-    private String neuronName; // bodyId
+    private String neuronName; // em body ID
     private String neuronType;
     private String neuronInstance;
     private String neuronStatus;
     private String sourceLmName;
+    private String lineName;
     private String sampleId;
     private String sampleName;
-    private String lineName;
     private String slideCode;
     private String objective;
     private String mountingProtocol;
@@ -81,6 +84,14 @@ public class SourcePPPMatch {
         this.sourceLmName = sourceLmName;
     }
 
+    public String getLineName() {
+        return lineName;
+    }
+
+    public void setLineName(String lineName) {
+        this.lineName = lineName;
+    }
+
     public String getSampleId() {
         return sampleId;
     }
@@ -95,14 +106,6 @@ public class SourcePPPMatch {
 
     public void setSampleName(String sampleName) {
         this.sampleName = sampleName;
-    }
-
-    public String getLineName() {
-        return lineName;
-    }
-
-    public void setLineName(String lineName) {
-        this.lineName = lineName;
     }
 
     public String getSlideCode() {

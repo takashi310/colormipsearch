@@ -362,11 +362,12 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private <T> List<T> retrieveChunk(WebTarget endpoint, TypeReference<List<T>> t) {
-        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
-        } else {
-            return response.readEntity(new GenericType<>(t.getType()));
+        try (Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), args.authorization).get()) {
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
+            } else {
+                return response.readEntity(new GenericType<>(t.getType()));
+            }
         }
     }
 
