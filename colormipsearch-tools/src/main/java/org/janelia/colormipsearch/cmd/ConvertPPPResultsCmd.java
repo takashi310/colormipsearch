@@ -15,8 +15,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,12 +57,13 @@ import org.slf4j.LoggerFactory;
 
 public class ConvertPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ConvertPPPResultsCmd.class);
+    private static final Random RAND = new Random();
 
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class ConvertPPPResultsArgs extends AbstractCmdArgs {
-        @Parameter(names = {"--jacs-url", "--data-url"},
+        @Parameter(names = {"--jacs-url", "--data-url"}, variableArity = true,
                 description = "JACS data service base URL")
-        String dataServiceURL;
+        List<String> dataServiceURLs;
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;
@@ -330,11 +333,15 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private Map<String, CDMIPSample> retrieveLMSamples(Set<String> sampleNames) {
-        if (StringUtils.isNotBlank(args.dataServiceURL) && CollectionUtils.isNotEmpty(sampleNames)) {
+        if (CollectionUtils.isNotEmpty(args.dataServiceURLs) && CollectionUtils.isNotEmpty(sampleNames)) {
             LOG.debug("Read LM metadata for {} samples", sampleNames.size());
-            WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-            WebTarget samplesEndpoint = serverEndpoint.path("/data/samples");
-            return retrieveDataStream(samplesEndpoint, args.jacsReadBatchSize, sampleNames, new TypeReference<List<CDMIPSample>>() {})
+            Client httpClient = createHttpClient();
+            return retrieveDataStream(() -> httpClient.target(getDataServiceURL())
+                            .path("/data/samples")
+                            .queryParam("withReducedFields", true),
+                    args.jacsReadBatchSize,
+                    sampleNames,
+                    new TypeReference<List<CDMIPSample>>() {})
                     .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
                     .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
@@ -343,39 +350,45 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
     }
 
     private Map<String, EMNeuron> retrieveEMNeurons(Set<String> neuronIds) {
-        if (StringUtils.isNotBlank(args.dataServiceURL) && CollectionUtils.isNotEmpty(neuronIds)) {
+        if (CollectionUtils.isNotEmpty(args.dataServiceURLs) && CollectionUtils.isNotEmpty(neuronIds)) {
             LOG.debug("Read EM metadata for {} neurons", neuronIds.size());
-            WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-            WebTarget emEndpoint = serverEndpoint.path("/emdata/dataset")
-                    .path(args.emDataset)
-                    .path(args.emDatasetVersion);
-            return retrieveDataStream(emEndpoint, args.jacsReadBatchSize, neuronIds, new TypeReference<List<EMNeuron>>() {})
+            Client httpClient = createHttpClient();
+            return retrieveDataStream(() -> httpClient.target(getDataServiceURL())
+                            .path("/emdata/dataset")
+                            .path(args.emDataset)
+                            .path(args.emDatasetVersion),
+                    args.jacsReadBatchSize,
+                    neuronIds,
+                    new TypeReference<List<EMNeuron>>() {})
                     .collect(Collectors.toMap(n -> n.name, n -> n));
         } else {
             return Collections.emptyMap();
         }
     }
 
+    private String getDataServiceURL() {
+        return args.dataServiceURLs.get(RAND.nextInt(args.dataServiceURLs.size()));
+    }
+
     /**
-     *
-     * @param endpoint Data endpoint
+     * @param endpointSupplier Data endpoint supplier
      * @param chunkSize
      * @param names is a non empty set of item names to be retrieved
-     * @param t
-     * @param <T>
+     * @param t data type reference
+     * @param <T> data type
      * @return
      */
-    private <T> Stream<T> retrieveDataStream(WebTarget endpoint, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
+    private <T> Stream<T> retrieveDataStream(Supplier<WebTarget> endpointSupplier, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
         if (chunkSize > 0) {
             return Utils.partitionCollection(names, chunkSize).stream().parallel()
                     .flatMap(namesSubset -> {
                         LOG.info("Retrieve {} items", namesSubset.size());
                         return retrieveChunk(
-                                endpoint.queryParam("name", namesSubset.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                                endpointSupplier.get().queryParam("name", namesSubset.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 t).stream();
                     });
         } else {
-            return retrieveChunk(endpoint.queryParam("name", CollectionUtils.isNotEmpty(names) ? names.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
+            return retrieveChunk(endpointSupplier.get().queryParam("name", CollectionUtils.isNotEmpty(names) ? names.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
                     t).stream();
         }
     }
