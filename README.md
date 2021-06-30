@@ -516,3 +516,17 @@ aws s3 cp \
     local/testData/cdsresults.normalized/flylight_gen1_mcfo_published \
     s3://janelia-neuronbridge-data-prod/metadata/cdsresults --recursive
 ```
+
+### Import PPP matches
+```bash
+PPP_IMPORT_DIR=/nrs/saalfeld/kainmuellerd/flymatch/all_hemibrain_1.2_NB/setup22_nblast_20/results/68
+PPP_RESULTS_DIR=/nrs/neuronbridge/v2.2/pppresults/flyem-to-flylight
+
+java \
+    -jar target/colormipsearch-2.7.0-jar-with-dependencies.jar \
+    convertPPPResults \
+    -ps 30 \
+     --jacs-read-batch-size 3000 \
+    -rd ${PPP_IMPORT_DIR} \
+    -od ${PPP_RESULTS_DIR}
+```

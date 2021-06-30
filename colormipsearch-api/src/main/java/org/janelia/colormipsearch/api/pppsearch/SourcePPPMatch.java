@@ -60,7 +60,7 @@ public class SourcePPPMatch {
     private Boolean mirrored;
     @JsonProperty("pppRank")
     private Double emPPPRank;
-    private Map<FileType, String> sourceImageFiles;
+    private Map<PPPScreenshotType, String> sourceImageFiles;
     private List<SourceSkeletonMatch> skeletonMatches;
 
     public String getSourceEmName() {
@@ -241,7 +241,9 @@ public class SourcePPPMatch {
     public Map<FileType, String> getFiles() {
         return this.sourceImageFiles == null
                 ? null
-                : sourceImageFiles.keySet().stream().collect(Collectors.toMap(e -> e, this::getTargetImageRelativePath));
+                : sourceImageFiles.keySet().stream().collect(Collectors.toMap(
+                        e -> e.getFileType(),
+                        e -> getTargetImageRelativePath(e.getFileType())));
     }
 
     @JsonIgnore
@@ -272,7 +274,7 @@ public class SourcePPPMatch {
     }
 
     public void addSourceImageFile(String imageName) {
-        FileType imageFileType = FileType.findFileType(imageName);
+        PPPScreenshotType imageFileType = PPPScreenshotType.findScreenshotType(imageName);
         if (imageFileType != null) {
             if (sourceImageFiles == null) {
                 sourceImageFiles = new HashMap<>();
@@ -281,11 +283,11 @@ public class SourcePPPMatch {
         }
     }
 
-    public Map<FileType, String> getSourceImageFiles() {
+    public Map<PPPScreenshotType, String> getSourceImageFiles() {
         return sourceImageFiles;
     }
 
-    public void setSourceImageFiles(Map<FileType, String> sourceImageFiles) {
+    public void setSourceImageFiles(Map<PPPScreenshotType, String> sourceImageFiles) {
         this.sourceImageFiles = sourceImageFiles;
     }
 
