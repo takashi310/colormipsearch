@@ -180,7 +180,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Path outputPath = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
-                .map(pppMatches -> SourcePPPMatches.pppMatchesBySingleNeuron(pppMatches))
+                .map(SourcePPPMatches::pppMatchesBySingleNeuron)
                 .forEach(pppMatches -> PPPUtils.writeResultsToJSONFile(
                         pppMatches,
                         outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),

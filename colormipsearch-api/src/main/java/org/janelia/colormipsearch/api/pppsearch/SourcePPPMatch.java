@@ -215,7 +215,7 @@ public class SourcePPPMatch {
         this.mirrored = mirrored;
     }
 
-    @JsonProperty
+    @JsonProperty("pppScore")
     public int getPPPScore() {
         return coverageScore == null ? 0 : (int)Math.abs(coverageScore);
     }
