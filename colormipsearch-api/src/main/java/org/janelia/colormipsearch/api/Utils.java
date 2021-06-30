@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -52,28 +53,11 @@ public class Utils {
         }
     }
 
-    public static <T> List<List<T>> partitionList(List<T> l, int partitionSize) {
-        BiFunction<Pair<List<List<T>>, List<T>>, T, Pair<List<List<T>>, List<T>>> partitionAcumulator = (partitionResult, s) -> {
-            List<T> currentPartition;
-            if (partitionResult.getRight().size() == partitionSize) {
-                currentPartition = new ArrayList<>();
-            } else {
-                currentPartition = partitionResult.getRight();
-            }
-            currentPartition.add(s);
-            if (currentPartition.size() == 1) {
-                partitionResult.getLeft().add(currentPartition);
-            }
-            return ImmutablePair.of(partitionResult.getLeft(), currentPartition);
-        };
-        return l.stream().reduce(
-                ImmutablePair.of(new ArrayList<>(), new ArrayList<>()),
-                partitionAcumulator,
-                (r1, r2) -> r2.getLeft().stream().flatMap(Collection::stream)
-                        .map(s -> partitionAcumulator.apply(r1, s))
-                        .reduce((first, second) -> second)
-                        .orElse(r1)).getLeft()
-                ;
+    public static <T> Collection<List<T>> partitionCollection(Collection<T> l, int partitionSizeArg) {
+        final AtomicInteger index = new AtomicInteger();
+        int partitionSize = partitionSizeArg > 0 ? partitionSizeArg : 1;
+        return l.stream()
+                .collect(Collectors.groupingBy(docId -> index.getAndIncrement() / partitionSize)).values();
     }
 
     public static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,

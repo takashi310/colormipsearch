@@ -169,7 +169,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> streamCDSMatchesFromFiles(fileList)
                         .forEach(cdsMatches -> updateGradientScoresForCDSMatches(cdsMatches,
                                 mipId -> {

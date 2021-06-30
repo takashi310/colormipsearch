@@ -156,6 +156,7 @@ public class RawPPPMatchesReader {
             }
         }
     }
+
     private String normalizeArrayString(String s) {
         return s.replaceAll("\\[\\s+", "[")
                 .replaceAll("\\.\\.\\.", "")

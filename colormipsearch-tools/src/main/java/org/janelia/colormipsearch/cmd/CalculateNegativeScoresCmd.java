@@ -126,7 +126,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Path outputDir = args.getOutputDir();
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            Utils.partitionList(args.resultsFiles, args.processingPartitionSize).stream().parallel()
+            Utils.partitionCollection(args.resultsFiles, args.processingPartitionSize).stream().parallel()
                     .forEach(inputFiles -> {
                         long startTime = System.currentTimeMillis();
                         inputFiles.forEach(inputArg -> {
@@ -170,7 +170,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                 } else {
                     filesToProcess = resultFileNames;
                 }
-                Utils.partitionList(filesToProcess, args.processingPartitionSize).stream().parallel()
+                Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                         .forEach(fileList -> {
                             long startTime = System.currentTimeMillis();
                             fileList.forEach(fn -> {

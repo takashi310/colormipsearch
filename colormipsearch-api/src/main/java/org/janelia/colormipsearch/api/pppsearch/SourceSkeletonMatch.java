@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.api.pppsearch;
 
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -11,6 +12,7 @@ public class SourceSkeletonMatch {
     private String id;
     private Double nblastScore;
     private Double coverage;
+    @JsonIgnore
     private short[] colors;
 
     public String getId() {

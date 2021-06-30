@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class RawSkeletonMatches {
+class RawSkeletonMatches {
     @JsonProperty("skel_ids")
     private String bestSkeletonIds;
     @JsonProperty("nblast_scores")
@@ -28,99 +28,99 @@ public class RawSkeletonMatches {
     private Boolean mirrored;
     private Double rank;
 
-    public String getBestSkeletonIds() {
+    String getBestSkeletonIds() {
         return bestSkeletonIds;
     }
 
-    public void setBestSkeletonIds(String bestSkeletonIds) {
+    void setBestSkeletonIds(String bestSkeletonIds) {
         this.bestSkeletonIds = bestSkeletonIds;
     }
 
-    public String getBestNBlastScores() {
+    String getBestNBlastScores() {
         return bestNBlastScores;
     }
 
-    public void setBestNBlastScores(String bestNBlastScores) {
+    void setBestNBlastScores(String bestNBlastScores) {
         this.bestNBlastScores = bestNBlastScores;
     }
 
-    public String getBestCoveragesScores() {
+    String getBestCoveragesScores() {
         return bestCoveragesScores;
     }
 
-    public void setBestCoveragesScores(String bestCoveragesScores) {
+    void setBestCoveragesScores(String bestCoveragesScores) {
         this.bestCoveragesScores = bestCoveragesScores;
     }
 
-    public String getBestColors() {
+    String getBestColors() {
         return bestColors;
     }
 
-    public void setBestColors(String bestColors) {
+    void setBestColors(String bestColors) {
         this.bestColors = bestColors;
     }
 
-    public String getAllSkeletonIds() {
+    String getAllSkeletonIds() {
         return allSkeletonIds;
     }
 
-    public void setAllSkeletonIds(String allSkeletonIds) {
+    void setAllSkeletonIds(String allSkeletonIds) {
         this.allSkeletonIds = allSkeletonIds;
     }
 
-    public String getAllNBlastScores() {
+    String getAllNBlastScores() {
         return allNBlastScores;
     }
 
-    public void setAllNBlastScores(String allNBlastScores) {
+    void setAllNBlastScores(String allNBlastScores) {
         this.allNBlastScores = allNBlastScores;
     }
 
-    public String getAllCoveragesScores() {
+    String getAllCoveragesScores() {
         return allCoveragesScores;
     }
 
-    public void setAllCoveragesScores(String allCoveragesScores) {
+    void setAllCoveragesScores(String allCoveragesScores) {
         this.allCoveragesScores = allCoveragesScores;
     }
 
-    public String getAllColors() {
+    String getAllColors() {
         return allColors;
     }
 
-    public void setAllColors(String allColors) {
+    void setAllColors(String allColors) {
         this.allColors = allColors;
     }
 
-    public Double getCoverageScore() {
+    Double getCoverageScore() {
         return coverageScore;
     }
 
-    public void setCoverageScore(Double coverageScore) {
+    void setCoverageScore(Double coverageScore) {
         this.coverageScore = coverageScore;
     }
 
-    public Double getAggregateCoverage() {
+    Double getAggregateCoverage() {
         return aggregateCoverage;
     }
 
-    public void setAggregateCoverage(Double aggregateCoverage) {
+    void setAggregateCoverage(Double aggregateCoverage) {
         this.aggregateCoverage = aggregateCoverage;
     }
 
-    public Boolean getMirrored() {
+    Boolean getMirrored() {
         return mirrored;
     }
 
-    public void setMirrored(Boolean mirrored) {
+    void setMirrored(Boolean mirrored) {
         this.mirrored = mirrored;
     }
 
-    public Double getRank() {
+    Double getRank() {
         return rank;
     }
 
-    public void setRank(Double rank) {
+    void setRank(Double rank) {
         this.rank = rank;
     }
 
