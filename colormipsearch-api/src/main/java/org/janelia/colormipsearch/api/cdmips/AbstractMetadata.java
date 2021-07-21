@@ -29,6 +29,7 @@ public abstract class AbstractMetadata implements Serializable {
     private String imageType; // file or zipEntry
     private String imageURL;
     private String thumbnailURL;
+    private String searchablePNG;
     private String slideCode;
     private String objective;
     private String neuronType;
@@ -140,6 +141,14 @@ public abstract class AbstractMetadata implements Serializable {
 
     public void setThumbnailURL(String thumbnailURL) {
         this.thumbnailURL = thumbnailURL;
+    }
+
+    public String getSearchablePNG() {
+        return searchablePNG;
+    }
+
+    public void setSearchablePNG(String searchablePNG) {
+        this.searchablePNG = searchablePNG;
     }
 
     @JsonProperty
@@ -310,6 +319,7 @@ public abstract class AbstractMetadata implements Serializable {
         that.setLibraryName(this.libraryName);
         that.setImageURL(this.imageURL);
         that.setThumbnailURL(this.thumbnailURL);
+        that.setSearchablePNG(this.getSearchablePNG());
         that.setCdmPath(this.getCdmPath());
         that.setImageType(this.getImageType());
         that.setImageName(this.getImageName());
@@ -362,6 +372,8 @@ public abstract class AbstractMetadata implements Serializable {
                     return this::setImageURL;
                 case "thumbnailURL":
                     return this::setThumbnailURL;
+                case "searchableName":
+                    return this::setSearchablePNG;
                 default:
                     return defaultAttributeValueHandler(attrName);
             }
@@ -408,6 +420,8 @@ public abstract class AbstractMetadata implements Serializable {
                 return "imageURL";
             case "thumbnail_path":
                 return "thumbnailURL";
+            case "searchableName":
+                return "searchableName";
         }
         return attrName;
     }

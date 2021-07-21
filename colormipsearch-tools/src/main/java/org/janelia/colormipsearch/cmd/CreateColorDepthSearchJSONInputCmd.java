@@ -13,12 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -450,6 +445,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 }
                             }
                         })
+                        .peek(cdmip -> {
+                            if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
+                                addSearchableName(cdmip);
+                            }
+                        })
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
@@ -483,6 +483,26 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 cdmip.addVariant(variant, variantName);
             }
         }
+    }
+
+    private void addSearchableName(MIPMetadata cdmip) {
+        // searchableName filename must be expressed in terms of publishedName (not internal name),
+        //  and must include the integer suffix that identifies exactly which image it is,
+        //  when there are multiple images for a given combination of parameters
+        // in practical terms, we take the filename from imageURL, which has
+        //  the publishedName in it, and graft on the required integer from imageName, which
+        //  has the internal name
+
+        // remove directories and extension (which we know is ".png") from imageURL:
+        Path imagePath = Paths.get(cdmip.getImageURL());
+        String imageFilename = imagePath.getFileName().toString();
+        String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
+
+        // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
+        String[] imageNamePieces = cdmip.getImageName().split("-");
+        String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
+
+        cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
     }
 
     private JsonGenerator openOutput(File of)  {
