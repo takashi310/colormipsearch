@@ -70,6 +70,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceImageURL;
     private int matchingPixels;
     private double matchingRatio;
+    private boolean bestMatchMirrored;
     @JsonProperty
     private Long gradientAreaGap;
     @JsonProperty
@@ -214,6 +215,14 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
             setMatchingRatio(Double.parseDouble(matchingRatioValue));
     }
 
+    public boolean isBestMatchMirrored() {
+        return bestMatchMirrored;
+    }
+
+    public void setBestMatchMirrored(boolean bestMatchMirrored) {
+        this.bestMatchMirrored = bestMatchMirrored;
+    }
+
     @JsonIgnore
     public long getGradientAreaGap() {
         return gradientAreaGap == null ? -1 : gradientAreaGap;
@@ -311,6 +320,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         // copy score attributes
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
+        that.setBestMatchMirrored(this.isBestMatchMirrored());
         that.setGradientAreaGap(this.getGradientAreaGap());
         that.setHighExpressionArea(this.getHighExpressionArea());
         that.setNormalizedGapScore(this.getNormalizedGapScore());

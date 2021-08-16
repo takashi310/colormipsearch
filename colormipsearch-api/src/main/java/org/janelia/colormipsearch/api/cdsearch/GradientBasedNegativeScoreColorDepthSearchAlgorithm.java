@@ -148,7 +148,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         long startTime = System.currentTimeMillis();
         ImageArray<?> targetGradientImageArray = getVariantImageArray(variantTypeSuppliers, "gradient");
         if (targetGradientImageArray == null) {
-            return new NegativeColorDepthMatchScore(-1, -1);
+            return new NegativeColorDepthMatchScore(-1, -1, false);
         }
         ImageArray<?> targetZGapMaskImageArray = getVariantImageArray(variantTypeSuppliers, "zgap");
         LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
@@ -157,11 +157,11 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                 ? LImageUtils.create(targetZGapMaskImageArray)
                 : negativeRadiusDilation.applyTo(targetImage.map(ColorTransformation.mask(queryThreshold)));
 
-        NegativeColorDepthMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY);
+        NegativeColorDepthMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY, false);
 
         if (mirrorQuery) {
             LOG.trace("Start calculating area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
-            NegativeColorDepthMatchScore mirrorNegativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.horizontalMirror());
+            NegativeColorDepthMatchScore mirrorNegativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.horizontalMirror(), true);
             LOG.trace("Completed area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
             if (mirrorNegativeScores.getScore() < negativeScores.getScore()) {
                 return mirrorNegativeScores;
@@ -179,7 +179,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         }
     }
 
-    private NegativeColorDepthMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation) {
+    private NegativeColorDepthMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation, boolean useMirroredMask) {
         long startTime = System.currentTimeMillis();
         LImage queryROIImage;
         LImage queryIntensitiesROIImage;
@@ -229,7 +229,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
         long highExpressionArea = highExpressionRegions.fold(0L, Long::sum);
         LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
-        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea);
+        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea, useMirroredMask);
     }
 
 }

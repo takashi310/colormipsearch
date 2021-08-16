@@ -6,23 +6,31 @@ import javax.annotation.Nullable;
  * ColorMIPCompareOutput represents the color depth match summary result.
  */
 public class ColorMIPMatchScore implements ColorDepthMatchScore {
-    public static ColorMIPMatchScore NO_MATCH = new ColorMIPMatchScore(0, 0, null);
+    public static ColorMIPMatchScore NO_MATCH = new ColorMIPMatchScore(0, 0, false, null);
 
     private final int matchingPixNum;
     private final double matchingPixNumToMaskRatio;
+    private final boolean bestMatchMirrored;
     private final NegativeColorDepthMatchScore negativeScores;
 
     public ColorMIPMatchScore(int matchingPixNum,
                        double matchingPixNumToMaskRatio,
+                       boolean bestMatchMirrored,
                        @Nullable NegativeColorDepthMatchScore negativeScores) {
         this.matchingPixNum = matchingPixNum;
         this.matchingPixNumToMaskRatio = matchingPixNumToMaskRatio;
+        this.bestMatchMirrored = bestMatchMirrored;
         this.negativeScores = negativeScores;
     }
 
     @Override
     public long getScore() {
         return matchingPixNum;
+    }
+
+    @Override
+    public boolean isBestScoreMirrored() {
+        return bestMatchMirrored;
     }
 
     public boolean isMatch() {

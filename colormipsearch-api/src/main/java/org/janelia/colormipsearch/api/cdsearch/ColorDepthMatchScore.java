@@ -8,4 +8,6 @@ public interface ColorDepthMatchScore extends Serializable {
      * @return
      */
     long getScore();
+
+    boolean isBestScoreMirrored();
 }
