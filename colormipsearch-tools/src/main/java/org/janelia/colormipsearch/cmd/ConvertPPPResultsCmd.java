@@ -48,10 +48,10 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
-import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatch;
-import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
 import org.janelia.colormipsearch.api.pppsearch.RawPPPMatchesReader;
+import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatch;
+import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
