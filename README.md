@@ -56,7 +56,7 @@ This command will also tag the repository with the `<version>`.
 
 ### Perform color depth search for one mask and one image only
 ```
-java  -Xmx120G -Xms120G -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+java  -Xmx120G -Xms120G -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     searchLocalFiles \
     -i /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flylight_splitgal4_drivers/GMR_MB242A-20121208_31_H4-20x-Brain-JRC2018_Unisex_20x_HR-1846510864534863970-CH1_CDM.png \
     -m /nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain/5901194966_RT_18U.tif \
@@ -69,7 +69,7 @@ images from `/nrs/jacs/jacsData/filestore/system/flylight_40xMCFO_Segmented_Pack
 all images from `/groups/scicomp/scicompsoft/otsuna/Brain/EM_Hemibrain/Masayoshi_selected.zip`
 
 ```
-java -Xmx480G -Xms480G -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+java -Xmx480G -Xms480G -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     searchLocalFiles \
     -i /nrs/jacs/jacsData/filestore/system/flylight_40xMCFO_Segmented_PackBits.zip:0:1000 \
     -m /groups/scicomp/scicompsoft/otsuna/Brain/EM_Hemibrain/Masayoshi_selected.zip \
@@ -81,7 +81,7 @@ java -Xmx480G -Xms480G -jar target/colormipsearch-2.4-jar-with-dependencies.jar 
 
 ### Calculating the gradient score for a set of existing results
 ```
-java -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+java -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     gradientScore \
     -rf local/testData/results/qq.json \
     -gp local/testData/flylight_40xMCFO_gradient_20px.zip \
@@ -105,7 +105,7 @@ important for LM line or EM body lookup.
 #### Generate LM SplitGal4 MIPs:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -118,7 +118,7 @@ java \
 #### Generate LM MCFO MIPs:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -131,7 +131,7 @@ java \
 #### Generate EM MIPs:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     groupMIPsByPublishedName \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -170,7 +170,7 @@ as input (see the '--segmented-mips-base-dir' argument).
 Prepare MCFO input:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -182,7 +182,7 @@ java \
 Prepare SplitGal4 input:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -194,7 +194,7 @@ java \
 Prepare EM input:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -208,7 +208,7 @@ If you only need to run the color depth search for some new MIPS
 that have been added to the library you can do that using the following command:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2  \
     --authorization "Bearer tokenvalue" \
@@ -248,7 +248,7 @@ two sets of JSON files that will have to have the imageURLs update:
 
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     createColorDepthSearchJSONInput \
     --jacsURL http://goinac-ws1.int.janelia.org:8800/api/rest-v2 \
     --authorization "Bearer tokenvalue" \
@@ -259,7 +259,7 @@ java \
 Update image URLs for the lines:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     replaceAttributes \
     -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/mips/gen1_mcfo_lines \
@@ -271,7 +271,7 @@ java \
 Update image URLs for the input MIPs:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     replaceAttributes \
     -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-file local/testData/mips/flylight_gen1_mcfo_published.json \
@@ -286,7 +286,7 @@ files reference the matched image so the field that we lookup for
 a match is "matchedId" 
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     replaceAttributes \
     -attrs local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
@@ -304,7 +304,7 @@ indexed by the EM mip IDs or LM mip IDs respectively.
 Calculate EM vs SplitGal4 results
 ```bash
 java -Xmx180G -Xms180G \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     searchFromJSON  \
     -m local/testData/mips/flyem_hemibrain.json:0:5000 \
     -i local/testData/mips/flylight_gen1_mcfo_published.json:0:40000 \
@@ -322,7 +322,7 @@ java -Xmx180G -Xms180G \
 
 ```bash
 java -Xmx180G -Xms180G \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     searchFromJSON  \
     -m local/testData/mips/flyem_hemibrain.json:0:35000 \
     -i local/testData/mips/flylight_split_gal4_published.json:0:7800 \
@@ -342,7 +342,7 @@ java -Xmx180G -Xms180G \
 ```bash
 java -Xmx240G -Xms240G \
     -Dlog4j.configuration=file:///groups/scicompsoft/home/goinac/Work/color-depth-spark/local/log4j.properties \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     --cacheSize 5000 --cacheExpirationInSeconds 60 \
     gradientScore \
     --maskThreshold 20 \
@@ -360,7 +360,7 @@ java -Xmx240G -Xms240G \
 ```bash
 java -Xmx240G -Xms240G \
     -Dlog4j.configuration=file:///groups/scicompsoft/home/goinac/Work/color-depth-spark/local/log4j.properties \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     --cacheSize 5000 --cacheExpirationInSeconds 60 \
     gradientScore \
     --maskThreshold 20 \
@@ -401,7 +401,7 @@ ones calculated for EM -> LM results to the corresponding LM -> EM results.
 
 ```bash
 java -Xms480G -Xmx480G \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     gradientScoresFromMatchedResults \
     -rd local/testData/cdsresults/flylight_gen1_mcfo_published \
     -revd local/testData/cdsresults.ga/flyem_hemibrain-vs-gen1_mcfo \
@@ -411,7 +411,7 @@ java -Xms480G -Xmx480G \
 
 ```bash
 java -Xms480G -Xmx480G \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     gradientScoresFromMatchedResults \
     -rd local/testData/cdsresults/flylight_split_gal4_published \
     -revd local/testData/cdsresults.ga/flyem_hemibrain-vs-split_gal4 \
@@ -426,7 +426,7 @@ therefore the flyem-vs-mcfo and flyem-vs-sgal4 will have to be merged in a singl
 directory.
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     mergeResults \
     -rd \
     local/testData/cdsresults.ga/flyem_hemibrain-vs-gen1_mcfo \
@@ -437,7 +437,7 @@ java \
 #### Step 6: Normalize and rank results:
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     normalizeScores \
     -rd local/testData/updateURLS/cdsresults/flyem_hemibrain-vs-flylight \
     --pctPositivePixels 2.0 \
@@ -447,7 +447,7 @@ java \
 
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     normalizeScores \
     -rd local/testData/cdsresults.ga/flylight_split_gal4_published \
     --pctPositivePixels 2.0 \
@@ -457,7 +457,7 @@ java \
 
 ```bash
 java \
-    -jar target/colormipsearch-2.4-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     normalizeScores \
     -rd local/testData/cdsresults.ga/flylight_gen1_mcfo_published \
     --pctPositivePixels 2.0 \
@@ -523,7 +523,7 @@ PPP_IMPORT_DIR=/nrs/saalfeld/kainmuellerd/flymatch/all_hemibrain_1.2_NB/setup22_
 PPP_RESULTS_DIR=/nrs/neuronbridge/v2.2/pppresults/flyem-to-flylight
 
 java \
-    -jar target/colormipsearch-2.7.0-jar-with-dependencies.jar \
+    -jar target/colormipsearch-2.8.0-jar-with-dependencies.jar \
     convertPPPResults \
     -ps 30 \
      --jacs-read-batch-size 3000 \
