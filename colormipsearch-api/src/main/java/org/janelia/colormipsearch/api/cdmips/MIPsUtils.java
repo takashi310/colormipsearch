@@ -339,9 +339,7 @@ public class MIPsUtils {
     @Nullable
     private static MIPMetadata getVariantMIPInfoFromZipEntry(String mipVariantLocation, String mipEntryName, Function<String, String> mipVariantSuffixMapping) {
         // Lookup up entries with the same name with extension tif or png and entries that have the object number suffix removed with the same extensions (tif and png)
-        String mipVariantName = RegExUtils.replacePattern(Paths.get(mipVariantLocation).getFileName().toString(), "\\..*$", "");
         Path mipEntryPath = Paths.get(mipEntryName);
-        Path mipEntryParentPath = mipEntryPath.getParent();
         String mipEntryFilenameWithoutExtension = RegExUtils.replacePattern(mipEntryPath.getFileName().toString(), "\\..*$", "");
         String mipEntryFilenameWithoutObjectNum = RegExUtils.replacePattern(mipEntryFilenameWithoutExtension, "_\\d\\d*$", "");
         Map<String, List<String>> mipVariantArchiveEntries = getZipEntryNames(mipVariantLocation);
