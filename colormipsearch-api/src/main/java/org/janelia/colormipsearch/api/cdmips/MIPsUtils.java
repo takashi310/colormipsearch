@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class MIPsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);
-    private static Map<String, Set<String>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
+    private static Map<String, Map<String, List<String>>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
 
     /**
      * Load a MIP image from its MIPInfo
@@ -344,46 +344,16 @@ public class MIPsUtils {
         Path mipEntryParentPath = mipEntryPath.getParent();
         String mipEntryFilenameWithoutExtension = RegExUtils.replacePattern(mipEntryPath.getFileName().toString(), "\\..*$", "");
         String mipEntryFilenameWithoutObjectNum = RegExUtils.replacePattern(mipEntryFilenameWithoutExtension, "_\\d\\d*$", "");
-        List<String> mipVariantEntryNames;
-        if (mipEntryParentPath == null) {
-            mipVariantEntryNames = Arrays.asList(
-                    mipEntryFilenameWithoutExtension + ".png",
-                    mipEntryFilenameWithoutExtension + ".tif",
-                    mipEntryFilenameWithoutObjectNum + ".png",
-                    mipEntryFilenameWithoutObjectNum + ".tif",
-                    mipVariantName + "/" + mipEntryFilenameWithoutExtension + ".png",
-                    mipVariantName + "/" + mipEntryFilenameWithoutExtension + ".tif",
-                    mipVariantName + "/" + mipEntryFilenameWithoutObjectNum + ".png",
-                    mipVariantName + "/" + mipEntryFilenameWithoutObjectNum + ".tif"
-            );
-        } else {
-            int nComponents = mipEntryParentPath.getNameCount();
-            mipVariantEntryNames = Stream.concat(
-                    Stream.of(
-                            mipVariantName,
-                            ""
-                    ),
-                    IntStream.range(0, nComponents)
-                            .map(i -> nComponents - i - 1)
-                            .mapToObj(i -> {
-                                if (i > 0)
-                                    return mipEntryParentPath.subpath(0, i).resolve(mipVariantSuffixMapping.apply(mipEntryParentPath.getName(i).toString())).toString();
-                                else
-                                    return mipVariantSuffixMapping.apply(mipEntryParentPath.getName(i).toString());
-                            }))
-                    .map(p -> Paths.get(p))
-                    .flatMap(p -> Stream.of(
-                            p.resolve(mipEntryFilenameWithoutExtension + ".png"),
-                            p.resolve(mipEntryFilenameWithoutExtension + ".tif"),
-                            p.resolve(mipEntryFilenameWithoutObjectNum + ".png"),
-                            p.resolve(mipEntryFilenameWithoutObjectNum + ".tif")
-                    ))
-                    .map(p -> p.toString())
-                    .collect(Collectors.toList());
-        }
-        Set<String> mipVariantEntries = getZipEntryNames(mipVariantLocation);
+        Map<String, List<String>> mipVariantArchiveEntries = getZipEntryNames(mipVariantLocation);
+        List<String> mipVariantEntryNames = Arrays.asList(
+                mipEntryFilenameWithoutExtension + ".png",
+                mipEntryFilenameWithoutExtension + ".tif",
+                mipEntryFilenameWithoutObjectNum + ".png",
+                mipEntryFilenameWithoutObjectNum + ".tif"
+        );
         return mipVariantEntryNames.stream()
-                .filter(en -> mipVariantEntries.contains(en))
+                .filter(en -> mipVariantArchiveEntries.containsKey(en))
+                .flatMap(en -> mipVariantArchiveEntries.get(en).stream())
                 .findFirst()
                 .map(en -> {
                     MIPMetadata variantMIP = new MIPMetadata();
@@ -396,7 +366,7 @@ public class MIPsUtils {
                 .orElse(null);
     }
 
-    private static Set<String> getZipEntryNames(String zipFilename) {
+    private static Map<String, List<String>> getZipEntryNames(String zipFilename) {
         if (ARCHIVE_ENTRIES_CACHE.get(zipFilename) == null) {
             return cacheZipEntryNames(zipFilename);
         } else {
@@ -404,7 +374,7 @@ public class MIPsUtils {
         }
     }
 
-    private static Set<String> cacheZipEntryNames(String zipFilename) {
+    private static Map<String, List<String>> cacheZipEntryNames(String zipFilename) {
         ZipFile archiveFile;
         try {
             archiveFile = new ZipFile(zipFilename);
@@ -412,10 +382,10 @@ public class MIPsUtils {
             throw new UncheckedIOException(e);
         }
         try {
-            Set<String> zipEntryNames = archiveFile.stream()
+            Map<String, List<String>> zipEntryNames = archiveFile.stream()
                     .filter(ze -> !ze.isDirectory())
                     .map(ze -> ze.getName())
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.groupingBy(zen -> Paths.get(zen).getFileName().toString(), Collectors.toList()));
             ARCHIVE_ENTRIES_CACHE.put(zipFilename, zipEntryNames);
             return zipEntryNames;
         } finally {
