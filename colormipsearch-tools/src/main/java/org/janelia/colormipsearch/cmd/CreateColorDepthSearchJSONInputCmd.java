@@ -334,7 +334,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             LOG.error("Error opening the outputfile {}", outputPath, e);
             return;
         }
-        
+
         String cdmLibraryPath = libraryPaths.getLibraryVariantPath(cdmVariantType);
         Pair<String, Map<String, List<String>>> cdmImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath);
 
@@ -342,6 +342,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
         LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
 
+        cdmImages.getRight().entrySet().stream()
+                .flatMap(cdmEntry -> cdmEntry.getValue().stream())
+                .forEach(cdmipImage -> {
+                    System.out.println(cdmipImage);
+                });
     }
 
     private void createColorDepthSearchJSONInputMIPs(WebTarget serverEndpoint,
