@@ -35,17 +35,17 @@ import org.slf4j.LoggerFactory;
 
 class MIPsHandlingUtils {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsHandlingUtils.class);
-    private static final int MAX_SEGMENTED_DATA_DEPTH = 5;
+    private static final int MAX_IMAGE_DATA_DEPTH = 5;
 
     static boolean isEmLibrary(String lname) {
         return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
-    static Pair<String, Map<String, List<String>>> getLibrarySegmentedImages(String library, String librarySegmentationPath) {
+    static Pair<String, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath) {
         if (isEmLibrary(library)) {
-            return MIPsHandlingUtils.getSegmentedImages(MIPsHandlingUtils.emSkeletonRegexPattern(), librarySegmentationPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.emSkeletonRegexPattern(), libraryPath);
         } else {
-            return MIPsHandlingUtils.getSegmentedImages(MIPsHandlingUtils.lmSlideCodeRegexPattern(), librarySegmentationPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.lmSlideCodeRegexPattern(), libraryPath);
         }
     }
 
@@ -57,11 +57,11 @@ class MIPsHandlingUtils {
         return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
     }
 
-    private static Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern indexingFieldRegExPattern, String segmentedMIPsBaseDir) {
-        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
+    private static Pair<String, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir) {
+        if (StringUtils.isBlank(imagesBaseDir)) {
             return ImmutablePair.of("", Collections.emptyMap());
         } else {
-            Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
+            Path imagesBasePath = Paths.get(imagesBaseDir);
             Function<String, String> indexingFieldFromName = n -> {
                 Matcher m = indexingFieldRegExPattern.matcher(n);
                 if (m.find()) {
@@ -72,46 +72,46 @@ class MIPsHandlingUtils {
                 }
             };
 
-            if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldFromName, segmentdMIPsBasePath));
-            } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldFromName, segmentdMIPsBasePath.toFile()));
+            if (Files.isDirectory(imagesBasePath)) {
+                return ImmutablePair.of("file", getImageFilesFromDir(indexingFieldFromName, imagesBasePath));
+            } else if (Files.isRegularFile(imagesBasePath)) {
+                return ImmutablePair.of("zipEntry", getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile()));
             } else {
                 return ImmutablePair.of("file", Collections.emptyMap());
             }
         }
     }
 
-    private static Map<String, List<String>> getSegmentedImagesFromDir(Function<String, String> indexingFieldFromName, Path segmentedMIPsBasePath) {
+    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir) {
         try {
-            return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
+            return Files.find(baseDir, MAX_IMAGE_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } catch (IOException e) {
-            LOG.warn("Error scanning {} for segmented images", segmentedMIPsBasePath, e);
+            LOG.warn("Error scanning {} for image files", baseDir, e);
             return Collections.emptyMap();
         }
     }
 
-    private static Map<String, List<String>> getSegmentedImagesFromZip(Function<String, String> indexingFieldFromName, File segmentedMIPsFile) {
-        ZipFile segmentedMIPsZipFile;
+    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive) {
+        ZipFile imagesZipFile;
         try {
-            segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
+            imagesZipFile = new ZipFile(imagesFileArchive);
         } catch (Exception e) {
-            LOG.warn("Error opening segmented mips archive {}", segmentedMIPsFile, e);
+            LOG.warn("Error opening image archive {}", imagesFileArchive, e);
             return Collections.emptyMap();
         }
         try {
-            return segmentedMIPsZipFile.stream()
+            return imagesZipFile.stream()
                     .filter(ze -> !ze.isDirectory())
                     .map(ZipEntry::getName)
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } finally {
             try {
-                segmentedMIPsZipFile.close();
+                imagesZipFile.close();
             } catch (IOException ignore) {
             }
         }
