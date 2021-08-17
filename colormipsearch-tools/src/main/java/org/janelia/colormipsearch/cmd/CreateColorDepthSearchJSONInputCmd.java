@@ -216,10 +216,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     @Override
     void execute() {
-        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-
-        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
-
         Set<MIPMetadata> excludedMips;
         if (args.excludedMIPs != null) {
             LOG.info("Read mips to be excluded from the output");
@@ -271,11 +267,13 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 lpaths,
                                 args.cdmVariantName,
                                 args.segmentationVariantName,
-                                libraryNameMapping,
                                 Paths.get(args.commonArgs.outputDir),
                                 args.outputFileName);
 
                     } else {
+                        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+                        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
+
                         createColorDepthSearchJSONInputMIPs(
                                 serverEndpoint,
                                 lpaths,
@@ -312,7 +310,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void createColorDepthSearchJSONInputMIPsInOfflineMode(LibraryPathsArgs libraryPaths,
                                                                   String cdmVariantType,
                                                                   String segmentationVariantType,
-                                                                  Map<String, String> libraryNamesMapping,
                                                                   Path outputPath,
                                                                   String outputFileName) {
         LOG.warn("Generate JSON mips in offline mode");
