@@ -769,14 +769,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                         String libraryPath,
                                                         MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
                                                         String mipImageName) {
-        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.setAlignmentSpace(args.alignmentSpace);
-        cdMetadata.setLibraryName(libraryName);
-        cdMetadata.setImageName(mipImageName);
-        if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
-            cdMetadata.setImageType(mipEntryType.name());
-            cdMetadata.setImageArchivePath(libraryPath);
-        }
+        ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
         populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
         return cdMetadata;
     }
@@ -785,6 +778,15 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                         String libraryPath,
                                                         MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
                                                         String mipImageName) {
+        ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
+        cdMetadata.setEMSkeletonPublishedName(MIPsHandlingUtils.extractEMBodyIdFromName(new File(mipImageName).getName()));
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata createMetadataFromName(String libraryName,
+                                                      String libraryPath,
+                                                      MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                      String mipImageName) {
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setAlignmentSpace(args.alignmentSpace);
         cdMetadata.setLibraryName(libraryName);
@@ -793,7 +795,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setImageType(mipEntryType.name());
             cdMetadata.setImageArchivePath(libraryPath);
         }
-        cdMetadata.setEMSkeletonPublishedName(MIPsHandlingUtils.extractEMBodyIdFromName(new File(mipImageName).getName()));
+        cdMetadata.filepath = mipImageName; // this is not quite right for zip entries but it's the best approximation
         return cdMetadata;
     }
 
