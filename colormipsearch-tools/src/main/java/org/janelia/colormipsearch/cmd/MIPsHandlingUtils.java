@@ -41,7 +41,20 @@ class MIPsHandlingUtils {
         return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
-    static Pair<String, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath) {
+    enum MIPLibraryEntryType {
+        file,
+        zipEntry;
+
+        static MIPLibraryEntryType fromStringValue(String value) {
+            if (StringUtils.isBlank(value)) {
+                return file;
+            } else {
+                return valueOf(value);
+            }
+        }
+    }
+
+    static Pair<MIPLibraryEntryType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath) {
         if (isEmLibrary(library)) {
             return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.emSkeletonRegexPattern(), libraryPath);
         } else {
@@ -57,9 +70,9 @@ class MIPsHandlingUtils {
         return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.)?)", Pattern.CASE_INSENSITIVE);
     }
 
-    private static Pair<String, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir) {
+    private static Pair<MIPLibraryEntryType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir) {
         if (StringUtils.isBlank(imagesBaseDir)) {
-            return ImmutablePair.of("", Collections.emptyMap());
+            return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
         } else {
             Path imagesBasePath = Paths.get(imagesBaseDir);
             Function<String, String> indexingFieldFromName = n -> {
@@ -73,11 +86,11 @@ class MIPsHandlingUtils {
             };
 
             if (Files.isDirectory(imagesBasePath)) {
-                return ImmutablePair.of("file", getImageFilesFromDir(indexingFieldFromName, imagesBasePath));
+                return ImmutablePair.of(MIPLibraryEntryType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath));
             } else if (Files.isRegularFile(imagesBasePath)) {
-                return ImmutablePair.of("zipEntry", getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile()));
+                return ImmutablePair.of(MIPLibraryEntryType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile()));
             } else {
-                return ImmutablePair.of("file", Collections.emptyMap());
+                return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
             }
         }
     }
@@ -119,7 +132,7 @@ class MIPsHandlingUtils {
 
     static List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
                                                       String segmentedImagesBasePath,
-                                                      Pair<String, Map<String, List<String>>> segmentedImages,
+                                                      Pair<MIPLibraryEntryType, Map<String, List<String>>> segmentedImages,
                                                       int segmentedImageHandling,
                                                       int segmentedImageChannelBase) {
         if (StringUtils.isBlank(segmentedImagesBasePath)) {
@@ -142,7 +155,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
+    private static List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, MIPLibraryEntryType libraryEntryType, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
         String indexingField;
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
@@ -183,7 +196,7 @@ class MIPsHandlingUtils {
                         ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                         cdmipMetadata.copyTo(segmentMIPMetadata);
                         segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
-                        segmentMIPMetadata.setImageType(type);
+                        segmentMIPMetadata.setImageType(libraryEntryType.name());
                         segmentMIPMetadata.segmentFilepath = p;
                         return segmentMIPMetadata;
                     })

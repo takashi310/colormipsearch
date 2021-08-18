@@ -333,16 +333,49 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
 
         String cdmLibraryPath = libraryPaths.getLibraryVariantPath(cdmVariantType);
-        Pair<String, Map<String, List<String>>> cdmImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> cdmImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath);
 
         String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
-        Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
         LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
 
         cdmImages.getRight().entrySet().stream()
                 .flatMap(cdmEntry -> cdmEntry.getValue().stream())
-                .forEach(cdmipImage -> {
-                    System.out.println(cdmipImage);
+                .map(cdmipImage -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
+                        ? asEMBodyMetadataFromName(
+                                libraryPaths.getLibraryName(),
+                                cdmLibraryPath,
+                                cdmImages.getLeft(),
+                                cdmipImage)
+                        : asLMLineMetadataFromName(
+                                libraryPaths.getLibraryName(),
+                                cdmLibraryPath,
+                                cdmImages.getLeft(),
+                                cdmipImage))
+                .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
+                .map(ColorDepthMetadata::asMIPWithVariants)
+                .peek(cdmip -> {
+                    libraryPaths.getLibraryVariant(segmentationVariantType)
+                            .ifPresent(librarySegmentationVariant -> {
+                                // add the image itself as a variant
+                                addVariant(
+                                        cdmip,
+                                        segmentationVariantType,
+                                        MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(cdmip.getImageType()),
+                                        cdmip.getImageArchivePath(),
+                                        cdmip.getImageName());
+                            });
+                })
+                .peek(cdmip -> populateAllVariantsExceptSegmentation(
+                        cdmip,
+                        libraryPaths.listLibraryVariants(),
+                        libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
+                .forEach(cdmip -> {
+                    try {
+                        gen.writeObject(cdmip);
+                    } catch (IOException e) {
+                        LOG.error("Error writing entry for {}", cdmip, e);
+                    }
                 });
     }
 
@@ -417,7 +450,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 });
             }
             String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
-            Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
+            Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
             LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
             for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -451,7 +484,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                         addVariant(
                                                 cdmip,
                                                 segmentationVariantType,
-                                                cdmip.getImageType(),
+                                                MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(cdmip.getImageType()),
                                                 cdmip.getImageArchivePath(),
                                                 cdmip.getImageName());
                                     });
@@ -487,30 +520,10 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 }
                             }
                         })
-                        .peek(cdmip -> {
-                            MIPVariantArg segmentationVariant = libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null);
-                            String librarySegmentationSuffix = segmentationVariant == null ? null : segmentationVariant.variantSuffix;
-                            for (MIPVariantArg mipVariantArg : libraryPaths.listLibraryVariants()) {
-                                if (mipVariantArg.variantType.equals(segmentationVariantType)) {
-                                    continue; // skip segmentation variant because it was already handled
-                                }
-                                MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
-                                        cdmip,
-                                        mipVariantArg.variantType,
-                                        Collections.singletonList(mipVariantArg.variantPath),
-                                        nc -> {
-                                            String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantSuffix, "");
-                                            if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
-                                                return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
-                                            } else {
-                                                return nc + suffix;
-                                            }
-                                        });
-                                if (variantMIP !=  null) {
-                                    addVariant(cdmip, mipVariantArg.variantType, variantMIP.getImageType(), variantMIP.getImageArchivePath(), variantMIP.getImageName());
-                                }
-                            }
-                        })
+                        .peek(cdmip -> populateAllVariantsExceptSegmentation(
+                                cdmip,
+                                libraryPaths.listLibraryVariants(),
+                                libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
                         .peek(cdmip -> {
                             if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
                                 addSearchableName(cdmip);
@@ -536,10 +549,41 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private void addVariant(MIPMetadata cdmip, String variant, String variantType, String variantArchivePath, String variantName) {
-        if (StringUtils.equalsIgnoreCase(variantType, "zipEntry")) {
+    private void populateAllVariantsExceptSegmentation(MIPMetadata cdmip,
+                                                       List<MIPVariantArg> libraryVariantArgs,
+                                                       MIPVariantArg segmentationVariantArg) {
+        String librarySegmentationSuffix = segmentationVariantArg == null ? null : segmentationVariantArg.variantSuffix;
+        for (MIPVariantArg mipVariantArg : libraryVariantArgs) {
+            if (mipVariantArg == segmentationVariantArg) { // here it's safe to use '==' because I am looking for identity
+                continue; // skip segmentation variant because it was already handled
+            }
+            MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
+                    cdmip,
+                    mipVariantArg.variantType,
+                    Collections.singletonList(mipVariantArg.variantPath),
+                    nc -> {
+                        String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantSuffix, "");
+                        if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
+                            return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
+                        } else {
+                            return nc + suffix;
+                        }
+                    });
+            if (variantMIP !=  null) {
+                addVariant(
+                        cdmip,
+                        mipVariantArg.variantType,
+                        MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(variantMIP.getImageType()),
+                        variantMIP.getImageArchivePath(),
+                        variantMIP.getImageName());
+            }
+        }
+    }
+
+    private void addVariant(MIPMetadata cdmip, String variant, MIPsHandlingUtils.MIPLibraryEntryType variantType, String variantArchivePath, String variantName) {
+        if (variantType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
             cdmip.addVariant(variant, variantName);
-            cdmip.addVariant(variant + "EntryType", "zipEntry");
+            cdmip.addVariant(variant + "EntryType", MIPsHandlingUtils.MIPLibraryEntryType.zipEntry.name());
             cdmip.addVariant(variant + "ArchivePath", variantArchivePath);
         } else {
             if (StringUtils.isNotBlank(variantArchivePath)) {
@@ -709,6 +753,38 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
         cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
         cdMetadata.setGender(defaultGender);
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata asLMLineMetadataFromName(String libraryName,
+                                                        String libraryPath,
+                                                        MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                        String mipImageName) {
+        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+        cdMetadata.setAlignmentSpace(args.alignmentSpace);
+        cdMetadata.setLibraryName(libraryName);
+        cdMetadata.setImageName(mipImageName);
+        if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
+            cdMetadata.setImageType(mipEntryType.name());
+            cdMetadata.setImageArchivePath(libraryPath);
+        }
+        // !!!!!!!!!! TODO
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata asEMBodyMetadataFromName(String libraryName,
+                                                        String libraryPath,
+                                                        MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                        String mipImageName) {
+        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+        cdMetadata.setAlignmentSpace(args.alignmentSpace);
+        cdMetadata.setLibraryName(libraryName);
+        cdMetadata.setImageName(mipImageName);
+        if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
+            cdMetadata.setImageType(mipEntryType.name());
+            cdMetadata.setImageArchivePath(libraryPath);
+        }
+        // !!!!!!!!!! TODO
         return cdMetadata;
     }
 

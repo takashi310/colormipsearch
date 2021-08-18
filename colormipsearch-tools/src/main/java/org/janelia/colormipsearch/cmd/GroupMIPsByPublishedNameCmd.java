@@ -264,7 +264,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
         } catch (IOException e) {
             LOG.error("Error creating the output directory for {}", outputPath, e);
         }
-        Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryArg.input, librarySegmentationPath);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryArg.input, librarySegmentationPath);
 
         Map<String, List<String>> cdmNameToMIPIdForDupCheck = new HashMap<>();
         for (int pageOffset = libraryArg.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
