@@ -55,11 +55,11 @@ class MIPsHandlingUtils {
         }
     }
 
-    static Pair<MIPLibraryEntryType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath) {
+    static Pair<MIPLibraryEntryType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath, String nameSuffixFilter) {
         if (isEmLibrary(library)) {
-            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.emSkeletonRegexPattern(), libraryPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.emSkeletonRegexPattern(), libraryPath, nameSuffixFilter);
         } else {
-            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.lmSlideCodeRegexPattern(), libraryPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.lmSlideCodeRegexPattern(), libraryPath, nameSuffixFilter);
         }
     }
 
@@ -71,7 +71,7 @@ class MIPsHandlingUtils {
         return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
     }
 
-    private static Pair<MIPLibraryEntryType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir) {
+    private static Pair<MIPLibraryEntryType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir, String nameSuffixFilter) {
         if (StringUtils.isBlank(imagesBaseDir)) {
             return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
         } else {
@@ -87,21 +87,29 @@ class MIPsHandlingUtils {
             };
 
             if (Files.isDirectory(imagesBasePath)) {
-                return ImmutablePair.of(MIPLibraryEntryType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath));
+                return ImmutablePair.of(MIPLibraryEntryType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath, nameSuffixFilter));
             } else if (Files.isRegularFile(imagesBasePath)) {
-                return ImmutablePair.of(MIPLibraryEntryType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile()));
+                return ImmutablePair.of(MIPLibraryEntryType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile(), nameSuffixFilter));
             } else {
                 return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
             }
         }
     }
 
-    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir) {
+    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir, String nameSuffixFilter) {
         try {
             return Files.find(baseDir, MAX_IMAGE_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } catch (IOException e) {
             LOG.warn("Error scanning {} for image files", baseDir, e);
@@ -109,7 +117,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive) {
+    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive, String nameSuffixFilter) {
         ZipFile imagesZipFile;
         try {
             imagesZipFile = new ZipFile(imagesFileArchive);
@@ -122,6 +130,14 @@ class MIPsHandlingUtils {
                     .filter(ze -> !ze.isDirectory())
                     .map(ZipEntry::getName)
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } finally {
             try {

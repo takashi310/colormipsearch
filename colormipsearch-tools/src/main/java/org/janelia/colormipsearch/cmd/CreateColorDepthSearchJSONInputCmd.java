@@ -187,6 +187,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     .findFirst();
         }
 
+        String getLibraryVariantNameSuffix(String variantType) {
+            return getLibraryVariant(variantType)
+                    .map(lv -> lv.variantNameSuffix)
+                    .orElse(null);
+        }
+
         String getLibraryVariantPath(String variantType) {
             return getLibraryVariant(variantType)
                     .map(lv -> lv.variantPath)
@@ -333,10 +339,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
 
         String cdmLibraryPath = libraryPaths.getLibraryVariantPath(cdmVariantType);
-        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> cdmImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> cdmImages =
+                MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath, libraryPaths.getLibraryVariantNameSuffix(cdmVariantType));
 
         String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
-        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages =
+                MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath, libraryPaths.getLibraryVariantNameSuffix(segmentationVariantType));
         LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
 
         cdmImages.getRight().entrySet().stream()
@@ -450,7 +458,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 });
             }
             String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
-            Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath);
+            Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages =
+                    MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath, libraryPaths.getLibraryVariantNameSuffix(segmentationVariantType));
             LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
             for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -552,7 +561,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void populateAllVariantsExceptSegmentation(MIPMetadata cdmip,
                                                        List<MIPVariantArg> libraryVariantArgs,
                                                        MIPVariantArg segmentationVariantArg) {
-        String librarySegmentationSuffix = segmentationVariantArg == null ? null : segmentationVariantArg.variantSuffix;
+        String librarySegmentationSuffix = segmentationVariantArg == null ? null : segmentationVariantArg.variantTypeSuffix;
         for (MIPVariantArg mipVariantArg : libraryVariantArgs) {
             if (mipVariantArg == segmentationVariantArg) { // here it's safe to use '==' because I am looking for identity
                 continue; // skip segmentation variant because it was already handled
@@ -562,7 +571,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     mipVariantArg.variantType,
                     Collections.singletonList(mipVariantArg.variantPath),
                     nc -> {
-                        String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantSuffix, "");
+                        String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantTypeSuffix, "");
                         if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
                             return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
                         } else {

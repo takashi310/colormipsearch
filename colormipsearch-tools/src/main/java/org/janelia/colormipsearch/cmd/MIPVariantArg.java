@@ -55,7 +55,10 @@ class MIPVariantArg {
                 arg.variantPath = argComponents.get(2);
             }
             if (argComponents.size() > 3 && StringUtils.isNotBlank(argComponents.get(3))) {
-                arg.variantSuffix = argComponents.get(3);
+                arg.variantTypeSuffix = argComponents.get(3);
+            }
+            if (argComponents.size() > 4 && StringUtils.isNotBlank(argComponents.get(4))) {
+                arg.variantNameSuffix = argComponents.get(4);
             }
             return arg;
         }
@@ -64,7 +67,8 @@ class MIPVariantArg {
     String libraryName;
     String variantType;
     String variantPath;
-    String variantSuffix;
+    String variantTypeSuffix; // this is typically the suffix appended to a foldername such as _gradient or _RGB20x
+    String variantNameSuffix; // this is a suffix that ends the filename itself such as _FL
 
     @Override
     public String toString() {
