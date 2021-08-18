@@ -712,7 +712,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setGender(cdmip.sample.gender);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
         } else {
-            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
+            populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
         }
         cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
         cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
@@ -721,9 +721,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         return cdMetadata;
     }
 
-    private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
-        String[] mipNameComponents = StringUtils.split(cdmip.name, '-');
-        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : cdmip.name;
+    private void populateCDMetadataFromCDMIPName(String mipName, ColorDepthMetadata cdMetadata) {
+        String[] mipNameComponents = StringUtils.split(mipName, '-');
+        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : mipName;
         // attempt to remove the PI initials
         int piSeparator = StringUtils.indexOf(line, '_');
         String lineID;
@@ -767,7 +767,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
             cdMetadata.setImageType(mipEntryType.name());
             cdMetadata.setImageArchivePath(libraryPath);
-        }
+        }populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
         // !!!!!!!!!! TODO
         return cdMetadata;
     }
