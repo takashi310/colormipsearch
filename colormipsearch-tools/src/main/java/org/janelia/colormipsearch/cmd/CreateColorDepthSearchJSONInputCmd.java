@@ -776,8 +776,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
             cdMetadata.setImageType(mipEntryType.name());
             cdMetadata.setImageArchivePath(libraryPath);
-        }populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
-        // !!!!!!!!!! TODO
+        }
+        populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
         return cdMetadata;
     }
 
@@ -793,7 +793,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setImageType(mipEntryType.name());
             cdMetadata.setImageArchivePath(libraryPath);
         }
-        // !!!!!!!!!! TODO
+        cdMetadata.setEMSkeletonPublishedName(MIPsHandlingUtils.extractEMBodyIdFromName(new File(mipImageName).getName()));
         return cdMetadata;
     }
 

@@ -25,6 +25,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -201,6 +202,15 @@ class MIPsHandlingUtils {
                         return segmentMIPMetadata;
                     })
                     .collect(Collectors.toList());
+        }
+    }
+
+    static String extractEMBodyIdFromName(String name) {
+        Matcher matcher = emSkeletonRegexPattern().matcher(name);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
         }
     }
 
