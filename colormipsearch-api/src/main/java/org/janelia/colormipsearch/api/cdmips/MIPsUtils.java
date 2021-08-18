@@ -209,11 +209,15 @@ public class MIPsUtils {
      * @param mipInfo
      * @param variantType
      * @param mipVariantLocations
-     * @param mipVariantSuffixMapping specifies how the mapping changes from the mipInfo to the variant mip
+     * @param mipVariantTypeSuffixMapping specifies how the mapping changes from the mipInfo to the variant mip
      * @return
      */
     @Nullable
-    public static MIPMetadata getMIPVariantInfo(MIPMetadata mipInfo, String variantType, List<String> mipVariantLocations, Function<String, String> mipVariantSuffixMapping) {
+    public static MIPMetadata getMIPVariantInfo(MIPMetadata mipInfo,
+                                                String variantType,
+                                                List<String> mipVariantLocations,
+                                                Function<String, String> mipVariantTypeSuffixMapping,
+                                                String mipVariantNameSuffix) {
         if (mipInfo.hasVariant(variantType)) {
             MIPMetadata mipVariant = mipInfo.variantAsMIP(variantType);
             if (mipVariant != null) {
@@ -232,9 +236,13 @@ public class MIPsUtils {
                                     variantMIPPath,
                                     Paths.get(mipInfo.getImageName()),
                                     mipInfo.getCdmName(),
-                                    mipVariantSuffixMapping);
+                                    mipVariantTypeSuffixMapping,
+                                    mipVariantNameSuffix);
                         } else if (Files.isRegularFile(variantMIPPath) && StringUtils.endsWithIgnoreCase(variantMIPPath.getFileName().toString(), ".zip")) {
-                            return getVariantMIPInfoFromZipEntry(variantMIPPath.toString(), mipInfo.getImageName(), mipVariantSuffixMapping);
+                            return getVariantMIPInfoFromZipEntry(
+                                    variantMIPPath.toString(),
+                                    mipInfo.getImageName(),
+                                    mipVariantNameSuffix);
                         } else {
                             return null;
                         }
@@ -245,18 +253,30 @@ public class MIPsUtils {
         }
     }
 
+    private static String createMIPEntryName(String name, String suffix, String ext) {
+        return name + StringUtils.defaultIfEmpty(suffix, "") + ext;
+    }
+
     @Nullable
-    private static MIPMetadata getMIPVariantInfoFromFilePath(Path mipVariantPath, Path mipImagePath, String sourceCDMName, Function<String, String> mipVariantSuffixMapping) {
+    private static MIPMetadata getMIPVariantInfoFromFilePath(Path mipVariantPath,
+                                                             Path mipImagePath,
+                                                             String sourceCDMName,
+                                                             Function<String, String> mipVariantTypeSuffixMapping,
+                                                             String mipVariantNameSuffix) {
         Path mipParentPath = mipImagePath.getParent();
         String mipFilenameWithoutExtension = RegExUtils.replacePattern(mipImagePath.getFileName().toString(), "\\..*$", "");
         List<Path> mipVariantPaths;
         if (mipParentPath == null) {
             String sourceMIPNameWithoutExtension = RegExUtils.replacePattern(sourceCDMName, "\\..*$", "");
             mipVariantPaths = Arrays.asList(
-                    mipVariantPath.resolve(mipFilenameWithoutExtension + ".png"),
-                    mipVariantPath.resolve(mipFilenameWithoutExtension + ".tif"),
-                    mipVariantPath.resolve(mipVariantSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".png"), // search variant based on the transformation of the original mip
-                    mipVariantPath.resolve(mipVariantSuffixMapping.apply(sourceMIPNameWithoutExtension) + ".tiff")
+                    mipVariantPath.resolve(
+                            createMIPEntryName(mipFilenameWithoutExtension, mipVariantNameSuffix,".png")),
+                    mipVariantPath.resolve(
+                            createMIPEntryName(mipFilenameWithoutExtension, mipVariantNameSuffix,".tif")),
+                    mipVariantPath.resolve(
+                            createMIPEntryName(mipVariantTypeSuffixMapping.apply(sourceMIPNameWithoutExtension), mipVariantNameSuffix, ".png")), // search variant based on the transformation of the original mip
+                    mipVariantPath.resolve(
+                            createMIPEntryName(mipVariantTypeSuffixMapping.apply(sourceMIPNameWithoutExtension), mipVariantNameSuffix, ".tiff"))
             );
         } else {
             int nComponents = mipParentPath.getNameCount();
@@ -265,18 +285,19 @@ public class MIPsUtils {
                             .map(i -> nComponents - i - 1)
                             .mapToObj(i -> {
                                 if (i > 0)
-                                    return mipParentPath.subpath(0, i).resolve(mipVariantSuffixMapping.apply(mipParentPath.getName(i).toString())).toString();
+                                    return mipParentPath.subpath(0, i).resolve(mipVariantTypeSuffixMapping.apply(mipParentPath.getName(i).toString())).toString();
                                 else
-                                    return mipVariantSuffixMapping.apply(mipParentPath.getName(i).toString());
+                                    return mipVariantTypeSuffixMapping.apply(mipParentPath.getName(i).toString());
                             }),
                     Stream.of(""))
                     .flatMap(p -> Stream.of(
-                            mipVariantPath.resolve(p).resolve(mipFilenameWithoutExtension + ".png"),
-                            mipVariantPath.resolve(p).resolve(mipFilenameWithoutExtension + ".tif")))
+                            mipVariantPath.resolve(p).resolve(createMIPEntryName(mipFilenameWithoutExtension, mipVariantNameSuffix, ".png")),
+                            mipVariantPath.resolve(p).resolve(createMIPEntryName(mipFilenameWithoutExtension, mipVariantNameSuffix, ".tif"))))
                     .collect(Collectors.toList());
         }
         return mipVariantPaths.stream()
-                .filter(p -> Files.exists(p)).filter(p -> Files.isRegularFile(p))
+                .filter(Files::exists)
+                .filter(Files::isRegularFile)
                 .findFirst()
                 .map(Path::toString)
                 .map(mipVariantImagePathname -> {
@@ -337,19 +358,19 @@ public class MIPsUtils {
     }
 
     @Nullable
-    private static MIPMetadata getVariantMIPInfoFromZipEntry(String mipVariantLocation, String mipEntryName, Function<String, String> mipVariantSuffixMapping) {
+    private static MIPMetadata getVariantMIPInfoFromZipEntry(String mipVariantLocation,
+                                                             String mipEntryName,
+                                                             String mipVariantNameSuffix) {
         // Lookup up entries with the same name with extension tif or png and entries that have the object number suffix removed with the same extensions (tif and png)
-        String mipVariantName = RegExUtils.replacePattern(Paths.get(mipVariantLocation).getFileName().toString(), "\\..*$", "");
         Path mipEntryPath = Paths.get(mipEntryName);
-        Path mipEntryParentPath = mipEntryPath.getParent();
         String mipEntryFilenameWithoutExtension = RegExUtils.replacePattern(mipEntryPath.getFileName().toString(), "\\..*$", "");
         String mipEntryFilenameWithoutObjectNum = RegExUtils.replacePattern(mipEntryFilenameWithoutExtension, "_\\d\\d*$", "");
         Map<String, List<String>> mipVariantArchiveEntries = getZipEntryNames(mipVariantLocation);
         List<String> mipVariantEntryNames = Arrays.asList(
-                mipEntryFilenameWithoutExtension + ".png",
-                mipEntryFilenameWithoutExtension + ".tif",
-                mipEntryFilenameWithoutObjectNum + ".png",
-                mipEntryFilenameWithoutObjectNum + ".tif"
+                createMIPEntryName(mipEntryFilenameWithoutExtension, mipVariantNameSuffix, ".png"),
+                createMIPEntryName(mipEntryFilenameWithoutExtension, mipVariantNameSuffix, ".tif"),
+                createMIPEntryName(mipEntryFilenameWithoutObjectNum, mipVariantNameSuffix, ".png"),
+                createMIPEntryName(mipEntryFilenameWithoutObjectNum, mipVariantNameSuffix, ".tif")
         );
         return mipVariantEntryNames.stream()
                 .filter(en -> mipVariantArchiveEntries.containsKey(en))

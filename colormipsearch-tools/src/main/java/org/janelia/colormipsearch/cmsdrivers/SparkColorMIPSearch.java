@@ -119,7 +119,8 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                             MIPsUtils.getMIPMetadata(targetImage),
                             "gradient",
                             gradientsLocations,
-                            gradientVariantSuffixMapping));
+                            gradientVariantSuffixMapping,
+                            null));
                     return MIPsUtils.getImageArray(gradientImage);
                 });
             }
@@ -129,7 +130,8 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                             MIPsUtils.getMIPMetadata(targetImage),
                             "zgap",
                             zgapMasksLocations,
-                            zgapMaskVariantSuffixMapping));
+                            zgapMaskVariantSuffixMapping,
+                            null));
                     return MIPsUtils.getImageArray(targetZGapMaskImage);
                 });
             }

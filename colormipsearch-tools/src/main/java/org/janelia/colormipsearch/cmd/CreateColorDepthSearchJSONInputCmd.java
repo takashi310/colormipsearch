@@ -577,7 +577,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         } else {
                             return nc + suffix;
                         }
-                    });
+                    },
+                    mipVariantArg.variantNameSuffix);
             if (variantMIP !=  null) {
                 addVariant(
                         cdmip,

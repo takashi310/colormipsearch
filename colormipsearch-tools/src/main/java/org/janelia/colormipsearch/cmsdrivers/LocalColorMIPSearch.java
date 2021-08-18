@@ -122,7 +122,8 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                                         targetMIP,
                                                         "gradient",
                                                         gradientsLocations,
-                                                        gradientVariantSuffixMapping));
+                                                        gradientVariantSuffixMapping,
+                                                        null));
                                                 return MIPsUtils.getImageArray(gradientImage);
                                             });
                                         }
@@ -132,7 +133,8 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                                         targetMIP,
                                                         "zgap",
                                                         zgapMasksLocations,
-                                                        zgapMaskVariantSuffixMapping));
+                                                        zgapMaskVariantSuffixMapping,
+                                                        null));
                                                 return MIPsUtils.getImageArray(libraryZGapMaskImage);
                                             });
                                         }
