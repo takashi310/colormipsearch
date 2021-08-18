@@ -81,8 +81,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Groop MIPs by published name")
     static class CreateColorDepthSearchJSONInputArgs extends AbstractCmdArgs {
-        @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"},
-                description = "JACS data service base URL", required = true)
+        @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"}, description = "JACS data service base URL")
         String dataServiceURL;
 
         @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
@@ -117,6 +116,10 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         List<String> datasets;
+
+        @Parameter(names = {"--color-depth-mips-variant"},
+                description = "The entry name in the variants dictionary for color depth mips")
+        String cdmVariantName;
 
         @Parameter(names = {"--segmented-mips-variant"},
                 description = "The entry name in the variants dictionary for segmented images")
@@ -178,14 +181,20 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             return CollectionUtils.isNotEmpty(libraryVariants) ? libraryVariants : Collections.emptyList();
         }
 
-        Optional<MIPVariantArg> getLibrarySegmentationVariant(String segmentationVariantType) {
+        Optional<MIPVariantArg> getLibraryVariant(String variantType) {
             return listLibraryVariants().stream()
-                    .filter(lv -> lv.variantType.equals(segmentationVariantType))
+                    .filter(lv -> lv.variantType.equals(variantType))
                     .findFirst();
         }
 
-        String getLibrarySegmentationPath(String segmentationVariantType) {
-            return getLibrarySegmentationVariant(segmentationVariantType)
+        String getLibraryVariantNameSuffix(String variantType) {
+            return getLibraryVariant(variantType)
+                    .map(lv -> lv.variantNameSuffix)
+                    .orElse(null);
+        }
+
+        String getLibraryVariantPath(String variantType) {
+            return getLibraryVariant(variantType)
                     .map(lv -> lv.variantPath)
                     .orElse(null);
         }
@@ -213,10 +222,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     @Override
     void execute() {
-        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
-
-        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
-
         Set<MIPMetadata> excludedMips;
         if (args.excludedMIPs != null) {
             LOG.info("Read mips to be excluded from the output");
@@ -263,16 +268,122 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     return lpaths;
                 })
                 .forEach(lpaths -> {
-                    createColorDepthSearchJSONInputMIPs(
-                            serverEndpoint,
-                            lpaths,
-                            args.segmentationVariantName,
-                            excludedMips,
-                            libraryNameMapping,
-                            imageURLMapper,
-                            Paths.get(args.commonArgs.outputDir),
-                            args.outputFileName
-                    );
+                    if (StringUtils.isBlank(args.dataServiceURL)) {
+                        createColorDepthSearchJSONInputMIPsInOfflineMode(
+                                lpaths,
+                                args.cdmVariantName,
+                                args.segmentationVariantName,
+                                Paths.get(args.commonArgs.outputDir),
+                                args.outputFileName);
+
+                    } else {
+                        WebTarget serverEndpoint = createHttpClient().target(args.dataServiceURL);
+                        Map<String, String> libraryNameMapping = MIPsHandlingUtils.retrieveLibraryNameMapping(createHttpClient(), args.libraryMappingURL);
+
+                        createColorDepthSearchJSONInputMIPs(
+                                serverEndpoint,
+                                lpaths,
+                                args.segmentationVariantName,
+                                excludedMips,
+                                libraryNameMapping,
+                                imageURLMapper,
+                                Paths.get(args.commonArgs.outputDir),
+                                args.outputFileName
+                        );
+                    }
+                });
+    }
+
+    private JsonGenerator createJsonGenerator(Path outputPath,
+                                              String outputFileName,
+                                              int libraryFromIndex,
+                                              int libraryToIndex) {
+        String outputName;
+        if (libraryFromIndex > 0) {
+            outputName = outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json";
+        } else {
+            outputName = outputFileName + ".json";
+        }
+        Path outputFilePath = outputPath.resolve(outputName);
+        LOG.info("Write color depth MIPs to {}", outputFilePath);
+        if (Files.exists(outputPath) && args.appendOutput) {
+            return openOutputForAppend(outputFilePath.toFile());
+        } else {
+            return openOutput(outputFilePath.toFile());
+        }
+    }
+
+    private void createColorDepthSearchJSONInputMIPsInOfflineMode(LibraryPathsArgs libraryPaths,
+                                                                  String cdmVariantType,
+                                                                  String segmentationVariantType,
+                                                                  Path outputPath,
+                                                                  String outputFileName) {
+        LOG.warn("Generate JSON mips in offline mode");
+
+        try {
+            Files.createDirectories(outputPath);
+        } catch (IOException e) {
+            LOG.error("Error creating the output directory for {}", outputPath, e);
+        }
+
+        JsonGenerator gen;
+        try {
+            gen = createJsonGenerator(
+                    outputPath,
+                    StringUtils.defaultIfBlank(outputFileName, libraryPaths.getLibraryName()),
+                    0, // no range based naming
+                    0);
+        } catch (Exception e) {
+            LOG.error("Error opening the outputfile {}", outputPath, e);
+            return;
+        }
+
+        String cdmLibraryPath = libraryPaths.getLibraryVariantPath(cdmVariantType);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> cdmImages =
+                MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, cdmLibraryPath, libraryPaths.getLibraryVariantNameSuffix(cdmVariantType));
+
+        String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
+        Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages =
+                MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath, libraryPaths.getLibraryVariantNameSuffix(segmentationVariantType));
+        LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
+
+        cdmImages.getRight().entrySet().stream()
+                .flatMap(cdmEntry -> cdmEntry.getValue().stream())
+                .map(cdmipImage -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
+                        ? asEMBodyMetadataFromName(
+                                libraryPaths.getLibraryName(),
+                                cdmLibraryPath,
+                                cdmImages.getLeft(),
+                                cdmipImage)
+                        : asLMLineMetadataFromName(
+                                libraryPaths.getLibraryName(),
+                                cdmLibraryPath,
+                                cdmImages.getLeft(),
+                                cdmipImage))
+                .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
+                .map(ColorDepthMetadata::asMIPWithVariants)
+                .peek(cdmip -> {
+                    libraryPaths.getLibraryVariant(segmentationVariantType)
+                            .ifPresent(librarySegmentationVariant -> {
+                                // add the image itself as a variant
+                                addVariant(
+                                        cdmip,
+                                        segmentationVariantType,
+                                        MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(cdmip.getImageType()),
+                                        cdmip.getImageArchivePath(),
+                                        cdmip.getImageName());
+                            });
+                })
+                .peek(cdmip -> populateAllVariantsExceptSegmentation(
+                        cdmip,
+                        libraryPaths.listLibraryVariants(),
+                        libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
+                .forEach(cdmip -> {
+                    try {
+                        gen.writeObject(cdmip);
+                    } catch (IOException e) {
+                        LOG.error("Error writing entry for {}", cdmip, e);
+                    }
                 });
     }
 
@@ -317,20 +428,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
         JsonGenerator gen;
         try {
-            String outputName;
-            String outputBasename = StringUtils.defaultIfBlank(outputFileName, libraryPaths.getLibraryName());
-            if (libraryPaths.library.offset > 0 || libraryPaths.library.length > 0) {
-                outputName = outputBasename + "-" + libraryPaths.library.offset + "-" + to + ".json";
-            } else {
-                outputName = outputBasename + ".json";
-            }
-            Path outputFilePath = outputPath.resolve(outputName);
-            LOG.info("Write color depth MIPs to {}", outputFilePath);
-            if (Files.exists(outputPath) && args.appendOutput) {
-                gen = openOutputForAppend(outputFilePath.toFile());
-            } else {
-                gen = openOutput(outputFilePath.toFile());
-            }
+            gen = createJsonGenerator(
+                    outputPath,
+                    StringUtils.defaultIfBlank(outputFileName, libraryPaths.getLibraryName()),
+                    libraryPaths.library.offset,
+                    to);
         } catch (Exception e) {
             LOG.error("Error opening the outputfile {}", outputPath, e);
             return;
@@ -355,8 +457,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     }
                 });
             }
-            String librarySegmentationPath = libraryPaths.getLibrarySegmentationPath(segmentationVariantType);
-            Pair<String, Map<String, List<String>>> segmentedImages = MIPsHandlingUtils.getLibrarySegmentedImages(libraryPaths.library.input, librarySegmentationPath);
+            String librarySegmentationPath = libraryPaths.getLibraryVariantPath(segmentationVariantType);
+            Pair<MIPsHandlingUtils.MIPLibraryEntryType, Map<String, List<String>>> segmentedImages =
+                    MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath, libraryPaths.getLibraryVariantNameSuffix(segmentationVariantType));
             LOG.info("Found {} segmented slide codes in {}", segmentedImages.getRight().size(), librarySegmentationPath);
             for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
                 int pageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -384,13 +487,13 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
                         .peek(cdmip -> {
-                            libraryPaths.getLibrarySegmentationVariant(segmentationVariantType)
+                            libraryPaths.getLibraryVariant(segmentationVariantType)
                                     .ifPresent(librarySegmentationVariant -> {
                                         // add the image itself as a variant
                                         addVariant(
                                                 cdmip,
                                                 segmentationVariantType,
-                                                cdmip.getImageType(),
+                                                MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(cdmip.getImageType()),
                                                 cdmip.getImageArchivePath(),
                                                 cdmip.getImageName());
                                     });
@@ -426,30 +529,10 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 }
                             }
                         })
-                        .peek(cdmip -> {
-                            MIPVariantArg segmentationVariant = libraryPaths.getLibrarySegmentationVariant(segmentationVariantType).orElse(null);
-                            String librarySegmentationSuffix = segmentationVariant == null ? null : segmentationVariant.variantSuffix;
-                            for (MIPVariantArg mipVariantArg : libraryPaths.listLibraryVariants()) {
-                                if (mipVariantArg.variantType.equals(segmentationVariantType)) {
-                                    continue; // skip segmentation variant because it was already handled
-                                }
-                                MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
-                                        cdmip,
-                                        mipVariantArg.variantType,
-                                        Collections.singletonList(mipVariantArg.variantPath),
-                                        nc -> {
-                                            String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantSuffix, "");
-                                            if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
-                                                return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
-                                            } else {
-                                                return nc + suffix;
-                                            }
-                                        });
-                                if (variantMIP !=  null) {
-                                    addVariant(cdmip, mipVariantArg.variantType, variantMIP.getImageType(), variantMIP.getImageArchivePath(), variantMIP.getImageName());
-                                }
-                            }
-                        })
+                        .peek(cdmip -> populateAllVariantsExceptSegmentation(
+                                cdmip,
+                                libraryPaths.listLibraryVariants(),
+                                libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
                         .peek(cdmip -> {
                             if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
                                 addSearchableName(cdmip);
@@ -475,10 +558,42 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private void addVariant(MIPMetadata cdmip, String variant, String variantType, String variantArchivePath, String variantName) {
-        if (StringUtils.equalsIgnoreCase(variantType, "zipEntry")) {
+    private void populateAllVariantsExceptSegmentation(MIPMetadata cdmip,
+                                                       List<MIPVariantArg> libraryVariantArgs,
+                                                       MIPVariantArg segmentationVariantArg) {
+        String librarySegmentationSuffix = segmentationVariantArg == null ? null : segmentationVariantArg.variantTypeSuffix;
+        for (MIPVariantArg mipVariantArg : libraryVariantArgs) {
+            if (mipVariantArg == segmentationVariantArg) { // here it's safe to use '==' because I am looking for identity
+                continue; // skip segmentation variant because it was already handled
+            }
+            MIPMetadata variantMIP = MIPsUtils.getMIPVariantInfo(
+                    cdmip,
+                    mipVariantArg.variantType,
+                    Collections.singletonList(mipVariantArg.variantPath),
+                    nc -> {
+                        String suffix = StringUtils.defaultIfBlank(mipVariantArg.variantTypeSuffix, "");
+                        if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
+                            return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
+                        } else {
+                            return nc + suffix;
+                        }
+                    },
+                    mipVariantArg.variantNameSuffix);
+            if (variantMIP !=  null) {
+                addVariant(
+                        cdmip,
+                        mipVariantArg.variantType,
+                        MIPsHandlingUtils.MIPLibraryEntryType.fromStringValue(variantMIP.getImageType()),
+                        variantMIP.getImageArchivePath(),
+                        variantMIP.getImageName());
+            }
+        }
+    }
+
+    private void addVariant(MIPMetadata cdmip, String variant, MIPsHandlingUtils.MIPLibraryEntryType variantType, String variantArchivePath, String variantName) {
+        if (variantType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
             cdmip.addVariant(variant, variantName);
-            cdmip.addVariant(variant + "EntryType", "zipEntry");
+            cdmip.addVariant(variant + "EntryType", MIPsHandlingUtils.MIPLibraryEntryType.zipEntry.name());
             cdmip.addVariant(variant + "ArchivePath", variantArchivePath);
         } else {
             if (StringUtils.isNotBlank(variantArchivePath)) {
@@ -607,7 +722,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setGender(cdmip.sample.gender);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
         } else {
-            populateCDMetadataFromCDMIPName(cdmip, cdMetadata);
+            populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
         }
         cdMetadata.setAnatomicalArea(cdmip.anatomicalArea);
         cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
@@ -616,9 +731,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         return cdMetadata;
     }
 
-    private void populateCDMetadataFromCDMIPName(ColorDepthMIP cdmip, ColorDepthMetadata cdMetadata) {
-        String[] mipNameComponents = StringUtils.split(cdmip.name, '-');
-        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : cdmip.name;
+    private void populateCDMetadataFromCDMIPName(String mipName, ColorDepthMetadata cdMetadata) {
+        String[] mipNameComponents = StringUtils.split(mipName, '-');
+        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : mipName;
         // attempt to remove the PI initials
         int piSeparator = StringUtils.indexOf(line, '_');
         String lineID;
@@ -630,6 +745,15 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.setLMLinePublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
         String slideCode = mipNameComponents.length > 1 ? mipNameComponents[1] : null;
         cdMetadata.setSlideCode(slideCode);
+        int colorChannel = MIPsHandlingUtils.extractColorChannelFromImageName(mipName, 0);
+        if (colorChannel != -1) {
+            cdMetadata.setChannel(String.valueOf(colorChannel));
+        }
+        cdMetadata.setObjective(MIPsHandlingUtils.extractObjectiveFromImageName(mipName));
+        String gender = MIPsHandlingUtils.extractGenderFromImageName(mipName);
+        if (gender != null) {
+            cdMetadata.setGender(gender);
+        }
     }
 
     private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip,
@@ -648,6 +772,40 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
         cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
         cdMetadata.setGender(defaultGender);
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata asLMLineMetadataFromName(String libraryName,
+                                                        String libraryPath,
+                                                        MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                        String mipImageName) {
+        ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
+        populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata asEMBodyMetadataFromName(String libraryName,
+                                                        String libraryPath,
+                                                        MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                        String mipImageName) {
+        ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
+        cdMetadata.setEMSkeletonPublishedName(MIPsHandlingUtils.extractEMBodyIdFromName(new File(mipImageName).getName()));
+        return cdMetadata;
+    }
+
+    private ColorDepthMetadata createMetadataFromName(String libraryName,
+                                                      String libraryPath,
+                                                      MIPsHandlingUtils.MIPLibraryEntryType mipEntryType,
+                                                      String mipImageName) {
+        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+        cdMetadata.setAlignmentSpace(args.alignmentSpace);
+        cdMetadata.setLibraryName(libraryName);
+        cdMetadata.setImageName(mipImageName);
+        if (mipEntryType == MIPsHandlingUtils.MIPLibraryEntryType.zipEntry) {
+            cdMetadata.setImageType(mipEntryType.name());
+            cdMetadata.setImageArchivePath(libraryPath);
+        }
+        cdMetadata.filepath = mipImageName; // this is not quite right for zip entries but it's the best approximation
         return cdMetadata;
     }
 

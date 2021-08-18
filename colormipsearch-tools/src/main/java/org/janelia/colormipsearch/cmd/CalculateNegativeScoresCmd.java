@@ -350,7 +350,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     private Supplier<ImageArray<?>> createVariantImageSupplier(MIPMetadata mip,
                                                                String variant,
                                                                List<String> variantLocations,
-                                                               String variantSuffix,
+                                                               String variantTypeSuffix,
                                                                String replacedSuffix) {
         return  () -> {
             MIPImage variantImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
@@ -358,13 +358,14 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                     variant,
                     variantLocations,
                     nc -> {
-                        String suffix = StringUtils.defaultIfBlank(variantSuffix, "");
+                        String suffix = StringUtils.defaultIfBlank(variantTypeSuffix, "");
                         if (StringUtils.isNotBlank(replacedSuffix)) {
                             return StringUtils.replaceIgnoreCase(nc, replacedSuffix, "") + suffix;
                         } else {
                             return nc + suffix;
                         }
-                    }));
+                    },
+                    null));
             return MIPsUtils.getImageArray(variantImage);
         };
     }

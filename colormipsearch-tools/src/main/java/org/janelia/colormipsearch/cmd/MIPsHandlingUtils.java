@@ -25,6 +25,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,17 +36,30 @@ import org.slf4j.LoggerFactory;
 
 class MIPsHandlingUtils {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsHandlingUtils.class);
-    private static final int MAX_SEGMENTED_DATA_DEPTH = 5;
+    private static final int MAX_IMAGE_DATA_DEPTH = 5;
 
     static boolean isEmLibrary(String lname) {
         return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
-    static Pair<String, Map<String, List<String>>> getLibrarySegmentedImages(String library, String librarySegmentationPath) {
+    enum MIPLibraryEntryType {
+        file,
+        zipEntry;
+
+        static MIPLibraryEntryType fromStringValue(String value) {
+            if (StringUtils.isBlank(value)) {
+                return file;
+            } else {
+                return valueOf(value);
+            }
+        }
+    }
+
+    static Pair<MIPLibraryEntryType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath, String nameSuffixFilter) {
         if (isEmLibrary(library)) {
-            return MIPsHandlingUtils.getSegmentedImages(MIPsHandlingUtils.emSkeletonRegexPattern(), librarySegmentationPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.emSkeletonRegexPattern(), libraryPath, nameSuffixFilter);
         } else {
-            return MIPsHandlingUtils.getSegmentedImages(MIPsHandlingUtils.lmSlideCodeRegexPattern(), librarySegmentationPath);
+            return MIPsHandlingUtils.getImageFiles(MIPsHandlingUtils.lmSlideCodeRegexPattern(), libraryPath, nameSuffixFilter);
         }
     }
 
@@ -54,14 +68,14 @@ class MIPsHandlingUtils {
     }
 
     private static Pattern lmSlideCodeRegexPattern() {
-        return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
+        return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
     }
 
-    private static Pair<String, Map<String, List<String>>> getSegmentedImages(Pattern indexingFieldRegExPattern, String segmentedMIPsBaseDir) {
-        if (StringUtils.isBlank(segmentedMIPsBaseDir)) {
-            return ImmutablePair.of("", Collections.emptyMap());
+    private static Pair<MIPLibraryEntryType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir, String nameSuffixFilter) {
+        if (StringUtils.isBlank(imagesBaseDir)) {
+            return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
         } else {
-            Path segmentdMIPsBasePath = Paths.get(segmentedMIPsBaseDir);
+            Path imagesBasePath = Paths.get(imagesBaseDir);
             Function<String, String> indexingFieldFromName = n -> {
                 Matcher m = indexingFieldRegExPattern.matcher(n);
                 if (m.find()) {
@@ -72,46 +86,62 @@ class MIPsHandlingUtils {
                 }
             };
 
-            if (Files.isDirectory(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("file", getSegmentedImagesFromDir(indexingFieldFromName, segmentdMIPsBasePath));
-            } else if (Files.isRegularFile(segmentdMIPsBasePath)) {
-                return ImmutablePair.of("zipEntry", getSegmentedImagesFromZip(indexingFieldFromName, segmentdMIPsBasePath.toFile()));
+            if (Files.isDirectory(imagesBasePath)) {
+                return ImmutablePair.of(MIPLibraryEntryType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath, nameSuffixFilter));
+            } else if (Files.isRegularFile(imagesBasePath)) {
+                return ImmutablePair.of(MIPLibraryEntryType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile(), nameSuffixFilter));
             } else {
-                return ImmutablePair.of("file", Collections.emptyMap());
+                return ImmutablePair.of(MIPLibraryEntryType.file, Collections.emptyMap());
             }
         }
     }
 
-    private static Map<String, List<String>> getSegmentedImagesFromDir(Function<String, String> indexingFieldFromName, Path segmentedMIPsBasePath) {
+    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir, String nameSuffixFilter) {
         try {
-            return Files.find(segmentedMIPsBasePath, MAX_SEGMENTED_DATA_DEPTH,
+            return Files.find(baseDir, MAX_IMAGE_DATA_DEPTH,
                     (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } catch (IOException e) {
-            LOG.warn("Error scanning {} for segmented images", segmentedMIPsBasePath, e);
+            LOG.warn("Error scanning {} for image files", baseDir, e);
             return Collections.emptyMap();
         }
     }
 
-    private static Map<String, List<String>> getSegmentedImagesFromZip(Function<String, String> indexingFieldFromName, File segmentedMIPsFile) {
-        ZipFile segmentedMIPsZipFile;
+    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive, String nameSuffixFilter) {
+        ZipFile imagesZipFile;
         try {
-            segmentedMIPsZipFile = new ZipFile(segmentedMIPsFile);
+            imagesZipFile = new ZipFile(imagesFileArchive);
         } catch (Exception e) {
-            LOG.warn("Error opening segmented mips archive {}", segmentedMIPsFile, e);
+            LOG.warn("Error opening image archive {}", imagesFileArchive, e);
             return Collections.emptyMap();
         }
         try {
-            return segmentedMIPsZipFile.stream()
+            return imagesZipFile.stream()
                     .filter(ze -> !ze.isDirectory())
                     .map(ZipEntry::getName)
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } finally {
             try {
-                segmentedMIPsZipFile.close();
+                imagesZipFile.close();
             } catch (IOException ignore) {
             }
         }
@@ -119,7 +149,7 @@ class MIPsHandlingUtils {
 
     static List<ColorDepthMetadata> findSegmentedMIPs(ColorDepthMetadata cdmipMetadata,
                                                       String segmentedImagesBasePath,
-                                                      Pair<String, Map<String, List<String>>> segmentedImages,
+                                                      Pair<MIPLibraryEntryType, Map<String, List<String>>> segmentedImages,
                                                       int segmentedImageHandling,
                                                       int segmentedImageChannelBase) {
         if (StringUtils.isBlank(segmentedImagesBasePath)) {
@@ -142,7 +172,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, String type, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
+    private static List<ColorDepthMetadata> lookupSegmentedImages(ColorDepthMetadata cdmipMetadata, String segmentedDataBasePath, MIPLibraryEntryType libraryEntryType, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
         String indexingField;
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(cdmipMetadata.getLibraryName())) {
@@ -163,10 +193,10 @@ class MIPsHandlingUtils {
                 String fn = Paths.get(p).getFileName().toString();
                 Preconditions.checkArgument(fn.contains(indexingField));
                 int channelFromMip = getColorChannel(cdmipMetadata);
-                int channelFromFN = extractColorChannelFromSegmentedImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
+                int channelFromFN = extractColorChannelFromImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                 String objectiveFromMip = cdmipMetadata.getObjective();
-                String objectiveFromFN = extractObjectiveFromSegmentedImageName(fn.replace(indexingField, ""));
+                String objectiveFromFN = extractObjectiveFromImageName(fn.replace(indexingField, ""));
                 return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
                         matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
             };
@@ -183,11 +213,20 @@ class MIPsHandlingUtils {
                         ColorDepthMetadata segmentMIPMetadata = new ColorDepthMetadata();
                         cdmipMetadata.copyTo(segmentMIPMetadata);
                         segmentMIPMetadata.segmentedDataBasePath = segmentedDataBasePath;
-                        segmentMIPMetadata.setImageType(type);
+                        segmentMIPMetadata.setImageType(libraryEntryType.name());
                         segmentMIPMetadata.segmentFilepath = p;
                         return segmentMIPMetadata;
                     })
                     .collect(Collectors.toList());
+        }
+    }
+
+    static String extractEMBodyIdFromName(String name) {
+        Matcher matcher = emSkeletonRegexPattern().matcher(name);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
         }
     }
 
@@ -209,8 +248,8 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
-        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
+    static int extractColorChannelFromImageName(String imageName, int channelBase) {
+        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
             String channel = chMatcher.group(1);
@@ -220,8 +259,19 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static String extractObjectiveFromSegmentedImageName(String imageName) {
+    static String extractObjectiveFromImageName(String imageName) {
         Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
+        Matcher objectiveMatcher = regExPattern.matcher(imageName);
+        if (objectiveMatcher.find()) {
+            return objectiveMatcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    static String extractGenderFromImageName(String imageName) {
+        // this assumes the gender is right before the objective
+        Pattern regExPattern = Pattern.compile("(m|f)[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher objectiveMatcher = regExPattern.matcher(imageName);
         if (objectiveMatcher.find()) {
             return objectiveMatcher.group(1);
