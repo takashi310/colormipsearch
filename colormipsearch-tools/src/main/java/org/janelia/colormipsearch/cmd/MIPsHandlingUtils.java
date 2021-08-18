@@ -67,7 +67,7 @@ class MIPsHandlingUtils {
     }
 
     private static Pattern lmSlideCodeRegexPattern() {
-        return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.)?)", Pattern.CASE_INSENSITIVE);
+        return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
     }
 
     private static Pair<MIPLibraryEntryType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir) {
@@ -223,7 +223,7 @@ class MIPsHandlingUtils {
     }
 
     static int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
-        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
+        Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
             String channel = chMatcher.group(1);
