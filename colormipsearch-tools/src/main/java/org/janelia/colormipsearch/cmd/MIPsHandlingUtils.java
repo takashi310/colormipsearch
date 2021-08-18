@@ -176,10 +176,10 @@ class MIPsHandlingUtils {
                 String fn = Paths.get(p).getFileName().toString();
                 Preconditions.checkArgument(fn.contains(indexingField));
                 int channelFromMip = getColorChannel(cdmipMetadata);
-                int channelFromFN = extractColorChannelFromSegmentedImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
+                int channelFromFN = extractColorChannelFromImageName(fn.replace(indexingField, ""), segmentedImageChannelBase);
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})", cdmipMetadata.filepath, channelFromMip, fn, channelFromFN);
                 String objectiveFromMip = cdmipMetadata.getObjective();
-                String objectiveFromFN = extractObjectiveFromSegmentedImageName(fn.replace(indexingField, ""));
+                String objectiveFromFN = extractObjectiveFromImageName(fn.replace(indexingField, ""));
                 return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
                         matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
             };
@@ -222,7 +222,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    static int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
+    static int extractColorChannelFromImageName(String imageName, int channelBase) {
         Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
@@ -233,8 +233,19 @@ class MIPsHandlingUtils {
         }
     }
 
-    static String extractObjectiveFromSegmentedImageName(String imageName) {
+    static String extractObjectiveFromImageName(String imageName) {
         Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
+        Matcher objectiveMatcher = regExPattern.matcher(imageName);
+        if (objectiveMatcher.find()) {
+            return objectiveMatcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    static String extractGenderFromImageName(String imageName) {
+        // this assumes the gender is right before the objective
+        Pattern regExPattern = Pattern.compile("(m|f)[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher objectiveMatcher = regExPattern.matcher(imageName);
         if (objectiveMatcher.find()) {
             return objectiveMatcher.group(1);
