@@ -735,6 +735,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.setLMLinePublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
         String slideCode = mipNameComponents.length > 1 ? mipNameComponents[1] : null;
         cdMetadata.setSlideCode(slideCode);
+        int colorChannel = MIPsHandlingUtils.extractColorChannelFromSegmentedImageName(mipName, 0);
+        if (colorChannel != -1) {
+            cdMetadata.setChannel(String.valueOf(colorChannel));
+        }
+        cdMetadata.setObjective(MIPsHandlingUtils.extractObjectiveFromSegmentedImageName(mipName));
     }
 
     private ColorDepthMetadata asEMBodyMetadata(ColorDepthMIP cdmip,

@@ -222,7 +222,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
+    static int extractColorChannelFromSegmentedImageName(String imageName, int channelBase) {
         Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher chMatcher = regExPattern.matcher(imageName);
         if (chMatcher.find()) {
@@ -233,7 +233,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static String extractObjectiveFromSegmentedImageName(String imageName) {
+    static String extractObjectiveFromSegmentedImageName(String imageName) {
         Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher objectiveMatcher = regExPattern.matcher(imageName);
         if (objectiveMatcher.find()) {
