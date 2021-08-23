@@ -64,7 +64,7 @@ class MIPsHandlingUtils {
     }
 
     private static Pattern emSkeletonRegexPattern() {
-        return Pattern.compile("([0-9]{7,})[_-].*");
+        return Pattern.compile("([0-9]{5,})[_-].*");
     }
 
     private static Pattern lmSlideCodeRegexPattern() {
