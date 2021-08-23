@@ -49,9 +49,9 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
         ColorMIPMatchScore cdsMatchScore = cdsMatchScoreCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);
         if (cdsMatchScore.getScore() > 0) {
             NegativeColorDepthMatchScore negativeColorDepthMatchScore = negScoreCDSearchCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);
-            return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isBestScoreMirrored(), negativeColorDepthMatchScore);
+            return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isMirrored(), negativeColorDepthMatchScore);
         } else {
-            return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isBestScoreMirrored(), null);
+            return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isMirrored(), null);
         }
     }
 }

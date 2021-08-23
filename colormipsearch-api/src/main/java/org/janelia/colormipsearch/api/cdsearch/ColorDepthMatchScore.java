@@ -9,5 +9,8 @@ public interface ColorDepthMatchScore extends Serializable {
      */
     long getScore();
 
-    boolean isBestScoreMirrored();
+    /**
+     * @return true if the best score comes from the mirrored mask
+     */
+    boolean isMirrored();
 }

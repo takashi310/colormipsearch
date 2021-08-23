@@ -10,16 +10,16 @@ public class ColorMIPMatchScore implements ColorDepthMatchScore {
 
     private final int matchingPixNum;
     private final double matchingPixNumToMaskRatio;
-    private final boolean bestMatchMirrored;
+    private final boolean mirrored;
     private final NegativeColorDepthMatchScore negativeScores;
 
     public ColorMIPMatchScore(int matchingPixNum,
                        double matchingPixNumToMaskRatio,
-                       boolean bestMatchMirrored,
+                       boolean mirrored,
                        @Nullable NegativeColorDepthMatchScore negativeScores) {
         this.matchingPixNum = matchingPixNum;
         this.matchingPixNumToMaskRatio = matchingPixNumToMaskRatio;
-        this.bestMatchMirrored = bestMatchMirrored;
+        this.mirrored = mirrored;
         this.negativeScores = negativeScores;
     }
 
@@ -29,8 +29,8 @@ public class ColorMIPMatchScore implements ColorDepthMatchScore {
     }
 
     @Override
-    public boolean isBestScoreMirrored() {
-        return bestMatchMirrored;
+    public boolean isMirrored() {
+        return mirrored;
     }
 
     public boolean isMatch() {

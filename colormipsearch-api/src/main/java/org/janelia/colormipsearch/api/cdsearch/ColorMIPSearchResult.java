@@ -20,7 +20,7 @@ public class ColorMIPSearchResult implements Serializable {
     private final double matchingRatio;
     private final long gradientAreaGap;
     private final long highExpressionArea;
-    private final boolean bestMatchMirrored;
+    private final boolean mirrored;
     private final boolean matchAbovePctPositivePixels;
     private final boolean errorsFound;
 
@@ -35,7 +35,7 @@ public class ColorMIPSearchResult implements Serializable {
         this.matchingRatio = cdsScore.getMatchingPixNumToMaskRatio();
         this.gradientAreaGap = cdsScore.getGradientAreaGap();
         this.highExpressionArea = cdsScore.getHighExpressionArea();
-        this.bestMatchMirrored = cdsScore.isBestScoreMirrored();
+        this.mirrored = cdsScore.isMirrored();
         this.matchAbovePctPositivePixels = matchAbovePctPositivePixels;
         this.errorsFound = errorsFound;
     }
@@ -52,8 +52,8 @@ public class ColorMIPSearchResult implements Serializable {
         return matchingPixels;
     }
 
-    public boolean isBestMatchMirrored() {
-        return bestMatchMirrored;
+    public boolean isMirrored() {
+        return mirrored;
     }
 
     public boolean isMatch() {
@@ -95,7 +95,7 @@ public class ColorMIPSearchResult implements Serializable {
                 .append("libraryMIP", libraryMIP)
                 .append("matchingPixels", matchingPixels)
                 .append("matchingPixelsPct", matchingRatio)
-                .append("bestMatchMirrored", bestMatchMirrored)
+                .append("mirrored", mirrored)
                 .append("areaGap", gradientAreaGap)
                 .append("highExpressionArea", highExpressionArea)
                 .append("matchAbovePctPositivePixels", matchAbovePctPositivePixels)
@@ -143,7 +143,7 @@ public class ColorMIPSearchResult implements Serializable {
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
-        srMetadata.setBestMatchMirrored(bestMatchMirrored);
+        srMetadata.setMirrored(mirrored);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         srMetadata.setHighExpressionArea(highExpressionArea);
         return srMetadata;
@@ -189,7 +189,7 @@ public class ColorMIPSearchResult implements Serializable {
 
         srMetadata.setMatchingPixels(matchingPixels);
         srMetadata.setMatchingRatio(matchingRatio);
-        srMetadata.setBestMatchMirrored(bestMatchMirrored);
+        srMetadata.setMirrored(mirrored);
         srMetadata.setGradientAreaGap(gradientAreaGap);
         srMetadata.setHighExpressionArea(highExpressionArea);
         return srMetadata;

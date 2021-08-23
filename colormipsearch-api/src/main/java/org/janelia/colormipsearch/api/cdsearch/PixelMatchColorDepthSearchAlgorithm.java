@@ -155,7 +155,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                 queryPixelPositions(),
                 targetImageArray,
                 targetMasksList);
-        boolean bestMatchMirrored = false;
+        boolean bestScoreMirrored = false;
         if (mirrorTargetMasksList != null) {
             int mirroredXYShiftsMaxScore = calculateMaxScoreForAllTargetTransformations(
                     queryImage,
@@ -165,7 +165,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
             );
             if (mirroredXYShiftsMaxScore > maxMatchingPixels) {
                 maxMatchingPixels = mirroredXYShiftsMaxScore;
-                bestMatchMirrored = true;
+                bestScoreMirrored = true;
             }
         }
         double maxMatchingPixelsRatio = (double)maxMatchingPixels / (double)querySize;
@@ -192,7 +192,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
             maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
             maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
         }
-        return new ColorMIPMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, bestMatchMirrored, null);
+        return new ColorMIPMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, bestScoreMirrored, null);
     }
 
     private int calculateMaxScoreForAllTargetTransformations(ImageArray<?> srcImageArray,
