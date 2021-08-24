@@ -787,6 +787,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                         String mipImageName) {
         ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
         populateCDMetadataFromCDMIPName(new File(mipImageName).getName(), cdMetadata);
+        cdMetadata.setId(cdMetadata.getPublishedName());
         return cdMetadata;
     }
 
@@ -796,6 +797,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                         String mipImageName) {
         ColorDepthMetadata cdMetadata = createMetadataFromName(libraryName, libraryPath, mipEntryType, mipImageName);
         cdMetadata.setEMSkeletonPublishedName(MIPsHandlingUtils.extractEMBodyIdFromName(new File(mipImageName).getName()));
+        cdMetadata.setId(cdMetadata.getPublishedName());
         return cdMetadata;
     }
 
