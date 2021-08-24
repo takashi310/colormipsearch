@@ -385,6 +385,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         LOG.error("Error writing entry for {}", cdmip, e);
                     }
                 });
+        try {
+            gen.writeEndArray();
+            gen.flush();
+        } catch (IOException e) {
+            LOG.error("Error closing array in {}", outputPath, e);
+        }
     }
 
     private void createColorDepthSearchJSONInputMIPs(WebTarget serverEndpoint,
