@@ -160,6 +160,9 @@ class MIPsHandlingUtils {
                 // return the original MIP but only if a segmentation exists
                 return segmentedCDMIPs.isEmpty() ? Collections.emptyList() : Collections.singletonList(cdmipMetadata);
             } else if (segmentedImageHandling == 0x2) {
+                if (segmentedCDMIPs.isEmpty()) {
+                    LOG.info("No segmentation found for {}", cdmipMetadata);
+                }
                 // return the segmentation if it exists
                 return segmentedCDMIPs;
             } else if (segmentedImageHandling == 0x4) {
