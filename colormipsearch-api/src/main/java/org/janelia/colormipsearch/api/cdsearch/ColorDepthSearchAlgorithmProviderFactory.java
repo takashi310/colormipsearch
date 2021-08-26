@@ -98,12 +98,11 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 }
                 LImage queryImage = LImageUtils.create(queryImageArray).mapi(clearLabels);
 
-                LImage maskForRegionsWithTooMuchExpression = LImageUtils.lazyCombine2(
+                LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                         queryImage.mapi(ImageTransformation.maxFilter(60)),
                         queryImage.mapi(ImageTransformation.maxFilter(20)),
-                        (p1s, p2s) -> {
-                            int p2 = p2s.get();
-                            return p2 != -16777216 && p2 != 0 ? -16777216 : p1s.get();
+                        (p1, p2) -> {
+                            return p2 != -16777216 && p2 != 0 ? -16777216 : p1;
                         } // mask pixels from the 60x image if they are present in the 20x image
                 );
                 GradientBasedNegativeScoreColorDepthSearchAlgorithm maskNegativeScoresCalculator = new GradientBasedNegativeScoreColorDepthSearchAlgorithm(

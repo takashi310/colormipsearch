@@ -8,7 +8,24 @@ import ij.process.ImageProcessor;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 public class ImageOperationsTest {
+
+    @Test
+    public void overExpressesMaskExpression() {
+        ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/1281324958-DNp11-RT_18U_FL.tif", 1);
+        ImageArray<?> testImageArray = ImageArrayUtils.fromImagePlus(testImage);
+        LImage testQueryImage = LImageUtils.create(testImageArray).mapi(ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION));
+        LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
+                testQueryImage.mapi(ImageTransformation.maxFilter(60)),
+                testQueryImage.mapi(ImageTransformation.maxFilter(20)),
+                (p1, p2) -> p2 != -16777216 && p2 != 0 ? -16777216 : p1 // mask pixels from the 60x image if they are present in the 20x image
+        );
+        ImageArray<?> res = maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce().toImageArray();
+        Integer nonZeroPxs = LImageUtils.create(res).fold(0, (p, s) -> p == 0 ? s : s+1);
+        assertTrue(nonZeroPxs > 0);
+    }
 
     @Test
     public void maxFilterForRGBImage() {

@@ -25,17 +25,6 @@ public class LImageUtils {
     }
 
     /**
-     * Combine 2 images, pixel wise, evaluating the pixels lazily
-     * @param l1
-     * @param l2
-     * @param op
-     * @return
-     */
-    public static LImage lazyCombine2(LImage l1, LImage l2, BiFunction<Supplier<Integer>, Supplier<Integer>, Integer> op) {
-        return new LImageImpl(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(() -> l1.get(x, y), () -> l2.get(x, y)));
-    }
-
-    /**
      * Combine 4 images, pixel wise using the given operator.
      *
      * @param l1
@@ -45,8 +34,8 @@ public class LImageUtils {
      * @param op
      * @return
      */
-    public static LImage lazyCombine4(LImage l1, LImage l2, LImage l3, LImage l4, QuadFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> op) {
-        return new LImageImpl(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(() -> l1.get(x, y), () -> l2.get(x, y), () -> l3.get(x, y), () -> l4.get(x, y)));
+    public static LImage combine4(LImage l1, LImage l2, LImage l3, LImage l4, QuadFunction<Integer, Integer, Integer, Integer, Integer> op) {
+        return new LImageImpl(l1.getPixelType(), l1.width(), l1.height(), (x, y) -> op.apply(l1.get(x, y), l2.get(x, y), l3.get(x, y), l4.get(x, y)));
     }
 
 }

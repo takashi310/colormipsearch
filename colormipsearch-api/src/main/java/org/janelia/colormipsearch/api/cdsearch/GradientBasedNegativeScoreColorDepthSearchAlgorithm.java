@@ -32,10 +32,8 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private static final int GAP_THRESHOLD = 3;
 
-    private static final TriFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> PIXEL_GAP_OP = (gradScorePixSupplier, maskPixSupplier, dilatedPixSupplier) -> {
-        int maskPix = maskPixSupplier.get();
+    private static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, maskPix, dilatedPix) -> {
         if (maskPix != -16777216) {
-            int dilatedPix = dilatedPixSupplier.get();
             if (dilatedPix != -16777216) {
                 int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(maskPix, dilatedPix);
                 if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
@@ -44,7 +42,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                 }
             }
         }
-        return gradScorePixSupplier.get();
+        return gradScorePix;
     };
 
     private final LImage queryImage;
@@ -55,7 +53,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private final boolean mirrorQuery;
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
-    private final QuadFunction<Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Supplier<Integer>, Integer> gapOp;
+    private final QuadFunction<Integer, Integer, Integer, Integer, Integer> gapOp;
 
     GradientBasedNegativeScoreColorDepthSearchAlgorithm(LImage queryImage,
                                                         LImage queryIntensityValues,
@@ -73,7 +71,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         this.mirrorQuery = mirrorQuery;
         this.clearLabels = clearLabels;
         this.negativeRadiusDilation = negativeRadiusDilation;
-        gapOp = (ps1, ps2, ps3, ps4) -> PIXEL_GAP_OP.apply(() -> ps1.get() * ps2.get(), ps3, ps4);
+        gapOp = (p1, p2, p3, p4) -> PIXEL_GAP_OP.apply(p1 * p2, p3, p4);
     }
 
     @Override
@@ -202,20 +200,18 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                     queryROIMaskImage,
                     (p1, p2) -> ColorTransformation.mask(queryHighExpressionMask.getPixelType(), p1, p2));
         }
-        LImage gaps = LImageUtils.lazyCombine4(
+        LImage gaps = LImageUtils.combine4(
                 queryIntensitiesROIImage,
                 targetGradientImage,
                 queryROIImage,
                 targetZGapMaskImage.mapi(maskTransformation),
                 gapOp.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
-        LImage highExpressionRegions = LImageUtils.lazyCombine2(
+        LImage highExpressionRegions = LImageUtils.combine2(
                 targetImage,
                 queryHighExpressionMaskROIImage,
-                (p1s, p2s) -> {
-                    int p2 = p2s.get();
+                (p1, p2) -> {
                     if (p2 == 1) {
-                        int p1 = p1s.get();
                         int r1 = (p1 >> 16) & 0xff;
                         int g1 = (p1 >> 8) & 0xff;
                         int b1 = p1 & 0xff;
