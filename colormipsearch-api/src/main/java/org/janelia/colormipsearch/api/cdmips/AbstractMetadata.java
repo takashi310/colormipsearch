@@ -454,10 +454,13 @@ public abstract class AbstractMetadata implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
+        ToStringBuilder builder = new ToStringBuilder(this)
                 .append("id", id)
-                .append("publishedName", publishedName)
-                .append("libraryName", libraryName)
+                .append("publishedName", publishedName);
+        if (StringUtils.isNotBlank(slideCode)) {
+            builder.append("slideCode", slideCode);
+        }
+        return builder.append("libraryName", libraryName)
                 .append("imageType", imageType)
                 .append("cdmPath", cdmPath)
                 .append("imageName", imageName)
