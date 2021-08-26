@@ -457,8 +457,17 @@ public abstract class AbstractMetadata implements Serializable {
         ToStringBuilder builder = new ToStringBuilder(this)
                 .append("id", id)
                 .append("publishedName", publishedName);
+        if (StringUtils.isNotBlank(sampleRef)) {
+            builder.append("sampleRef", sampleRef);
+        }
         if (StringUtils.isNotBlank(slideCode)) {
             builder.append("slideCode", slideCode);
+        }
+        if (StringUtils.isNotBlank(objective)) {
+            builder.append("objective", objective);
+        }
+        if (StringUtils.isNotBlank(channel)) {
+            builder.append("channel", channel);
         }
         return builder.append("libraryName", libraryName)
                 .append("imageType", imageType)
