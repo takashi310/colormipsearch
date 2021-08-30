@@ -31,6 +31,7 @@ public abstract class AbstractMetadata implements Serializable {
     private String thumbnailURL;
     private String searchablePNG;
     private String slideCode;
+    private String driver;
     private String objective;
     private String neuronType;
     private String neuronInstance;
@@ -166,6 +167,15 @@ public abstract class AbstractMetadata implements Serializable {
 
     public void setSlideCode(String slideCode) {
         this.slideCode = slideCode;
+    }
+
+    @JsonIgnore
+    public String getDriver() {
+        return driver;
+    }
+
+    public void setDriver(String driver) {
+        this.driver = driver;
     }
 
     public String getObjective() {

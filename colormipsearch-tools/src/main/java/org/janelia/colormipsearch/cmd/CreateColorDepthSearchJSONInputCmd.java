@@ -656,15 +656,13 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             seg = "";
             ext = ".png";
         }
-        return new StringBuilder()
-                .append(cdmip.getAlignmentSpace()).append('/')
-                .append(cdmip.getLibraryName()).append('/')
-                .append(cdmip.getPublishedName()).append('-')
-                .append(cdmip.getAlignmentSpace()).append('-')
-                .append("CDM")
-                .append(StringUtils.isNotBlank(seg) ? "_" + seg : "")
-                .append(ext)
-                .toString();
+        return cdmip.getAlignmentSpace() + '/' +
+                cdmip.getLibraryName() + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
     }
 
     private String createLMImageRelativeURL(MIPMetadata cdmip) {
@@ -682,20 +680,31 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             seg = "";
             ext = ".png";
         }
-        return new StringBuilder()
-                .append(cdmip.getAlignmentSpace()).append('/')
-                .append(cdmip.getLibraryName()).append('/')
-                .append(cdmip.getPublishedName()).append('-')
-                .append(cdmip.getSlideCode()).append('-')
-                .append(cdmip.getLibraryName()).append('-')
-                .append(cdmip.getGender()).append('-')
-                .append(cdmip.getObjective()).append('-')
-                .append(cdmip.getAnatomicalArea()).append('-')
-                .append(cdmip.getAlignmentSpace()).append('-')
-                .append("CDM")
-                .append(StringUtils.isNotBlank(seg) ? "_" + seg : "")
-                .append(ext)
-                .toString();
+        // I think we should get rid of this as well
+        String driverName;
+        if (StringUtils.isBlank(cdmip.getDriver())) {
+            driverName = "";
+        } else {
+            int driverSeparator = cdmip.getDriver().indexOf('_');
+            if (driverSeparator == -1) {
+                driverName = cdmip.getDriver();
+            } else {
+                driverName = cdmip.getDriver().substring(0, driverSeparator);
+            }
+        }
+
+        return cdmip.getAlignmentSpace() + '/' +
+                StringUtils.replace(cdmip.getLibraryName(), " ", "_") + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getSlideCode() + '-' +
+                (StringUtils.isBlank(driverName) ? "" : driverName + '-') +
+                cdmip.getGender() + '-' +
+                cdmip.getObjective() + '-' +
+                cdmip.getAnatomicalArea() + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
     }
 
     private JsonGenerator openOutput(File of)  {
@@ -793,6 +802,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
             cdMetadata.setSlideCode(cdmip.sample.slideCode);
             cdMetadata.setGender(cdmip.sample.gender);
+            cdMetadata.setDriver(cdmip.sample.driver);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
         } else {
             populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
