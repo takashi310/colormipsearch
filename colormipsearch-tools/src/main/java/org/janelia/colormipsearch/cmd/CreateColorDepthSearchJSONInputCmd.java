@@ -671,7 +671,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         String imageName = StringUtils.isNotBlank(cdmip.getImageName())
                 ? Paths.get(cdmip.getImageName()).getFileName().toString()
                 : cdmip.getCdmName();
-        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)(_CDM)?)?(?<ext>\\..*$)");
         Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
         String seg;
         String ext;
