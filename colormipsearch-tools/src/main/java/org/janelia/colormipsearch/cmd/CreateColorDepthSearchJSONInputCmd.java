@@ -50,6 +50,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -146,6 +147,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
         List<ListArg> excludedMIPs;
+
+        @Parameter(names = {"--excluded-names"}, description = "Published names excluded from JSON", variableArity = true)
+        List<String> excludedNames;
 
         @Parameter(names = {"--default-gender"}, description = "Default gender")
         String defaultGender = "f";
@@ -275,6 +279,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 lpaths,
                                 args.cdmVariantName,
                                 args.segmentationVariantName,
+                                CollectionUtils.isEmpty(args.excludedNames)
+                                        ? Collections.emptySet()
+                                        : ImmutableSet.copyOf(args.excludedNames),
                                 Paths.get(args.commonArgs.outputDir),
                                 args.outputFileName);
 
@@ -318,6 +325,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void createColorDepthSearchJSONInputMIPsInOfflineMode(LibraryPathsArgs libraryPaths,
                                                                   String cdmVariantType,
                                                                   String segmentationVariantType,
+                                                                  Set<String> excludedNames,
                                                                   Path outputPath,
                                                                   String outputFileName) {
         LOG.warn("Generate JSON mips in offline mode");
@@ -362,6 +370,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmLibraryPath,
                                 cdmImages.getLeft(),
                                 cdmipImage))
+                .filter(cdmip -> excludedNames.contains(cdmip.getPublishedName()))
                 .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                 .map(ColorDepthMetadata::asMIPWithVariants)
                 .peek(cdmip -> {
@@ -700,7 +709,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 (StringUtils.isBlank(driverName) ? "" : driverName + '-') +
                 cdmip.getGender() + '-' +
                 cdmip.getObjective() + '-' +
-                cdmip.getAnatomicalArea() + '-' +
+                StringUtils.lowerCase(cdmip.getAnatomicalArea()) + '-' +
                 cdmip.getAlignmentSpace() + '-' +
                 "CDM" +
                 (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
