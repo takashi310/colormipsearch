@@ -39,7 +39,8 @@ class MIPsHandlingUtils {
     private static final int MAX_IMAGE_DATA_DEPTH = 5;
 
     static boolean isEmLibrary(String lname) {
-        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
+        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") &&
+                (StringUtils.containsIgnoreCase(lname, "hemibrain") || StringUtils.containsIgnoreCase(lname, "vnc"));
     }
 
     enum MIPLibraryEntryType {
