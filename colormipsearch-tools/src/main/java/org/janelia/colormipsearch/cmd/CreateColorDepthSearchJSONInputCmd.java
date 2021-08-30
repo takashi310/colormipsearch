@@ -541,11 +541,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmip,
                                 libraryPaths.listLibraryVariants(),
                                 libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
-                        .peek(cdmip -> {
-                            if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
-                                addSearchableName(cdmip);
-                            }
-                        })
+                        .peek(this::addSearchableName)
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
@@ -622,15 +618,17 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         //  has the internal name
 
         // remove directories and extension (which we know is ".png") from imageURL:
-        Path imagePath = Paths.get(cdmip.getImageURL());
-        String imageFilename = imagePath.getFileName().toString();
-        String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
+        if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
+            Path imagePath = Paths.get(cdmip.getImageURL());
+            String imageFilename = imagePath.getFileName().toString();
+            String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
 
-        // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
-        String[] imageNamePieces = cdmip.getImageName().split("-");
-        String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
+            // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
+            String[] imageNamePieces = cdmip.getImageName().split("-");
+            String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
 
-        cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+            cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+        }
         if (StringUtils.isBlank(cdmip.getImageURL())) {
             String imageRelativeURL;
             if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
