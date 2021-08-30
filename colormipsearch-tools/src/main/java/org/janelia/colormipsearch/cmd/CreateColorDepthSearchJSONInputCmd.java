@@ -370,7 +370,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmLibraryPath,
                                 cdmImages.getLeft(),
                                 cdmipImage))
-                .filter(cdmip -> excludedNames.contains(cdmip.getPublishedName()))
+                .filter(cdmip -> !excludedNames.contains(cdmip.getPublishedName()))
                 .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                 .map(ColorDepthMetadata::asMIPWithVariants)
                 .peek(cdmip -> {
