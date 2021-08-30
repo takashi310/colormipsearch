@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -629,6 +631,73 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
 
         cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+        if (StringUtils.isBlank(cdmip.getImageURL())) {
+            String imageRelativeURL;
+            if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
+                imageRelativeURL = createEMImageRelativeURL(cdmip);
+            } else {
+                imageRelativeURL = createLMImageRelativeURL(cdmip);
+            }
+            cdmip.setImageURL(imageRelativeURL);
+            cdmip.setThumbnailURL(imageRelativeURL);
+        }
+    }
+
+    private String createEMImageRelativeURL(MIPMetadata cdmip) {
+        String imageName = StringUtils.isNotBlank(cdmip.getImageName())
+                ? Paths.get(cdmip.getImageName()).getFileName().toString()
+                : cdmip.getCdmName();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        return new StringBuilder()
+                .append(cdmip.getAlignmentSpace()).append('/')
+                .append(cdmip.getLibraryName()).append('/')
+                .append(cdmip.getPublishedName()).append('-')
+                .append(cdmip.getAlignmentSpace()).append('-')
+                .append("CDM")
+                .append(StringUtils.isNotBlank(seg) ? "_" + seg : "")
+                .append(ext)
+                .toString();
+    }
+
+    private String createLMImageRelativeURL(MIPMetadata cdmip) {
+        String imageName = StringUtils.isNotBlank(cdmip.getImageName())
+                ? Paths.get(cdmip.getImageName()).getFileName().toString()
+                : cdmip.getCdmName();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        return new StringBuilder()
+                .append(cdmip.getAlignmentSpace()).append('/')
+                .append(cdmip.getLibraryName()).append('/')
+                .append(cdmip.getPublishedName()).append('-')
+                .append(cdmip.getSlideCode()).append('-')
+                .append(cdmip.getLibraryName()).append('-')
+                .append(cdmip.getGender()).append('-')
+                .append(cdmip.getObjective()).append('-')
+                .append(cdmip.getAnatomicalArea()).append('-')
+                .append(cdmip.getAlignmentSpace()).append('-')
+                .append("CDM")
+                .append(StringUtils.isNotBlank(seg) ? "_" + seg : "")
+                .append(ext)
+                .toString();
     }
 
     private JsonGenerator openOutput(File of)  {
