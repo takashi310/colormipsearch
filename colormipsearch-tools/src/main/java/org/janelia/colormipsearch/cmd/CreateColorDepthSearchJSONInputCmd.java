@@ -500,6 +500,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
                                 ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                                 : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
+                        .filter(cdmip -> cdmip != null)
                         .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
@@ -857,24 +858,28 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                 String defaultGender,
                                                 Function<ColorDepthMIP, String> libraryNameExtractor,
                                                 Function<String, String> imageURLMapper) {
-        String libraryName = libraryNameExtractor.apply(cdmip);
-        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.setId(cdmip.id);
-        cdMetadata.setNeuronType(cdmip.neuronType);
-        cdMetadata.setNeuronInstance(cdmip.neuronInstance);
-        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
-        cdMetadata.setLibraryName(libraryName);
-        cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
-        cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
-        try {
-            cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
-        } catch (Exception e) {
-            LOG.error("Error getting body ID for {}", cdmip.id, e);
-            throw new IllegalArgumentException(e);
+        if (cdmip.bodyId == null || cdmip.bodyId == 0L) {
+            LOG.warn("Invalid body ID - Ignore {}", cdmip);
+            return null;
         }
-        cdMetadata.setGender(defaultGender);
-        return cdMetadata;
+        try {
+            String libraryName = libraryNameExtractor.apply(cdmip);
+            ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+            cdMetadata.setId(cdmip.id);
+            cdMetadata.setNeuronType(cdmip.neuronType);
+            cdMetadata.setNeuronInstance(cdmip.neuronInstance);
+            cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+            cdMetadata.setLibraryName(libraryName);
+            cdMetadata.filepath = cdmip.filepath;
+            cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
+            cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
+            cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
+            cdMetadata.setGender(defaultGender);
+            return cdMetadata;
+        } catch (Exception e) {
+            LOG.error("Error getting metadata for {}", cdmip, e);
+            return null;
+        }
     }
 
     private ColorDepthMetadata asLMLineMetadataFromName(String libraryName,
