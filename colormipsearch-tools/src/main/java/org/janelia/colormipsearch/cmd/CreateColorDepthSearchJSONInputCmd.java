@@ -867,7 +867,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.filepath = cdmip.filepath;
         cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
-        cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
+        try {
+            cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
+        } catch (Exception e) {
+            LOG.error("Error getting body ID for {}", cdmip.id, e);
+            throw new IllegalArgumentException(e);
+        }
         cdMetadata.setGender(defaultGender);
         return cdMetadata;
     }
