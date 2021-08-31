@@ -550,7 +550,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmip,
                                 libraryPaths.listLibraryVariants(),
                                 libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
-                        .peek(this::addSearchableName)
+                        .peek(this::setImageURLs)
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
@@ -618,16 +618,20 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private void addSearchableName(MIPMetadata cdmip) {
-        // searchableName filename must be expressed in terms of publishedName (not internal name),
-        //  and must include the integer suffix that identifies exactly which image it is,
-        //  when there are multiple images for a given combination of parameters
-        // in practical terms, we take the filename from imageURL, which has
-        //  the publishedName in it, and graft on the required integer from imageName, which
-        //  has the internal name
-
-        // remove directories and extension (which we know is ".png") from imageURL:
+    /**
+     * The method sets image URLs to relative URLs if they are not set as well as the name of the searched image.
+     * @param cdmip
+     */
+    private void setImageURLs(MIPMetadata cdmip) {
         if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
+            // searchableName filename must be expressed in terms of publishedName (not internal name),
+            //  and must include the integer suffix that identifies exactly which image it is,
+            //  when there are multiple images for a given combination of parameters
+            // in practical terms, we take the filename from imageURL, which has
+            //  the publishedName in it, and graft on the required integer from imageName, which
+            //  has the internal name
+
+            // remove directories and extension (which we know is ".png") from imageURL:
             Path imagePath = Paths.get(cdmip.getImageURL());
             String imageFilename = imagePath.getFileName().toString();
             String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
@@ -639,6 +643,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
         }
         if (StringUtils.isBlank(cdmip.getImageURL())) {
+            // set relative image URLs
             String imageRelativeURL;
             if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
                 imageRelativeURL = createEMImageRelativeURL(cdmip);
