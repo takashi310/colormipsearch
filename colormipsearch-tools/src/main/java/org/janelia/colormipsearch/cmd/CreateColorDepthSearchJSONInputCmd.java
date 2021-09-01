@@ -429,7 +429,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             } else {
                 String displayLibraryName = libraryNamesMapping.get(internalLibraryName);
                 if (StringUtils.isBlank(displayLibraryName)) {
-                    LOG.warn("No name mapping found {}", internalLibraryName);
                     return internalLibraryName;
                 } else {
                     return displayLibraryName;
