@@ -31,7 +31,7 @@ function gridRun {
     from=$1
     to=$2
     # this is tricky and has not been tested yet because we have to run a function from this file
-    bsub -n ${CORES_RESOURCE} -J CDS[${from}-${to}] -P emlm \
+    bsub -n ${CORES_RESOURCE} -J CDS[${from}-${to}] -P neuronbridge \
         ${SCRIPT_DIR}/submitCDSJob.sh
 }
 
