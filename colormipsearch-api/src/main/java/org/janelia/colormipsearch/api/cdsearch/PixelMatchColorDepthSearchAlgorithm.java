@@ -56,24 +56,40 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         int firstPixel = super.getQueryFirstPixelIndex();
         int lastPixel = super.getQueryLastPixelIndex();
         for (int i = 0; i < targetMasksList.length; i++) {
-            if (targetMasksList[i][0] < firstPixel) firstPixel = targetMasksList[i][0];
-            if (targetMasksList[i][targetMasksList[i].length-1] > lastPixel) lastPixel = targetMasksList[i][targetMasksList[i].length-1];
+            if (targetMasksList[i].length > 0) {
+                if (targetMasksList[i][0] < firstPixel)
+                    firstPixel = targetMasksList[i][0];
+                if (targetMasksList[i][targetMasksList[i].length-1] > lastPixel)
+                    lastPixel = targetMasksList[i][targetMasksList[i].length-1];
+            }
         }
         if (mirrorQuery) {
             for (int i = 0; i < mirrorTargetMasksList.length; i++) {
-                if (mirrorTargetMasksList[i][0] < firstPixel) firstPixel = mirrorTargetMasksList[i][0];
-                if (mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1] > lastPixel) lastPixel = mirrorTargetMasksList[i][mirrorTargetMasksList[i].length-1];
+                if (mirrorTargetMasksList[i].length > 0) {
+                    if (mirrorTargetMasksList[i][0] < firstPixel)
+                        firstPixel = mirrorTargetMasksList[i][0];
+                    if (mirrorTargetMasksList[i][mirrorTargetMasksList[i].length - 1] > lastPixel)
+                        lastPixel = mirrorTargetMasksList[i][mirrorTargetMasksList[i].length - 1];
+                }
             }
         }
         if (negQueryImage != null) {
             for (int i = 0; i < negTargetMasksList.length; i++) {
-                if (negTargetMasksList[i][0] < firstPixel) firstPixel = negTargetMasksList[i][0];
-                if (negTargetMasksList[i][negTargetMasksList[i].length-1] > lastPixel) lastPixel = negTargetMasksList[i][negTargetMasksList[i].length-1];
+                if (negTargetMasksList[i].length > 0) {
+                    if (negTargetMasksList[i][0] < firstPixel)
+                        firstPixel = negTargetMasksList[i][0];
+                    if (negTargetMasksList[i][negTargetMasksList[i].length-1] > lastPixel)
+                        lastPixel = negTargetMasksList[i][negTargetMasksList[i].length-1];
+                }
             }
             if (mirrorNegQuery) {
                 for (int i = 0; i < negMirrorTargetMasksList.length; i++) {
-                    if (negMirrorTargetMasksList[i][0] < firstPixel) firstPixel = negMirrorTargetMasksList[i][0];
-                    if (negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1] > lastPixel) lastPixel = negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1];
+                    if (negMirrorTargetMasksList[i].length > 0) {
+                        if (negMirrorTargetMasksList[i][0] < firstPixel)
+                            firstPixel = negMirrorTargetMasksList[i][0];
+                        if (negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1] > lastPixel)
+                            lastPixel = negMirrorTargetMasksList[i][negMirrorTargetMasksList[i].length-1];
+                    }
                 }
             }
         }
