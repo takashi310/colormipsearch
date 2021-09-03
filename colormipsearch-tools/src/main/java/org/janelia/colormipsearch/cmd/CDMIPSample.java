@@ -14,6 +14,8 @@ class CDMIPSample {
     @JsonProperty
     String mountingProtocol;
     @JsonProperty
+    String driver;
+    @JsonProperty
     String organism;
     @JsonProperty
     String genotype;

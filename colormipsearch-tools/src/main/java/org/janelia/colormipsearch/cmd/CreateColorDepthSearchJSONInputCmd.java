@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -48,6 +50,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -144,6 +147,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
         List<ListArg> excludedMIPs;
+
+        @Parameter(names = {"--excluded-names"}, description = "Published names excluded from JSON", variableArity = true)
+        List<String> excludedNames;
 
         @Parameter(names = {"--default-gender"}, description = "Default gender")
         String defaultGender = "f";
@@ -273,6 +279,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 lpaths,
                                 args.cdmVariantName,
                                 args.segmentationVariantName,
+                                CollectionUtils.isEmpty(args.excludedNames)
+                                        ? Collections.emptySet()
+                                        : ImmutableSet.copyOf(args.excludedNames),
                                 Paths.get(args.commonArgs.outputDir),
                                 args.outputFileName);
 
@@ -316,6 +325,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void createColorDepthSearchJSONInputMIPsInOfflineMode(LibraryPathsArgs libraryPaths,
                                                                   String cdmVariantType,
                                                                   String segmentationVariantType,
+                                                                  Set<String> excludedNames,
                                                                   Path outputPath,
                                                                   String outputFileName) {
         LOG.warn("Generate JSON mips in offline mode");
@@ -360,6 +370,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmLibraryPath,
                                 cdmImages.getLeft(),
                                 cdmipImage))
+                .filter(cdmip -> !excludedNames.contains(cdmip.getPublishedName()))
                 .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                 .map(ColorDepthMetadata::asMIPWithVariants)
                 .peek(cdmip -> {
@@ -418,7 +429,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             } else {
                 String displayLibraryName = libraryNamesMapping.get(internalLibraryName);
                 if (StringUtils.isBlank(displayLibraryName)) {
-                    LOG.warn("No name mapping found {}", internalLibraryName);
                     return internalLibraryName;
                 } else {
                     return displayLibraryName;
@@ -489,6 +499,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
                                 ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                                 : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
+                        .filter(cdmip -> cdmip != null)
                         .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                         .map(ColorDepthMetadata::asMIPWithVariants)
                         .filter(cdmip -> CollectionUtils.isEmpty(excludedMIPs) || !excludedMIPs.contains(cdmip))
@@ -539,11 +550,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmip,
                                 libraryPaths.listLibraryVariants(),
                                 libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
-                        .peek(cdmip -> {
-                            if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
-                                addSearchableName(cdmip);
-                            }
-                        })
+                        .peek(this::setImageURLs)
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
@@ -611,24 +618,107 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
-    private void addSearchableName(MIPMetadata cdmip) {
-        // searchableName filename must be expressed in terms of publishedName (not internal name),
-        //  and must include the integer suffix that identifies exactly which image it is,
-        //  when there are multiple images for a given combination of parameters
-        // in practical terms, we take the filename from imageURL, which has
-        //  the publishedName in it, and graft on the required integer from imageName, which
-        //  has the internal name
+    /**
+     * The method sets image URLs to relative URLs if they are not set as well as the name of the searched image.
+     * @param cdmip
+     */
+    private void setImageURLs(MIPMetadata cdmip) {
+        if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
+            // searchableName filename must be expressed in terms of publishedName (not internal name),
+            //  and must include the integer suffix that identifies exactly which image it is,
+            //  when there are multiple images for a given combination of parameters
+            // in practical terms, we take the filename from imageURL, which has
+            //  the publishedName in it, and graft on the required integer from imageName, which
+            //  has the internal name
 
-        // remove directories and extension (which we know is ".png") from imageURL:
-        Path imagePath = Paths.get(cdmip.getImageURL());
-        String imageFilename = imagePath.getFileName().toString();
-        String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
+            // remove directories and extension (which we know is ".png") from imageURL:
+            Path imagePath = Paths.get(cdmip.getImageURL());
+            String imageFilename = imagePath.getFileName().toString();
+            String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
 
-        // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
-        String[] imageNamePieces = cdmip.getImageName().split("-");
-        String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
+            // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
+            String[] imageNamePieces = cdmip.getImageName().split("-");
+            String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
 
-        cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+            cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+        }
+        if (StringUtils.isBlank(cdmip.getImageURL())) {
+            // set relative image URLs
+            String imageRelativeURL;
+            if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
+                imageRelativeURL = createEMImageRelativeURL(cdmip);
+            } else {
+                imageRelativeURL = createLMImageRelativeURL(cdmip);
+            }
+            cdmip.setImageURL(imageRelativeURL);
+            cdmip.setThumbnailURL(imageRelativeURL);
+        }
+    }
+
+    private String createEMImageRelativeURL(MIPMetadata cdmip) {
+        String imageName = StringUtils.isNotBlank(cdmip.getImageName())
+                ? Paths.get(cdmip.getImageName()).getFileName().toString()
+                : cdmip.getCdmName();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        return cdmip.getAlignmentSpace() + '/' +
+                cdmip.getLibraryName() + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
+    }
+
+    private String createLMImageRelativeURL(MIPMetadata cdmip) {
+        String imageName = StringUtils.isNotBlank(cdmip.getImageName())
+                ? Paths.get(cdmip.getImageName()).getFileName().toString()
+                : cdmip.getCdmName();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)(_CDM)?)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        // I think we should get rid of this as well
+        String driverName;
+        if (StringUtils.isBlank(cdmip.getDriver())) {
+            driverName = "";
+        } else {
+            int driverSeparator = cdmip.getDriver().indexOf('_');
+            if (driverSeparator == -1) {
+                driverName = cdmip.getDriver();
+            } else {
+                driverName = cdmip.getDriver().substring(0, driverSeparator);
+            }
+        }
+
+        return cdmip.getAlignmentSpace() + '/' +
+                StringUtils.replace(cdmip.getLibraryName(), " ", "_") + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getSlideCode() + '-' +
+                (StringUtils.isBlank(driverName) ? "" : driverName + '-') +
+                cdmip.getGender() + '-' +
+                cdmip.getObjective() + '-' +
+                StringUtils.lowerCase(cdmip.getAnatomicalArea()) + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
     }
 
     private JsonGenerator openOutput(File of)  {
@@ -726,6 +816,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);
             cdMetadata.setSlideCode(cdmip.sample.slideCode);
             cdMetadata.setGender(cdmip.sample.gender);
+            cdMetadata.setDriver(cdmip.sample.driver);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
         } else {
             populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
@@ -766,19 +857,28 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                 String defaultGender,
                                                 Function<ColorDepthMIP, String> libraryNameExtractor,
                                                 Function<String, String> imageURLMapper) {
-        String libraryName = libraryNameExtractor.apply(cdmip);
-        ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
-        cdMetadata.setId(cdmip.id);
-        cdMetadata.setNeuronType(cdmip.neuronType);
-        cdMetadata.setNeuronInstance(cdmip.neuronInstance);
-        cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
-        cdMetadata.setLibraryName(libraryName);
-        cdMetadata.filepath = cdmip.filepath;
-        cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
-        cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
-        cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
-        cdMetadata.setGender(defaultGender);
-        return cdMetadata;
+        if (cdmip.bodyId == null || cdmip.bodyId == 0L) {
+            LOG.warn("Invalid body ID - Ignore {}", cdmip);
+            return null;
+        }
+        try {
+            String libraryName = libraryNameExtractor.apply(cdmip);
+            ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
+            cdMetadata.setId(cdmip.id);
+            cdMetadata.setNeuronType(cdmip.neuronType);
+            cdMetadata.setNeuronInstance(cdmip.neuronInstance);
+            cdMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+            cdMetadata.setLibraryName(libraryName);
+            cdMetadata.filepath = cdmip.filepath;
+            cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
+            cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
+            cdMetadata.setEMSkeletonPublishedName(Long.toString(cdmip.bodyId));
+            cdMetadata.setGender(defaultGender);
+            return cdMetadata;
+        } catch (Exception e) {
+            LOG.error("Error getting metadata for {}", cdmip, e);
+            return null;
+        }
     }
 
     private ColorDepthMetadata asLMLineMetadataFromName(String libraryName,
