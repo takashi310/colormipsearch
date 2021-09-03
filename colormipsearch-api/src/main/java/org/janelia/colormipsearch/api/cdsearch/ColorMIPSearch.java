@@ -32,7 +32,11 @@ public class ColorMIPSearch implements Serializable {
     }
 
     public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearchWithDefaultThreshold(MIPImage queryMIPImage) {
-        return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold);
+        try {
+            return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold);
+        } catch(Exception e) {
+            throw new IllegalStateException("Error creating a color depth search for " + queryMIPImage.toString(), e);
+        }
     }
 
     public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(MIPImage queryMIPImage, int queryThreshold) {
