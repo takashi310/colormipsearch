@@ -164,7 +164,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 })
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} results with matches comparing mask# {} - {} with {} out of {} libraries in {}ms",
+                        LOG.info("Found {} matches comparing mask# {} - {} with {} out of {} libraries in {}ms",
                                 srs.size(), mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size(), System.currentTimeMillis() - startTime);
                         return srs;
                     };
