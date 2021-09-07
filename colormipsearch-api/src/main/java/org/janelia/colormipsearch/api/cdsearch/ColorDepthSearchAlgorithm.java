@@ -21,6 +21,11 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> exten
     ImageArray<?> getQueryImage();
 
     /**
+     * @return the number of pixels in the mask.
+     */
+    int getQuerySize();
+
+    /**
      * @return the lower bound of the query image from the current context.
      */
     int getQueryFirstPixelIndex();
@@ -47,8 +52,8 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> exten
      * calculate the negative impact of certain pixels to the total matching score.
      *
      * @param targetImageArray
-     * @param helperMaskSuppliers image supplier per variant type. The map key is the variant type and the value is
-     *                            the supplier that can provide the corresponding image.
+     * @param variantTypeSuppliers image supplier per variant type. The map key is the variant type and the value is
+     *                             the supplier that can provide the corresponding image.
      * @return
      */
     S calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray, Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers);

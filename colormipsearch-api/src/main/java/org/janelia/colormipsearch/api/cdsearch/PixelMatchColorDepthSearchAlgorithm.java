@@ -162,7 +162,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     @Override
     public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
                                                      Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
-        int querySize = querySize();
+        int querySize = getQuerySize();
         if (querySize == 0) {
             return new ColorMIPMatchScore(0, 0, false, null);
         }

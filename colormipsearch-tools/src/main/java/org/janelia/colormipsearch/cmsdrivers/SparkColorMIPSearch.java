@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
 
@@ -94,9 +95,13 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                             .map(MIPsUtils::loadMIP)
                             .flatMap(queryImage -> {
                                 ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
-                                return localTargetImages.stream()
-                                        .map(targetImage -> search(queryColorDepthSearch, queryImage, targetImage))
-                                        .filter(ColorMIPSearchResult::isMatch);
+                                if (queryColorDepthSearch.getQuerySize() == 0) {
+                                    return Stream.of();
+                                } else {
+                                    return localTargetImages.stream()
+                                            .map(targetImage -> search(queryColorDepthSearch, queryImage, targetImage))
+                                            .filter(ColorMIPSearchResult::isMatch);
+                                }
                             })
                             .iterator();
                 }).collect())

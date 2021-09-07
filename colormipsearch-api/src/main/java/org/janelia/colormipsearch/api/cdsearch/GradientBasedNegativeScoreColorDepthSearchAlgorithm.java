@@ -80,6 +80,21 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     }
 
     @Override
+    public int getQuerySize() {
+        return queryImage.fold(0, (pix, s) -> {
+            int red = (pix >> 16) & 0xff;
+            int green = (pix >> 8) & 0xff;
+            int blue = pix & 0xff;
+
+            if (red > queryThreshold || green > queryThreshold || blue > queryThreshold) {
+                return s + 1;
+            } else {
+                return s;
+            }
+        });
+    }
+
+    @Override
     public int getQueryFirstPixelIndex() {
         return findQueryFirstPixelIndex();
     }

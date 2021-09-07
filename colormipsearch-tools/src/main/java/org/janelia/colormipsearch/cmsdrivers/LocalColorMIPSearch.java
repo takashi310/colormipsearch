@@ -104,6 +104,9 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
             );
         }
         ColorDepthSearchAlgorithm<ColorMIPMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
+        if (queryColorDepthSearch.getQuerySize() == 0) {
+            return Collections.emptyList();
+        }
         Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
         List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = Utils.partitionCollection(targetMIPs, localProcessingPartitionSize).stream()
                 .map(targetMIPsPartition -> {

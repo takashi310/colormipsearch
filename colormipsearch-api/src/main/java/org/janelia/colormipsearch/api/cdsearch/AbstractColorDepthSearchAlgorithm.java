@@ -66,6 +66,11 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
     }
 
     @Override
+    public int getQuerySize() {
+        return queryPositions.size();
+    }
+
+    @Override
     public int getQueryFirstPixelIndex() {
         return queryPositions.miny * getQueryImage().getWidth() * queryPositions.minx;
     }
@@ -108,10 +113,6 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
 
     int[] queryPixelPositions() {
         return queryPositions.pixelPositions();
-    }
-
-    int querySize() {
-        return queryPositions.size();
     }
 
     int[] negQueryPixelPositions() {
