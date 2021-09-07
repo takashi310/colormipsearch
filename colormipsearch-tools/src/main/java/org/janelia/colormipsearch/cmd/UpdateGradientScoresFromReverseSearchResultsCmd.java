@@ -44,7 +44,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File(s) containing results to be calculated")
         private List<String> resultsFiles;
 
-        @Parameter(names = {"--reverseResultsDir", "-revd"}, description = "Reverse results directory to be calculated")
+        @Parameter(names = {"--reverseResultsDir", "-revd"},
+                description = "Directory containing matches that we want to be updated with the corresponding gradient scores from <resultsDir>")
         private String reverseResultsDir;
 
         @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
@@ -156,7 +157,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private void updateGradientScores(UpdateGradientScoresArgs args) {
         long startTime = System.currentTimeMillis();
         LOG.info("Prepare opposite results cache from {}", args.reverseResultsDir);
-        Map<String, ColorDepthSearchMatchesProvider> oppositeResultsCache = streamCDSMatchesFromFiles(getFileToProcessFromDir(args.reverseResultsDir, 0, -1))
+        Map<String, ColorDepthSearchMatchesProvider> oppositeResultsCache = streamCDSMatchesFromFiles(CmdUtils.getFileToProcessFromDir(args.reverseResultsDir, 0, -1))
                 .collect(Collectors.toMap(cdsMatches -> cdsMatches.getMipId(), cdsMatches -> cdsMatches));
         LOG.info("Done preparing opposite results cache from {} in {}ms", args.reverseResultsDir, System.currentTimeMillis() - startTime);
 
@@ -164,7 +165,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             filesToProcess = args.resultsFiles;
         } else if (args.resultsDir != null) {
-            filesToProcess = getFileToProcessFromDir(args.resultsDir.input, args.resultsDir.offset, args.resultsDir.length);
+            filesToProcess = CmdUtils.getFileToProcessFromDir(args.resultsDir.input, args.resultsDir.offset, args.resultsDir.length);
         } else {
             filesToProcess = Collections.emptyList();
         }
@@ -196,23 +197,6 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 oppositeResultsCache.size(),
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-    }
-
-    private List<String> getFileToProcessFromDir(String dirName, int offsetParam, int lengthParam) {
-        try {
-            int from = Math.max(offsetParam, 0);
-            List<String> filenamesList = Files.find(Paths.get(dirName), 1, (p, fa) -> fa.isRegularFile())
-                    .skip(from)
-                    .map(Path::toString)
-                    .collect(Collectors.toList());
-            if (lengthParam > 0 && lengthParam < filenamesList.size()) {
-                return filenamesList.subList(0, lengthParam);
-            } else {
-                return filenamesList;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private Stream<ColorDepthSearchMatchesProvider> streamCDSMatchesFromFiles(List<String> fileList) {

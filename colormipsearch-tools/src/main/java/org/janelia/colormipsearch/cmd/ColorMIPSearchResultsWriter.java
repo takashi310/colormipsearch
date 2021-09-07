@@ -67,6 +67,7 @@ class ColorMIPSearchResultsWriter {
     }
 
     static void writeSearchResults(Path outputPath, List<CDSMatches> cdsMatchesList) {
+        long startTime = System.currentTimeMillis();
         LOG.info("Write {} file results", cdsMatchesList.size());
         cdsMatchesList.stream().parallel()
                 .forEach(cdsMatches -> {
@@ -78,7 +79,7 @@ class ColorMIPSearchResultsWriter {
                                     cdsMatches)
                     );
                 });
-        LOG.info("Finished writing {} file results", cdsMatchesList.size());
+        LOG.info("Finished writing {} file results in {}s", cdsMatchesList.size(), (System.currentTimeMillis()-startTime)/1000.);
     }
 
     private static void writeSearchResultsToFile(Path outputFile, CDSMatches searchResults) {

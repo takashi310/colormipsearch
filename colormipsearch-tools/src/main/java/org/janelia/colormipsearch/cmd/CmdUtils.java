@@ -2,10 +2,14 @@ package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -53,6 +57,23 @@ class CmdUtils {
             return null;
         } else {
             return outputDir.resolve(inputFile.getName()).toFile();
+        }
+    }
+
+    static List<String> getFileToProcessFromDir(String dirName, int offsetParam, int lengthParam) {
+        try {
+            int from = Math.max(offsetParam, 0);
+            List<String> filenamesList = Files.find(Paths.get(dirName), 1, (p, fa) -> fa.isRegularFile())
+                    .skip(from)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            if (lengthParam > 0 && lengthParam < filenamesList.size()) {
+                return filenamesList.subList(0, lengthParam);
+            } else {
+                return filenamesList;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
