@@ -50,8 +50,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
 import org.janelia.colormipsearch.api.pppsearch.RawPPPMatchesReader;
-import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatch;
-import org.janelia.colormipsearch.api.pppsearch.SourcePPPMatches;
+import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
+import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,10 +98,10 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         boolean onlyBestSkeletonMatches = false;
 
         @Parameter(names = {"--jacs-read-batch-size"}, description = "Batch size for getting data from JACS")
-        int jacsReadBatchSize = 2000;
+        int jacsReadBatchSize = 5000;
 
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
-        int processingPartitionSize = 100;
+        int processingPartitionSize = 500;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -183,7 +183,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Path outputPath = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
-                .map(SourcePPPMatches::pppMatchesBySingleNeuron)
+                .map(EmPPPMatches::pppMatchesBySingleNeuron)
                 .forEach(pppMatches -> PPPUtils.writeResultsToJSONFile(
                         pppMatches,
                         outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
@@ -256,16 +256,16 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
      * @param pppResultsFile
      * @return
      */
-    private List<SourcePPPMatch> importPPPRResultsFromFile(Path pppResultsFile) {
-        List<SourcePPPMatch> neuronMatches = args.onlyBestSkeletonMatches
+    private List<EmPPPMatch> importPPPRResultsFromFile(Path pppResultsFile) {
+        List<EmPPPMatch> neuronMatches = args.onlyBestSkeletonMatches
                 ? originalPPPMatchesReader.readPPPMatchesWithBestSkeletonMatches(pppResultsFile.toString())
                 : originalPPPMatchesReader.readPPPMatchesWithAllSkeletonMatches(pppResultsFile.toString());
         Set<String> matchedLMSampleNames = neuronMatches.stream()
                 .peek(this::fillInPPPMetadata)
-                .map(SourcePPPMatch::getSampleName)
+                .map(EmPPPMatch::getSampleName)
                 .collect(Collectors.toSet());
         Set<String> neuronNames = neuronMatches.stream()
-                .map(SourcePPPMatch::getNeuronName)
+                .map(EmPPPMatch::getNeuronName)
                 .collect(Collectors.toSet());
 
         Map<String, CDMIPSample> lmSamples = retrieveLMSamples(matchedLMSampleNames);
@@ -287,6 +287,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
             if (emNeuron != null) {
+                pppMatch.setNeuronId(emNeuron.id);
                 pppMatch.setSourceEmDataset(emNeuron.datasetIdentifier); // this should be set to the library id which differs slightly from the EM dataset
                 pppMatch.setNeuronType(emNeuron.neuronType);
                 pppMatch.setNeuronInstance(emNeuron.neuronInstance);
@@ -296,13 +297,13 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         return neuronMatches;
     }
 
-    private void fillInPPPMetadata(SourcePPPMatch pppMatch) {
+    private void fillInPPPMetadata(EmPPPMatch pppMatch) {
         pppMatch.setAlignmentSpace(args.alignmentSpace);
         fillEMMMetadata(pppMatch.getSourceEmName(), pppMatch);
         fillLMMetadata(pppMatch.getSourceLmName(), pppMatch);
     }
 
-    private void fillEMMMetadata(String emFullName, SourcePPPMatch pppMatch) {
+    private void fillEMMMetadata(String emFullName, EmPPPMatch pppMatch) {
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
@@ -311,7 +312,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private void fillLMMetadata(String lmFullName, SourcePPPMatch pppMatch) {
+    private void fillLMMetadata(String lmFullName, EmPPPMatch pppMatch) {
         Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = lmRegExPattern.matcher(lmFullName);
         if (matcher.find()) {
@@ -320,7 +321,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private void lookupScreenshots(Path pppScreenshotsDir, SourcePPPMatch pppMatch) {
+    private void lookupScreenshots(Path pppScreenshotsDir, EmPPPMatch pppMatch) {
         if (Files.exists(pppScreenshotsDir)) {
             try(DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
                 screenshotsDirStream.forEach(f -> {

@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,34 +22,50 @@ import org.janelia.colormipsearch.api.FileType;
  * This object contains all fields currently read from the original result file.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "id", "publishedName", "libraryName",
-        "pppRank", "pppScore",
-        "sampleName", "slideCode", "objective",
-        "gender", "alignmentSpace", "mountingProtocol",
-        "coverageScore", "aggregateCoverage", "mirrored",
-        "files", "sourceImageFiles", "skeletonMatches"
-})
-public class SourcePPPMatch {
-    @JsonIgnore
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.NONE,
+        getterVisibility = JsonAutoDetect.Visibility.NONE,
+        setterVisibility = JsonAutoDetect.Visibility.NONE
+)
+public class AbstractPPPMatch {
+
+    public static <S extends AbstractPPPMatch, D extends AbstractPPPMatch> D copyFrom(S from, D to) {
+        to.setSourceEmName(from.getSourceEmName());
+        to.setSourceEmDataset(from.getSourceEmDataset());
+        to.setNeuronId(from.getNeuronId());
+        to.setNeuronName(from.getNeuronName());
+        to.setNeuronType(from.getNeuronType());
+        to.setNeuronInstance(from.getNeuronInstance());
+        to.setNeuronStatus(from.getNeuronStatus());
+        to.setSourceLmName(from.getSourceLmName());
+        to.setSourceLmDataset(from.getSourceLmDataset());
+        to.setLineName(from.getLineName());
+        to.setSampleId(from.getSampleId());
+        to.setSampleName(from.getSampleName());
+        to.setSlideCode(from.getSlideCode());
+        to.setObjective(from.getObjective());
+        to.setMountingProtocol(from.getMountingProtocol());
+        to.setAlignmentSpace(from.getAlignmentSpace());
+        to.setGender(from.getGender());
+        to.setCoverageScore(from.getCoverageScore());
+        to.setAggregateCoverage(from.getAggregateCoverage());
+        to.setMirrored(from.getMirrored());
+        to.setEmPPPRank(from.getEmPPPRank());
+        to.setSourceImageFiles(from.getSourceImageFiles());
+        to.setSkeletonMatches(from.getSkeletonMatches());
+        return to;
+    }
+
     private String sourceEmName;
-    @JsonIgnore
     private String sourceEmDataset;
-    @JsonIgnore
+    private String neuronId; // JACS EM body ID
     private String neuronName; // EM body ID
-    @JsonIgnore
     private String neuronType;
-    @JsonIgnore
     private String neuronInstance;
-    @JsonIgnore
     private String neuronStatus;
-    @JsonIgnore
     private String sourceLmName;
-    @JsonProperty("libraryName")
     private String sourceLmDataset;
-    @JsonProperty("publishedName")
     private String lineName; // LM line
-    @JsonProperty("id")
     private String sampleId; // LM sample ID
     private String sampleName; // LM sample name
     private String slideCode;
@@ -58,7 +76,6 @@ public class SourcePPPMatch {
     private Double coverageScore;
     private Double aggregateCoverage;
     private Boolean mirrored;
-    @JsonProperty("pppRank")
     private Double emPPPRank;
     private Map<PPPScreenshotType, String> sourceImageFiles;
     private List<SourceSkeletonMatch> skeletonMatches;
@@ -77,6 +94,14 @@ public class SourcePPPMatch {
 
     public void setSourceEmDataset(String sourceEmDataset) {
         this.sourceEmDataset = sourceEmDataset;
+    }
+
+    public String getNeuronId() {
+        return neuronId;
+    }
+
+    public void setNeuronId(String neuronId) {
+        this.neuronId = neuronId;
     }
 
     public String getNeuronName() {
@@ -175,6 +200,7 @@ public class SourcePPPMatch {
         this.mountingProtocol = mountingProtocol;
     }
 
+    @JsonProperty
     public String getAlignmentSpace() {
         return alignmentSpace;
     }
@@ -191,6 +217,7 @@ public class SourcePPPMatch {
         this.gender = gender;
     }
 
+    @JsonProperty
     public Double getCoverageScore() {
         return coverageScore;
     }
@@ -199,6 +226,7 @@ public class SourcePPPMatch {
         this.coverageScore = coverageScore;
     }
 
+    @JsonProperty
     public Double getAggregateCoverage() {
         return aggregateCoverage;
     }
@@ -207,6 +235,7 @@ public class SourcePPPMatch {
         this.aggregateCoverage = aggregateCoverage;
     }
 
+    @JsonProperty
     public Boolean getMirrored() {
         return mirrored;
     }
@@ -221,14 +250,15 @@ public class SourcePPPMatch {
     }
 
     @JsonIgnore
-    void setPPPScore() {
-        // pppScore is Read Only
+    void setPPPScore(int pppScore) {
+        coverageScore = pppScore == 0 ? null : new Double(-pppScore);
     }
 
     boolean hasEmPPPRank() {
         return emPPPRank != null;
     }
 
+    @JsonProperty("pppRank")
     public Double getEmPPPRank() {
         return emPPPRank;
     }
@@ -242,12 +272,12 @@ public class SourcePPPMatch {
         return this.sourceImageFiles == null
                 ? null
                 : sourceImageFiles.keySet().stream().collect(Collectors.toMap(
-                        e -> e.getFileType(),
-                        e -> getTargetImageRelativePath(e.getFileType())));
+                e -> e.getFileType(),
+                e -> getTargetImageRelativePath(e.getFileType())));
     }
 
     @JsonIgnore
-    void setFiles(Map<FileType, String> sourceImageFiles) {
+    void setFiles(Map<FileType, String> files) {
         // do nothing here
     }
 
@@ -283,6 +313,7 @@ public class SourcePPPMatch {
         }
     }
 
+    @JsonProperty
     public Map<PPPScreenshotType, String> getSourceImageFiles() {
         return sourceImageFiles;
     }
@@ -295,6 +326,7 @@ public class SourcePPPMatch {
         return CollectionUtils.isNotEmpty(skeletonMatches);
     }
 
+    @JsonProperty
     public List<SourceSkeletonMatch> getSkeletonMatches() {
         return skeletonMatches;
     }

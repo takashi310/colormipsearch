@@ -15,4 +15,9 @@ public class Results<T> {
     public T getResults() {
         return results;
     }
+
+    public boolean hasResults() {
+        return results != null;
+    }
+
 }

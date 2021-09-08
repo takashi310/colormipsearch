@@ -3,6 +3,8 @@ package org.janelia.colormipsearch.cmd;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EMNeuron {
+    @JsonProperty("_id")
+    String id;
     @JsonProperty
     String name;
     @JsonProperty

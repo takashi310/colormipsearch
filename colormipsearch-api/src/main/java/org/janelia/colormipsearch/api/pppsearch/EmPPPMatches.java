@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -15,18 +16,20 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.api.Results;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"maskPublishedName", "maskLibraryName", "neuronType", "neuronInstance", "results"})
-public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
+@JsonPropertyOrder({"maskId", "maskPublishedName", "maskLibraryName", "neuronType", "neuronInstance", "results"})
+public class EmPPPMatches extends Results<List<EmPPPMatch>> {
 
-    private static class PPPID {
+    private static class EmPPPID {
         private final String fullName;
+        private final String id;
         private final String name;
         private final String type;
         private final String instance;
         private final String dataset;
 
-        PPPID(String fullName, String name, String type, String instance, String dataset) {
+        EmPPPID(String fullName, String id ,String name, String type, String instance, String dataset) {
             this.fullName = fullName;
+            this.id = id;
             this.name = name;
             this.type = type;
             this.instance = instance;
@@ -39,10 +42,11 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
 
             if (o == null || getClass() != o.getClass()) return false;
 
-            PPPID that = (PPPID) o;
+            EmPPPID that = (EmPPPID) o;
 
             return new EqualsBuilder()
                     .append(fullName, that.fullName)
+                    .append(id, that.id)
                     .append(name, that.name)
                     .append(type, that.type)
                     .append(instance, that.instance)
@@ -54,6 +58,7 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
         public int hashCode() {
             return new HashCodeBuilder(17, 37)
                     .append(fullName)
+                    .append(id)
                     .append(name)
                     .append(type)
                     .append(instance)
@@ -61,14 +66,48 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
         }
     }
 
-    public static List<SourcePPPMatches> pppMatchesByNeurons(List<SourcePPPMatch> pppMatchList) {
+    @JsonCreator
+    public static EmPPPMatches createEmPPPMatches(@JsonProperty("maskId") String maskId,
+                                                  @JsonProperty("maskPublishedName") String maskPublishedName,
+                                                  @JsonProperty("maskLibraryName") String maskLibraryName,
+                                                  @JsonProperty("neuronType") String neuronType,
+                                                  @JsonProperty("neuronInstance") String neuronInstance,
+                                                  @JsonProperty("results") List<EmPPPMatch> results) {
+        results.forEach(pppMatch -> {
+            pppMatch.setNeuronId(maskId);
+            pppMatch.setNeuronName(maskPublishedName);
+            pppMatch.setNeuronType(neuronType);
+            pppMatch.setNeuronInstance(neuronInstance);
+            pppMatch.setSourceEmDataset(maskLibraryName);
+        });
+        return new EmPPPMatches(
+                null,
+                maskId,
+                maskPublishedName,
+                neuronType,
+                neuronInstance,
+                maskLibraryName,
+                results);
+    }
+
+    public static EmPPPMatches pppMatchesBySingleNeuron(List<EmPPPMatch> pppMatchList) {
+        List<EmPPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
+        if (allPPPMatches.size() != 1) {
+            throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
+        } else {
+            return allPPPMatches.get(0);
+        }
+    }
+
+    private static List<EmPPPMatches> pppMatchesByNeurons(List<EmPPPMatch> pppMatchList) {
         if (CollectionUtils.isNotEmpty(pppMatchList)) {
-            Comparator<SourcePPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getEmPPPRank()));
+            Comparator<EmPPPMatch> pppComparator = Comparator.comparingDouble(pppMatch -> Math.abs(pppMatch.getEmPPPRank()));
             return pppMatchList.stream()
-                    .filter(SourcePPPMatch::hasSkeletonMatches)
+                    .filter(EmPPPMatch::hasSkeletonMatches)
                     .collect(Collectors.groupingBy(
-                            pppMatch -> new PPPID(
+                            pppMatch -> new EmPPPID(
                                     pppMatch.getSourceEmName(),
+                                    pppMatch.getNeuronId(),
                                     pppMatch.getNeuronName(),
                                     pppMatch.getNeuronType(),
                                     pppMatch.getNeuronInstance(),
@@ -79,8 +118,9 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
                                         listOfPPPMatches.sort(pppComparator);
                                         return listOfPPPMatches;
                                     })))
-                    .entrySet().stream().map(e -> new SourcePPPMatches(
+                    .entrySet().stream().map(e -> new EmPPPMatches(
                             e.getKey().fullName,
+                            e.getKey().id,
                             e.getKey().name,
                             e.getKey().type,
                             e.getKey().instance,
@@ -92,29 +132,23 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
         }
     }
 
-    public static SourcePPPMatches pppMatchesBySingleNeuron(List<SourcePPPMatch> pppMatchList) {
-        List<SourcePPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
-        if (allPPPMatches.size() != 1) {
-            throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
-        } else {
-            return allPPPMatches.get(0);
-        }
-    }
-
     private final String fullName;
+    private final String neuronId;
     private final String neuronName;
     private final String neuronType;
     private final String neuronInstance;
     private final String neuronDataset;
 
-    SourcePPPMatches(String fullName,
-                     String neuronName,
-                     String neuronType,
-                     String neuronInstance,
-                     String neuronDataset,
-                     List<SourcePPPMatch> results) {
+    EmPPPMatches(String fullName,
+                 String neuronId,
+                 String neuronName,
+                 String neuronType,
+                 String neuronInstance,
+                 String neuronDataset,
+                 List<EmPPPMatch> results) {
         super(results);
         this.fullName = fullName;
+        this.neuronId = neuronId;
         this.neuronName = neuronName;
         this.neuronType = neuronType;
         this.neuronDataset = neuronDataset;
@@ -123,6 +157,11 @@ public class SourcePPPMatches extends Results<List<SourcePPPMatch>> {
 
     public String getFullName() {
         return fullName;
+    }
+
+    @JsonProperty("maskId")
+    public String getNeuronId() {
+        return neuronId;
     }
 
     @JsonProperty("maskPublishedName")

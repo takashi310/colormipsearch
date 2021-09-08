@@ -315,7 +315,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
         Path outputFilePath = outputPath.resolve(outputName);
         LOG.info("Write color depth MIPs to {}", outputFilePath);
-        if (Files.exists(outputPath) && args.appendOutput) {
+        if (Files.exists(outputFilePath) && args.appendOutput) {
             return openOutputForAppend(outputFilePath.toFile());
         } else {
             return openOutput(outputFilePath.toFile());

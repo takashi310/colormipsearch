@@ -26,7 +26,7 @@ public class RawPPPMatchesReaderTest {
                 "src/test/resources/colormipsearch/api/pppsearch/cov_scores_484130600-SMP145-RT_18U.json"
         };
         for (String testFile : testFiles) {
-            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithAllSkeletonMatches(testFile);
+            List<EmPPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithAllSkeletonMatches(testFile);
             assertTrue(pppMatchList.size() > 0);
 
             String testNeuron = new File(testFile).getName()
@@ -47,7 +47,7 @@ public class RawPPPMatchesReaderTest {
                 "src/test/resources/colormipsearch/api/pppsearch/cov_scores_484130600-SMP145-RT_18U.json"
         };
         for (String testFile : testFiles) {
-            List<SourcePPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithBestSkeletonMatches(testFile);
+            List<EmPPPMatch> pppMatchList = rawPPPMatchesReader.readPPPMatchesWithBestSkeletonMatches(testFile);
             assertTrue(pppMatchList.size() > 0);
 
             String testNeuron = new File(testFile).getName()

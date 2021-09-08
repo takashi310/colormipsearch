@@ -53,7 +53,8 @@ public class Main {
                 new MergeResultsCmd("mergeResults", commonArgs),
                 new NormalizeScoresCmd("normalizeScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs),
-                new ConvertPPPResultsCmd("convertPPPResults", commonArgs)
+                new ConvertPPPResultsCmd("convertPPPResults", commonArgs),
+                new CreateReversePPPMatchesCmd("createReversePPPMatches", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);
