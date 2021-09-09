@@ -228,7 +228,17 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 .sum();
         LOG.info("Finished updating {} results out of {} from {} in {}ms",
                 nUpdates, cdsMatches.results.size(), cdsMatchesProvider.getCdsFilename(), System.currentTimeMillis() - startTime);
-        ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
+        LOG.info("!!!!! Sorting {}", cdsMatchesProvider.getCdsFilename());
+        ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                cdsMatches,
+                CmdUtils.getOutputFile(outputDir, new File(cdsMatchesProvider.getCdsFilename() + ".unsorted")),
+                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+        try {
+            ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
+        } catch (Exception e) {
+            LOG.error("Failed for {}", cdsMatchesProvider.getCdsFilename(), e);
+            throw new IllegalStateException(e);
+        }
         ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                 cdsMatches,
                 CmdUtils.getOutputFile(outputDir, cdsMatchesProvider.getCdsFile()),
