@@ -16,6 +16,15 @@ import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 
 public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
 
+    public static CDSMatches EMPTY = new CDSMatches(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            Collections.emptyList());
+
     public static List<CDSMatches> fromResultsOfColorMIPSearchMatches(List<ColorMIPSearchMatchMetadata> listOfCDSMatches) {
         if (CollectionUtils.isNotEmpty(listOfCDSMatches)) {
             return listOfCDSMatches.stream()
