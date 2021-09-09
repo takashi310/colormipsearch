@@ -190,29 +190,29 @@ public class ColorMIPSearchResultUtils {
                             csr1.getNegativeScore() < csr2.getNegativeScore()) {
                         LOG.warn("Ranking inversion found for {} and {}", csr1, csr2);
                     }
-                    return 1;
+                    return -1;
                 } else if (csr1.getNormalizedGapScore() > csr2.getNormalizedGapScore()) {
                     if (csr1.getId().equals(csr2.getId()) &&
                             csr1.getMatchingPixels() < csr2.getMatchingPixels() &&
                             csr1.getNegativeScore() > csr2.getNegativeScore()) {
                         LOG.warn("Ranking inversion found for {} and {}", csr1, csr2);
                     }
-                    return -1;
+                    return 1;
                 } else {
                     return 0;
                 }
-            } else if (csr1.getNormalizedScore() == null && csr2.getNormalizedScore() == null) {
-                return Comparator.comparingInt(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed()
+            } else if (csr1.getNormalizedGapScore() == null && csr2.getNormalizedGapScore() == null) {
+                return Comparator.comparingInt(ColorMIPSearchMatchMetadata::getMatchingPixels)
                         .compare(csr1, csr2)
                         ;
-            } else if (csr1.getNormalizedScore() == null) {
+            } else if (csr1.getNormalizedGapScore() == null) {
                 // null gap scores should be at the beginning
-                return 1;
-            } else {
                 return -1;
+            } else {
+                return 1;
             }
         };
-        cdsResults.sort(csrComp);
+        cdsResults.sort(csrComp.reversed());
     }
 
     public static void writeCDSMatchesToJSONFile(CDSMatches cdsMatches, File f, ObjectWriter objectWriter) {
