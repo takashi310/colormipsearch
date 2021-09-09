@@ -26,6 +26,7 @@ import com.google.common.cache.LoadingCache;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
@@ -91,10 +92,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     static class ColorDepthSearchMatchesProvider {
-        private static LoadingCache<String, CDSMatches> cdsMatchesCache;
-        private static Function<String, CDSMatches> cdsMatchesLoader;
+        private static LoadingCache<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesCache;
+        private static Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader;
 
-        static void initializeCache(long maxSize, long expirationInSeconds, Function<String, CDSMatches> cdsMatchesLoader) {
+        static void initializeCache(long maxSize, long expirationInSeconds, Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader) {
             ColorDepthSearchMatchesProvider.cdsMatchesLoader = cdsMatchesLoader;
             if (maxSize > 0) {
                 LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
@@ -105,9 +106,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                     cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
                 }
                 cdsMatchesCache = cacheBuilder
-                        .build(new CacheLoader<String, CDSMatches>() {
+                        .build(new CacheLoader<String, Map<String, List<ColorMIPSearchMatchMetadata>>>() {
                             @Override
-                            public CDSMatches load(String filepath) {
+                            public Map<String, List<ColorMIPSearchMatchMetadata>> load(String filepath) {
                                 return cdsMatchesLoader.apply(filepath);
                             }
                         });
@@ -132,15 +133,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
         }
 
-        String getCdsFilename() {
-            return fp;
-        }
-
-        File getCdsFile() {
-            return new File(fp);
-        }
-
-        CDSMatches getCdsMatches() {
+        Map<String, List<ColorMIPSearchMatchMetadata>> getCdsMatches() {
             if (cdsMatchesCache == null) {
                 return cdsMatchesLoader.apply(fp);
             } else {
@@ -183,7 +176,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         ColorDepthSearchMatchesProvider.initializeCache(
                 cacheSizeSupplier.get(),
                 cacheExpirationInSecondsSupplier.get(),
-                fn -> loadCdsMatches(fn).filterMatches(cdsr -> cdsr.getNegativeScore() != -1)
+                fn -> loadCdsMatches(fn).getResults().stream()
+                        .filter(cdsr -> cdsr.getNegativeScore() != -1)
+                        .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()))
         );
         updateGradientScores(args);
     }
@@ -213,10 +208,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                             mipId -> {
                                 ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
                                 if (reverseCDSMatchesProvider == null) {
-                                    return Collections.emptyList();
+                                    return Collections.emptyMap();
                                 } else {
-                                    CDSMatches reverseCDSMatches = reverseCDSMatchesProvider.getCdsMatches();
-                                    return reverseCDSMatches.results;
+                                    return reverseCDSMatchesProvider.getCdsMatches();
                                 }
                             },
                             outputDir));
@@ -232,7 +226,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private void updateGradientScoresForFile(String filepath,
-                                             Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsSupplier,
+                                             Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsResultsSupplier,
                                              Path outputDir) {
         CDSMatches cdsMatches = loadCdsMatches(filepath);
         if (CollectionUtils.isEmpty(cdsMatches.results)) {
@@ -241,7 +235,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         LOG.info("Start processing {} for updating gradient scores", filepath);
         int nUpdates = cdsMatches.results.stream().parallel()
-                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsSupplier)
+                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsSupplier.apply(cdsr.getId()).get(cdsr.getId()))
                         .map(reverseCdsr -> {
                             LOG.debug("Set negative scores for {} from {} to {}, {}",
                                     cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), reverseCdsr.getHighExpressionArea());
@@ -269,18 +263,20 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     private CDSMatches loadCdsMatches(String filepath) {
         try {
             CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(Paths.get(filepath), mapper);
-            return cdsMatches == null ? CDSMatches.EMPTY : cdsMatches;
+            return cdsMatches == null || cdsMatches.isEmpty() ? CDSMatches.EMPTY : cdsMatches;
         } catch (Exception e) {
             LOG.error("Error reading {}", filepath, e);
             throw new IllegalStateException(e);
         }
     }
 
-    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, Function<String, List<ColorMIPSearchMatchMetadata>> cdsReverseMatchesSupplier) {
-        List<ColorMIPSearchMatchMetadata> allMatchesForMatchedId = cdsReverseMatchesSupplier.apply(cdsr.getId());
-        return allMatchesForMatchedId.stream()
-                .filter(r -> r.getNegativeScore() != -1)
-                .filter(r -> r.matches(cdsr))
-                .findFirst();
+    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, List<ColorMIPSearchMatchMetadata> cdsReverseMatches) {
+        if (cdsReverseMatches != null)
+            return cdsReverseMatches.stream()
+                    .filter(r -> r.getNegativeScore() != -1)
+                    .filter(r -> r.matches(cdsr))
+                    .findFirst();
+        else
+            return Optional.empty();
     }
 }

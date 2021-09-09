@@ -135,14 +135,4 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         return maskImageURL;
     }
 
-    public CDSMatches filterMatches(Predicate<ColorMIPSearchMatchMetadata> filter) {
-        return new CDSMatches(
-                maskId,
-                maskPublishedName,
-                maskLibraryName,
-                maskSampleRef,
-                maskRelatedImageRefId,
-                maskImageURL,
-                results.stream().filter(filter).collect(Collectors.toList()));
-    }
 }
