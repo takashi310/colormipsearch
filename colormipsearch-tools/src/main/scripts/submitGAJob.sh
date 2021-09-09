@@ -20,8 +20,21 @@ function runGAJob {
 
     MEM_OPTS="-Xmx${MEM_RESOURCE}G -Xms${MEM_RESOURCE}G"
     CDGA_ZGAP_SUFFIX=${CDGA_ZGAP_SUFFIX:_20pxRGBMAX}
-    CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
-    CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
+
+    if [ -n "${CDGA_GRADIENTS_LOCATION}" ] ; then
+        CDGA_GRAD_OPTS="-gp ${CDGA_GRADIENTS_LOCATION}"
+    else
+        CDGA_GRAD_OPTS=
+    fi
+
+    if [ -n "${CDGA_ZGAP_LOCATION}" ] ; then
+        CDGA_ZGAP_OPTS="-zgp ${CDGA_ZGAP_LOCATION}"
+        if [ -n "${CDGA_ZGAP_SUFFIX}" ] ; then
+            CDGA_ZGAP_OPTS="${CDGA_ZGAP_OPTS} --zgapSuffix ${CDGA_ZGAP_SUFFIX}"
+        fi
+    else
+        CDGA_ZGAP_OPTS=
+    fi
 
     if [ -n "${LOGCONFIGFILE}" ] && [ -f "${LOGCONFIGFILE}" ] ; then
         echo "Using Log config: ${LOGCONFIGFILE}"
