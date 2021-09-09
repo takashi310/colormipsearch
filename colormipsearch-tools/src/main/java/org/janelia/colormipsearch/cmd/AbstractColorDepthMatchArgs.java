@@ -46,13 +46,13 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     String librarySuffix;
 
     @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location", variableArity = true)
-    List<String> gradientPaths = new ArrayList<>();
+    List<String> gradientPaths;
 
     @Parameter(names = {"--gradientSuffix"}, description = "Gradient suffix")
     String gradientSuffix = "_gradient";
 
     @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location", variableArity = true)
-    List<String> zgapPaths = new ArrayList<>();
+    List<String> zgapPaths;
 
     @Parameter(names = {"--zgapSuffix"}, description = "ZGap suffix")
     String zgapSuffix;
