@@ -97,15 +97,10 @@ public class ColorMIPSearchResultUtils {
      * @param mapper
      * @return
      */
-    public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper, Predicate<ColorMIPSearchMatchMetadata> filter) throws IOException {
+    public static CDSMatches readCDSMatchesFromJSONFilePath(Path jsonFile, ObjectMapper mapper) throws IOException {
         try (FileChannel channel = FileChannel.open(jsonFile)) {
             LOG.debug("Reading {}", jsonFile);
-            CDSMatches cdsMatches = mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
-            if (filter != null) {
-                return cdsMatches.filterMatches(filter);
-            } else {
-                return cdsMatches;
-            }
+            return mapper.readValue(Channels.newInputStream(channel), CDSMatches.class);
         }
     }
 
