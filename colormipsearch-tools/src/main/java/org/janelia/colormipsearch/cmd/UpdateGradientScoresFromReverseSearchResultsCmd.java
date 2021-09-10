@@ -203,8 +203,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartition = System.currentTimeMillis();
-                    for (String f : fileList) {
-                        updateGradientScoresForFile(f,
+                    for (String fn : fileList) {
+                        updateGradientScoresForFile(
+                                fn,
                                 mipId -> {
                                     ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
                                     if (reverseCDSMatchesProvider == null) {
