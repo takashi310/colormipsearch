@@ -52,7 +52,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         private String reverseResultsDir;
 
         @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
-        int processingPartitionSize = 100;
+        int processingPartitionSize = 10;
 
         @Parameter(names = {"--topPublishedNameMatches"},
                 description = "If set only calculate the gradient score for the specified number of best lines color depth search results")
