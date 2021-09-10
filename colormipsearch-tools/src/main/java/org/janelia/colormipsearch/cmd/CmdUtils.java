@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -76,5 +77,4 @@ class CmdUtils {
             throw new UncheckedIOException(e);
         }
     }
-
 }

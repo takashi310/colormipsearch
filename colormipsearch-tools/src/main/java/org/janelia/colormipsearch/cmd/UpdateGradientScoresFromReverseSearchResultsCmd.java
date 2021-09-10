@@ -95,10 +95,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     static class ColorDepthSearchMatchesProvider {
-        private static LoadingCache<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesCache;
-        private static Function<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesLoader;
+        private static LoadingCache<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesCache;
+        private static Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader;
 
-        static void initializeCache(long maxSize, long expirationInSeconds, Function<String, List<ColorMIPSearchMatchMetadata>> cdsMatchesLoader) {
+        static void initializeCache(long maxSize, long expirationInSeconds, Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader) {
             ColorDepthSearchMatchesProvider.cdsMatchesLoader = cdsMatchesLoader;
             if (maxSize > 0) {
                 LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
@@ -109,13 +109,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                     cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
                 }
                 cdsMatchesCache = cacheBuilder
-                        .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
+                        .build(new CacheLoader<String, Map<String, List<ColorMIPSearchMatchMetadata>>>() {
                             @Override
-                            public List<ColorMIPSearchMatchMetadata> load(@Nonnull String filepath) {
+                            public Map<String, List<ColorMIPSearchMatchMetadata>> load(@Nonnull String filepath) {
+                                long startCacheLoad = System.currentTimeMillis();
                                 try {
                                     return cdsMatchesLoader.apply(filepath);
                                 } finally {
-                                    LOG.debug("Loaded {} into cache", filepath);
+                                    LOG.info("Loaded {} into cache in {}ms", filepath, (System.currentTimeMillis()-startCacheLoad));
                                 }
                             }
                         });
@@ -140,7 +141,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
         }
 
-        synchronized List<ColorMIPSearchMatchMetadata> getCdsMatches() {
+        Map<String, List<ColorMIPSearchMatchMetadata>> getCdsMatches() {
             if (cdsMatchesCache == null) {
                 return cdsMatchesLoader.apply(fp);
             } else {
@@ -185,7 +186,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 cacheExpirationInSecondsSupplier.get(),
                 fn -> loadCdsMatches(fn).getResults().stream().parallel()
                         .filter(cdsr -> cdsr.getNegativeScore() != -1)
-                        .collect(Collectors.toList())
+                        .map(ColorMIPSearchMatchMetadata::createReleaseCopy)
+                        .collect(Collectors.groupingBy(cdsr -> cdsr.getId(), Collectors.toList()))
         );
         updateGradientScores(args);
     }
@@ -218,7 +220,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                 mipId -> {
                                     ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
                                     if (reverseCDSMatchesProvider == null) {
-                                        return Collections.emptyList();
+                                        return Collections.emptyMap();
                                     } else {
                                         return reverseCDSMatchesProvider.getCdsMatches();
                                     }
@@ -244,7 +246,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private void updateGradientScoresForFile(String filepath,
-                                             Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsMapProvider,
+                                             Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsResultsMapProvider,
                                              Path outputDir) {
         CDSMatches cdsMatches = loadCdsMatches(filepath);
         if (CollectionUtils.isEmpty(cdsMatches.results)) {
@@ -279,18 +281,26 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private CDSMatches loadCdsMatches(String filepath) {
+        long startLoadTime = System.currentTimeMillis();
         try {
             CDSMatches cdsMatches = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFilePath(Paths.get(filepath), mapper);
             return cdsMatches == null || cdsMatches.isEmpty() ? CDSMatches.EMPTY : cdsMatches;
         } catch (Exception e) {
             LOG.error("Error reading {}", filepath, e);
             throw new IllegalStateException(e);
+        } finally {
+            LOG.info("Loaded {} in {}ms", filepath, (System.currentTimeMillis()-startLoadTime));
         }
     }
 
-    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, List<ColorMIPSearchMatchMetadata> cdsReverseMatches) {
-        return cdsReverseMatches.stream().parallel()
-                .filter(r -> r.matches(cdsr))
-                .findFirst();
+    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, Map<String, List<ColorMIPSearchMatchMetadata>> cdsReverseMatchesMap) {
+        List<ColorMIPSearchMatchMetadata> cdsReverseMatches = cdsReverseMatchesMap.get(cdsr.getSourceId());
+        if (cdsReverseMatches == null) {
+            return Optional.empty();
+        } else {
+            return cdsReverseMatches.stream()
+                    .filter(r -> r.matches(cdsr))
+                    .findFirst();
+        }
     }
 }
