@@ -138,7 +138,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         List<CompletableFuture<Void>> allGradScoreComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .map(fileList -> CompletableFuture.supplyAsync(() -> {
                             long startProcessingPartition = System.currentTimeMillis();
-                            List<CompletableFuture<CDSMatches>> gradScoreComputations = fileList.stream()
+                            List<CompletableFuture<File>> gradScoreComputations = fileList.stream()
                                     .map(filename -> gradientAreaScoreComputationForResultsFile(
                                             negativeMatchCDSArgorithmProvider,
                                             new File(filename),
@@ -165,8 +165,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
 
                                     })
                                     .join();
-                        },
-                        executor))
+                        }))
                 .collect(Collectors.toList())
                 ;
         CompletableFuture.allOf(allGradScoreComputations.toArray(new CompletableFuture<?>[0]))
@@ -194,7 +193,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         }
     }
 
-    private CompletableFuture<CDSMatches> gradientAreaScoreComputationForResultsFile(
+    private CompletableFuture<File> gradientAreaScoreComputationForResultsFile(
             ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
             File inputResultsFile,
             String targetSuffix,
@@ -211,7 +210,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         CDSMatches matchesFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(matchesFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
-            return CompletableFuture.completedFuture(matchesFileContent);
+            return CompletableFuture.completedFuture(null);
         }
         LOG.info("Select best matches: {}", numberOfBestLinesToSelect);
         Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedByQuery = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
@@ -249,7 +248,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                         .collect(Collectors.toList());
         return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
                 .thenApply(ignoredVoidResult -> negativeScoresComputations.stream()
-                        .flatMap(gsc -> gsc.join().stream()).collect(Collectors.toList()))
+                        .flatMap(gsc -> gsc.join().stream())
+                        .collect(Collectors.toList()))
                 .thenApply(srWithNegativeScores -> {
                     LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
                             srWithNegativeScores.size(),
@@ -265,11 +265,12 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                             (System.currentTimeMillis() - startTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
                     CDSMatches cdsMatches = CDSMatches.singletonfromResultsOfColorMIPSearchMatches(srWithNegativeScores);
+                    File outputFile = CmdUtils.getOutputFile(outputDir, inputResultsFile);
                     ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                             cdsMatches,
-                            CmdUtils.getOutputFile(outputDir, inputResultsFile),
+                            outputFile,
                             args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                    return cdsMatches;
+                    return outputFile;
                 })
                 ;
     }
