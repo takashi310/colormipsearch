@@ -25,6 +25,7 @@ import com.google.common.cache.LoadingCache;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.zookeeper.Op;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
@@ -209,9 +210,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                 mipId -> {
                                     ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
                                     if (reverseCDSMatchesProvider == null) {
-                                        return Collections.emptyList();
+                                        return Collections.emptyMap();
                                     } else {
-                                        return reverseCDSMatchesProvider.getCdsMatches().get(mipId);
+                                        return reverseCDSMatchesProvider.getCdsMatches();
                                     }
                                 },
                                 outputDir);
@@ -228,7 +229,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private void updateGradientScoresForFile(String filepath,
-                                             Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsMap,
+                                             Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsResultsMapProvider,
                                              Path outputDir) {
         CDSMatches cdsMatches = loadCdsMatches(filepath);
         if (CollectionUtils.isEmpty(cdsMatches.results)) {
@@ -237,7 +238,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         LOG.info("Start processing {} for updating gradient scores", filepath);
         int nUpdates = cdsMatches.results.stream().parallel()
-                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsMap.apply(cdsr.getId()))
+                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsMapProvider.apply(cdsr.getId()))
                         .map(reverseCdsr -> {
                             LOG.debug("Set negative scores for {} from {} to {}, {}",
                                     cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), reverseCdsr.getHighExpressionArea());
@@ -272,13 +273,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
     }
 
-    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, List<ColorMIPSearchMatchMetadata> cdsReverseMatches) {
-        if (cdsReverseMatches != null)
+    private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, Map<String, List<ColorMIPSearchMatchMetadata>> cdsReverseMatchesMap) {
+        List<ColorMIPSearchMatchMetadata> cdsReverseMatches = cdsReverseMatchesMap.get(cdsr.getId());
+        if (cdsReverseMatches == null) {
+            return Optional.empty();
+        } else {
             return cdsReverseMatches.stream()
-                    .filter(r -> r.getNegativeScore() != -1)
                     .filter(r -> r.matches(cdsr))
                     .findFirst();
-        else
-            return Optional.empty();
+        }
     }
 }
