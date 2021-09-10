@@ -274,7 +274,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private Optional<ColorMIPSearchMatchMetadata> findReverseMatches(ColorMIPSearchMatchMetadata cdsr, Map<String, List<ColorMIPSearchMatchMetadata>> cdsReverseMatchesMap) {
-        List<ColorMIPSearchMatchMetadata> cdsReverseMatches = cdsReverseMatchesMap.get(cdsr.getId());
+        List<ColorMIPSearchMatchMetadata> cdsReverseMatches = cdsReverseMatchesMap.get(cdsr.getSourceId());
         if (cdsReverseMatches == null) {
             return Optional.empty();
         } else {
