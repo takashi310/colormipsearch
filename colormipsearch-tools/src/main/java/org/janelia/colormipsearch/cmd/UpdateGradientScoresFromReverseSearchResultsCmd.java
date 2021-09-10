@@ -112,8 +112,11 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                             @Override
                             public List<ColorMIPSearchMatchMetadata> load(@Nonnull String filepath) {
-                                LOG.info("Load {} into cache", filepath);
-                                return cdsMatchesLoader.apply(filepath);
+                                try {
+                                    return cdsMatchesLoader.apply(filepath);
+                                } finally {
+                                    LOG.debug("Loaded {} into cache", filepath);
+                                }
                             }
                         });
             } else {
@@ -137,7 +140,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             }
         }
 
-        List<ColorMIPSearchMatchMetadata> getCdsMatches() {
+        synchronized List<ColorMIPSearchMatchMetadata> getCdsMatches() {
             if (cdsMatchesCache == null) {
                 return cdsMatchesLoader.apply(fp);
             } else {
