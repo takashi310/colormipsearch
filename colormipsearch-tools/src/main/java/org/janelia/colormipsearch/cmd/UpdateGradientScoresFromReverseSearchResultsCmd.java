@@ -235,9 +235,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 }, executor))
                 .collect(Collectors.toList())
         ;
-        long nComputations = updateGradientComputations.stream().parallel()
-                .map(updateComputation -> updateComputation.join())
-                .count();
+        int nComputations = updateGradientComputations.size();
+        CompletableFuture.allOf(updateGradientComputations.toArray(new CompletableFuture<?>[0]))
+                .join();
         LOG.info("Completed {} computations to update gradient scores for {} files in {}s - memory usage {}M",
                 nComputations,
                 filesToProcess.size(),
