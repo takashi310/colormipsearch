@@ -177,7 +177,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         ColorDepthSearchMatchesProvider.initializeCache(
                 cacheSizeSupplier.get(),
                 cacheExpirationInSecondsSupplier.get(),
-                fn -> loadCdsMatches(fn).getResults().stream()
+                fn -> loadCdsMatches(fn).getResults().stream().parallel()
                         .filter(cdsr -> cdsr.getNegativeScore() != -1)
                         .collect(Collectors.groupingBy(AbstractMetadata::getId, Collectors.toList()))
         );
@@ -188,10 +188,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         LOG.info("Prepare opposite results cache from {}", args.reverseResultsDir);
         Map<String, ColorDepthSearchMatchesProvider> reverseCDSResultsCache =
-                CmdUtils.getFileToProcessFromDir(args.reverseResultsDir, 0, -1).stream()
+                CmdUtils.getFileToProcessFromDir(args.reverseResultsDir, 0, -1).stream().parallel()
                     .map(ColorDepthSearchMatchesProvider::new)
                     .collect(Collectors.toMap(ColorDepthSearchMatchesProvider::getMipId, cdsMatches -> cdsMatches));
-        LOG.info("Done preparing opposite results cache from {} in {}ms", args.reverseResultsDir, System.currentTimeMillis() - startTime);
+        LOG.info("Done preparing reverse results cache from {} in {}ms", args.reverseResultsDir, System.currentTimeMillis() - startTime);
 
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
@@ -205,7 +205,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartition = System.currentTimeMillis();
-                    fileList.forEach(f -> {
+                    for (String f : fileList) {
                         updateGradientScoresForFile(f,
                                 mipId -> {
                                     ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
@@ -216,7 +216,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                     }
                                 },
                                 outputDir);
-                    });
+                    }
                     LOG.info("Processed {} files in {}s - memory usage {}M",
                             fileList.size(),
                             (System.currentTimeMillis() - startProcessingPartition) / 1000.,
