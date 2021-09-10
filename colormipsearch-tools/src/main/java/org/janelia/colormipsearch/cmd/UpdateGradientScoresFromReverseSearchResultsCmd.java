@@ -9,10 +9,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -107,7 +111,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                 cdsMatchesCache = cacheBuilder
                         .build(new CacheLoader<String, List<ColorMIPSearchMatchMetadata>>() {
                             @Override
-                            public List<ColorMIPSearchMatchMetadata> load(String filepath) {
+                            public List<ColorMIPSearchMatchMetadata> load(@Nonnull String filepath) {
+                                LOG.info("Load {} into cache", filepath);
                                 return cdsMatchesLoader.apply(filepath);
                             }
                         });
@@ -184,6 +189,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private void updateGradientScores(UpdateGradientScoresArgs args) {
         long startTime = System.currentTimeMillis();
+        Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         LOG.info("Prepare reverse results cache from {}", args.reverseResultsDir);
         Map<String, ColorDepthSearchMatchesProvider> reverseCDSResultsCache =
                 CmdUtils.getFileToProcessFromDir(args.reverseResultsDir, 0, -1).stream().parallel()
@@ -200,8 +206,8 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(fileList -> {
+        List<CompletableFuture<List<Void>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .map(fileList -> CompletableFuture.supplyAsync(() -> {
                     long startProcessingPartition = System.currentTimeMillis();
                     for (String fn : fileList) {
                         updateGradientScoresForFile(
@@ -220,8 +226,15 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                             fileList.size(),
                             (System.currentTimeMillis() - startProcessingPartition) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-                });
-        LOG.info("Completed updating gradient scores for {} files in {}s - memory usage {}M",
+
+                }, executor))
+                .collect(Collectors.toList())
+        ;
+        long nComputations = updateGradientComputations.stream().parallel()
+                .map(updateComputation -> updateComputation.join())
+                .count();
+        LOG.info("Completed {} computations to update gradient scores for {} files in {}s - memory usage {}M",
+                nComputations,
                 filesToProcess.size(),
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
