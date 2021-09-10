@@ -116,7 +116,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                 try {
                                     return cdsMatchesLoader.apply(filepath);
                                 } finally {
-                                    LOG.info("Loaded {} into cache in {}ms", filepath, (System.currentTimeMillis()-startCacheLoad));
+                                    LOG.debug("Loaded {} into cache in {}ms", filepath, (System.currentTimeMillis()-startCacheLoad));
                                 }
                             }
                         });
@@ -289,7 +289,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             LOG.error("Error reading {}", filepath, e);
             throw new IllegalStateException(e);
         } finally {
-            LOG.info("Loaded {} in {}ms", filepath, (System.currentTimeMillis()-startLoadTime));
+            LOG.debug("Loaded {} in {}ms", filepath, (System.currentTimeMillis()-startLoadTime));
         }
     }
 
