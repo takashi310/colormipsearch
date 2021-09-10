@@ -56,6 +56,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageName(cdsm.getImageName());
         mip.setImageType(cdsm.getImageType());
         mip.setImageURL(cdsm.getImageURL());
+        mip.copyVariantsFrom(cdsm);
         return mip;
     }
 
