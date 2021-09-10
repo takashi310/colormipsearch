@@ -184,7 +184,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private void updateGradientScores(UpdateGradientScoresArgs args) {
         long startTime = System.currentTimeMillis();
-        LOG.info("Prepare opposite results cache from {}", args.reverseResultsDir);
+        LOG.info("Prepare reverse results cache from {}", args.reverseResultsDir);
         Map<String, ColorDepthSearchMatchesProvider> reverseCDSResultsCache =
                 CmdUtils.getFileToProcessFromDir(args.reverseResultsDir, 0, -1).stream().parallel()
                     .map(ColorDepthSearchMatchesProvider::new)
