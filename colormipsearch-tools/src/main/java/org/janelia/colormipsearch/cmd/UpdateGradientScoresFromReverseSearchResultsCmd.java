@@ -204,16 +204,18 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartition = System.currentTimeMillis();
-                    fileList.forEach(f -> updateGradientScoresForFile(f,
-                            mipId -> {
-                                ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
-                                if (reverseCDSMatchesProvider == null) {
-                                    return Collections.emptyMap();
-                                } else {
-                                    return reverseCDSMatchesProvider.getCdsMatches();
-                                }
-                            },
-                            outputDir));
+                    fileList.forEach(f -> {
+                        updateGradientScoresForFile(f,
+                                mipId -> {
+                                    ColorDepthSearchMatchesProvider reverseCDSMatchesProvider = reverseCDSResultsCache.get(mipId);
+                                    if (reverseCDSMatchesProvider == null) {
+                                        return Collections.emptyList();
+                                    } else {
+                                        return reverseCDSMatchesProvider.getCdsMatches().get(mipId);
+                                    }
+                                },
+                                outputDir);
+                    });
                     LOG.info("Processed {} files in {}s - memory usage {}M",
                             fileList.size(),
                             (System.currentTimeMillis() - startProcessingPartition) / 1000.,
@@ -226,7 +228,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
     }
 
     private void updateGradientScoresForFile(String filepath,
-                                             Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsResultsSupplier,
+                                             Function<String, List<ColorMIPSearchMatchMetadata>> cdsResultsMap,
                                              Path outputDir) {
         CDSMatches cdsMatches = loadCdsMatches(filepath);
         if (CollectionUtils.isEmpty(cdsMatches.results)) {
@@ -235,7 +237,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         LOG.info("Start processing {} for updating gradient scores", filepath);
         int nUpdates = cdsMatches.results.stream().parallel()
-                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsSupplier.apply(cdsr.getId()).get(cdsr.getId()))
+                .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsMap.apply(cdsr.getId()))
                         .map(reverseCdsr -> {
                             LOG.debug("Set negative scores for {} from {} to {}, {}",
                                     cdsr, reverseCdsr, reverseCdsr.getGradientAreaGap(), reverseCdsr.getHighExpressionArea());
