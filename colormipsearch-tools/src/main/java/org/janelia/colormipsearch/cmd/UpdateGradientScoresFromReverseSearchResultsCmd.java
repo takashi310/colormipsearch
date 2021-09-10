@@ -184,7 +184,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         ColorDepthSearchMatchesProvider.initializeCache(
                 cacheSizeSupplier.get(),
                 cacheExpirationInSecondsSupplier.get(),
-                fn -> loadCdsMatches(fn).getResults().stream().parallel()
+                fn -> loadCdsMatches(fn).getResults().stream()
                         .filter(cdsr -> cdsr.getNegativeScore() != -1)
                         .map(ColorMIPSearchMatchMetadata::createReleaseCopy)
                         .collect(Collectors.groupingBy(cdsr -> cdsr.getId(), Collectors.toList()))
@@ -211,7 +211,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        List<CompletableFuture<List<String>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+        List<CompletableFuture<List<String>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream()
                 .map(fileList -> CompletableFuture.supplyAsync(() -> {
                     long startProcessingPartition = System.currentTimeMillis();
                     for (String fn : fileList) {
@@ -254,7 +254,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
         long startTime = System.currentTimeMillis();
         LOG.info("Start processing {} for updating gradient scores", filepath);
-        int nUpdates = cdsMatches.results.stream().parallel()
+        int nUpdates = cdsMatches.results.stream()
                 .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsMapProvider.apply(cdsr.getId()))
                         .map(reverseCdsr -> {
                             LOG.debug("Set negative scores for {} from {} to {}, {}",
