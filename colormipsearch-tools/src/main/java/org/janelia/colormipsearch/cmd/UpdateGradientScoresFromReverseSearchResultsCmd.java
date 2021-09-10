@@ -211,7 +211,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        List<CompletableFuture<List<String>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream()
+        List<CompletableFuture<List<String>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .map(fileList -> CompletableFuture.supplyAsync(() -> {
                     long startProcessingPartition = System.currentTimeMillis();
                     for (String fn : fileList) {
