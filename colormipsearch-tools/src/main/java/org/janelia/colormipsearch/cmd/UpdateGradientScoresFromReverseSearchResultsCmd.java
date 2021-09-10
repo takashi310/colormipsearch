@@ -255,12 +255,12 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                              Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsResultsMapProvider,
                                              Path outputDir) {
         CDSMatches cdsMatches = loadCdsMatches(filepath);
-        if (CollectionUtils.isEmpty(cdsMatches.results)) {
+        if (cdsMatches.isEmpty()) {
             return; // either something went wrong or there's really nothing to do
         }
         long startTime = System.currentTimeMillis();
-        LOG.info("Start processing {} for updating gradient scores", filepath);
-        int nUpdates = cdsMatches.results.stream()
+        LOG.info("Start processing {} containing {} results", filepath, cdsMatches.getResults().size());
+        int nUpdates = cdsMatches.getResults().stream()
                 .mapToInt(cdsr -> findReverseMatches(cdsr, cdsResultsMapProvider.apply(cdsr.getId()))
                         .map(reverseCdsr -> {
                             LOG.debug("Set negative scores for {} from {} to {}, {}",
@@ -273,9 +273,9 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                         .orElse(0))
                 .sum();
         LOG.info("Finished updating {} results out of {} from {} in {}ms",
-                nUpdates, cdsMatches.results.size(), filepath, System.currentTimeMillis() - startTime);
+                nUpdates, cdsMatches.getResults().size(), filepath, System.currentTimeMillis() - startTime);
         try {
-            ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.results);
+            ColorMIPSearchResultUtils.sortCDSResults(cdsMatches.getResults());
             ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
                     cdsMatches,
                     CmdUtils.getOutputFile(outputDir, new File(filepath)),
