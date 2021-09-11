@@ -136,9 +136,9 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         long startProcessing = System.currentTimeMillis();
         List<CompletableFuture<Void>> allGradScoreComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .map(fileList -> CompletableFuture.supplyAsync(() -> {
-                            long startProcessingPartition = System.currentTimeMillis();
-                            List<CompletableFuture<File>> gradScoreComputations = fileList.stream()
+                .map(fileList -> {
+                    long startProcessingPartition = System.currentTimeMillis();
+                    return CompletableFuture.allOf(fileList.stream()
                                     .map(filename -> gradientAreaScoreComputationForResultsFile(
                                             negativeMatchCDSArgorithmProvider,
                                             new File(filename),
@@ -153,19 +153,16 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                             outputDir,
                                             mapper,
                                             executor
-                                    ))
-                                    .collect(Collectors.toList());
-                            return CompletableFuture.allOf(gradScoreComputations.toArray(new CompletableFuture<?>[0]))
-                                    .thenAccept(ignored -> {
-                                        LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                                                fileList.size(),
-                                                (System.currentTimeMillis() - startProcessingPartition) / 1000.,
-                                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                                (Runtime.getRuntime().totalMemory() / _1M));
+                                    )).toArray(CompletableFuture<?>[]::new))
+                            .thenAccept(ignored -> {
+                                LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
+                                        fileList.size(),
+                                        (System.currentTimeMillis() - startProcessingPartition) / 1000.,
+                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                        (Runtime.getRuntime().totalMemory() / _1M));
 
-                                    })
-                                    .join();
-                        }))
+                            });
+                })
                 .collect(Collectors.toList())
                 ;
         CompletableFuture.allOf(allGradScoreComputations.toArray(new CompletableFuture<?>[0]))
