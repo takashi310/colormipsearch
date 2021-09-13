@@ -48,8 +48,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
         ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, converter = ListArg.ListArgConverter.class, description = "File containing results to be sorted")
-        List<ListArg> resultsFiles;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
+        List<String> resultsFiles;
 
         @Parameter(names = {"--topPublishedNameMatches"},
                 description = "If set only calculate the gradient score for the specified number of best lines color depth search results")
@@ -124,86 +124,52 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Path outputDir = args.getOutputDir();
+        List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            Utils.partitionCollection(args.resultsFiles, args.processingPartitionSize).stream().parallel()
-                    .forEach(inputFiles -> {
-                        long startTime = System.currentTimeMillis();
-                        inputFiles.forEach(inputArg -> {
-                            File f = new File(inputArg.input);
-                            CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
-                                    negativeMatchCDSArgorithmProvider,
-                                    f,
-                                    args.librarySuffix,
-                                    args.gradientPaths,
-                                    args.gradientSuffix,
-                                    args.zgapPaths,
-                                    StringUtils.defaultString(args.zgapSuffix, ""),
-                                    args.numberOfBestLines,
-                                    args.numberOfBestSamplesPerLine,
-                                    args.numberOfBestMatchesPerSample,
-                                    mapper,
-                                    executor
-                            );
-                            ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                                    cdsMatches,
-                                    CmdUtils.getOutputFile(outputDir, f),
-                                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                        });
-                        LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                                inputFiles.size(),
-                                (System.currentTimeMillis() - startTime) / 1000.,
-                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                (Runtime.getRuntime().totalMemory() / _1M));
-                    });
+            filesToProcess = args.resultsFiles;
         } else if (args.resultsDir != null) {
-            try {
-                int from = Math.max(args.resultsDir.offset, 0);
-                int length = args.resultsDir.length;
-                List<String> resultFileNames = Files.find(Paths.get(args.resultsDir.input), 1, (p, fa) -> fa.isRegularFile())
-                        .skip(from)
-                        .map(Path::toString)
-                        .collect(Collectors.toList());
-                List<String> filesToProcess;
-                if (length > 0 && length < resultFileNames.size()) {
-                    filesToProcess = resultFileNames.subList(0, length);
-                } else {
-                    filesToProcess = resultFileNames;
-                }
-                Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                        .forEach(fileList -> {
-                            long startTime = System.currentTimeMillis();
-                            fileList.forEach(fn -> {
-                                File f = new File(fn);
-                                CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
-                                        negativeMatchCDSArgorithmProvider,
-                                        f,
-                                        args.librarySuffix,
-                                        args.gradientPaths,
-                                        args.gradientSuffix,
-                                        args.zgapPaths,
-                                        StringUtils.defaultString(args.zgapSuffix, ""),
-                                        args.numberOfBestLines,
-                                        args.numberOfBestSamplesPerLine,
-                                        args.numberOfBestMatchesPerSample,
-                                        mapper,
-                                        executor
-                                );
-                                ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                                        cdsMatches,
-                                        CmdUtils.getOutputFile(outputDir, f),
-                                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                            });
-                            LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                                    fileList.size(),
-                                    (System.currentTimeMillis() - startTime) / 1000.,
-                                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                    (Runtime.getRuntime().totalMemory() / _1M));
-                        });
-            } catch (IOException e) {
-                LOG.error("Error listing {}", args.resultsDir, e);
-            }
+            filesToProcess = CmdUtils.getFileToProcessFromDir(args.resultsDir.input, args.resultsDir.offset, args.resultsDir.length);
+        } else {
+            filesToProcess = Collections.emptyList();
         }
+        Path outputDir = args.getOutputDir();
+        long startTime = System.currentTimeMillis();
+        int nFiles = filesToProcess.size();
+        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(fileList -> {
+                    long startProcessingPartitionTime = System.currentTimeMillis();
+                    fileList.forEach(fn -> {
+                        File f = new File(fn);
+                        CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
+                                negativeMatchCDSArgorithmProvider,
+                                f,
+                                args.librarySuffix,
+                                args.gradientPaths,
+                                args.gradientSuffix,
+                                args.zgapPaths,
+                                StringUtils.defaultString(args.zgapSuffix, ""),
+                                args.numberOfBestLines,
+                                args.numberOfBestSamplesPerLine,
+                                args.numberOfBestMatchesPerSample,
+                                mapper,
+                                executor
+                        );
+                        ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                cdsMatches,
+                                CmdUtils.getOutputFile(outputDir, f),
+                                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    });
+                    LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
+                            fileList.size(),
+                            (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
+                            (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                            (Runtime.getRuntime().totalMemory() / _1M));
+                });
+        LOG.info("Finished calculating gradient scores for {} files in {}s - memory usage {}M out of {}M",
+                nFiles,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
     }
 
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {
