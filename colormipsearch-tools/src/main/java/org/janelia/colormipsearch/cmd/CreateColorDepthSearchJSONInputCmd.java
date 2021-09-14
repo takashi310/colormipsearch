@@ -825,8 +825,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     MIPsHandlingUtils.MIPLibraryEntryType.file,
                     cdmip.name);
             if (!cdMetadata.getSlideCode().equals(lmMetadataFromName.getSlideCode())) {
-                LOG.error("Slidecodes from sample and from name are different for {} and {} => ignore cdMetadata {}",
-                        cdMetadata, lmMetadataFromName, cdMetadata);
+                LOG.error("Slidecodes from sample and from name are different for {} and {} => ignore cdMetadata {}:{}",
+                        cdMetadata, lmMetadataFromName, cdMetadata.getId(), cdMetadata.filepath);
                 return null;
             }
         } else {
