@@ -370,6 +370,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 cdmLibraryPath,
                                 cdmImages.getLeft(),
                                 cdmipImage))
+                .filter(cdmip -> cdmip != null)
                 .filter(cdmip -> !excludedNames.contains(cdmip.getPublishedName()))
                 .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                 .map(ColorDepthMetadata::asMIPWithVariants)
@@ -818,6 +819,16 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setGender(cdmip.sample.gender);
             cdMetadata.setDriver(cdmip.sample.driver);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
+            ColorDepthMetadata lmMetadataFromName = asLMLineMetadataFromName(
+                    libraryName,
+                    null,
+                    MIPsHandlingUtils.MIPLibraryEntryType.file,
+                    cdmip.name);
+            if (!cdMetadata.getSlideCode().equals(lmMetadataFromName.getSlideCode())) {
+                LOG.error("Slidecodes from sample and from name are different for {} and {} => ignore cdMetadata {}",
+                        cdMetadata, lmMetadataFromName, cdMetadata);
+                return null;
+            }
         } else {
             populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
         }
