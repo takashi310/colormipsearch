@@ -36,6 +36,7 @@ function updateRevGAJob {
         ${CONCURRENCY_OPTS} \
         --topPublishedNameMatches ${TOP_RESULTS} \
         --topPublishedSampleMatches ${SAMPLES_PER_LINE} \
+        --processingPartitionSize ${PROCESSING_PARTITION_SIZE} \
          -revd ${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS} \
          -rd ${CDGA_INPUT_PARAM} \
          -od ${CDGA_OUTPUT_PARAM} \
