@@ -144,8 +144,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                 negativeMatchCDSArgorithmProvider,
                                 f,
                                 args.librarySuffix,
+                                args.gradientVariantKey,
                                 args.gradientPaths,
                                 args.gradientSuffix,
+                                args.zgapVariantKey,
                                 args.zgapPaths,
                                 StringUtils.defaultString(args.zgapSuffix, ""),
                                 args.numberOfBestLines,
@@ -189,8 +191,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
             File inputResultsFile,
             String targetSuffix,
+            String gradientVariantKey,
             List<String> gradientsLocations,
             String gradientSuffix,
+            String zgapVariantKey,
             List<String> zgapsLocations,
             String zgapsSuffix,
             int numberOfBestLinesToSelect,
@@ -222,8 +226,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     queryResultsEntry.getKey(),
                                     queryResultsEntry.getValue(),
                                     targetSuffix,
+                                    gradientVariantKey,
                                     gradientsLocations,
                                     gradientSuffix,
+                                    zgapVariantKey,
                                     zgapsLocations,
                                     zgapsSuffix,
                                     negativeMatchCDSArgorithmProvider,
@@ -260,8 +266,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                                                           MIPMetadata inputQueryMIP,
                                                                           List<ColorMIPSearchMatchMetadata> selectedCDSResultsForQueryMIP,
                                                                           String targetSuffix,
+                                                                          String gradientVariantKey,
                                                                           List<String> gradientsLocations,
                                                                           String gradientSuffix,
+                                                                          String zgapVariantKey,
                                                                           List<String> zgapsLocations,
                                                                           String zgapsSuffix,
                                                                           ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
@@ -290,10 +298,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                 cdsMatchesSource, inputQueryMIP, matchedMIP);
                         Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                         if (requiredVariantTypes.contains("gradient")) {
-                            variantImageSuppliers.put("gradient", createVariantImageSupplier(matchedMIP, "gradient", gradientsLocations, gradientSuffix, targetSuffix));
+                            variantImageSuppliers.put("gradient", createVariantImageSupplier(matchedMIP, gradientVariantKey, gradientsLocations, gradientSuffix, targetSuffix));
                         }
                         if (requiredVariantTypes.contains("zgap")) {
-                            variantImageSuppliers.put("zgap", createVariantImageSupplier(matchedMIP, "zgap", zgapsLocations, zgapsSuffix, targetSuffix));
+                            variantImageSuppliers.put("zgap", createVariantImageSupplier(matchedMIP, zgapVariantKey, zgapsLocations, zgapsSuffix, targetSuffix));
                         }
                         NegativeColorDepthMatchScore negativeScores = gradientScoreCalculator.calculateMatchingScore(
                                 MIPsUtils.getImageArray(matchedImage),
