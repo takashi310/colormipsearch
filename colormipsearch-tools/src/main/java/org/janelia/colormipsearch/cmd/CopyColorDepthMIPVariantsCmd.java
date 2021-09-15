@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,7 +22,10 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -199,15 +203,61 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         String cdmNameWithoutExt = RegExUtils.replacePattern(cdmName, "\\..*$", "");
         if (StringUtils.endsWith(cdmNameWithoutExt, "_CDM")) {
             String cdmSegmentName = StringUtils.removeEnd(cdmNameWithoutExt, "_CDM");
-            return formatSegmentName(cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
+            if (variantMIP.hasSlideCode()) {
+                List<String> cdmSegmentNameComponents = Splitter.on('-').splitToList(cdmSegmentName);
+                String prefix = cdmSegmentNameComponents.get(0); // there should always be at least one component even if there is no hyphen delim
+                String slideCode = variantMIP.getSlideCode();
+                String objective = getMIPComponent(variantMIP, MIPMetadata::getObjective, cdmSegmentNameComponents, 2, "");
+                String area = getMIPComponent(variantMIP, MIPMetadata::getAnatomicalArea, cdmSegmentNameComponents, 3, "");
+                String alignmentSpace = variantMIP.getAlignmentSpace();
+                Function<MIPMetadata, String> sampleRefGetter = MIPMetadata::getSampleRef;
+                String sampleRef = getMIPComponent(variantMIP,
+                        sampleRefGetter.andThen(s -> StringUtils.removeStartIgnoreCase(s, "Sample#")),
+                        cdmSegmentNameComponents,
+                        5,
+                        "");
+                Function<MIPMetadata, String> channelGetter = MIPMetadata::getChannel;
+                String channel = getMIPComponent(variantMIP,
+                        channelGetter.andThen(s -> StringUtils.removeStartIgnoreCase(s, "c"))
+                                .andThen(s -> StringUtils.removeStartIgnoreCase(s, "h")),
+                        cdmSegmentNameComponents,
+                        6,
+                        "");;
+                return formatSimpleSegmentName(prefix + '-' +
+                        slideCode + '-' +
+                        objective + '-' +
+                        area + '-' +
+                        alignmentSpace + '-' +
+                        sampleRef + '-' +
+                        "CH" + channel, segmentIndex, getImageExt(cdmImageVariantPath));
+            } else {
+                return formatSimpleSegmentName(cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
+            }
         } else {
             String cdmVariantName = Paths.get(cdmImageVariantPath).getFileName().toString();
             String cdmVariantNameWithoutExt = RegExUtils.replacePattern(cdmVariantName, "\\..*$", "");
-            return formatSegmentName(cdmVariantNameWithoutExt, segmentIndex, getImageExt(cdmImageVariantPath));
+            return formatSimpleSegmentName(cdmVariantNameWithoutExt, segmentIndex, getImageExt(cdmImageVariantPath));
         }
     }
 
-    private String formatSegmentName(String segmentName, int segmentIndex, String imageExt) {
+    private String getMIPComponent(MIPMetadata mip, Function<MIPMetadata, String> getter, List<String> comps, int index, String defaultValue) {
+        String mipField = getter.apply(mip);
+        if (StringUtils.isNotBlank(mipField)) {
+            return mipField;
+        } else {
+            return getComponent(comps, index, defaultValue);
+        }
+    }
+
+    private String getComponent(List<String> comps, int index, String defaultValue) {
+        if (index < comps.size()) {
+            return comps.get(index);
+        } else {
+            return defaultValue;
+        }
+    }
+
+    private String formatSimpleSegmentName(String segmentName, int segmentIndex, String imageExt) {
         if (segmentIndex > 0) {
             return String.format("%s-%02d_CDM%s", segmentName, segmentIndex, imageExt);
         } else {

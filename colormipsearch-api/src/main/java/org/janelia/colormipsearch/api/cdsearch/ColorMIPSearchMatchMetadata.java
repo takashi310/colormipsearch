@@ -31,6 +31,8 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         cdsCopy.setImageType(null);
         cdsCopy.setImageName(null);
         cdsCopy.setImageArchivePath(null);
+        // reset other internal fields
+        cdsCopy.setSampleRef(null);
         return cdsCopy;
     }
 

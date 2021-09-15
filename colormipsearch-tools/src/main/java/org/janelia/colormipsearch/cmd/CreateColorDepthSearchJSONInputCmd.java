@@ -824,7 +824,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         cdMetadata.setImageURL(imageURLMapper.apply(cdmip.publicImageUrl));
         cdMetadata.setThumbnailURL(imageURLMapper.apply(cdmip.publicThumbnailUrl));
         cdMetadata.sourceImageRef = cdmip.sourceImageRef;
-        cdMetadata.sampleRef = cdmip.sampleRef;
+        cdMetadata.setSampleRef(cdmip.sampleRef);
         if (cdmip.sample != null) {
             cdMetadata.setPublishedToStaging(cdmip.sample.publishedToStaging);
             cdMetadata.setLMLinePublishedName(cdmip.sample.publishingName);

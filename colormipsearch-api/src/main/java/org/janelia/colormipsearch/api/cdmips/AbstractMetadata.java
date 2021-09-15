@@ -169,6 +169,10 @@ public abstract class AbstractMetadata implements Serializable {
         this.slideCode = slideCode;
     }
 
+    public boolean hasSlideCode() {
+        return StringUtils.isNotBlank(slideCode);
+    }
+
     @JsonIgnore
     public String getDriver() {
         return driver;
@@ -335,6 +339,7 @@ public abstract class AbstractMetadata implements Serializable {
         that.setImageName(this.getImageName());
         that.setImageArchivePath(this.getImageArchivePath());
         // copy the "attributes"
+        that.setSampleRef(this.sampleRef);
         that.setSlideCode(this.slideCode);
         that.setObjective(this.objective);
         that.setNeuronType(this.neuronType);

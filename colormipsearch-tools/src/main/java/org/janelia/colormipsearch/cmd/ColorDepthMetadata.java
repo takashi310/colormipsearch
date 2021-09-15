@@ -15,7 +15,6 @@ class ColorDepthMetadata extends AbstractMetadata {
     String filepath;
     String segmentedDataBasePath;
     String segmentFilepath;
-    String sampleRef;
 
     @JsonIgnore
     void setEMSkeletonPublishedName(String publishedName) {
@@ -32,7 +31,6 @@ class ColorDepthMetadata extends AbstractMetadata {
         that.filepath = this.filepath;
         that.segmentedDataBasePath = this.segmentedDataBasePath;
         that.segmentFilepath = this.segmentFilepath;
-        that.sampleRef = this.sampleRef;
     }
 
     MIPMetadata asMIPWithVariants() {
@@ -46,7 +44,6 @@ class ColorDepthMetadata extends AbstractMetadata {
         mipInfo.setThumbnailURL(getThumbnailURL());
         mipInfo.setSearchablePNG(getSearchablePNG());
         mipInfo.setRelatedImageRefId(extractIdFromRef(sourceImageRef));
-        mipInfo.setSampleRef(sampleRef);
         return mipInfo;
     }
 
