@@ -491,6 +491,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage.stream()
                         .peek(cdmip -> {
+                            if (cdmip.sample.slideCode.equals("")) {
+                                LOG.info("!!!! GOT {}", cdmip.sample.slideCode);
+                            }
                             if (Files.notExists(Paths.get(cdmip.filepath))) {
                                 LOG.warn("No filepath {} found for {} (sample: {}, publishedName: {})", cdmip.filepath, cdmip, cdmip.sampleRef, !hasSample(cdmip) ? "no sample": cdmip.sample.publishingName);
                             }
