@@ -196,40 +196,12 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private String createMIPVariantName(MIPMetadata mip, MIPMetadata variantMIP, int segmentIndex) {
         String cdmPath = mip.getCdmPath();
         String cdmImageVariantPath = variantMIP.getImagePath();
-        if (mip.getSlideCode().equals("20181121_65_I1")) {
-            LOG.info("!!!!! BREAK {}", mip);
-        }
         String cdmName = Paths.get(cdmPath).getFileName().toString();
         String cdmNameWithoutExt = RegExUtils.replacePattern(cdmName, "\\..*$", "");
         if (StringUtils.endsWith(cdmNameWithoutExt, "_CDM")) {
             String cdmSegmentName = StringUtils.removeEnd(cdmNameWithoutExt, "_CDM");
             if (variantMIP.hasSlideCode()) {
-                List<String> cdmSegmentNameComponents = Splitter.on('-').splitToList(cdmSegmentName);
-                String prefix = cdmSegmentNameComponents.get(0); // there should always be at least one component even if there is no hyphen delim
-                String slideCode = variantMIP.getSlideCode();
-                String objective = getMIPComponent(variantMIP, MIPMetadata::getObjective, cdmSegmentNameComponents, 2, "");
-                String area = getMIPComponent(variantMIP, MIPMetadata::getAnatomicalArea, cdmSegmentNameComponents, 3, "");
-                String alignmentSpace = variantMIP.getAlignmentSpace();
-                Function<MIPMetadata, String> sampleRefGetter = MIPMetadata::getSampleRef;
-                String sampleRef = getMIPComponent(variantMIP,
-                        sampleRefGetter.andThen(s -> StringUtils.removeStartIgnoreCase(s, "Sample#")),
-                        cdmSegmentNameComponents,
-                        5,
-                        "");
-                Function<MIPMetadata, String> channelGetter = MIPMetadata::getChannel;
-                String channel = getMIPComponent(variantMIP,
-                        channelGetter.andThen(s -> StringUtils.removeStartIgnoreCase(s, "c"))
-                                .andThen(s -> StringUtils.removeStartIgnoreCase(s, "h")),
-                        cdmSegmentNameComponents,
-                        6,
-                        "");;
-                return formatSimpleSegmentName(prefix + '-' +
-                        slideCode + '-' +
-                        objective + '-' +
-                        area + '-' +
-                        alignmentSpace + '-' +
-                        sampleRef + '-' +
-                        "CH" + channel, segmentIndex, getImageExt(cdmImageVariantPath));
+                return createFileNameFromLMMips(variantMIP, cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
             } else {
                 return formatSimpleSegmentName(cdmSegmentName, segmentIndex, getImageExt(cdmImageVariantPath));
             }
@@ -240,12 +212,55 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         }
     }
 
-    private String getMIPComponent(MIPMetadata mip, Function<MIPMetadata, String> getter, List<String> comps, int index, String defaultValue) {
+    private String createFileNameFromLMMips(MIPMetadata mip, String cdmBaseName, int segmentIndex, String ext) {
+        List<String> cdmBaseNameComponents = Splitter.on('-').splitToList(cdmBaseName);
+        String prefix = cdmBaseNameComponents.get(0); // there should always be at least one component even if there is no hyphen delim
+        String slideCode = mip.getSlideCode();
+        String objective = getMIPComponent(mip,
+                MIPMetadata::getObjective,
+                Function.identity(),
+                cdmBaseNameComponents,
+                2,
+                "");
+        String area = getMIPComponent(mip,
+                MIPMetadata::getAnatomicalArea,
+                Function.identity(),
+                cdmBaseNameComponents,
+                3,
+                "");
+        String alignmentSpace = mip.getAlignmentSpace();
+        String sampleRef = getMIPComponent(mip,
+                MIPMetadata::getSampleRef,
+                s -> StringUtils.removeStartIgnoreCase(s, "Sample#"),
+                cdmBaseNameComponents,
+                5,
+                "");
+        String channel = getMIPComponent(mip,
+                MIPMetadata::getChannel,
+                s -> StringUtils.removeStartIgnoreCase(
+                        StringUtils.removeStartIgnoreCase(s, "c"), "h"
+                ),
+                cdmBaseNameComponents,
+                6,
+                "");
+        return formatSimpleSegmentName(prefix + '-' +
+                slideCode + '-' +
+                objective + '-' +
+                area + '-' +
+                alignmentSpace + '-' +
+                sampleRef + '-' +
+                "CH" + StringUtils.removeStartIgnoreCase(channel, "c"), segmentIndex, ext);
+    }
+
+    private String getMIPComponent(MIPMetadata mip,
+                                   Function<MIPMetadata, String> getter,
+                                   Function<String, String> fieldTransform,
+                                   List<String> comps, int index, String defaultValue) {
         String mipField = getter.apply(mip);
         if (StringUtils.isNotBlank(mipField)) {
-            return mipField;
+            return fieldTransform.apply(mipField);
         } else {
-            return getComponent(comps, index, defaultValue);
+            return fieldTransform.apply(getComponent(comps, index, defaultValue));
         }
     }
 
