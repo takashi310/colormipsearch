@@ -153,7 +153,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                 copyMIPVariantAction.accept(
                                         variantMIP,
                                         outputPath.resolve(variantDestination)
-                                                .resolve(createMIPVariantName(variantMIP.getCdmPath(), variantMIP.getImagePath(), -1))
+                                                .resolve(createMIPVariantName(variantMIP, variantMIP, -1))
                                 );
                             });
 
@@ -184,12 +184,17 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                     action.accept(
                             variantMIP,
                             outputPath.resolve(variantDestination)
-                                    .resolve(createMIPVariantName(mip.getCdmPath(), variantMIP.getImagePath(), variantIndex))
+                                    .resolve(createMIPVariantName(mip, variantMIP, variantIndex))
                     );
                 });
     }
 
-    private String createMIPVariantName(String cdmPath, String cdmImageVariantPath, int segmentIndex) {
+    private String createMIPVariantName(MIPMetadata mip, MIPMetadata variantMIP, int segmentIndex) {
+        String cdmPath = mip.getCdmPath();
+        String cdmImageVariantPath = variantMIP.getImagePath();
+        if (mip.getSlideCode().equals("20181121_65_I1")) {
+            LOG.info("!!!!! BREAK {}", mip);
+        }
         String cdmName = Paths.get(cdmPath).getFileName().toString();
         String cdmNameWithoutExt = RegExUtils.replacePattern(cdmName, "\\..*$", "");
         if (StringUtils.endsWith(cdmNameWithoutExt, "_CDM")) {
