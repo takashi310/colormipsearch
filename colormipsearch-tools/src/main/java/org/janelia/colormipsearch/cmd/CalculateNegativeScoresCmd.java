@@ -48,8 +48,8 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class, description = "Results directory to be sorted")
         ListArg resultsDir;
 
-        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File(s) containing results to be calculated")
-        private List<String> resultsFiles;
+        @Parameter(names = {"--resultsFile", "-rf"}, variableArity = true, description = "File containing results to be sorted")
+        List<String> resultsFiles;
 
         @Parameter(names = {"--topPublishedNameMatches"},
                 description = "If set only calculate the gradient score for the specified number of best lines color depth search results")
@@ -132,49 +132,46 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         } else {
             filesToProcess = Collections.emptyList();
         }
-        int nFiles = filesToProcess.size();
         Path outputDir = args.getOutputDir();
-        long startProcessing = System.currentTimeMillis();
-        List<CompletableFuture<Void>> allGradScoreComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .map(fileList -> {
-                    long startProcessingPartition = System.currentTimeMillis();
-                    return CompletableFuture.allOf(fileList.stream()
-                                    .map(filename -> gradientAreaScoreComputationForResultsFile(
-                                            negativeMatchCDSArgorithmProvider,
-                                            new File(filename),
-                                            args.librarySuffix,
-                                            args.gradientPaths,
-                                            args.gradientSuffix,
-                                            args.zgapPaths,
-                                            StringUtils.defaultString(args.zgapSuffix, ""),
-                                            args.numberOfBestLines,
-                                            args.numberOfBestSamplesPerLine,
-                                            args.numberOfBestMatchesPerSample,
-                                            outputDir,
-                                            mapper,
-                                            executor
-                                    )).toArray(CompletableFuture<?>[]::new))
-                            .thenAccept(ignored -> {
-                                LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                                        fileList.size(),
-                                        (System.currentTimeMillis() - startProcessingPartition) / 1000.,
-                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                        (Runtime.getRuntime().totalMemory() / _1M));
-
-                            });
-                })
-                .collect(Collectors.toList())
-                ;
-        CompletableFuture.allOf(allGradScoreComputations.toArray(new CompletableFuture<?>[0]))
-                .thenAccept(ignored -> {
-                    LOG.info("Finished gradient scores for {} in {}s - memory usage {}M out of {}M",
-                            nFiles,
-                            (System.currentTimeMillis() - startProcessing) / 1000.,
+        long startTime = System.currentTimeMillis();
+        int nFiles = filesToProcess.size();
+        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(fileList -> {
+                    long startProcessingPartitionTime = System.currentTimeMillis();
+                    fileList.forEach(fn -> {
+                        File f = new File(fn);
+                        CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
+                                negativeMatchCDSArgorithmProvider,
+                                f,
+                                args.librarySuffix,
+                                args.gradientVariantKey,
+                                args.gradientPaths,
+                                args.gradientSuffix,
+                                args.zgapVariantKey,
+                                args.zgapPaths,
+                                StringUtils.defaultString(args.zgapSuffix, ""),
+                                args.numberOfBestLines,
+                                args.numberOfBestSamplesPerLine,
+                                args.numberOfBestMatchesPerSample,
+                                mapper,
+                                executor
+                        );
+                        ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                cdsMatches,
+                                CmdUtils.getOutputFile(outputDir, f),
+                                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    });
+                    LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
+                            fileList.size(),
+                            (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));
-
-                })
-                .join();
+                });
+        LOG.info("Finished calculating gradient scores for {} files in {}s - memory usage {}M out of {}M",
+                nFiles,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
     }
 
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {
@@ -190,24 +187,25 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         }
     }
 
-    private CompletableFuture<File> gradientAreaScoreComputationForResultsFile(
+    private CDSMatches calculateGradientAreaScoreForResultsFile(
             ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
             File inputResultsFile,
             String targetSuffix,
+            String gradientVariantKey,
             List<String> gradientsLocations,
             String gradientSuffix,
+            String zgapVariantKey,
             List<String> zgapsLocations,
             String zgapsSuffix,
             int numberOfBestLinesToSelect,
             int numberOfBestSamplesPerLineToSelect,
             int numberOfBestMatchesPerSampleToSelect,
-            Path outputDir,
             ObjectMapper mapper,
             Executor executor) {
         CDSMatches matchesFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(inputResultsFile, mapper);
         if (CollectionUtils.isEmpty(matchesFileContent.results)) {
             LOG.error("No color depth search results found in {}", inputResultsFile);
-            return CompletableFuture.completedFuture(null);
+            return matchesFileContent;
         }
         LOG.info("Select best matches: {}", numberOfBestLinesToSelect);
         Map<MIPMetadata, List<ColorMIPSearchMatchMetadata>> resultsGroupedByQuery = ColorMIPSearchResultUtils.selectCDSResultForGradientScoreCalculation(
@@ -228,8 +226,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     queryResultsEntry.getKey(),
                                     queryResultsEntry.getValue(),
                                     targetSuffix,
+                                    gradientVariantKey,
                                     gradientsLocations,
                                     gradientSuffix,
+                                    zgapVariantKey,
                                     zgapsLocations,
                                     zgapsSuffix,
                                     negativeMatchCDSArgorithmProvider,
@@ -243,41 +243,33 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                     executor);
                         })
                         .collect(Collectors.toList());
-        return CompletableFuture.allOf(negativeScoresComputations.toArray(new CompletableFuture<?>[0]))
-                .thenApply(ignoredVoidResult -> negativeScoresComputations.stream()
-                        .flatMap(gsc -> gsc.join().stream())
-                        .collect(Collectors.toList()))
-                .thenApply(srWithNegativeScores -> {
-                    LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
-                            srWithNegativeScores.size(),
-                            matchesFileContent.results.size(),
-                            inputResultsFile,
-                            (System.currentTimeMillis() - startTime) / 1000.,
-                            (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-                    ColorMIPSearchResultUtils.sortCDSResults(srWithNegativeScores);
-                    LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
-                            srWithNegativeScores.size(),
-                            matchesFileContent.results.size(),
-                            inputResultsFile,
-                            (System.currentTimeMillis() - startTime) / 1000.,
-                            (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-                    CDSMatches cdsMatches = CDSMatches.singletonfromResultsOfColorMIPSearchMatches(srWithNegativeScores);
-                    File outputFile = CmdUtils.getOutputFile(outputDir, inputResultsFile);
-                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                            cdsMatches,
-                            outputFile,
-                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                    return outputFile;
-                })
-                ;
+        List<ColorMIPSearchMatchMetadata> srWithNegativeScores = negativeScoresComputations.stream().parallel()
+                .flatMap(gsc -> gsc.join().stream())
+                .collect(Collectors.toList());
+        LOG.info("Finished gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
+                srWithNegativeScores.size(),
+                matchesFileContent.results.size(),
+                inputResultsFile,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
+        ColorMIPSearchResultUtils.sortCDSResults(srWithNegativeScores);
+        LOG.info("Finished sorting by gradient area score for {} out of {} entries from {} in {}s - memory usage {}M",
+                srWithNegativeScores.size(),
+                matchesFileContent.results.size(),
+                inputResultsFile,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
+        return CDSMatches.singletonfromResultsOfColorMIPSearchMatches(srWithNegativeScores);
     }
 
     private List<CompletableFuture<Long>> createNegativeScoreComputations(String cdsMatchesSource,
                                                                           MIPMetadata inputQueryMIP,
                                                                           List<ColorMIPSearchMatchMetadata> selectedCDSResultsForQueryMIP,
                                                                           String targetSuffix,
+                                                                          String gradientVariantKey,
                                                                           List<String> gradientsLocations,
                                                                           String gradientSuffix,
+                                                                          String zgapVariantKey,
                                                                           List<String> zgapsLocations,
                                                                           String zgapsSuffix,
                                                                           ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider,
@@ -306,10 +298,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                 cdsMatchesSource, inputQueryMIP, matchedMIP);
                         Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                         if (requiredVariantTypes.contains("gradient")) {
-                            variantImageSuppliers.put("gradient", createVariantImageSupplier(matchedMIP, "gradient", gradientsLocations, gradientSuffix, targetSuffix));
+                            variantImageSuppliers.put("gradient", createVariantImageSupplier(matchedMIP, gradientVariantKey, gradientsLocations, gradientSuffix, targetSuffix));
                         }
                         if (requiredVariantTypes.contains("zgap")) {
-                            variantImageSuppliers.put("zgap", createVariantImageSupplier(matchedMIP, "zgap", zgapsLocations, zgapsSuffix, targetSuffix));
+                            variantImageSuppliers.put("zgap", createVariantImageSupplier(matchedMIP, zgapVariantKey, zgapsLocations, zgapsSuffix, targetSuffix));
                         }
                         NegativeColorDepthMatchScore negativeScores = gradientScoreCalculator.calculateMatchingScore(
                                 MIPsUtils.getImageArray(matchedImage),
