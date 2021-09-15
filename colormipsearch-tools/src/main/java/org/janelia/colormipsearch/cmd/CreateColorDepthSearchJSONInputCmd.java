@@ -778,7 +778,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     private boolean hasConsensusLine(ColorDepthMIP cdmip) {
         if (StringUtils.equalsIgnoreCase(NO_CONSENSUS, cdmip.sample.line)) {
-            LOG.info ("MIP {} has no consensus line", cdmip);
+            LOG.warn ("MIP {} has no consensus line", cdmip);
             return false;
         } else {
             return true;
@@ -801,7 +801,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         (cdmip.sample.publishedToStaging || (missingPublishingHandling & 0x2) != 0)) {
                     return true;
                 } else {
-                    LOG.info("MIP {} has no consensus publishing name", cdmip);
+                    LOG.warn("MIP {} has no consensus publishing name", cdmip);
                     return false;
                 }
 
