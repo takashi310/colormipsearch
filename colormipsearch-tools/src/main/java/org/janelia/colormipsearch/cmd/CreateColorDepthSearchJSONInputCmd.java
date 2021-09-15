@@ -491,9 +491,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage.stream()
                         .peek(cdmip -> {
-                            if (cdmip.sample.slideCode.equals("20180117_63_E4")) {
-                                LOG.info("!!!! GOT {}", cdmip.sample.slideCode);
-                            }
                             if (Files.notExists(Paths.get(cdmip.filepath))) {
                                 LOG.warn("No filepath {} found for {} (sample: {}, publishedName: {})", cdmip.filepath, cdmip, cdmip.sampleRef, !hasSample(cdmip) ? "no sample": cdmip.sample.publishingName);
                             }
@@ -780,7 +777,12 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private boolean hasConsensusLine(ColorDepthMIP cdmip) {
-        return !StringUtils.equalsIgnoreCase(NO_CONSENSUS, cdmip.sample.line);
+        if (StringUtils.equalsIgnoreCase(NO_CONSENSUS, cdmip.sample.line)) {
+            LOG.info ("MIP {} has no consensus line", cdmip);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private boolean hasPublishedName(int missingPublishingHandling,  ColorDepthMIP cdmip) {
@@ -794,9 +796,14 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 // missingPublishingHandling values:
                 //      0x1 - ignore missing name
                 //      0x2 - ignore missing published flag
-                return (StringUtils.isNotBlank(publishingName) &&
+                if ((StringUtils.isNotBlank(publishingName) &&
                         !StringUtils.equalsIgnoreCase(NO_CONSENSUS, publishingName) || (missingPublishingHandling & 0x1) != 0) &&
-                        (cdmip.sample.publishedToStaging || (missingPublishingHandling & 0x2) != 0);
+                        (cdmip.sample.publishedToStaging || (missingPublishingHandling & 0x2) != 0)) {
+                    return true;
+                } else {
+                    LOG.info("MIP {} has no consensus publishing name", cdmip);
+                    return false;
+                }
 
             }
         }
@@ -822,16 +829,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdMetadata.setGender(cdmip.sample.gender);
             cdMetadata.setDriver(cdmip.sample.driver);
             cdMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
-//            ColorDepthMetadata lmMetadataFromName = asLMLineMetadataFromName(
-//                    libraryName,
-//                    null,
-//                    MIPsHandlingUtils.MIPLibraryEntryType.file,
-//                    cdmip.name);
-//            if (!cdMetadata.getSlideCode().equals(lmMetadataFromName.getSlideCode())) {
-//                LOG.error("Slidecodes from sample and from name are different for {} and {} => ignore cdMetadata {}:{}",
-//                        cdMetadata, lmMetadataFromName, cdMetadata.getId(), cdMetadata.filepath);
-//                return null;
-//            }
         } else {
             populateCDMetadataFromCDMIPName(cdmip.name, cdMetadata);
         }
