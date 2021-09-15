@@ -491,7 +491,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
                 cdmipsPage.stream()
                         .peek(cdmip -> {
-                            if (cdmip.sample.slideCode.equals("")) {
+                            if (cdmip.sample.slideCode.equals("20180117_63_E4")) {
                                 LOG.info("!!!! GOT {}", cdmip.sample.slideCode);
                             }
                             if (Files.notExists(Paths.get(cdmip.filepath))) {
