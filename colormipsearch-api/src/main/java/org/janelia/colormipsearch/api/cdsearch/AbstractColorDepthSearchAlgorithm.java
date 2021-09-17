@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api.cdsearch;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiPredicate;
 
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
@@ -88,10 +89,11 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         int miny = msk.getHeight();
         int maxx = 0;
         int maxy = 0;
+        BiPredicate<Integer, Integer> isLabel = ImageTransformation.getLabelRegionCond(msk.getWidth());
         for (int pi = 0; pi < sumpx; pi++) {
             int x = pi % msk.getWidth();
             int y = pi / msk.getWidth();
-            if (ImageTransformation.IS_LABEL_REGION.test(x, y)) {
+            if (isLabel.test(x, y)) {
                 // label regions are not to be searched
                 continue;
             }

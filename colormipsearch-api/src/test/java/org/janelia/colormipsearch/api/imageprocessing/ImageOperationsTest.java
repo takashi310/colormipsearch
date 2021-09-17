@@ -16,7 +16,8 @@ public class ImageOperationsTest {
     public void overExpressesMaskExpression() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/1281324958-DNp11-RT_18U_FL.tif", 1);
         ImageArray<?> testImageArray = ImageArrayUtils.fromImagePlus(testImage);
-        LImage testQueryImage = LImageUtils.create(testImageArray).mapi(ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION));
+        LImage testQueryImage = LImageUtils.create(testImageArray)
+                .mapi(ImageTransformation.clearRegion(ImageTransformation.getLabelRegionCond(testImageArray.getWidth())));
         LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                 testQueryImage.mapi(ImageTransformation.maxFilter(60)),
                 testQueryImage.mapi(ImageTransformation.maxFilter(20)),

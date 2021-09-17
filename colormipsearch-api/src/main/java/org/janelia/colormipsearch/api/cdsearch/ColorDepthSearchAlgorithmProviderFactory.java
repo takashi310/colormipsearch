@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
+import java.util.function.BiPredicate;
+
 import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
@@ -84,7 +86,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
                                                                                                                 int queryThreshold,
                                                                                                                 ColorDepthSearchParams cdsParams) {
-                ImageTransformation clearLabels = ImageTransformation.clearRegion(ImageTransformation.IS_LABEL_REGION);
+                BiPredicate<Integer, Integer> isLabel = ImageTransformation.getLabelRegionCond(queryImageArray.getWidth());
+                ImageTransformation clearLabels = ImageTransformation.clearRegion(isLabel);
 
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
                         .mask(queryThreshold)

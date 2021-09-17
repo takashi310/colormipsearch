@@ -16,8 +16,6 @@ public abstract class ImageTransformation implements Serializable {
      */
     public static ImageTransformation IDENTITY = ImageTransformation.identity();
 
-    public static BiPredicate<Integer, Integer> IS_LABEL_REGION = (x, y) -> x < 330 && y < 100 || x >= 950 && y < 85;
-
     private interface ColorHistogram {
         /**
          * Add a value and return the new max
@@ -141,6 +139,10 @@ public abstract class ImageTransformation implements Serializable {
                 return lImage.get(x, y);
             }
         };
+    }
+
+    public static BiPredicate<Integer, Integer> getLabelRegionCond(int imageWidth) {
+        return (x, y) -> x >= imageWidth - 250 && y < 90;
     }
 
     /**
