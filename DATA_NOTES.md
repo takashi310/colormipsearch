@@ -1,4 +1,4 @@
-### Release Version: 2.2
+### Release Version: 2.2.0
 
 ### Release Date: 2021-xx-xx
 
@@ -7,11 +7,9 @@
 
 #### LM data;
 * MCFO GAL4 lines
-   
 * Stable split GAL4 lines
    
 * Parameters for pre-computed matches between LM and EM data 
-* (not yet reviewed/updated)
     * maskThreshold: 20
     * targetThreshold: 20
     * xyShift : 2
@@ -22,7 +20,8 @@
 ### Notes
 
 * Hemibrain 1.2.1
-* Added `neuronType` and `neuronInstance` attributes to JSON
+* Added `neuronType` and `neuronInstance` attributes to EM results JSON
+* Added `searchablePNG` attribute to LM results JSON
 
 
 ### Release Version: 2.1.1
