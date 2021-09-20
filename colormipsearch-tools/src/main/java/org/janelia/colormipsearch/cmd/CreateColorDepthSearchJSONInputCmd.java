@@ -655,8 +655,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private String createMatchingSegmentationName(String mipFileName, String imageFileName, String displayFileName) {
-        String mipName = RegExUtils.replacePattern(mipFileName, "(_)?CDM\\..*$", ""); // clear  _CDM.<ext> suffix
-        String imageName = RegExUtils.replacePattern(imageFileName, "(_)?CDM\\..*$", ""); // clear  _CDM.<ext> suffix
+        String mipName = RegExUtils.replacePattern(mipFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
+        String imageName = RegExUtils.replacePattern(imageFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
         String imageSuffix = RegExUtils.replacePattern(
                 StringUtils.removeStart(imageName, mipName), // typically the segmentation name shares the same prefix with the original mip name
                 "^[-_]",
