@@ -7,22 +7,26 @@ public enum FileType {
     ColorDepthMip("_5_ch.png"),
     ColorDepthMipSkel("_6_ch_skel.png");
 
-    private String suffix;
+    private String fullSuffix;
 
-    FileType(String suffix) {
-        this.suffix = suffix;
+    FileType(String fullSuffix) {
+        this.fullSuffix = fullSuffix;
     }
 
     public static FileType findFileType(String fname) {
         for (FileType vt : values()) {
-            if (fname.endsWith(vt.suffix)) {
+            if (fname.endsWith(vt.fullSuffix)) {
                 return vt;
             }
         }
         return null;
     }
 
-    public String getSuffix() {
-        return suffix;
+    public String getFullSuffix() {
+        return fullSuffix;
+    }
+
+    public String getDisplaySuffix() {
+        return fullSuffix.substring(3); // hacky to remove the prefix _n_ but it works for now
     }
 }

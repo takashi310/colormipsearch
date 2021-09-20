@@ -283,24 +283,14 @@ public class AbstractPPPMatch {
 
     private String getTargetImageRelativePath(FileType ft) {
         // e.g. "12/1200351200/1200351200-VT064583-20170630_64_C2-40x-JRC2018_Unisex_20x_HR-masked_inst.png"
-        StringBuilder fileNameBuilder = new StringBuilder()
-                .append(neuronName.substring(0,2))
-                .append('/')
-                .append(neuronName)
-                .append('/')
-                .append(neuronName)
-                .append('-')
-                .append(lineName)
-                .append('-')
-                .append(slideCode)
-                .append('-')
-                .append(objective)
-                .append('-')
-                .append(alignmentSpace)
-                .append('-')
-                .append(ft.getSuffix())
-                ;
-        return fileNameBuilder.toString();
+        return neuronName.substring(0, 2) + '/' +
+                neuronName + '/' +
+                neuronName + '-' +
+                lineName + '-' +
+                slideCode + '-' +
+                objective + '-' +
+                alignmentSpace + '-' +
+                ft.getDisplaySuffix();
     }
 
     public void addSourceImageFile(String imageName) {

@@ -17,7 +17,7 @@ public enum PPPScreenshotType {
 
     static PPPScreenshotType findScreenshotType(String imageName) {
         for (PPPScreenshotType t : values()) {
-            if (imageName.endsWith(t.fileType.getSuffix())) {
+            if (imageName.endsWith(t.fileType.getFullSuffix())) {
                 return t;
             }
         }
