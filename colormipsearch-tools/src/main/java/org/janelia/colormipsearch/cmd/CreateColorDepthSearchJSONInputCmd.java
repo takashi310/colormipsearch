@@ -53,6 +53,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
@@ -634,14 +635,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
             // remove directories and extension (which we know is ".png") from imageURL:
             Path imagePath = Paths.get(cdmip.getImageURL());
-            String imageFilename = imagePath.getFileName().toString();
-            String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
-
-            // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
-            String[] imageNamePieces = cdmip.getImageName().split("-");
-            String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
-
-            cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+            String matchingImageName = createMatchingSegmentationName(
+                    Paths.get(cdmip.getCdmName()).getFileName().toString(),
+                    Paths.get(cdmip.getImageName()).getFileName().toString(),
+                    imagePath.getFileName().toString())
+            cdmip.setSearchablePNG(matchingImageName);
         }
         if (StringUtils.isBlank(cdmip.getImageURL())) {
             // set relative image URLs
@@ -654,6 +652,18 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdmip.setImageURL(imageRelativeURL);
             cdmip.setThumbnailURL(imageRelativeURL);
         }
+    }
+
+    private String createMatchingSegmentationName(String mipFileName, String imageFileName, String displayFileName) {
+        String mipName = RegExUtils.replacePattern(mipFileName, "(_)?CDM\\..*$", ""); // clear  _CDM.<ext> suffix
+        String imageName = RegExUtils.replacePattern(imageFileName, "(_)?CDM\\..*$", ""); // clear  _CDM.<ext> suffix
+        String imageSuffix = RegExUtils.replacePattern(
+                StringUtils.removeStart(imageName, mipName), // typically the segmentation name shares the same prefix with the original mip name
+                "^[-_]",
+                ""
+        ); // remove the hyphen or underscore prefix
+        String displayName = RegExUtils.replacePattern(displayFileName, "\\..*$", ""); // clear  .<ext> suffix
+        return displayName + "-" + imageSuffix + ".png";
     }
 
     private String createEMImageRelativeURL(MIPMetadata cdmip) {
