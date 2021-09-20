@@ -180,13 +180,13 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
-        Path outputPath = args.getOutputDir();
+        Path outputDir = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
                 .map(EmPPPMatches::pppMatchesBySingleNeuron)
                 .forEach(pppMatches -> PPPUtils.writeResultsToJSONFile(
                         pppMatches,
-                        outputPath == null ? null : outputPath.resolve(pppMatches.getNeuronName() + ".json").toFile(),
+                        outputDir == null ? null : outputDir.resolve(pppMatches.getNeuronName() + ".json").toFile(),
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis()-start)/1000.);
     }

@@ -27,20 +27,20 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Results;
 import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
+import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
-import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CreateReversePPPMatchesCmd extends AbstractCmd {
+public class CopyPPPMatchesCmd extends AbstractCmd {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CreateReversePPPMatchesCmd.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CopyPPPMatchesCmd.class);
 
-    @Parameters(commandDescription = "Create reverse PPP matches. Typically PPP matches are computed only from EM to LM, and " +
-            "this provides a mechanism to artificially generate LM to EM PPP matches.")
-    static class ReversePPPMatchesArgs extends AbstractCmdArgs {
+    @Parameters(commandDescription = "Copy PPP matches with options to clean up the data.")
+    static class CopyPPPMatchesArgs extends AbstractCmdArgs {
         @Parameter(names = {"--resultsDir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Results directory containing computed PPP matches")
         private ListArg resultsDir;
@@ -51,10 +51,16 @@ public class CreateReversePPPMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--processingPartitionSize", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 100;
 
+        @Parameter(names = {"--filterInternalFields"}, description = "Filter out internal fields such as sample name, etc.", arity = 0)
+        boolean filterOutInternalFields;
+
+        @Parameter(names = {"--truncatePartialResults"}, description = "Truncate partial results that do not have image files")
+        boolean truncateResults;
+
         @ParametersDelegate
         final CommonArgs commonArgs;
 
-        ReversePPPMatchesArgs(CommonArgs commonArgs) {
+        CopyPPPMatchesArgs(CommonArgs commonArgs) {
             this.commonArgs = commonArgs;
         }
 
@@ -77,28 +83,28 @@ public class CreateReversePPPMatchesCmd extends AbstractCmd {
         }
     }
 
-    private final ReversePPPMatchesArgs args;
+    private final CopyPPPMatchesArgs args;
     private final ObjectMapper mapper;
 
-    CreateReversePPPMatchesCmd(String commandName, CommonArgs commonArgs) {
+    CopyPPPMatchesCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
-        this.args = new ReversePPPMatchesArgs(commonArgs);
+        this.args = new CopyPPPMatchesArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override
-    ReversePPPMatchesArgs getArgs() {
+    CopyPPPMatchesArgs getArgs() {
         return args;
     }
 
     @Override
     void execute() {
         CmdUtils.createOutputDirs(args.getOutputDir());
-        createReversePPPMatches(args);
+        copyPPPMatches(args);
     }
 
-    private void createReversePPPMatches(ReversePPPMatchesArgs args) {
+    private void copyPPPMatches(CopyPPPMatchesArgs args) {
         List<String> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
             filesToProcess = args.resultsFiles;
@@ -109,45 +115,14 @@ public class CreateReversePPPMatchesCmd extends AbstractCmd {
         }
         Path outputDir = args.getOutputDir();
         Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .flatMap(fileList -> {
-                    List<LmPPPMatch> lmPPPMatches = fileList.stream()
-                            .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper))
-                            .flatMap(r -> r.getResults().stream())
-                            .map(r -> LmPPPMatch.copyFrom(r, new LmPPPMatch()))
-                            .collect(Collectors.toList());
-                    return LmPPPMatches.pppMatchesByLines(lmPPPMatches).stream();
-                })
+                .flatMap(fileList -> fileList.stream()
+                        .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper)))
                 .filter(Results::hasResults)
-                .sequential()
                 .forEach(res -> {
-                    if (outputDir == null) {
-                        PPPUtils.writeResultsToJSONFile(
-                                res,
-                                null,
-                                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                    } else {
-                        JsonGenerator gen = createJsonGenerator(res, outputDir, res.getLineName());
-                        try {
-                            res.getResults().forEach(r -> {
-                                try {
-                                    gen.writeObject(r);
-                                } catch (IOException e) {
-                                    LOG.error("Error writing entry for {} to {}", r, res.getLineName(), e);
-                                }
-                            });
-                        } catch (Exception e) {
-                            LOG.error("Error writing results for {} to {}", res.getLineName(), outputDir, e);
-                        } finally {
-                            try {
-                                gen.writeEndArray();
-                                gen.writeEndObject();
-                                gen.flush();
-                                gen.close();
-                            } catch (IOException e) {
-                                LOG.error("Error closing array in {}", res.getLineName(), e);
-                            }
-                        }
-                    }
+                    PPPUtils.writeResultsToJSONFile(
+                            res,
+                            outputDir == null ? null : outputDir.resolve(res.getNeuronName() + ".json").toFile(),
+                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                 });
                 ;
     }
