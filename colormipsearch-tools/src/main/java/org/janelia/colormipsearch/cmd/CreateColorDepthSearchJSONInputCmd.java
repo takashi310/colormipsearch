@@ -638,7 +638,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             String matchingImageName = createMatchingSegmentationName(
                     Paths.get(cdmip.getCdmName()).getFileName().toString(),
                     Paths.get(cdmip.getImageName()).getFileName().toString(),
-                    imagePath.getFileName().toString())
+                    imagePath.getFileName().toString());
             cdmip.setSearchablePNG(matchingImageName);
         }
         if (StringUtils.isBlank(cdmip.getImageURL())) {
