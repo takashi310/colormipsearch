@@ -626,22 +626,32 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void setImageURLs(MIPMetadata cdmip) {
         if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
             // searchableName filename must be expressed in terms of publishedName (not internal name),
-            //  and must include the integer suffix that identifies exactly which image it is,
+            //  and must include the integer suffix that identifies exactly which image it is (for LM),
             //  when there are multiple images for a given combination of parameters
             // in practical terms, we take the filename from imageURL, which has
-            //  the publishedName in it, and graft on the required integer from imageName, which
-            //  has the internal name
+            //  the publishedName in it, and graft on the required integer from imageName (for LM), which
+            //  has the internal name; we have to similarly grab _FL from EM names
 
             // remove directories and extension (which we know is ".png") from imageURL:
             Path imagePath = Paths.get(cdmip.getImageURL());
             String imageFilename = imagePath.getFileName().toString();
             String imageURLBasename = imageFilename.substring(0, imageFilename.length() - 4);
 
-            // last piece of imageName looks like "-01_CDM.tif"; split it off, split it again, grab that "01" piece:
+            // split it off last '-' delimited piece, then split again on '_'
             String[] imageNamePieces = cdmip.getImageName().split("-");
-            String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
-
-            cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+            if (cdmip.getImageName().contains("CDM")) {
+                // LM: last piece of imageName looks like "-01_CDM.tif"; grab that "01" piece:
+                String[] morePieces = imageNamePieces[imageNamePieces.length - 1].split("_");
+                cdmip.setSearchablePNG(imageURLBasename + "-" + morePieces[0] + ".png");
+            } else {
+                // EM: last piece looks like "-RT_18U.tif" or "-RT_18U_FL.tif"; if there is _FL,
+                //  append -FL (drop the status either way)
+                if (imageNamePieces[imageNamePieces.length - 1].contains("_FL")) {
+                    cdmip.setSearchablePNG(imageURLBasename + "-FL" + ".png");
+                } else {
+                    cdmip.setSearchablePNG(imageURLBasename + ".png");
+                }
+            }
         }
         if (StringUtils.isBlank(cdmip.getImageURL())) {
             // set relative image URLs
