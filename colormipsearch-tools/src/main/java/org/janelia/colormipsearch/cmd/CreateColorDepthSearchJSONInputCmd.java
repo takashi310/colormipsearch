@@ -663,7 +663,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 ""
         ); // remove the hyphen or underscore prefix
         String displayName = RegExUtils.replacePattern(displayFileName, "\\..*$", ""); // clear  .<ext> suffix
-        return displayName + "-" + imageSuffix + ".png";
+        return StringUtils.isBlank(imageSuffix)
+                ? displayName + ".png"
+                : displayName + "-" + imageSuffix + ".png";
     }
 
     private String createEMImageRelativeURL(MIPMetadata cdmip) {
