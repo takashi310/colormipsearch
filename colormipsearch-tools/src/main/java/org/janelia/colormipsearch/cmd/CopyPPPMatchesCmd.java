@@ -146,6 +146,9 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
                                                     .get()
                                             )
                                             .collect(Collectors.toList());
+                            if (pppMatches.isEmpty()) {
+                                LOG.info("No valid PPP matches exist for {}", res.getNeuronName());
+                            }
                             return EmPPPMatches.pppMatchesBySingleNeuron(pppMatches);
                         }))
                 .filter(Results::hasResults)
