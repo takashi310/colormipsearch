@@ -1,5 +1,9 @@
 package org.janelia.colormipsearch.api.pppsearch;
 
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -22,5 +26,17 @@ public class PublishedEmPPPMatch extends EmPPPMatch {
         PublishedEmPPPMatch pppReleaseCopy = new PublishedEmPPPMatch();
         copyFrom(pppMatch, pppReleaseCopy);
         return pppReleaseCopy;
+    }
+
+    @JsonIgnore
+    @Override
+    public Map<PPPScreenshotType, String> getSourceImageFiles() {
+        return super.getSourceImageFiles();
+    }
+
+    @JsonIgnore
+    @Override
+    public List<SourceSkeletonMatch> getSkeletonMatches() {
+        return super.getSkeletonMatches();
     }
 }
