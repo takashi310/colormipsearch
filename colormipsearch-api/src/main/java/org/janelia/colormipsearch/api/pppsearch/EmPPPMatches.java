@@ -66,6 +66,15 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         }
     }
 
+    private static EmPPPMatches EMPTY = new EmPPPMatches(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            Collections.emptyList());
+
     @JsonCreator
     public static EmPPPMatches createEmPPPMatches(@JsonProperty("maskId") String maskId,
                                                   @JsonProperty("maskPublishedName") String maskPublishedName,
@@ -95,7 +104,7 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         if (allPPPMatches.size() > 1) {
             throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
         } else {
-            return allPPPMatches.get(0);
+            return allPPPMatches.size() > 0 ? allPPPMatches.get(0) : EmPPPMatches.EMPTY;
         }
     }
 
