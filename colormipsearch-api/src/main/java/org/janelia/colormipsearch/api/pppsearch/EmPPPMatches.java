@@ -92,7 +92,7 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
 
     public static EmPPPMatches pppMatchesBySingleNeuron(List<EmPPPMatch> pppMatchList) {
         List<EmPPPMatches> allPPPMatches = pppMatchesByNeurons(pppMatchList);
-        if (allPPPMatches.size() != 1) {
+        if (allPPPMatches.size() > 1) {
             throw new IllegalArgumentException("Expected all matches to be for the same neuron. Found " + allPPPMatches.size() + " neurons");
         } else {
             return allPPPMatches.get(0);
