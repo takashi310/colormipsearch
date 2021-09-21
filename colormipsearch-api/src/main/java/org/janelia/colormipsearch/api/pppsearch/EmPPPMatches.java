@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.api.Results;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"maskId", "maskPublishedName", "maskLibraryName", "neuronType", "neuronInstance", "results"})
+@JsonPropertyOrder({"maskId", "maskPublishedName", "maskLibraryName", "neuronType", "neuronInstance", "sourceMaskName", "results"})
 public class EmPPPMatches extends Results<List<EmPPPMatch>> {
 
     private static class EmPPPID {
@@ -132,14 +132,14 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         }
     }
 
-    private final String fullName;
+    private final String sourceNeuronName;
     private final String neuronId;
     private final String neuronName;
     private final String neuronType;
     private final String neuronInstance;
     private final String neuronDataset;
 
-    EmPPPMatches(String fullName,
+    EmPPPMatches(String sourceNeuronName,
                  String neuronId,
                  String neuronName,
                  String neuronType,
@@ -147,7 +147,7 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
                  String neuronDataset,
                  List<EmPPPMatch> results) {
         super(results);
-        this.fullName = fullName;
+        this.sourceNeuronName = sourceNeuronName;
         this.neuronId = neuronId;
         this.neuronName = neuronName;
         this.neuronType = neuronType;
@@ -155,8 +155,9 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         this.neuronInstance = neuronInstance;
     }
 
-    public String getFullName() {
-        return fullName;
+    @JsonProperty("sourceMaskName")
+    public String getSourceNeuronName() {
+        return sourceNeuronName;
     }
 
     @JsonProperty("maskId")

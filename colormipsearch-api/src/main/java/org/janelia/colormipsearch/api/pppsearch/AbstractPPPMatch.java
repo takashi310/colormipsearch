@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api.pppsearch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -52,6 +53,23 @@ public class AbstractPPPMatch {
         to.setSourceImageFiles(from.getSourceImageFiles());
         to.setSkeletonMatches(from.getSkeletonMatches());
         return to;
+    }
+
+    public static class Update<M extends AbstractPPPMatch> {
+        private final M pppMatch;
+
+        public Update(M pppMatch) {
+            this.pppMatch = pppMatch;
+        }
+
+        public <F> Update<M> applyUpdate(BiConsumer<M, F> update, F toUpdate) {
+            update.accept(pppMatch, toUpdate);
+            return this;
+        }
+
+        public M get() {
+            return pppMatch;
+        }
     }
 
     private String sourceEmName;

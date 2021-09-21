@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.Results;
 import org.janelia.colormipsearch.api.Utils;
+import org.janelia.colormipsearch.api.pppsearch.AbstractPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatch;
@@ -57,8 +58,14 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--filterInternalFields"}, description = "Filter out internal fields such as sample name, etc.", arity = 0)
         boolean filterOutInternalFields;
 
-        @Parameter(names = {"--truncatePartialResults"}, description = "Truncate partial results that do not have image files")
+        @Parameter(names = {"--truncatePartialResults"}, description = "Truncate partial results that do not have image files", arity = 0)
         boolean truncateResults;
+
+        @Parameter(names = {"--emDatasetMapping"}, description = "EM library name")
+        String emDatasetMapping;
+
+        @Parameter(names = {"--lmDatasetMapping"}, description = "EM library name")
+        String lmDatasetMapping;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -125,6 +132,19 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
                             List<EmPPPMatch> pppMatches = res.getResults().stream()
                                             .filter(r -> !args.truncateResults || r.hasSourceImageFiles())
                                             .map(r -> args.filterOutInternalFields ? PublishedEmPPPMatch.createReleaseCopy(r) : r)
+                                            .map(r -> new AbstractPPPMatch.Update<>(r)
+                                                    .applyUpdate((pppMatch, v) -> {
+                                                        if (StringUtils.isNotBlank(v)) {
+                                                            pppMatch.setSourceEmDataset(v);
+                                                        }
+                                                    }, args.emDatasetMapping)
+                                                    .applyUpdate((pppMatch, v) -> {
+                                                        if (StringUtils.isNotBlank(v)) {
+                                                            pppMatch.setSourceLmDataset(v);
+                                                        }
+                                                    }, args.lmDatasetMapping)
+                                                    .get()
+                                            )
                                             .collect(Collectors.toList());
                             return EmPPPMatches.pppMatchesBySingleNeuron(pppMatches);
                         }))
