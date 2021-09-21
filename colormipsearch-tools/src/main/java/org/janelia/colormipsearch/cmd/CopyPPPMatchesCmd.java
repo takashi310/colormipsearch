@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.xml.transform.Result;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
@@ -32,6 +34,7 @@ import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
+import org.janelia.colormipsearch.api.pppsearch.PublishedEmPPPMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +119,15 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .flatMap(fileList -> fileList.stream()
-                        .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper)))
+                        .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper))
+                        .filter(Results::hasResults)
+                        .map(res -> {
+                            List<EmPPPMatch> pppMatches = res.getResults().stream()
+                                            .filter(r -> !args.truncateResults || r.hasSourceImageFiles())
+                                            .map(r -> args.filterOutInternalFields ? PublishedEmPPPMatch.createReleaseCopy(r) : r)
+                                            .collect(Collectors.toList());
+                            return EmPPPMatches.pppMatchesBySingleNeuron(pppMatches);
+                        }))
                 .filter(Results::hasResults)
                 .forEach(res -> {
                     PPPUtils.writeResultsToJSONFile(

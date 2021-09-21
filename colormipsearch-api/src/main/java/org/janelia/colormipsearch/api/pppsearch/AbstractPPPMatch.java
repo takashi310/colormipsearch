@@ -7,13 +7,11 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.FileType;
 
@@ -301,6 +299,10 @@ public class AbstractPPPMatch {
             }
             sourceImageFiles.put(imageFileType, imageName);
         }
+    }
+
+    public boolean hasSourceImageFiles() {
+        return MapUtils.isNotEmpty(sourceImageFiles);
     }
 
     @JsonProperty
