@@ -29,10 +29,9 @@
 
 **LM data**
 * MCFO GAL4 lines
-* Stable split GAL4 lines
 
 **Notes**
-* (any notes?) 
+* See https://github.com/Kainmueller-Lab/PatchPerPix for information on the algorithm
 
 
 ### Release Version: 2.1.1
