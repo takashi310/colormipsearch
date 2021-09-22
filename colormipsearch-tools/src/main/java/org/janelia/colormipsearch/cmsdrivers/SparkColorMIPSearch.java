@@ -100,7 +100,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                                 } else {
                                     return localTargetImages.stream()
                                             .map(targetImage -> search(queryColorDepthSearch, queryImage, targetImage))
-                                            .filter(ColorMIPSearchResult::isMatch);
+                                            .filter(r -> r.isMatch());
                                 }
                             })
                             .iterator();
