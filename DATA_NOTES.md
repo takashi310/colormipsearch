@@ -2,14 +2,16 @@
 
 ### Release Date: 2021-xx-xx
 
-#### EM data;
+#### Color Depth Searches
+
+**EM data**
 * Hemibrain 1.2.1
 
-#### LM data;
+**LM data**
 * MCFO GAL4 lines
 * Stable split GAL4 lines
-   
-* Parameters for pre-computed matches between LM and EM data 
+
+* Parameters for pre-computed color-depth matches between LM and EM data 
     * maskThreshold: 20
     * targetThreshold: 20
     * xyShift : 2
@@ -17,11 +19,20 @@
     * pixColorFluctuation: 1.0
     * pctPositivePixels: 1.0
 
-### Notes
-
-* Hemibrain 1.2.1
+**Notes** 
 * Added `neuronType` and `neuronInstance` attributes to EM results JSON
-* Added `searchablePNG` attribute to LM results JSON
+* Added `searchablePNG` attribute to results JSON
+
+#### PatchPerPix (PPP) searches
+**EM data**
+* Hemibrain 1.2.0
+
+**LM data**
+* MCFO GAL4 lines
+* Stable split GAL4 lines
+
+**Notes**
+* (any notes?) 
 
 
 ### Release Version: 2.1.1
@@ -38,11 +49,11 @@ with a higher normalized gradient score. This led to a wrong ranking of the fina
 
 ### Release Date: 2020-09-15
 
-#### EM data;
+#### EM data
 * Hemibrain 1.1
     * 32,777 EM bodies
 
-#### LM data;
+#### LM data
 * MCFO GAL4 lines
    * 175,533 segmented MCFO CDM
    * 80,812 MCFO channels
