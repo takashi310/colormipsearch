@@ -264,7 +264,7 @@ java \
     -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/mips/gen1_mcfo_lines \
     --id-field id \
-    --fields-toUpdate imageURL,thumbnailURL \
+    --fields-toUpdate imageURL thumbnailURL \
     -od local/testData/mips.gamma1.4/gen1_mcfo_lines
 ```
 
@@ -276,7 +276,7 @@ java \
     -attrs local/testData/mips/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-file local/testData/mips/flylight_gen1_mcfo_published.json \
     --id-field id \
-    --fields-toUpdate imageURL,thumbnailURL \
+    --fields-toUpdate imageURL thumbnailURL \
     -od local/testData/mips.gamma1.4
 ```
 
@@ -291,7 +291,7 @@ java \
     -attrs local/testData/cdsresult/flylight_gen1_mcfo_case_1_gamma1_4.json \
     --input-dirs local/testData/cdsresults.merged/flyem_hemibrain-vs-flylight \
     --id-field id  \
-    --fields-toUpdate imageURL,thumbnailURL \
+    --fields-toUpdate imageURL thumbnailURL \
     -od local/testData/cdsresults/flyem_hemibrain.gamma1_4
 ```
 
