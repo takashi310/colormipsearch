@@ -144,16 +144,18 @@ public class ColorMIPSearchResultUtils {
                 ColorMIPSearchMatchMetadata::getMatchingPixels,
                 numberOfBestPublishedNamesToSelect,
                 -1);
-        LOG.info("{} selected names: {}",
-                numberOfBestPublishedNamesToSelect > 0
-                        ? "Top " + numberOfBestPublishedNamesToSelect + " out of " + cdsResults.size()
-                        : "All " + cdsResults.size(),
-                IntStream.range(0, topResultsByPublishedName.size()).boxed()
-                        .map(index -> {
-                            ScoredEntry<List<ColorMIPSearchMatchMetadata>> scoredEntry = topResultsByPublishedName.get(index);
-                            return "(" + (index + 1) + ") " + scoredEntry.getName() + ":" + scoredEntry.getScore();
-                        })
-                        .collect(Collectors.toList()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} selected names: {}",
+                    numberOfBestPublishedNamesToSelect > 0
+                            ? "Top " + numberOfBestPublishedNamesToSelect + " out of " + cdsResults.size()
+                            : "All " + cdsResults.size(),
+                    IntStream.range(0, topResultsByPublishedName.size()).boxed()
+                            .map(index -> {
+                                ScoredEntry<List<ColorMIPSearchMatchMetadata>> scoredEntry = topResultsByPublishedName.get(index);
+                                return "(" + (index + 1) + ") " + scoredEntry.getName() + ":" + scoredEntry.getScore();
+                            })
+                            .collect(Collectors.toList()));
+        }
         return topResultsByPublishedName.stream()
                 .flatMap(se -> Utils.pickBestMatches(
                         se.getEntry(),
