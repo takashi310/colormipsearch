@@ -45,6 +45,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageName(cdsm.getSourceImageName());
         mip.setImageType(cdsm.getSourceImageType());
         mip.setImageURL(cdsm.getSourceImageURL());
+        mip.setSearchablePNG(cdsm.getSourceSearchablePNG());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -58,6 +59,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageName(cdsm.getImageName());
         mip.setImageType(cdsm.getImageType());
         mip.setImageURL(cdsm.getImageURL());
+        mip.setSearchablePNG(cdsm.getSearchablePNG());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -72,6 +74,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceSampleRef;
     private String sourceRelatedImageRefId;
     private String sourceImageURL;
+    private String sourceSearchablePNG;
     private int matchingPixels;
     private double matchingRatio;
     private boolean mirrored;
@@ -187,6 +190,14 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     public void setSourceImageURL(String sourceImageURL) {
         this.sourceImageURL = sourceImageURL;
+    }
+
+    public String getSourceSearchablePNG() {
+        return sourceSearchablePNG;
+    }
+
+    public void setSourceSearchablePNG(String sourceSearchablePNG) {
+        this.sourceSearchablePNG = sourceSearchablePNG;
     }
 
     public int getMatchingPixels() {
