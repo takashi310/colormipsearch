@@ -627,11 +627,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     private void setImageURLs(MIPMetadata cdmip) {
         if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
             // searchableName filename must be expressed in terms of publishedName (not internal name),
-            //  and must include the integer suffix that identifies exactly which image it is,
+            //  and must include the integer suffix that identifies exactly which image it is (for LM),
             //  when there are multiple images for a given combination of parameters
             // in practical terms, we take the filename from imageURL, which has
-            //  the publishedName in it, and graft on the required integer from imageName, which
-            //  has the internal name
+            //  the publishedName in it, and graft on the required integer from imageName (for LM), which
+            //  has the internal name; we have to similarly grab _FL from EM names
 
             // remove directories and extension (which we know is ".png") from imageURL:
             Path imagePath = Paths.get(cdmip.getImageURL());
@@ -654,6 +654,13 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         }
     }
 
+    /**
+     * Create the published name for the segmented image - the one that will actually be "color depth searched".
+     * @param mipFileName
+     * @param imageFileName
+     * @param displayFileName
+     * @return
+     */
     private String createMatchingSegmentationName(String mipFileName, String imageFileName, String displayFileName) {
         String mipName = RegExUtils.replacePattern(mipFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
         String imageName = RegExUtils.replacePattern(imageFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix

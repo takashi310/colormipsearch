@@ -1,17 +1,17 @@
-### Release Version: 2.2
+### Release Version: 2.2.0
 
-### Release Date: 2021-xx-xx
+### Release Date: 2021-09-30
 
-#### EM data;
+#### Color Depth Searches
+
+**EM data**
 * Hemibrain 1.2.1
 
-#### LM data;
+**LM data**
 * MCFO GAL4 lines
-   
 * Stable split GAL4 lines
-   
-* Parameters for pre-computed matches between LM and EM data 
-* (not yet reviewed/updated)
+
+* Parameters for pre-computed color-depth matches between LM and EM data 
     * maskThreshold: 20
     * targetThreshold: 20
     * xyShift : 2
@@ -19,10 +19,19 @@
     * pixColorFluctuation: 1.0
     * pctPositivePixels: 1.0
 
-### Notes
+**Notes** 
+* Added `neuronType` and `neuronInstance` attributes to EM results JSON
+* Added `searchablePNG` attribute to results JSON
 
-* Hemibrain 1.2.1
-* Added `neuronType` and `neuronInstance` attributes to JSON
+#### PatchPerPix (PPP) searches
+**EM data**
+* Hemibrain 1.2.0
+
+**LM data**
+* MCFO GAL4 lines
+
+**Notes**
+* See https://github.com/Kainmueller-Lab/PatchPerPix for information on the algorithm
 
 
 ### Release Version: 2.1.1
@@ -39,11 +48,11 @@ with a higher normalized gradient score. This led to a wrong ranking of the fina
 
 ### Release Date: 2020-09-15
 
-#### EM data;
+#### EM data
 * Hemibrain 1.1
     * 32,777 EM bodies
 
-#### LM data;
+#### LM data
 * MCFO GAL4 lines
    * 175,533 segmented MCFO CDM
    * 80,812 MCFO channels
