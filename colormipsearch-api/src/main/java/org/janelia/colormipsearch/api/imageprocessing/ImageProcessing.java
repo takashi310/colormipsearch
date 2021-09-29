@@ -25,35 +25,19 @@ public class ImageProcessing implements Serializable {
         this.imageTransformation = imageTransformation;
     }
 
-    public ImageProcessing mask(int threshold) {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.mask(threshold)));
-    }
-
-    public ImageProcessing toGray16() {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toGray16WithNoGammaCorrection()));
-    }
-
-    public ImageProcessing toBinary8(int threshold) {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary8(threshold)));
-    }
-
-    public ImageProcessing toBinary16(int threshold) {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toBinary16(threshold)));
-    }
-
-    public ImageProcessing maxFilter(double radius) {
+    public final ImageProcessing maxFilter(double radius) {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilter(radius)));
     }
 
-    public ImageProcessing horizontalMirror() {
+    public final ImageProcessing horizontalMirror() {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.horizontalMirror()));
     }
 
-    public ImageProcessing toSignalRegions(int threshold) {
-        return new ImageProcessing(imageTransformation.fmap(ColorTransformation.toSignalRegions(threshold)));
+    public final ImageProcessing applyColorTransformation(ColorTransformation colorTransformation) {
+        return new ImageProcessing(imageTransformation.fmap(colorTransformation));
     }
 
-    public ImageProcessing thenExtend(ImageTransformation f) {
+    public final ImageProcessing thenExtend(ImageTransformation f) {
         return new ImageProcessing(imageTransformation.extend(f));
     }
 

@@ -90,7 +90,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 ImageTransformation clearLabels = ImageTransformation.clearRegion(isLabel);
 
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
-                        .mask(queryThreshold)
+                        .applyColorTransformation(ColorTransformation.mask(queryThreshold))
                         .maxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
                 long startTime = System.currentTimeMillis();
                 LImage roiMaskImage;
@@ -110,8 +110,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 );
                 GradientBasedNegativeScoreColorDepthSearchAlgorithm maskNegativeScoresCalculator = new GradientBasedNegativeScoreColorDepthSearchAlgorithm(
                         queryImage,
-                        queryImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(2)).reduce(),
-                        maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce(),
+                        queryImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.gray8Or16ToSignal(2)).reduce(),
+                        maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.gray8Or16ToSignal(0)).reduce(),
                         roiMaskImage,
                         cdsParams.getIntParam("queryThreshold", queryThreshold),
                         cdsParams.getBoolParam("mirrorMask", mirrorMask),

@@ -23,7 +23,11 @@ public class ImageOperationsTest {
                 testQueryImage.mapi(ImageTransformation.maxFilter(20)),
                 (p1, p2) -> p2 != -16777216 && p2 != 0 ? -16777216 : p1 // mask pixels from the 60x image if they are present in the 20x image
         );
-        ImageArray<?> res = maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.toSignalRegions(0)).reduce().toImageArray();
+        ImageArray<?> res = maskForRegionsWithTooMuchExpression
+                .map(ColorTransformation.toGray16WithNoGammaCorrection())
+                .map(ColorTransformation.gray8Or16ToSignal(0))
+                .reduce()
+                .toImageArray();
         Integer nonZeroPxs = LImageUtils.create(res).fold(0, (p, s) -> p == 0 ? s : s+1);
         assertTrue(nonZeroPxs > 0);
     }
@@ -98,7 +102,7 @@ public class ImageOperationsTest {
         ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray<?> binaryMaxFilteredImage = ImageProcessing.create()
-                .toBinary8(50)
+                .applyColorTransformation(ColorTransformation.toBinary8(50))
                 .maxFilter(10)
                 .applyTo(testMIP)
                 .toImageArray();
@@ -175,8 +179,8 @@ public class ImageOperationsTest {
         ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray<?> signalImage = ImageProcessing.create()
-                .toGray16()
-                .toSignalRegions(0)
+                .applyColorTransformation(ColorTransformation.toGray16WithNoGammaCorrection())
+                .applyColorTransformation(ColorTransformation.gray8Or16ToSignal(0))
                 .applyTo(testMIP)
                 .toImageArray();
 
@@ -195,7 +199,7 @@ public class ImageOperationsTest {
         ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
 
         ImageArray<?> maskedImage = ImageProcessing.create()
-                .mask(250)
+                .applyColorTransformation(ColorTransformation.mask(250))
                 .maxFilter(10)
                 .applyTo(testMIP)
                 .toImageArray();

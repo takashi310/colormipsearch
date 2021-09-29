@@ -357,7 +357,6 @@ public abstract class ImageTransformation implements Serializable {
                             try {
                                 m = histogram.remove(p);
                             } catch (IllegalArgumentException e) {
-                                System.out.println("!!!!! " + Integer.toHexString(p) + " " + x + " " + y + " " + nextx + " " + ay);
                                 throw e;
                             }
                         }
