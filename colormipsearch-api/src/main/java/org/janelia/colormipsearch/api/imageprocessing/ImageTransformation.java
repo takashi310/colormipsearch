@@ -360,31 +360,27 @@ public abstract class ImageTransformation implements Serializable {
              */
             class PixelIterator {
                 private final LImage lImage;
-                private final int cacheWidth;
-                private final int cacheHeight;
                 private int currX;
                 private int currY;
-                final int[] pixelCache ;
+                int cachedRowsStart;
+                int cachedRowsEnd;
+                final int[] pixelCache;
                 final ColorHistogram histogram;
 
                 PixelIterator(LImage lImage, int startX, int startY) {
                     this.lImage = lImage;
-                    this.cacheWidth = lImage.width();
-                    this.cacheHeight = kHeight + 1;
                     currX = startX;
                     currY = startY;
-                    pixelCache = new int[cacheWidth * cacheHeight];
-                    initPixelsCache();
+                    pixelCache = new int[lImage.width() * kHeight];
+                    initPixelsCache(startY - kRadius);
                     histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
-                    initializeHistogram(startX);
+                    initializeHistogram(startX, startY);
                 }
 
                 void nextXY(int nextX, int nextY) {
                     if (nextY != currY) {
-                        System.arraycopy(pixelCache, cacheWidth, pixelCache, 0, pixelCache.length - cacheWidth);
-                        // cache the next row
-                        cacheRow(nextY, cacheHeight - 1);
-                        initializeHistogram(nextX);
+                        cacheNextRow(nextY);
+                        initializeHistogram(nextX, nextY);
                     } else {
                         BiFunction<Integer, Integer, Integer> toAddCoord, toRemoveCoord;
                         if (nextX > currX) {
@@ -399,19 +395,25 @@ public abstract class ImageTransformation implements Serializable {
                             // nothing to do
                             return;
                         }
-                        for (int h = 0; h < kHeight; h++) {
-                            int ay = nextY - kRadius + h;
+                        int miny = nextY - kRadius;
+                        int maxy = nextY - kRadius + kHeight;
+                        for (int ay = Math.max(0, miny); ay < Math.min(lImage.height(), maxy); ay++) {
+                            int h = ay - nextY + kRadius;
                             int toAddX = toAddCoord.apply(nextX, h);
-                            int toAddP = pixelCache[h * cacheWidth + toAddX];
-                            histogram.add(toAddP);
+                            if (toAddX < lImage.width() && toAddX >= 0) {
+                                int toAddP = pixelCache[h * lImage.width() + toAddX];
+                                histogram.add(toAddP);
+                            }
                             int toRemoveX = toRemoveCoord.apply(nextX, h);
-                            int toRemoveP = pixelCache[h * lImage.width() + toRemoveX];
-                            try {
-                                histogram.remove(toRemoveP);
-                            } catch (Exception e) {
-                                String message = String.format("Error removing pixel %X at (%d,%d) while handling (%d, %d)",
-                                        toRemoveP, toRemoveX, ay, nextX, nextY);
-                                throw new IllegalStateException(message, e);
+                            if (toRemoveX >= 0 && toRemoveX < lImage.width()) {
+                                int toRemoveP = pixelCache[h * lImage.width() + toRemoveX];
+                                try {
+                                    histogram.remove(toRemoveP);
+                                } catch (Exception e) {
+                                    String message = String.format("Error removing pixel %X at (%d,%d) while handling (%d, %d)",
+                                            toRemoveP, toRemoveX, ay, nextX, nextY);
+                                    throw new IllegalStateException(message, e);
+                                }
                             }
                         }
                     }
@@ -442,27 +444,47 @@ public abstract class ImageTransformation implements Serializable {
                 /**
                  * Initialize histogram assumes the pixel cache is initialized.
                  * @param x
+                 * @param y
                  */
-                private void initializeHistogram(int x) {
+                private void initializeHistogram(int x, int y) {
                     histogram.clear();
-                    for (int h = 0; h < kHeight; h++) {
-                        for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
-                            int ax = x + dx;
-                            int p = pixelCache[h *  cacheWidth + ax];
+                    int cachedPixelY = y - cachedRowsStart;
+                    int miny = cachedPixelY - kRadius;
+                    int maxy = cachedPixelY - kRadius + kHeight;
+                    for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd-cachedRowsStart, maxy); ay++) {
+                        int h = ay - cachedPixelY + kRadius;
+                        int minx = x + radii[2*h];
+                        int maxx = x + radii[2*h + 1];
+                        for (int ax = Math.max(0, minx); ax < maxx; ax++) {
+                            int p = pixelCache[ay *  lImage.width() + ax];
                             histogram.add(p);
                         }
                     }
                 }
 
-                private void initPixelsCache() {
-                    for (int r = 0; r < cacheHeight; r++) {
-                        cacheRow(r, r);
+                private void initPixelsCache(int startImageRow) {
+                    cachedRowsStart = startImageRow < 0 ? 0 : startImageRow;
+                    cachedRowsEnd = cachedRowsStart + kHeight < lImage.height()
+                                    ? cachedRowsStart + kHeight
+                                    : lImage.height();
+                    for (int r = cachedRowsStart; r < cachedRowsEnd; r++) {
+                        cacheRow(startImageRow, r-cachedRowsStart);
                     }
                 }
 
-                void cacheRow(int imageRow, int cacheRow) {
+                private void cacheNextRow(int y) {
+                    if (y >= (cachedRowsEnd - cachedRowsStart) / 2 &&  cachedRowsEnd + 1 < lImage.height()) {
+                        System.arraycopy(pixelCache, lImage.width(), pixelCache, 0, pixelCache.length - lImage.width());
+                        cachedRowsStart++;
+                        cachedRowsEnd++;
+                        // cache the next row
+                        cacheRow(cachedRowsEnd, kHeight - 1);
+                    }
+                }
+
+                private void cacheRow(int imageRow, int cacheRow) {
                     for (int x = 0; x < lImage.width(); x++) {
-                        pixelCache[cacheRow * cacheWidth + x] = lImage.get(x, imageRow);
+                        pixelCache[cacheRow * lImage.width() + x] = lImage.get(x, imageRow);
                     }
                 }
             }
@@ -488,6 +510,10 @@ public abstract class ImageTransformation implements Serializable {
      * Create an with the size equal 2 * Diameter. The index in the array will give us the relative y coordinate from
      * the center calculated like `index - radius'. Then for each y there are 2 positions containing
      * x (even position) and -x (odd position).
+     * For example for r=10 the values look like:
+     * [-1, 1, -4, 4, -6, 6, -7, 7, -8, 8, -8, 8, -9, 9, -9, 9, -9, 9, -10, 10,
+     * -10, 10,
+     * -10, 10, -9, 9, -9, 9, -9, 9, -8, 8, -8, 8, -7, 7, -6, 6, -4, 4, -1, 1, 10]
      *
      * @param radiusArg
      * @return
