@@ -22,7 +22,7 @@ public class ImageOperationsTest {
         LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                 testQueryImage.mapi(ImageTransformation.maxFilter(60)),
                 testQueryImage.mapi(ImageTransformation.maxFilter(20)),
-                (p1, p2) -> (p2 & 0xFF000000) != 0 ? 0xFF000000 : p1 // mask pixels from the 60x image if they are present in the 20x image
+                (p1, p2) -> (p2 & 0xFFFFFF) != 0 ? 0xFF000000 : p1 // mask pixels from the 60x image if they are present in the 20x image
         );
         ImageArray<?> res = maskForRegionsWithTooMuchExpression
                 .map(ColorTransformation.toGray16WithNoGammaCorrection())
@@ -42,7 +42,7 @@ public class ImageOperationsTest {
         LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                 testQueryImage.mapi(ImageTransformation.unsafeMaxFilter(60)),
                 testQueryImage.mapi(ImageTransformation.unsafeMaxFilter(20)),
-                (p1, p2) -> (p2 & 0xFF000000) != 0 ? 0xFF000000 : p1 // mask pixels from the 60x image if they are present in the 20x image
+                (p1, p2) -> (p2 & 0xFFFFFF) != 0 ? 0xFF000000 : p1 // mask pixels from the 60x image if they are present in the 20x image
         );
         ImageArray<?> res = maskForRegionsWithTooMuchExpression
                 .map(ColorTransformation.toGray16WithNoGammaCorrection())
@@ -55,24 +55,28 @@ public class ImageOperationsTest {
 
     @Test
     public void unsafeMaxFilterForRGBImage() {
+        final int radius = 10;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
-                .unsafeMaxFilter(10);
+                .unsafeMaxFilter(radius);
 
-        for (int i = 1; i < 5; i++) {
-            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+        for (int i = 0; i < 5; i++) {
+            String testImageName = "src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif";
+            ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray<?> maxFilteredImage = maxFilterProcessing
-                    .applyTo(testMIP, 10, 10, 10, 10)
+                    .applyTo(testMIP, radius, radius, radius, radius)
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
-            testImage.getProcessor().setRoi(10, 10, testMIP.getWidth()-10, testMIP.getHeight()-10);
-            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
-            testImage.getProcessor().setMask(testImage.getProcessor().createMask());
+            maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
             IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(maxFilteredImage)), "tt"+ i + ".png"); // !!!
             IJ.save(testImage, "ttt"+ i + ".png"); // !!!
-
-            for (int j = 0; j < testImage.getProcessor().getPixelCount(); j++) {
-                Assert.assertEquals((testImage.getProcessor().get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            for (int r = 2*radius; r < testMIP.getHeight() - 2*radius; r++) {
+                for (int c = 2*radius; c < testMIP.getWidth() - 2*radius; c++) {
+                    int j = r * testMIP.getWidth() + c;
+                    Assert.assertEquals(String.format("Differ %s at:%d %d\n", testImageName, c, r),
+                            (testImage.getProcessor().get(j) & 0x00FFFFFF),
+                            (maxFilteredImage.get(j) & 0x00FFFFFF));
+                }
             }
         }
     }

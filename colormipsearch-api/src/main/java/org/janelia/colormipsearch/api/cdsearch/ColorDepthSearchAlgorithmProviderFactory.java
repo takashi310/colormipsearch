@@ -105,7 +105,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                         queryImage.mapi(ImageTransformation.maxFilter(60)),
                         queryImage.mapi(ImageTransformation.maxFilter(20)),
                         (p1, p2) -> {
-                            return (p2 & 0xFF000000) != 0 ? 0xFF000000 : p1;
+                            return (p2 & 0xFFFFFF) != 0 ? 0xFF000000 : p1;
                         } // mask pixels from the 60x image if they are present in the 20x image
                 );
                 GradientBasedNegativeScoreColorDepthSearchAlgorithm maskNegativeScoresCalculator = new GradientBasedNegativeScoreColorDepthSearchAlgorithm(
