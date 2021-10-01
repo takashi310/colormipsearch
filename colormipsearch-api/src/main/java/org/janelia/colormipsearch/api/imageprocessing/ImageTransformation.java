@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -112,7 +111,7 @@ public abstract class ImageTransformation implements Serializable {
             if (ci > 0) {
                 int ciCount = histogram[ci] - 1;
                 if (ciCount < 0) {
-                    histogram[ci] = 0;
+                    throw new IllegalStateException("Illegal remove at " + ci + " from the histogram");
                 } else {
                     histogram[ci] = ciCount;
                 }
@@ -377,17 +376,18 @@ public abstract class ImageTransformation implements Serializable {
                     initializeHistogram(startX, startY);
                 }
 
-                void nextXY(int nextX, int nextY) {
-                    if (nextY != currY) {
-                        cacheNextRow(nextY);
-                        initializeHistogram(nextX, nextY);
+                void nextXY(int x, int y) {
+                    if (y != currY) {
+                        // for now we only handle the case here where nextY > currY
+                        cacheNextRow(y);
+                        initializeHistogram(x, y);
                     } else {
                         BiFunction<Integer, Integer, Integer> toAddCoord, toRemoveCoord;
-                        if (nextX > currX) {
+                        if (x > currX) {
                             // left -> right
                             toAddCoord = this::nextLeftToRight;
                             toRemoveCoord = this::prevLeftToRight;
-                        } else if (nextX < currX) {
+                        } else if (x < currX) {
                             // right -> left
                             toAddCoord = this::nextRightToLeft;
                             toRemoveCoord = this::prevRightToLeft;
@@ -395,30 +395,31 @@ public abstract class ImageTransformation implements Serializable {
                             // nothing to do
                             return;
                         }
-                        int miny = nextY - kRadius;
-                        int maxy = nextY - kRadius + kHeight;
-                        for (int ay = Math.max(0, miny); ay < Math.min(lImage.height(), maxy); ay++) {
-                            int h = ay - nextY + kRadius;
-                            int toAddX = toAddCoord.apply(nextX, h);
+                        int cachedPixelY = y - cachedRowsStart;
+                        int miny = cachedPixelY - kRadius;
+                        int maxy = cachedPixelY - kRadius + kHeight;
+                        for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd-cachedRowsStart, maxy); ay++) {
+                            int h = ay - cachedPixelY + kRadius;
+                            int toAddX = toAddCoord.apply(x, h);
                             if (toAddX < lImage.width() && toAddX >= 0) {
-                                int toAddP = pixelCache[h * lImage.width() + toAddX];
+                                int toAddP = pixelCache[ay * lImage.width() + toAddX];
                                 histogram.add(toAddP);
                             }
-                            int toRemoveX = toRemoveCoord.apply(nextX, h);
+                            int toRemoveX = toRemoveCoord.apply(x, h);
                             if (toRemoveX >= 0 && toRemoveX < lImage.width()) {
-                                int toRemoveP = pixelCache[h * lImage.width() + toRemoveX];
+                                int toRemoveP = pixelCache[ay * lImage.width() + toRemoveX];
                                 try {
                                     histogram.remove(toRemoveP);
                                 } catch (Exception e) {
                                     String message = String.format("Error removing pixel %X at (%d,%d) while handling (%d, %d)",
-                                            toRemoveP, toRemoveX, ay, nextX, nextY);
+                                            toRemoveP, toRemoveX, ay, x, y);
                                     throw new IllegalStateException(message, e);
                                 }
                             }
                         }
                     }
-                    currX = nextX;
-                    currY = nextY;
+                    currX = x;
+                    currY = y;
                 }
 
                 private int nextLeftToRight(int x, int h) {
@@ -454,8 +455,8 @@ public abstract class ImageTransformation implements Serializable {
                     for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd-cachedRowsStart, maxy); ay++) {
                         int h = ay - cachedPixelY + kRadius;
                         int minx = x + radii[2*h];
-                        int maxx = x + radii[2*h + 1];
-                        for (int ax = Math.max(0, minx); ax < maxx; ax++) {
+                        int maxx = x + radii[2*h + 1] + 1;
+                        for (int ax = Math.max(0, minx); ax < Math.min(maxx, lImage.width()); ax++) {
                             int p = pixelCache[ay *  lImage.width() + ax];
                             histogram.add(p);
                         }
@@ -468,12 +469,12 @@ public abstract class ImageTransformation implements Serializable {
                                     ? cachedRowsStart + kHeight
                                     : lImage.height();
                     for (int r = cachedRowsStart; r < cachedRowsEnd; r++) {
-                        cacheRow(startImageRow, r-cachedRowsStart);
+                        cacheRow(cachedRowsStart, r-cachedRowsStart);
                     }
                 }
 
                 private void cacheNextRow(int y) {
-                    if (y >= (cachedRowsEnd - cachedRowsStart) / 2 &&  cachedRowsEnd + 1 < lImage.height()) {
+                    if (y > (cachedRowsEnd - cachedRowsStart) / 2 &&  cachedRowsEnd + 1 < lImage.height()) {
                         System.arraycopy(pixelCache, lImage.width(), pixelCache, 0, pixelCache.length - lImage.width());
                         cachedRowsStart++;
                         cachedRowsEnd++;

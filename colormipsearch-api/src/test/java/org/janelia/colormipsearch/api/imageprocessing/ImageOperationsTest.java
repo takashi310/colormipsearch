@@ -68,10 +68,10 @@ public class ImageOperationsTest {
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
-            IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(maxFilteredImage)), "tt"+ i + ".png"); // !!!!!!
+            IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(maxFilteredImage)), "unsafett"+ i + ".png"); // !!!!!!
             IJ.save(testImage, "ttt"+ i + ".png"); // !!!!!!!
             for (int r = 0; r < testMIP.getHeight(); r++) {
-                for (int c = radius; c < testMIP.getWidth() - radius; c++) {
+                for (int c = 0; c < testMIP.getWidth(); c++) {
                     int j = r * testMIP.getWidth() + c;
                     Assert.assertEquals(String.format("Differ %s at:%d %d\n", testImageName, c, r),
                             (testImage.getProcessor().get(j) & 0x00FFFFFF),
@@ -87,7 +87,7 @@ public class ImageOperationsTest {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .maxFilter(radius);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 1; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray<?> maxFilteredImage = maxFilterProcessing
@@ -95,7 +95,6 @@ public class ImageOperationsTest {
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
-            IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(maxFilteredImage)), "tt"+ i + ".png"); // !!!
 
             for (int j = 0; j < testImage.getProcessor().getPixelCount(); j++) {
                 Assert.assertEquals((testImage.getProcessor().get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
