@@ -2,9 +2,10 @@ package org.janelia.colormipsearch.api.imageprocessing;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 /**
  * ImageTransformation - image transformations that take both pixel value and pixel position into consideration
@@ -29,6 +30,7 @@ public abstract class ImageTransformation implements Serializable {
          * @return the new max value
          */
         int remove(int val);
+        int getMax();
         void clear();
     }
 
@@ -67,6 +69,14 @@ public abstract class ImageTransformation implements Serializable {
         }
 
         @Override
+        public int getMax() {
+            int maxR = rHistogram.getMax();
+            int maxG = gHistogram.getMax();
+            int maxB = bHistogram.getMax();
+            return getColor(maxR, maxG, maxB);
+        }
+
+        @Override
         public void clear() {
             rHistogram.clear();
             gHistogram.clear();
@@ -78,21 +88,20 @@ public abstract class ImageTransformation implements Serializable {
 
         private final int[] histogram;
         private int max;
-        private int count;
 
         Gray8Histogram() {
             histogram = new int[256];
-            max = -1;
-            count = 0;
+            max = 0;
         }
 
         @Override
         public int add(int val) {
             int ci = val & 0xFF;
-            histogram[ci] = histogram[ci] + 1;
-            count++;
-            if (ci > max) {
-                max = ci;
+            if (ci > 0) {
+                histogram[ci] = histogram[ci] + 1;
+                if (ci > max) {
+                    max = ci;
+                }
             }
             return max;
         }
@@ -100,23 +109,21 @@ public abstract class ImageTransformation implements Serializable {
         @Override
         public int remove(int val) {
             int ci = val & 0xFF;
-            count--;
-            histogram[ci] = histogram[ci] - 1;
-            if (histogram[ci] < 0) {
-                throw new IllegalStateException();
-            }
-            if (count < 0) {
-                throw new IllegalStateException();
-            }
-            if (ci == max) {
-                if (count == 0) {
-                    max = -1;
-                } else if (histogram[max] == 0) {
-                    max = -1;
-                    for (int pv = ci - 1; pv >= 0; pv--) {
-                        if (histogram[pv] > 0) {
-                            max = pv;
-                            break;
+            if (ci > 0) {
+                int ciCount = histogram[ci] - 1;
+                if (ciCount < 0) {
+                    histogram[ci] = 0;
+                } else {
+                    histogram[ci] = ciCount;
+                }
+                if (ci == max) {
+                    if (histogram[max] == 0) {
+                        max = 0;
+                        for (int pv = ci - 1; pv >= 0; pv--) {
+                            if (histogram[pv] > 0) {
+                                max = pv;
+                                break;
+                            }
                         }
                     }
                 }
@@ -125,10 +132,14 @@ public abstract class ImageTransformation implements Serializable {
         }
 
         @Override
+        public int getMax() {
+            return max;
+        }
+
+        @Override
         public void clear() {
             Arrays.fill(histogram, 0);
-            count = 0;
-            max = -1;
+            max = 0;
         }
     }
 
@@ -170,7 +181,7 @@ public abstract class ImageTransformation implements Serializable {
             @Override
             protected int apply(LImage lImage, int x, int y) {
                 if (regionDefnPredicate.test(x, y)) {
-                    return -16777216;
+                    return 0xFF000000;
                 } else {
                     return lImage.get(x, y);
                 }
@@ -188,40 +199,8 @@ public abstract class ImageTransformation implements Serializable {
         return ImageTransformation.maxFilterWithHistogram(radius);
     }
 
-    private static ImageTransformation maxFilterOverFullRegion(double radius) {
-        int[] radii = makeLineRadii(radius);
-        int kRadius = radii[radii.length - 1];
-        int kHeight = (radii.length - 1) / 2;
-        TriFunction<ImageType, Integer, Integer, Integer> maxValue = (pt, p1, p2) -> {
-            switch (pt) {
-                case RGB:
-                    int a = Math.max(((p1 >> 24) & 0xFF), ((p2 >> 24) & 0xFF));
-                    int r = Math.max(((p1 >> 16) & 0xFF), ((p2 >> 16) & 0xFF));
-                    int g = Math.max(((p1 >> 8) & 0xFF), ((p2 >> 8) & 0xFF));
-                    int b = Math.max((p1 & 0xFF), (p2 & 0xFF));
-                    return (a << 24) | (r << 16) | (g << 8) | b;
-                case GRAY8:
-                case GRAY16:
-                default:
-                    return Math.max(p1, p2);
-            }
-        };
-        return new ImageTransformation() {
-
-            @Override
-            protected int apply(LImage lImage, int x, int y) {
-                return IntStream.range(0, kHeight)
-                        .filter(h -> {
-                            int ay = y + h - kRadius;
-                            return ay >= 0 && ay < lImage.height();
-                        })
-                        .flatMap(h -> IntStream.rangeClosed(x+radii[2*h], x+radii[2*h+1])
-                                .filter(ax -> ax >= 0 && ax < lImage.width())
-                                .map(ax -> lImage.get(ax, y + h - kRadius)))
-                        .reduce(lImage.get(x, y), (p1, p2) -> maxValue.apply(lImage.getPixelType(), p1, p2));
-            }
-
-        };
+    public static ImageTransformation unsafeMaxFilter(double radius) {
+        return ImageTransformation.unsafeMaxFilterWithHistogram(radius);
     }
 
     private static ImageTransformation maxFilterWithHistogram(double radius) {
@@ -368,6 +347,151 @@ public abstract class ImageTransformation implements Serializable {
         };
     }
 
+    private static ImageTransformation unsafeMaxFilterWithHistogram(double radius) {
+        int[] radii = makeLineRadii(radius);
+        int kRadius = radii[radii.length - 1];
+        int kHeight = (radii.length - 1) / 2;
+
+        return new ImageTransformation() {
+            /**
+             * PixelIterator is used for immproving the performance of the max filter transformation and it
+             * contains the histogram for selecting the max pixel value and a cache of the image rows. This must
+             * be associated both with the image and the transformation.
+             */
+            class PixelIterator {
+                private final LImage lImage;
+                private final int cacheWidth;
+                private final int cacheHeight;
+                private int currX;
+                private int currY;
+                final int[] pixelCache ;
+                final ColorHistogram histogram;
+
+                PixelIterator(LImage lImage, int startX, int startY) {
+                    this.lImage = lImage;
+                    this.cacheWidth = lImage.width();
+                    this.cacheHeight = kHeight + 1;
+                    currX = startX;
+                    currY = startY;
+                    pixelCache = new int[cacheWidth * cacheHeight];
+                    initPixelsCache();
+                    histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
+                    initializeHistogram(startX);
+                }
+
+                void nextXY(int nextX, int nextY) {
+                    if (nextY != currY) {
+                        System.arraycopy(pixelCache, cacheWidth, pixelCache, 0, pixelCache.length - cacheWidth);
+                        // cache the next row
+                        cacheRow(nextY, cacheHeight - 1);
+                        initializeHistogram(nextX);
+                    } else {
+                        BiFunction<Integer, Integer, Integer> toAddCoord, toRemoveCoord;
+                        if (nextX > currX) {
+                            // left -> right
+                            toAddCoord = this::nextLeftToRight;
+                            toRemoveCoord = this::prevLeftToRight;
+                        } else if (nextX < currX) {
+                            // right -> left
+                            toAddCoord = this::nextRightToLeft;
+                            toRemoveCoord = this::prevRightToLeft;
+                        } else {
+                            // nothing to do
+                            return;
+                        }
+                        for (int h = 0; h < kHeight; h++) {
+                            int ay = nextY - kRadius + h;
+                            int toAddX = toAddCoord.apply(nextX, h);
+                            int toAddP = pixelCache[h * cacheWidth + toAddX];
+                            histogram.add(toAddP);
+                            int toRemoveX = toRemoveCoord.apply(nextX, h);
+                            int toRemoveP = pixelCache[h * lImage.width() + toRemoveX];
+                            try {
+                                histogram.remove(toRemoveP);
+                            } catch (Exception e) {
+                                String message = String.format("Error removing pixel %X at (%d,%d) while handling (%d, %d)",
+                                        toRemoveP, toRemoveX, ay, nextX, nextY);
+                                throw new IllegalStateException(message, e);
+                            }
+                        }
+                    }
+                    currX = nextX;
+                    currY = nextY;
+                }
+
+                private int nextLeftToRight(int x, int h) {
+                    return x + radii[2 * h + 1];
+                }
+
+                private int prevLeftToRight(int x, int h) {
+                    return x - 1 + radii[2 * h];
+                }
+
+                private int nextRightToLeft(int x, int h) {
+                    return x + radii[2 * h];
+                }
+
+                private int prevRightToLeft(int x, int h) {
+                    return x + 1 + radii[2 * h + 1];
+                }
+
+                int getCurrentPixel() {
+                    return histogram.getMax();
+                }
+
+                /**
+                 * Initialize histogram assumes the pixel cache is initialized.
+                 * @param x
+                 */
+                private void initializeHistogram(int x) {
+                    histogram.clear();
+                    for (int h = 0; h < kHeight; h++) {
+                        for (int dx = 0; dx < radii[2 * h + 1]; dx++) {
+                            int ax = x + dx;
+                            int p = pixelCache[h *  cacheWidth + ax];
+                            histogram.add(p);
+                        }
+                    }
+                }
+
+                private void initPixelsCache() {
+                    for (int r = 0; r < cacheHeight; r++) {
+                        cacheRow(r, r);
+                    }
+                }
+
+                void cacheRow(int imageRow, int cacheRow) {
+                    for (int x = 0; x < lImage.width(); x++) {
+                        pixelCache[cacheRow * cacheWidth + x] = lImage.get(x, imageRow);
+                    }
+                }
+            }
+
+            @Override
+            protected int apply(LImage lImage, int x, int y) {
+                PixelIterator maxFilterPixelIterator;
+                String maxFilterContextEntry = "unsafeMaxFilter-" + this.hashCode();
+                if (lImage.getProcessingContext(maxFilterContextEntry) == null) {
+                    maxFilterPixelIterator = new PixelIterator(lImage, x, y);
+                    lImage.setProcessingContext(maxFilterContextEntry, maxFilterPixelIterator);
+                } else {
+                    maxFilterPixelIterator = (PixelIterator) lImage.getProcessingContext(maxFilterContextEntry);
+                    maxFilterPixelIterator.nextXY(x, y);
+                }
+                return maxFilterPixelIterator.getCurrentPixel();
+            }
+
+        };
+    }
+
+    /**
+     * Create an with the size equal 2 * Diameter. The index in the array will give us the relative y coordinate from
+     * the center calculated like `index - radius'. Then for each y there are 2 positions containing
+     * x (even position) and -x (odd position).
+     *
+     * @param radiusArg
+     * @return
+     */
     private static int[] makeLineRadii(double radiusArg) {
         double radius;
         if (radiusArg >= 1.5 && radiusArg < 1.75) //this code creates the same sizes as the previous RankFilters

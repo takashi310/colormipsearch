@@ -12,14 +12,24 @@ public class LImageImpl implements LImage {
     private final ImageType imageType;
     private final int width;
     private final int height;
+    private final int leftBorder;
+    private final int topBorder;
+    private final int rightBorder;
+    private final int bottomBorder;
+
     private final BiFunction<Integer, Integer, Integer> pixelSupplier;
     private final Map<Object, Object> processingContext;
 
     LImageImpl(ImageType imageType, int width, int height,
+               int leftBorder, int topBorder, int rightBorder, int bottomBorder,
                BiFunction<Integer, Integer, Integer> pixelSupplier) {
         this.imageType = imageType;
         this.width = width;
         this.height = height;
+        this.leftBorder = leftBorder;
+        this.topBorder = topBorder;
+        this.rightBorder = rightBorder;
+        this.bottomBorder = bottomBorder;
         this.pixelSupplier = pixelSupplier;
         this.processingContext = new HashMap<>();
     }
@@ -36,18 +46,40 @@ public class LImageImpl implements LImage {
 
     @Override
     public int height() {
-        return height;
+        return this.height;
     }
 
     @Override
     public int width() {
-        return width;
+        return this.width;
+    }
+
+    @Override
+    public int leftBorder() {
+        return this.leftBorder;
+    }
+
+    @Override
+    public int topBorder() {
+        return this.topBorder;
+    }
+
+    @Override
+    public int rightBorder() {
+        return this.rightBorder;
+    }
+
+    @Override
+    public int bottomBorder() {
+        return this.bottomBorder;
     }
 
     @Override
     public LImageImpl map(ColorTransformation colorChange) {
         return new LImageImpl(
-                colorChange.pixelTypeChange.apply(getPixelType()), width, height,
+                colorChange.pixelTypeChange.apply(getPixelType()),
+                width, height,
+                leftBorder, topBorder, rightBorder, bottomBorder,
                 (x, y) -> colorChange.apply(getPixelType(), get(x, y))
         );
     }
@@ -58,7 +90,9 @@ public class LImageImpl implements LImage {
             return this;
         } else {
             return new LImageImpl(
-                    imageTransformation.pixelTypeChange.apply(getPixelType()), width, height,
+                    imageTransformation.pixelTypeChange.apply(getPixelType()),
+                    width, height,
+                    leftBorder, topBorder, rightBorder, bottomBorder,
                     (x, y) -> imageTransformation.apply(this, x, y)
             );
         }

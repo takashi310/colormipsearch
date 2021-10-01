@@ -33,13 +33,11 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private static final int GAP_THRESHOLD = 3;
 
     private static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, maskPix, dilatedPix) -> {
-        if (maskPix != -16777216) {
-            if (dilatedPix != -16777216) {
-                int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(maskPix, dilatedPix);
-                if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
-                    // negative score value
-                    return pxGapSlice - DEFAULT_COLOR_FLUX;
-                }
+        if ((maskPix & 0xFF000000) != 0 && (dilatedPix & 0xFF000000) != 0) {
+            int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(maskPix, dilatedPix);
+            if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
+                // negative score value
+                return pxGapSlice - DEFAULT_COLOR_FLUX;
             }
         }
         return gradScorePix;

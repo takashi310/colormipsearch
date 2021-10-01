@@ -30,6 +30,14 @@ public interface LImage {
      */
     int width();
 
+    int leftBorder();
+
+    int topBorder();
+
+    int rightBorder();
+
+    int bottomBorder();
+
     /**
      * Change every pixel from this image using the given color transformation.
      *
@@ -80,8 +88,8 @@ public interface LImage {
      */
     default <R> R fold(R initialValue, BiFunction<Integer, R, R> acumulator) {
         R res = initialValue;
-        for (int y = 0; y < height(); y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = topBorder(); y < height()-bottomBorder(); y++) {
+            for (int x = leftBorder(); x < width()-rightBorder(); x++) {
                 res = acumulator.apply(get(x, y), res);
             }
         }
@@ -98,8 +106,8 @@ public interface LImage {
      */
     default <R> R foldi(R initialValue, QuadFunction<Integer, Integer, Integer, R, R> acumulator) {
         R res = initialValue;
-        for (int y = 0; y < height(); y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = topBorder(); y < height()-bottomBorder(); y++) {
+            for (int x = leftBorder(); x < width()-rightBorder(); x++) {
                 res = acumulator.apply(x, y, get(x, y), res);
             }
         }

@@ -38,7 +38,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     private static int rgbToGrayNoGammaCorrection(int rgb, float maxGrayValue) {
-        if (rgb == -16777216) {
+        if ((rgb & 0xFFFFFF) == 0) {
             return 0;
         } else {
             int r = (rgb >> 16) & 0xFF;
@@ -54,7 +54,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     private static int rgbToGrayWithGammaCorrection(int rgb, float maxGrayValue) {
-        if (rgb == -16777216) {
+        if ((rgb & 0xFFFFFF) == 0) {
             return 0;
         } else {
             int r = (rgb >> 16) & 0xFF;
@@ -112,7 +112,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     }
 
     public static ColorTransformation mask(int threshold) {
-        return mask(threshold, -16777216);
+        return mask(threshold, 0xFF000000);
     }
 
     public static ColorTransformation mask(int threshold, int maskedVal) {
@@ -134,7 +134,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
     public static int mask(ImageType pt, int p, int m) {
         if ((m & 0xFFFFFF) == 0) {
             switch (pt) {
-                case RGB: return -16777216;
+                case RGB: return 0xFF000000;
                 default: return 0;
             }
         } else {

@@ -29,6 +29,10 @@ public class ImageProcessing implements Serializable {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.maxFilter(radius)));
     }
 
+    public final ImageProcessing unsafeMaxFilter(double radius) {
+        return new ImageProcessing(imageTransformation.extend(ImageTransformation.unsafeMaxFilter(radius)));
+    }
+
     public final ImageProcessing horizontalMirror() {
         return new ImageProcessing(imageTransformation.extend(ImageTransformation.horizontalMirror()));
     }
@@ -45,7 +49,7 @@ public class ImageProcessing implements Serializable {
         return image.mapi(imageTransformation);
     }
 
-    public LImage applyTo(ImageArray<?> image) {
-        return applyTo(LImageUtils.create(image));
+    public LImage applyTo(ImageArray<?> image, int leftBorder, int topBorder, int rightBorder, int bottomBorder) {
+        return applyTo(LImageUtils.create(image, leftBorder, topBorder, rightBorder, bottomBorder));
     }
 }
