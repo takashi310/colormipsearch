@@ -370,13 +370,13 @@ public abstract class ImageTransformation implements Serializable {
                 private final LImage lImage;
                 private int currX;
                 private int currY;
-                int cachedRowsStart;
-                int cachedRowsEnd;
-                final int[] pixelCache;
-                final ColorHistogram histogram;
+                private int cachedRowsStart;
+                private int cachedRowsEnd;
+                private final int[] pixelCache;
+                private final ColorHistogram histogram;
                 private BiFunction<Integer, Integer, Integer> getNextCoord, getPrevCoord;
 
-                PixelIterator(LImage lImage, int startX, int startY) {
+                private PixelIterator(LImage lImage, int startX, int startY) {
                     this.lImage = lImage;
                     currX = startX;
                     currY = startY;
@@ -384,45 +384,42 @@ public abstract class ImageTransformation implements Serializable {
                     initPixelsCache(startY - kRadius);
                     histogram = lImage.getPixelType() == ImageType.RGB ? new RGBHistogram() : new Gray8Histogram();
                     initializeHistogram(startX, startY);
-                    getNextCoord = this::nextLeftToRight;
-                    getPrevCoord = this::prevLeftToRight;
-
+                    updateTraversalOptions(startX);
                 }
 
-                void nextXY(int x, int y) {
+                private void updateTraversalOptions(int x) {
+                    if ( x < lImage.width() / 2) {
+                        // if my first pixel is in the first half I assume
+                        // left -> right
+                        getNextCoord = this::nextLeftToRight;
+                        getPrevCoord = this::prevLeftToRight;
+                    } else {
+                        // ogherwise if my first pixel is in the second half I assume
+                        // right -> left
+                        getNextCoord = this::nextRightToLeft;
+                        getPrevCoord = this::prevRightToLeft;
+                    }
+                }
+
+                private void nextXY(int x, int y) {
                     if (y != currY) {
-                        // for now we only handle the case here where nextY > currY
+                        // for now we only handle the case here where nextY > currY - top down traversal
                         cacheNextRow(y);
                         initializeHistogram(x, y);
-                        if ( x < lImage.width() / 2) {
-                            // if my first pixel is in the first half I assume
-                            // left -> right
-                            getNextCoord = this::nextLeftToRight;
-                            getPrevCoord = this::prevLeftToRight;
-                        } else {
-                            // ogherwise if my first pixel is in the second half I assume
-                            // right -> left
-                            getNextCoord = this::nextRightToLeft;
-                            getPrevCoord = this::prevRightToLeft;
-                        }
+                        updateTraversalOptions(x);
                     } else {
-                        int cachedPixelY = y - cachedRowsStart;
-                        int miny = cachedPixelY - kRadius;
-                        int maxy = cachedPixelY - kRadius + kHeight;
-                        for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd - cachedRowsStart, maxy); ay++) {
+                        int cachedPixelY = y - cachedRowsStart; // this is the y of the corresponding pixel in the cache
+                                                                // relative to the top border
+                        int fromY = Math.max(0, cachedPixelY - kRadius);
+                        int toY = Math.min(cachedRowsEnd - cachedRowsStart, cachedPixelY - kRadius + kHeight);
+                        // as we traverse the image we add new pixels that come into window to the histogram
+                        // and remove old pixels that are now out of the current window
+                        for (int ay = fromY; ay < toY; ay++) {
                             int h = ay - cachedPixelY + kRadius;
-                            int toAddX = getNextCoord.apply(x, h);
-                            int toAddP = getCachedPixel(toAddX, ay);
-                            histogram.add(toAddP);
-                            int toRemoveX = getPrevCoord.apply(x, h);
-                            int toRemoveP = getCachedPixel(toRemoveX, ay);
-                            try {
-                                histogram.remove(toRemoveP);
-                            } catch (Exception e) {
-                                String message = String.format("Error removing pixel %X at (%d,%d) while handling (%d, %d)",
-                                        toRemoveP, toRemoveX, ay, x, y);
-                                throw new IllegalStateException(message, e);
-                            }
+                            int newPixel = getPixelFromCache(getNextCoord.apply(x, h), ay);
+                            histogram.add(newPixel);
+                            int oldPixel = getPixelFromCache(getPrevCoord.apply(x, h), ay);
+                            histogram.remove(oldPixel);
                         }
                     }
                     currX = x;
@@ -449,16 +446,16 @@ public abstract class ImageTransformation implements Serializable {
                     pixelCache[(y + kRadius) * (lImage.width() + 2 * kRadius) + x + kRadius] = p;
                 }
 
-                private int getCachedPixel(int x, int y) {
+                private int getPixelFromCache(int x, int y) {
                     return pixelCache[(y + kRadius) * (lImage.width() + 2 * kRadius) + x + kRadius];
                 }
 
-                int getCurrentPixel() {
+                private int getCurrentPixel() {
                     return histogram.getMax();
                 }
 
                 /**
-                 * Initialize histogram assumes the pixel cache is initialized.
+                 * Initialize the histogram - this assumes the pixel cache is already initialized to the proper window.
                  * @param x
                  * @param y
                  */
@@ -472,13 +469,15 @@ public abstract class ImageTransformation implements Serializable {
                         int minx = x + radii[2*h];
                         int maxx = x + radii[2*h + 1] + 1;
                         for (int ax = Math.max(0, minx); ax < Math.min(maxx, lImage.width()); ax++) {
-                            int p = getCachedPixel(ax, ay);
+                            int p = getPixelFromCache(ax, ay);
                             histogram.add(p);
                         }
                     }
                 }
 
                 private int[] allocatePixelCache(int imageWidth, int cachedRows, int borderSize) {
+                    // the cache will actually have an extra border equal to the radius of the kernel
+                    // in order to minimize the number of checks for the border.
                     return new int[(imageWidth + 2 * borderSize) * (cachedRows + 2 * borderSize)];
                 }
 
@@ -492,6 +491,11 @@ public abstract class ImageTransformation implements Serializable {
                     }
                 }
 
+                /**
+                 * Cache the next row from the image if the y is past the middle of the current cached window.
+                 *
+                 * @param y
+                 */
                 private void cacheNextRow(int y) {
                     if (y > (cachedRowsEnd + cachedRowsStart) / 2 &&  cachedRowsEnd < lImage.height()) {
                         shiftCacheRows();

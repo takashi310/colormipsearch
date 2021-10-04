@@ -68,8 +68,6 @@ public class ImageOperationsTest {
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
-//            IJ.save(new ImagePlus(null, ImageArrayUtils.toImageProcessor(maxFilteredImage)), "unsafett"+ i + ".png"); // !!!!!!
-//            IJ.save(testImage, "ttt"+ i + ".png"); // !!!!!!!
             for (int r = 0; r < testMIP.getHeight(); r++) {
                 for (int c = 0; c < testMIP.getWidth(); c++) {
                     int j = r * testMIP.getWidth() + c;
@@ -132,10 +130,55 @@ public class ImageOperationsTest {
     }
 
     @Test
+    public void unsafeMaxFilterThenHorizontalMirroringForRGBImage() {
+        ImageProcessing maxFilterProcessing = ImageProcessing.create()
+                .thenExtend(ImageTransformation.unsafeMaxFilter(10))
+                .thenExtend(ImageTransformation.horizontalMirror())
+                ;
+
+        for (int i = 1; i < 6; i++) {
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
+            ImageArray<?> maxFilteredImage = maxFilterProcessing
+                    .applyTo(testMIP, 0, 0, 0, 0)
+                    .toImageArray();
+            RankFilters maxFilter = new RankFilters();
+            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
+            testImage.getProcessor().flipHorizontal();
+
+            for (int j = 0; j < testImage.getProcessor().getPixelCount(); j++) {
+                Assert.assertEquals((testImage.getProcessor().get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            }
+        }
+    }
+
+    @Test
     public void horizontalMirrorThenMaxFilterForRGBImage() {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .thenExtend(ImageTransformation.horizontalMirror())
                 .thenExtend(ImageTransformation.maxFilter(10));
+
+        for (int i = 0; i < 5; i++) {
+            ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
+            ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
+            ImageArray<?> maxFilteredImage = maxFilterProcessing
+                    .applyTo(testMIP, 0, 0, 0, 0)
+                    .toImageArray();
+            RankFilters maxFilter = new RankFilters();
+            maxFilter.rank(testImage.getProcessor(), 10, RankFilters.MAX);
+            testImage.getProcessor().flipHorizontal();
+
+            for (int j = 0; j < testImage.getProcessor().getPixelCount(); j++) {
+                Assert.assertEquals((testImage.getProcessor().get(j) & 0x00FFFFFF), maxFilteredImage.get(j) & 0x00FFFFFF);
+            }
+        }
+    }
+
+    @Test
+    public void horizontalMirrorThenUnsafeMaxFilterForRGBImage() {
+        ImageProcessing maxFilterProcessing = ImageProcessing.create()
+                .thenExtend(ImageTransformation.horizontalMirror())
+                .thenExtend(ImageTransformation.unsafeMaxFilter(10));
 
         for (int i = 0; i < 5; i++) {
             ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif", 1);
