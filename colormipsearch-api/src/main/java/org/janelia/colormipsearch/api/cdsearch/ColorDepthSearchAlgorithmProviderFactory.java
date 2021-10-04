@@ -91,7 +91,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
 
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
                         .applyColorTransformation(ColorTransformation.mask(queryThreshold))
-                        .maxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
+                        .unsafeMaxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
                 long startTime = System.currentTimeMillis();
                 LImage roiMaskImage;
                 if (roiMaskImageArray == null) {
@@ -102,8 +102,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 LImage queryImage = LImageUtils.create(queryImageArray).mapi(clearLabels);
 
                 LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
-                        queryImage.mapi(ImageTransformation.maxFilter(60)),
-                        queryImage.mapi(ImageTransformation.maxFilter(20)),
+                        queryImage.mapi(ImageTransformation.unsafeMaxFilter(60)),
+                        queryImage.mapi(ImageTransformation.unsafeMaxFilter(20)),
                         (p1, p2) -> {
                             return (p2 & 0xFFFFFF) != 0 ? 0xFF000000 : p1;
                         } // mask pixels from the 60x image if they are present in the 20x image
