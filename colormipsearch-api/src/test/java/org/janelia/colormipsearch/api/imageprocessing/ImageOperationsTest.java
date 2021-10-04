@@ -55,7 +55,7 @@ public class ImageOperationsTest {
 
     @Test
     public void unsafeMaxFilterForRGBImage() {
-        final int radius = 3;
+        final int radius = 10;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .unsafeMaxFilter(radius);
 
@@ -64,7 +64,6 @@ public class ImageOperationsTest {
             ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray<?> maxFilteredImage = maxFilterProcessing
-                    .thenExtend(ImageTransformation.shift(0, 0))
                     .applyTo(testMIP, 0, 0, 0, 0)
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
@@ -84,7 +83,7 @@ public class ImageOperationsTest {
 
     @Test
     public void maxFilterForRGBImage() {
-        final int radius = 3;
+        final int radius = 10;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .maxFilter(radius);
 
