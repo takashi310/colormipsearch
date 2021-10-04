@@ -409,14 +409,14 @@ public abstract class ImageTransformation implements Serializable {
                         int maxy = cachedPixelY - kRadius + kHeight;
                         for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd - cachedRowsStart, maxy); ay++) {
                             int h = ay - cachedPixelY + kRadius;
-                            int toAddX = x + radii[2 * h + 1]; // !!!toAddCoord.apply(x, h);
+                            int toAddX = toAddCoord.apply(x, h);
                             if (toAddX < lImage.width() && toAddX >= 0) {
-                                int toAddP = pixelCache[ay * lImage.width() + toAddX];
+                                int toAddP = getCachedPixel(toAddX, ay);
                                 histogram.add(toAddP);
                             }
-                            int toRemoveX = x + radii[2 * h] - 1;    //  !!!toRemoveCoord.apply(x, h);
+                            int toRemoveX = toRemoveCoord.apply(x, h);
                             if (toRemoveX >= 0 && toRemoveX < lImage.width()) {
-                                int toRemoveP = pixelCache[ay * lImage.width() + toRemoveX];
+                                int toRemoveP = getCachedPixel(toRemoveX, ay);
                                 try {
                                     histogram.remove(toRemoveP);
                                 } catch (Exception e) {
@@ -447,6 +447,14 @@ public abstract class ImageTransformation implements Serializable {
                     return x + 1 + radii[2 * h + 1];
                 }
 
+                private void setCachedPixel(int x, int y, int p) {
+                    pixelCache[y * lImage.width() + x] = p;
+                }
+
+                private int getCachedPixel(int x, int y) {
+                    return pixelCache[y * lImage.width() + x];
+                }
+
                 int getCurrentPixel() {
                     return histogram.getMax();
                 }
@@ -466,7 +474,7 @@ public abstract class ImageTransformation implements Serializable {
                         int minx = x + radii[2*h];
                         int maxx = x + radii[2*h + 1] + 1;
                         for (int ax = Math.max(0, minx); ax < Math.min(maxx, lImage.width()); ax++) {
-                            int p = pixelCache[ay *  lImage.width() + ax];
+                            int p = getCachedPixel(ax, ay);
                             histogram.add(p);
                         }
                     }
@@ -483,19 +491,18 @@ public abstract class ImageTransformation implements Serializable {
                 }
 
                 private void cacheNextRow(int y) {
-                    int minCachedY = y - cachedRowsStart - kRadius;
-                    if (minCachedY > 0 &&  cachedRowsEnd + 1 < lImage.height()) {
+                    if (y > (cachedRowsEnd + cachedRowsStart) / 2 &&  cachedRowsEnd < lImage.height()) {
                         System.arraycopy(pixelCache, lImage.width(), pixelCache, 0, pixelCache.length - lImage.width());
-                        cachedRowsStart++;
-                        cachedRowsEnd++;
                         // cache the next row
                         cacheRow(cachedRowsEnd, kHeight - 1);
+                        cachedRowsStart++;
+                        cachedRowsEnd++;
                     }
                 }
 
                 private void cacheRow(int imageRow, int cacheRow) {
                     for (int x = 0; x < lImage.width(); x++) {
-                        pixelCache[cacheRow * lImage.width() + x] = lImage.get(x, imageRow);
+                        setCachedPixel(x,  cacheRow, lImage.get(x, imageRow));
                     }
                 }
             }
