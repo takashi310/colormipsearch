@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -56,6 +55,7 @@ public class ImageOperationsTest {
     @Test
     public void unsafeMaxFilterForRGBImage() {
         final int radius = 10;
+        final int border = 0;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .unsafeMaxFilter(radius);
 
@@ -64,12 +64,12 @@ public class ImageOperationsTest {
             ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray<?> maxFilteredImage = maxFilterProcessing
-                    .applyTo(testMIP, 0, 0, 0, 0)
+                    .applyTo(testMIP, border, border, border, border)
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
-            for (int r = 0; r < testMIP.getHeight(); r++) {
-                for (int c = 0; c < testMIP.getWidth(); c++) {
+            for (int r = border; r < testMIP.getHeight() - border; r++) {
+                for (int c = border; c < testMIP.getWidth() - border; c++) {
                     int j = r * testMIP.getWidth() + c;
                     Assert.assertEquals(String.format("Differ %s at:%d %d\n", testImageName, c, r),
                             (testImage.getProcessor().get(j) & 0x00FFFFFF),

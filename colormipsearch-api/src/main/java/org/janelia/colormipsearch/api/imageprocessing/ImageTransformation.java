@@ -29,7 +29,7 @@ public abstract class ImageTransformation implements Serializable {
          * @return the new max value
          */
         int remove(int val);
-        int getMax();
+        int getHistMax();
         void clear();
     }
 
@@ -68,10 +68,10 @@ public abstract class ImageTransformation implements Serializable {
         }
 
         @Override
-        public int getMax() {
-            int maxR = rHistogram.getMax();
-            int maxG = gHistogram.getMax();
-            int maxB = bHistogram.getMax();
+        public int getHistMax() {
+            int maxR = rHistogram.getHistMax();
+            int maxG = gHistogram.getHistMax();
+            int maxB = bHistogram.getHistMax();
             return getColor(maxR, maxG, maxB);
         }
 
@@ -86,59 +86,58 @@ public abstract class ImageTransformation implements Serializable {
     private static final class Gray8Histogram implements ColorHistogram {
 
         private final int[] histogram;
-        private int max;
+        private int histMax;
 
         Gray8Histogram() {
             histogram = new int[256];
-            max = 0;
+            histMax = 0;
         }
 
         @Override
         public int add(int val) {
             int ci = val & 0xFF;
             if (ci > 0) {
-                histogram[ci] = histogram[ci] + 1;
-                if (ci > max) {
-                    max = ci;
-                }
+                histogram[ci] = ++histogram[ci];
+                histMax = histMax ^ ((histMax ^ ci) & -(histMax < ci ? 1 : 0)); // max(histMax, ci) - non branching bitwise max based on
+                                                                                // https://graphics.stanford.edu/~seander/bithacks.html
             }
-            return max;
+            return histMax;
         }
 
         @Override
         public int remove(int val) {
             int ci = val & 0xFF;
             if (ci > 0) {
-                int ciCount = histogram[ci] - 1;
+                int ciCount = --histogram[ci];
                 if (ciCount < 0) {
                     throw new IllegalStateException("Illegal remove at " + ci + " from the histogram");
                 } else {
                     histogram[ci] = ciCount;
                 }
-                if (ci == max) {
-                    if (histogram[max] == 0) {
-                        max = 0;
-                        for (int pv = ci - 1; pv >= 0; pv--) {
-                            if (histogram[pv] > 0) {
-                                max = pv;
-                                break;
-                            }
+                if (histogram[histMax] == 0) {
+                    // no need to test if current ci is max because the only time histogram of max gets to 0
+                    // is if max > 0 and ci == max
+                    histMax = 0;
+                    for (int pv = ci - 1; pv >= 0; pv--) {
+                        if (histogram[pv] > 0) {
+                            histMax = pv;
+                            break;
                         }
                     }
                 }
             }
-            return max;
+            return histMax;
         }
 
         @Override
-        public int getMax() {
-            return max;
+        public int getHistMax() {
+            return histMax;
         }
 
         @Override
         public void clear() {
             Arrays.fill(histogram, 0);
-            max = 0;
+            histMax = 0;
         }
     }
 
@@ -451,7 +450,7 @@ public abstract class ImageTransformation implements Serializable {
                 }
 
                 private int getCurrentPixel() {
-                    return histogram.getMax();
+                    return histogram.getHistMax();
                 }
 
                 /**
