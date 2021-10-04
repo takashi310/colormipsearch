@@ -169,6 +169,15 @@ public abstract class ImageTransformation implements Serializable {
         };
     }
 
+    public static ImageTransformation shift(int dx, int dy) {
+        return new ImageTransformation() {
+            @Override
+            protected int apply(LImage lImage, int x, int y) {
+                return lImage.get(x - dx, y - dy);
+            }
+        };
+    }
+
     /**
      * Transformation that clears the image regions identified by the given predicate.
      *
@@ -348,8 +357,8 @@ public abstract class ImageTransformation implements Serializable {
 
     private static ImageTransformation unsafeMaxFilterWithHistogram(double radius) {
         int[] radii = makeLineRadii(radius);
-        int kRadius = radii[radii.length - 1];
-        int kHeight = (radii.length - 1) / 2;
+        int kRadius = radii[radii.length - 1]; // kernel radius
+        int kHeight = (radii.length - 1) / 2; // kernel size
 
         return new ImageTransformation() {
             /**
@@ -398,14 +407,14 @@ public abstract class ImageTransformation implements Serializable {
                         int cachedPixelY = y - cachedRowsStart;
                         int miny = cachedPixelY - kRadius;
                         int maxy = cachedPixelY - kRadius + kHeight;
-                        for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd-cachedRowsStart, maxy); ay++) {
+                        for (int ay = Math.max(0, miny); ay < Math.min(cachedRowsEnd - cachedRowsStart, maxy); ay++) {
                             int h = ay - cachedPixelY + kRadius;
-                            int toAddX = toAddCoord.apply(x, h);
+                            int toAddX = x + radii[2 * h + 1]; // !!!toAddCoord.apply(x, h);
                             if (toAddX < lImage.width() && toAddX >= 0) {
                                 int toAddP = pixelCache[ay * lImage.width() + toAddX];
                                 histogram.add(toAddP);
                             }
-                            int toRemoveX = toRemoveCoord.apply(x, h);
+                            int toRemoveX = x + radii[2 * h] - 1;    //  !!!toRemoveCoord.apply(x, h);
                             if (toRemoveX >= 0 && toRemoveX < lImage.width()) {
                                 int toRemoveP = pixelCache[ay * lImage.width() + toRemoveX];
                                 try {
@@ -427,7 +436,7 @@ public abstract class ImageTransformation implements Serializable {
                 }
 
                 private int prevLeftToRight(int x, int h) {
-                    return x - 1 + radii[2 * h];
+                    return x + radii[2 * h] - 1;
                 }
 
                 private int nextRightToLeft(int x, int h) {
@@ -469,12 +478,13 @@ public abstract class ImageTransformation implements Serializable {
                                     ? cachedRowsStart + kHeight
                                     : lImage.height();
                     for (int r = cachedRowsStart; r < cachedRowsEnd; r++) {
-                        cacheRow(cachedRowsStart, r-cachedRowsStart);
+                        cacheRow(cachedRowsStart + r, r - cachedRowsStart);
                     }
                 }
 
                 private void cacheNextRow(int y) {
-                    if (y > (cachedRowsEnd - cachedRowsStart) / 2 &&  cachedRowsEnd + 1 < lImage.height()) {
+                    int minCachedY = y - cachedRowsStart - kRadius;
+                    if (minCachedY > 0 &&  cachedRowsEnd + 1 < lImage.height()) {
                         System.arraycopy(pixelCache, lImage.width(), pixelCache, 0, pixelCache.length - lImage.width());
                         cachedRowsStart++;
                         cachedRowsEnd++;

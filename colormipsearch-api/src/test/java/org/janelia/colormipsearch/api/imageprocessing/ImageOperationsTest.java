@@ -59,11 +59,12 @@ public class ImageOperationsTest {
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .unsafeMaxFilter(radius);
 
-        for (int i = 1; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             String testImageName = "src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif";
             ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
             ImageArray<?> maxFilteredImage = maxFilterProcessing
+                    .thenExtend(ImageTransformation.shift(0, 0))
                     .applyTo(testMIP, 0, 0, 0, 0)
                     .toImageArray();
             RankFilters maxFilter = new RankFilters();
