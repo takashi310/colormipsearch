@@ -212,7 +212,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                         .orElse(null);
             }
             Path outputPath;
-            if (isEmLibrary(library.input)) {
+            if (MIPsHandlingUtils.isEmLibrary(library.input)) {
                 outputPath = Paths.get(args.commonArgs.outputDir, args.skeletonsOutput);
             } else {
                 outputPath = Paths.get(args.commonArgs.outputDir, args.linesOutput);
@@ -281,8 +281,8 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
             Map<String, List<ColorDepthMetadata>> resultsByLineOrSkeleton = cdmipsPage.stream()
                     .filter(cdmip -> checkMIPLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
-                    .filter(cdmip -> isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
-                    .map(cdmip -> isEmLibrary(libraryArg.input)
+                    .filter(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryArg.input) || (hasSample(cdmip) && hasConsensusLine(cdmip) && hasPublishedName(args.includeMIPsWithoutPublisingName, cdmip)))
+                    .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryArg.input)
                             ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                             : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
                     .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
@@ -340,10 +340,6 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     .count() == 0;
         }
         return true;
-    }
-
-    private boolean isEmLibrary(String lname) {
-        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") && StringUtils.containsIgnoreCase(lname, "hemibrain");
     }
 
     private boolean hasSample(ColorDepthMIP cdmip) {

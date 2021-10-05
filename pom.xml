@@ -28,6 +28,12 @@
                 <scopes.provided>compile</scopes.provided>
             </properties>
         </profile>
+        <profile>
+            <id>dev</id>
+            <build>
+                <directory>target-dev</directory>
+            </build>
+	</profile>
     </profiles>
 
     <repositories>
