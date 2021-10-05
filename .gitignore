@@ -4,7 +4,7 @@
 .idea
 hs_err_pid*
 testdata
-target
+target*
 local
 
 .DS_Store

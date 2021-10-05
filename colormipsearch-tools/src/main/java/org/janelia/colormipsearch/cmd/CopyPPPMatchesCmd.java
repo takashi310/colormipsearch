@@ -153,11 +153,11 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
                         }))
                 .filter(Results::hasResults)
                 .forEach(res -> {
-                    PPPUtils.writeResultsToJSONFile(
+                    Utils.writeResultsToJSONFile(
                             res,
-                            outputDir == null ? null : outputDir.resolve(res.getNeuronName() + ".json").toFile(),
+                            CmdUtils.getOutputFile(outputDir, new File(res.getNeuronName() + ".json")),
                             args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
-                });
+                })
                 ;
     }
 

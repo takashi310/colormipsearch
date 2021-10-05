@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
@@ -184,9 +185,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
                 .map(EmPPPMatches::pppMatchesBySingleNeuron)
-                .forEach(pppMatches -> PPPUtils.writeResultsToJSONFile(
+                .forEach(pppMatches -> Utils.writeResultsToJSONFile(
                         pppMatches,
-                        outputDir == null ? null : outputDir.resolve(pppMatches.getNeuronName() + ".json").toFile(),
+                        CmdUtils.getOutputFile(outputDir, new File(pppMatches.getNeuronName() + ".json")),
                         args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis()-start)/1000.);
     }

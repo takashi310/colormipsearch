@@ -1,5 +1,8 @@
 package org.janelia.colormipsearch.api;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,9 +16,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static <T> void processPartitionStream(Stream<T> stream,
                                                   int partitionSize,
@@ -85,6 +95,22 @@ public class Utils {
             return bestResultsForSpecifiedCriteria.subList(0, topResults);
         } else {
             return bestResultsForSpecifiedCriteria;
+        }
+    }
+
+    public static <T, R extends Results<List<T>>> void writeResultsToJSONFile(R results, File f, ObjectWriter objectWriter) {
+        try {
+            if (CollectionUtils.isNotEmpty(results.getResults())) {
+                if (f == null) {
+                    objectWriter.writeValue(System.out, results);
+                } else {
+                    LOG.info("Writing {}", f);
+                    objectWriter.writeValue(f, results);
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Error writing CDS results to json file {}", f, e);
+            throw new UncheckedIOException(e);
         }
     }
 

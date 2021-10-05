@@ -121,7 +121,7 @@ public class CreateReversePPPMatchesCmd extends AbstractCmd {
                 .sequential()
                 .forEach(res -> {
                     if (outputDir == null) {
-                        PPPUtils.writeResultsToJSONFile(
+                        Utils.writeResultsToJSONFile(
                                 res,
                                 null,
                                 args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());

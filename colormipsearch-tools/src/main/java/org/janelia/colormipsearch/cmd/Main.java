@@ -57,7 +57,8 @@ public class Main {
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs),
                 new ConvertPPPResultsCmd("convertPPPResults", commonArgs),
                 new CopyPPPMatchesCmd("copyPPPMatches", commonArgs),
-                new CreateReversePPPMatchesCmd("createReversePPPMatches", commonArgs)
+                new CreateReversePPPMatchesCmd("createReversePPPMatches", commonArgs),
+                new MergeMipsCmd("mergeMips", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

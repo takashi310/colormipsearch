@@ -16,22 +16,6 @@ import org.slf4j.LoggerFactory;
 public class PPPUtils {
     private static final Logger LOG = LoggerFactory.getLogger(PPPUtils.class);
 
-    public static <T, R extends Results<List<T>>> void writeResultsToJSONFile(R results, File f, ObjectWriter objectWriter) {
-        try {
-            if (CollectionUtils.isNotEmpty(results.getResults())) {
-                if (f == null) {
-                    objectWriter.writeValue(System.out, results);
-                } else {
-                    LOG.info("Writing {}", f);
-                    objectWriter.writeValue(f, results);
-                }
-            }
-        } catch (IOException e) {
-            LOG.error("Error writing CDS results to json file {}", f, e);
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public static EmPPPMatches readEmPPPMatchesFromJSONFile(File f, ObjectMapper objectMapper) {
         try {
             LOG.info("Read {}", f);
