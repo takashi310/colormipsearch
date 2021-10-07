@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.api.imageprocessing;
 
+import java.util.function.BiPredicate;
+
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
@@ -16,8 +18,9 @@ public class ImageOperationsTest {
     public void overExpressesMaskExpression() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/1281324958-DNp11-RT_18U_FL.tif", 1);
         ImageArray<?> testImageArray = ImageArrayUtils.fromImagePlus(testImage);
+        BiPredicate<Integer, Integer> labelRegion = (x, y) -> x < 330 && y < 100 || x >= testImageArray.getWidth() - 250 && y < 90;
         LImage testQueryImage = LImageUtils.create(testImageArray)
-                .mapi(ImageTransformation.clearRegion(ImageTransformation.getLabelRegionCond(testImageArray.getWidth())));
+                .mapi(ImageTransformation.clearRegion(labelRegion));
         LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                 testQueryImage.mapi(ImageTransformation.maxFilter(60)),
                 testQueryImage.mapi(ImageTransformation.maxFilter(20)),
@@ -36,8 +39,9 @@ public class ImageOperationsTest {
     public void unsafeOverExpressesMaskExpression() {
         ImagePlus testImage = new Opener().openTiff("src/test/resources/colormipsearch/api/imageprocessing/1281324958-DNp11-RT_18U_FL.tif", 1);
         ImageArray<?> testImageArray = ImageArrayUtils.fromImagePlus(testImage);
+        BiPredicate<Integer, Integer> labelRegion = (x, y) -> x < 330 && y < 100 || x >= testImageArray.getWidth() - 250 && y < 90;
         LImage testQueryImage = LImageUtils.create(testImageArray, 60, 60, 60, 60)
-                .mapi(ImageTransformation.clearRegion(ImageTransformation.getLabelRegionCond(testImageArray.getWidth())));
+                .mapi(ImageTransformation.clearRegion(labelRegion));
         LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                 testQueryImage.mapi(ImageTransformation.unsafeMaxFilter(60)),
                 testQueryImage.mapi(ImageTransformation.unsafeMaxFilter(20)),

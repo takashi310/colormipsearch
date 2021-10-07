@@ -34,6 +34,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorDepthSearchAlgorithmProvider
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api.cdsearch.GradientAreaGapUtils;
+import org.janelia.colormipsearch.api.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.api.cdsearch.NegativeColorDepthMatchScore;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
@@ -116,12 +117,14 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     }
 
     private void calculateGradientAreaScore(NegativeScoreResultsArgs args) {
+        ImageRegionGenerator labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
         ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider =
                 ColorDepthSearchAlgorithmProviderFactory.createNegativeMatchCDSAlgorithmProvider(
                         args.mirrorMask,
                         args.negativeRadius,
                         args.borderSize,
-                        loadQueryROIMask(args.queryROIMaskName));
+                        loadQueryROIMask(args.queryROIMaskName),
+                        labelRegionsProvider);
         Executor executor = CmdUtils.createCDSExecutor(args.commonArgs);
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

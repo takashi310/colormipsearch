@@ -7,6 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
+import org.janelia.colormipsearch.api.Results;
 import org.janelia.colormipsearch.api.cdmips.MIPImage;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class CachedMIPsUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CachedMIPsUtils.class);
 
-    private static LoadingCache<MIPMetadata, MIPImage> mipsImagesCache;
+    private static LoadingCache<MIPMetadata, Results<MIPImage>> mipsImagesCache;
 
     public static void initializeCache(long maxSize, long expirationInSeconds) {
         if (maxSize > 0) {
@@ -28,10 +29,10 @@ public class CachedMIPsUtils {
                 cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
             }
             mipsImagesCache = cacheBuilder
-                    .build(new CacheLoader<MIPMetadata, MIPImage>() {
+                    .build(new CacheLoader<MIPMetadata, Results<MIPImage>>() {
                         @Override
-                        public MIPImage load(MIPMetadata mipInfo) {
-                            return MIPsUtils.loadMIP(mipInfo);
+                        public Results<MIPImage> load(MIPMetadata mipInfo) {
+                            return tryMIPLoad(mipInfo);
                         }
                     });
         } else {
@@ -41,14 +42,27 @@ public class CachedMIPsUtils {
 
     public static MIPImage loadMIP(MIPMetadata mipInfo) {
         try {
-            if (mipInfo == null || !MIPsUtils.exists(mipInfo)) {
+            if (mipInfo == null) {
                 return null;
-            } else {
-                return mipsImagesCache == null ? MIPsUtils.loadMIP(mipInfo) : mipsImagesCache.get(mipInfo);
             }
+            Results<MIPImage> mipsImageResult;
+            if (mipsImagesCache != null) {
+                mipsImageResult = mipsImagesCache.get(mipInfo);
+            } else {
+                mipsImageResult = tryMIPLoad(mipInfo);
+            }
+            return mipsImageResult.getResults();
         } catch (ExecutionException e) {
             LOG.error("Error loading {}", mipInfo, e);
             throw new IllegalStateException(e);
+        }
+    }
+
+    private static Results<MIPImage> tryMIPLoad(MIPMetadata mipInfo) {
+        if (MIPsUtils.exists(mipInfo)) {
+            return new Results<>(MIPsUtils.loadMIP(mipInfo));
+        } else {
+            return new Results<>(null);
         }
     }
 

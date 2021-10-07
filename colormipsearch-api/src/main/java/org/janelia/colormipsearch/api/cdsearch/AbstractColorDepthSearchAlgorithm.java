@@ -42,17 +42,19 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
     final ImageArray<?> negQueryImage;
     final PixelPositions queryPositions;
     final PixelPositions negQueryPositions;
+    final ImageRegionGenerator ignoredRegionsProvider;
     final int targetThreshold;
     final double zTolerance;
 
     protected AbstractColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold,
                                                 ImageArray<?> negQueryImage, int negQueryThreshold,
-                                                int targetThreshold, double zTolerance) {
+                                                int targetThreshold, double zTolerance,
+                                                ImageRegionGenerator ignoredRegionsProvider) {
         this.queryImage = queryImage;
         this.negQueryImage = negQueryImage;
         this.targetThreshold = targetThreshold;
         this.zTolerance = zTolerance;
-
+        this.ignoredRegionsProvider = ignoredRegionsProvider;
         this.queryPositions = getMaskPosArray(queryImage, queryThreshold);
         if (negQueryImage != null) {
             this.negQueryPositions = getMaskPosArray(negQueryImage, negQueryThreshold);
@@ -89,11 +91,11 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         int miny = msk.getHeight();
         int maxx = 0;
         int maxy = 0;
-        BiPredicate<Integer, Integer> isLabel = ImageTransformation.getLabelRegionCond(msk.getWidth());
+        BiPredicate<Integer, Integer> ignoredRegions = ignoredRegionsProvider.getRegion(msk);
         for (int pi = 0; pi < sumpx; pi++) {
             int x = pi % msk.getWidth();
             int y = pi / msk.getWidth();
-            if (isLabel.test(x, y)) {
+            if (ignoredRegions.test(x, y)) {
                 // label regions are not to be searched
                 continue;
             }

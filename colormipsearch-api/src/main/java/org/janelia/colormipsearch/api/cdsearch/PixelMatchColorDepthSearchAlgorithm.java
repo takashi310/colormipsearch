@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api.cdsearch;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
@@ -27,8 +28,9 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     public PixelMatchColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold, boolean mirrorQuery,
                                                ImageArray<?> negQueryImage, int negQueryThreshold,
                                                boolean mirrorNegQuery, int targetThreshold,
-                                               double zTolerance, int xyshift) {
-        super(queryImage, queryThreshold, negQueryImage, negQueryThreshold, targetThreshold, zTolerance);
+                                               double zTolerance, int xyshift,
+                                               ImageRegionGenerator ignoredRegionsProvider) {
+        super(queryImage, queryThreshold, negQueryImage, negQueryThreshold, targetThreshold, zTolerance, ignoredRegionsProvider);
         // shifting
         targetMasksList = generateShiftedMasks(queryPixelPositions(), xyshift, queryImage.getWidth(), queryImage.getHeight());
         if (negQueryImage != null) {

@@ -31,7 +31,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             boolean mirrorMask,
             int targetThreshold,
             double pixColorFluctuation,
-            int xyShift) {
+            int xyShift,
+            ImageRegionGenerator ignoredRegionsProvider) {
         LOG.info("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
                 mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
@@ -61,7 +62,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                         false,
                         cdsParams.getIntParam("dataThreshold", targetThreshold),
                         zTolerance,
-                        cdsParams.getIntParam("xyShift", xyShift));
+                        cdsParams.getIntParam("xyShift", xyShift),
+                        ignoredRegionsProvider);
             }
         };
     }
@@ -70,7 +72,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             boolean mirrorMask,
             int negativeRadius,
             int borderSize,
-            ImageArray<?> roiMaskImageArray) {
+            ImageArray<?> roiMaskImageArray,
+            ImageRegionGenerator ignoredRegionsProvider) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
@@ -90,10 +93,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                                                                                                                 int queryThreshold,
                                                                                                                 int queryBorderSize,
                                                                                                                 ColorDepthSearchParams cdsParams) {
-                BiPredicate<Integer, Integer> isLabel = ImageTransformation.getLabelRegionCond(queryImageArray.getWidth());
-                ImageTransformation clearLabels = ImageTransformation.clearRegion(isLabel);
-
-                ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearLabels)
+                ImageTransformation clearIgnoredRegions = ImageTransformation.clearRegion(ignoredRegionsProvider.getRegion(queryImageArray));
+                ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearIgnoredRegions)
                         .applyColorTransformation(ColorTransformation.mask(queryThreshold))
                         .unsafeMaxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
                 long startTime = System.currentTimeMillis();
@@ -101,9 +102,9 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 if (roiMaskImageArray == null) {
                     roiMaskImage = null;
                 } else {
-                    roiMaskImage = LImageUtils.create(roiMaskImageArray).mapi(clearLabels);
+                    roiMaskImage = LImageUtils.create(roiMaskImageArray).mapi(clearIgnoredRegions);
                 }
-                LImage queryImage = LImageUtils.create(queryImageArray, borderSize, borderSize, borderSize, borderSize).mapi(clearLabels);
+                LImage queryImage = LImageUtils.create(queryImageArray, borderSize, borderSize, borderSize, borderSize).mapi(clearIgnoredRegions);
 
                 LImage maskForRegionsWithTooMuchExpression = LImageUtils.combine2(
                         queryImage.mapi(ImageTransformation.unsafeMaxFilter(60)),
@@ -119,7 +120,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                         roiMaskImage,
                         cdsParams.getIntParam("queryThreshold", queryThreshold),
                         cdsParams.getBoolParam("mirrorMask", mirrorMask),
-                        clearLabels,
+                        clearIgnoredRegions,
                         negativeRadiusDilation
                 );
 
@@ -135,7 +136,8 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             double pixColorFluctuation,
             int xyShift,
             int negativeRadius,
-            ImageArray<?> roiMaskImageArray) {
+            ImageArray<?> roiMaskImageArray,
+            ImageRegionGenerator ignoredRegionsProvider) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
@@ -158,10 +160,10 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                                                                                                       int queryBorderSize,
                                                                                                       ColorDepthSearchParams cdsParams) {
                 ColorDepthSearchAlgorithm<ColorMIPMatchScore> posScoreCDSAlg =
-                        createPixMatchCDSAlgorithmProvider(mirrorMask, targetThreshold, pixColorFluctuation, xyShift)
+                        createPixMatchCDSAlgorithmProvider(mirrorMask, targetThreshold, pixColorFluctuation, xyShift, ignoredRegionsProvider)
                                 .createColorDepthQuerySearchAlgorithm(queryImageArray, queryThreshold, queryBorderSize, cdsParams);
                 ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSAlg =
-                        createNegativeMatchCDSAlgorithmProvider(mirrorMask, negativeRadius, queryBorderSize, roiMaskImageArray)
+                        createNegativeMatchCDSAlgorithmProvider(mirrorMask, negativeRadius, queryBorderSize, roiMaskImageArray, ignoredRegionsProvider)
                                 .createColorDepthQuerySearchAlgorithm(queryImageArray, queryThreshold, queryBorderSize, cdsParams);
                 return new PixelMatchWithNegativeScoreColorDepthSearchAlgorithm(posScoreCDSAlg, negScoreCDSAlg);
             }

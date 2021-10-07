@@ -16,6 +16,7 @@ import org.janelia.colormipsearch.api.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.api.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
@@ -78,12 +79,14 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
         ColorMIPSearchDriver colorMIPSearchDriver;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
+        ImageRegionGenerator labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
         if (args.onlyPositiveScores()) {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
                     args.mirrorMask,
                     args.dataThreshold,
                     args.pixColorFluctuation,
-                    args.xyShift
+                    args.xyShift,
+                    labelRegionsProvider
             );
         } else {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchWithNegativeScoreCDSAlgorithmProvider(
@@ -92,7 +95,8 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
                     args.pixColorFluctuation,
                     args.xyShift,
                     args.negativeRadius,
-                    loadQueryROIMask(args.queryROIMaskName)
+                    loadQueryROIMask(args.queryROIMaskName),
+                    labelRegionsProvider
             );
         }
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, args.maskThreshold, cdsAlgorithmProvider);

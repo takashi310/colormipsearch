@@ -69,6 +69,16 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
     int processingPartitionSize = 100;
 
+    @Parameter(names = {"--no-name-labels"},
+            description = "If true the mips do not have the name labels so they do not need to be cleared",
+            arity = 0)
+    boolean noNameLabel = false;
+
+    @Parameter(names = {"--no-colormap-labels"},
+            description = "If true the mips do not have the color map labels so they do not need to be cleared",
+            arity = 0)
+    boolean noColorScaleLabel = false;
+
     @ParametersDelegate
     final CommonArgs commonArgs;
 
@@ -122,5 +132,13 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
 
     boolean onlyPositiveScores() {
         return !withGradientScores;
+    }
+
+    boolean hasNameLabel() {
+        return !noNameLabel;
+    }
+
+    boolean hasColorScaleLabel() {
+        return !noColorScaleLabel;
     }
 }

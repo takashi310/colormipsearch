@@ -150,9 +150,25 @@ public abstract class ImageTransformation implements Serializable {
         };
     }
 
-    public static BiPredicate<Integer, Integer> getLabelRegionCond(int imageWidth) {
-        return (x, y) -> x >= imageWidth - 250 && y < 90;
-    }
+//    public static BiPredicate<Integer, Integer> getColorMapRegion(int imageWidth, int imageHeight) {
+//        // this is the color map on the right-top image
+//        if (imageWidth / 2 > 250) {
+//            return (x, y) -> x >= imageWidth - 250 && y < 90;
+//        } else {
+//            return (x, y) -> false;
+//        }
+//    }
+//
+//    public static BiPredicate<Integer, Integer> getNameAndColorMapRegion(int imageWidth, int imageHeight) {
+//        // this is the name label that sometimes is on the MIPs - especially the EM mips
+//        if (imageWidth < imageHeight) {
+//            // apparently the names is only on the brain mips and I use
+//            // the shape of the mips width < height to determine that
+//            return (x, y) -> x < 330 && y < 100;
+//        } else {
+//            return (x, y) -> false;
+//        }
+//    }
 
     /**
      * Image horizontal mirroring.

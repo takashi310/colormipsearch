@@ -10,12 +10,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import org.janelia.colormipsearch.api.cdsearch.ImageRegionGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,5 +78,25 @@ class CmdUtils {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static <A extends AbstractColorDepthMatchArgs> ImageRegionGenerator getLabelsRegionGenerator(A args) {
+        // define the label regions
+        return img -> {
+            int imgWidth = img.getWidth();
+            BiPredicate<Integer, Integer> colorScaleLabelRegion;
+            if (args.hasColorScaleLabel() && imgWidth > 260) {
+                colorScaleLabelRegion = (x, y) -> x >= imgWidth - 260 && y < 90;
+            } else {
+                colorScaleLabelRegion = (x, y) -> false;
+            }
+            BiPredicate<Integer, Integer> nameLabelRegion;
+            if (args.hasNameLabel()) {
+                nameLabelRegion = (x, y) -> x < 330 && y < 100;
+            } else {
+                nameLabelRegion = (x, y) -> false;
+            }
+            return colorScaleLabelRegion.or(nameLabelRegion);
+        };
     }
 }
