@@ -204,7 +204,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
     private void replaceMIPsAttributes(String id, ObjectNode srcAttributes, String attributeName, ObjectNode toUpdate) {
         String attributeValue = getFieldValue(srcAttributes, attributeName);
         if (StringUtils.isNotBlank(attributeValue)) {
-            LOG.debug("Setting {} for {} to {}", id, attributeValue);
+            LOG.info("Setting {} for {} to {}", attributeName, id, attributeValue);
             toUpdate.put(attributeName, attributeValue);
         }
     }
