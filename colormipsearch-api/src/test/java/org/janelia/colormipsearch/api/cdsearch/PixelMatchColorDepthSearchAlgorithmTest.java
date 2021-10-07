@@ -9,6 +9,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class PixelMatchColorDepthSearchAlgorithmTest {
@@ -34,6 +35,7 @@ public class PixelMatchColorDepthSearchAlgorithmTest {
         ColorMIPMatchScore score = colorDepthSearchAlgorithm.calculateMatchingScore(testTargetArray, Collections.emptyMap());
         assertTrue(score.isMatch());
         assertEquals(87, score.getMatchingPixNum());
+        assertFalse(score.isMirrored());
     }
 
 
