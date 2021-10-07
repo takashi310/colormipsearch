@@ -94,13 +94,11 @@ public class MIPsUtils {
             }
         } else {
             Path imageFilePath = Paths.get(mip.getImageName());
-            if (Files.exists(imageFilePath)) {
-                return imageFilePath.toFile().length() > 0L;
-            } else if (StringUtils.isNotBlank(mip.getImageArchivePath())) {
+            if (StringUtils.isNotBlank(mip.getImageArchivePath())) {
                 Path fullImageFilePath = Paths.get(mip.getImageArchivePath()).resolve(imageFilePath);
                 return Files.exists(fullImageFilePath) && fullImageFilePath.toFile().length() > 0;
             } else {
-                return false;
+                return Files.exists(imageFilePath);
             }
         }
     }
