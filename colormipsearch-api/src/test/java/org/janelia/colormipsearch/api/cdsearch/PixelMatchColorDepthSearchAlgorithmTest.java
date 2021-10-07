@@ -1,0 +1,20 @@
+package org.janelia.colormipsearch.api.cdsearch;
+
+import ij.ImagePlus;
+import ij.io.Opener;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
+import org.junit.Test;
+
+public class PixelMatchColorDepthSearchAlgorithmTest {
+
+    @Test
+    public void pixelMatchScore() {
+        ImagePlus testMask = new Opener().openTiff("src/test/resources/colormipsearch/api/cdsearch/1752016801-LPLC2-RT_18U.tif", 1);
+        ImagePlus testTarget = new Opener().openTiff("src/test/resources/colormipsearch/api/cdsearch/GMR_31G04_AE_01-20190813_66_F3-40x-Brain-JRC2018_Unisex_20x_HR-2704505419467849826-CH2-07_CDM.tif", 1);
+        ImageArray<?> testMaskArray = ImageArrayUtils.fromImagePlus(testMask);
+        ImageArray<?> testTargetArray = ImageArrayUtils.fromImagePlus(testTarget);
+        // TODO - finish it
+    }
+
+}
