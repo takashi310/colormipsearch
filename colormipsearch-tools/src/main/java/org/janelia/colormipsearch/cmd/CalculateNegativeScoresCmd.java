@@ -283,7 +283,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
             return Collections.emptyList();
         }
         ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> gradientScoreCalculator =
-                negativeMatchCDSArgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(inputQueryImage.getImageArray(), args.borderSize, args.maskThreshold);
+                negativeMatchCDSArgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(inputQueryImage.getImageArray(), args.maskThreshold, args.borderSize);
         return selectedCDSResultsForQueryMIP.stream()
                 .map(csr -> CompletableFuture.supplyAsync(() -> {
                     long startGapCalcTime = System.currentTimeMillis();
