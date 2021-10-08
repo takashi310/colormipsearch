@@ -48,18 +48,15 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
 
     private final LocalMIPFilesSearchArgs args;
     private final Supplier<Long> cacheSizeSupplier;
-    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final boolean useSpark;
 
     ColorDepthSearchLocalMIPsCmd(String commandName,
                                  CommonArgs commonArgs,
                                  Supplier<Long> cacheSizeSupplier,
-                                 Supplier<Long> cacheExpirationInSecondsSupplier,
                                  boolean useSpark) {
         super(commandName);
         this.args = new LocalMIPFilesSearchArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
-        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.useSpark = useSpark;
     }
 
@@ -72,7 +69,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     void execute() {
         CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         // initialize the cache
-        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
+        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
         runSearchForLocalMIPFiles(args);
     }
 

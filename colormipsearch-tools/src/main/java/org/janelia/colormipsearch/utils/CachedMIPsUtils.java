@@ -19,15 +19,12 @@ public class CachedMIPsUtils {
 
     private static LoadingCache<MIPMetadata, Results<MIPImage>> mipsImagesCache;
 
-    public static void initializeCache(long maxSize, long expirationInSeconds) {
+    public static void initializeCache(long maxSize) {
         if (maxSize > 0) {
-            LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
+            LOG.info("Initialize cache: size={}", maxSize);
             CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
                     .concurrencyLevel(8)
                     .maximumSize(maxSize);
-            if (expirationInSeconds > 0) {
-                cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
-            }
             mipsImagesCache = cacheBuilder
                     .build(new CacheLoader<MIPMetadata, Results<MIPImage>>() {
                         @Override

@@ -58,18 +58,15 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
 
     private final JsonMIPsSearchArgs args;
     private final Supplier<Long> cacheSizeSupplier;
-    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final boolean useSpark;
 
     ColorDepthSearchJSONInputCmd(String commandName,
                                  CommonArgs commonArgs,
                                  Supplier<Long> cacheSizeSupplier,
-                                 Supplier<Long> cacheExpirationInSecondsSupplier,
                                  boolean useSpark) {
         super(commandName);
         this.args = new JsonMIPsSearchArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
-        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.useSpark = useSpark;
     }
 
@@ -82,7 +79,7 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
     void execute() {
         CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         // initialize the cache
-        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
+        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
         runColorDepthSearchFromJSONInput(args);
     }
 

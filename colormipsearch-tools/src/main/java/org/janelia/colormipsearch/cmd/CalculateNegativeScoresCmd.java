@@ -91,16 +91,13 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
 
     private final NegativeScoreResultsArgs args;
     private final Supplier<Long> cacheSizeSupplier;
-    private final Supplier<Long> cacheExpirationInSecondsSupplier;
 
     CalculateNegativeScoresCmd(String commandName,
                                CommonArgs commonArgs,
-                               Supplier<Long> cacheSizeSupplier,
-                               Supplier<Long> cacheExpirationInSecondsSupplier) {
+                               Supplier<Long> cacheSizeSupplier) {
         super(commandName);
         this.args = new NegativeScoreResultsArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
-        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
     }
 
     @Override
@@ -112,7 +109,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     void execute() {
         CmdUtils.createOutputDirs(args.getOutputDir());
         // initialize the cache
-        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get(), cacheExpirationInSecondsSupplier.get());
+        CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
         calculateGradientAreaScore(args);
     }
 

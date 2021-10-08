@@ -17,8 +17,6 @@ public class Main {
     private static class MainArgs {
         @Parameter(names = "--cacheSize", description = "Max cache size")
         long cacheSize = 0L;
-        @Parameter(names = "--cacheExpirationInSeconds", description = "Cache expiration in seconds")
-        long cacheExpirationInSeconds = 300;
         @Parameter(names = "-h", description = "Display the help message", help = true, arity = 0)
         boolean displayHelpMessage = false;
     }
@@ -34,24 +32,20 @@ public class Main {
                         "searchFromJSON",
                         commonArgs,
                         () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds,
                         false),
                 new ColorDepthSearchLocalMIPsCmd(
                         "searchLocalFiles",
                         commonArgs,
                         () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds,
                         false),
                 new CalculateNegativeScoresCmd(
                         "gradientScore",
                         commonArgs,
-                        () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds),
+                        () -> mainArgs.cacheSize),
                 new UpdateGradientScoresFromReverseSearchResultsCmd(
                         "gradientScoresFromMatchedResults",
                         commonArgs,
-                        () -> mainArgs.cacheSize,
-                        () -> mainArgs.cacheExpirationInSeconds),
+                        () -> mainArgs.cacheSize),
                 new MergeResultsCmd("mergeResults", commonArgs),
                 new NormalizeScoresCmd("normalizeScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs),

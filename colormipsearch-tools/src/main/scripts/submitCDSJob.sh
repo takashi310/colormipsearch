@@ -27,13 +27,12 @@ function runCDSJob {
     fi
 
     MIPS_CACHE_SIZE=${MIPS_CACHE_SIZE:-200000}
-    MIPS_CACHE_EXPIRATION=${MIPS_CACHE_EXPIRATION:-60}
 
     JAVA_EXEC=${JAVA_EXEC:-java}
     CDS_JAR=${CDS_JAR:-target/colormipsearch-${CDS_JAR_VERSION}-jar-with-dependencies.jar}
     cmd="${JAVA_EXEC} ${JAVA_OPTS} ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
         -jar ${CDS_JAR} \
-        --cacheSize ${MIPS_CACHE_SIZE} --cacheExpirationInSeconds ${MIPS_CACHE_EXPIRATION} \
+        --cacheSize ${MIPS_CACHE_SIZE} \
         searchFromJSON \
         -m ${MASKS_FILES} \
         --masks-index ${MASK_OFFSET} --masks-length ${MASKS_PER_JOB} \

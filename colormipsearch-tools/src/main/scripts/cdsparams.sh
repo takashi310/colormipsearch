@@ -28,7 +28,6 @@ export MEM_RESOURCE=170
 # a cache size of 100000 is OK if there are at least 160GB of memory - otherwise set it to 50000 or
 # to some other reasonable value based on the available memory
 export MIPS_CACHE_SIZE=100000
-export MIPS_CACHE_EXPIRATION=60
 
 CDSMATCHES_SUBDIR=cdsresults.matches
 export CDSMATCHES_RESULTS_DIR=$WORKING_DIR/${CDSMATCHES_SUBDIR}

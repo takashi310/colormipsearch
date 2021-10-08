@@ -98,16 +98,13 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         private static LoadingCache<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesCache;
         private static Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader;
 
-        static void initializeCache(long maxSize, long expirationInSeconds, Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader) {
+        static void initializeCache(long maxSize, Function<String, Map<String, List<ColorMIPSearchMatchMetadata>>> cdsMatchesLoader) {
             ColorDepthSearchMatchesProvider.cdsMatchesLoader = cdsMatchesLoader;
             if (maxSize > 0) {
-                LOG.info("Initialize cache: size={} and expiration={}s", maxSize, expirationInSeconds);
+                LOG.info("Initialize cache: size={}", maxSize);
                 CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder()
                         .concurrencyLevel(8)
                         .maximumSize(maxSize);
-                if (expirationInSeconds > 0) {
-                    cacheBuilder.expireAfterAccess(Duration.ofSeconds(expirationInSeconds));
-                }
                 cdsMatchesCache = cacheBuilder
                         .build(new CacheLoader<String, Map<String, List<ColorMIPSearchMatchMetadata>>>() {
                             @Override
@@ -157,17 +154,14 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
 
     private final UpdateGradientScoresArgs args;
     private final Supplier<Long> cacheSizeSupplier;
-    private final Supplier<Long> cacheExpirationInSecondsSupplier;
     private final ObjectMapper mapper;
 
     UpdateGradientScoresFromReverseSearchResultsCmd(String commandName,
                                                     CommonArgs commonArgs,
-                                                    Supplier<Long> cacheSizeSupplier,
-                                                    Supplier<Long> cacheExpirationInSecondsSupplier) {
+                                                    Supplier<Long> cacheSizeSupplier) {
         super(commandName);
         this.args = new UpdateGradientScoresArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
-        this.cacheExpirationInSecondsSupplier = cacheExpirationInSecondsSupplier;
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -183,7 +177,6 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         // initialize the cache for the reverse matches
         ColorDepthSearchMatchesProvider.initializeCache(
                 cacheSizeSupplier.get(),
-                cacheExpirationInSecondsSupplier.get(),
                 fn -> loadCdsMatches(fn).getResults().stream()
                         .filter(cdsr -> cdsr.getNegativeScore() != -1)
                         .map(ColorMIPSearchMatchMetadata::createReleaseCopy)

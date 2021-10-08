@@ -85,8 +85,8 @@ class CmdUtils {
         return img -> {
             int imgWidth = img.getWidth();
             BiPredicate<Integer, Integer> colorScaleLabelRegion;
-            if (args.hasColorScaleLabel() && imgWidth > 260) {
-                colorScaleLabelRegion = (x, y) -> x >= imgWidth - 260 && y < 90;
+            if (args.hasColorScaleLabel() && imgWidth > 270) {
+                colorScaleLabelRegion = (x, y) -> x >= imgWidth - 270 && y < 90;
             } else {
                 colorScaleLabelRegion = (x, y) -> false;
             }
