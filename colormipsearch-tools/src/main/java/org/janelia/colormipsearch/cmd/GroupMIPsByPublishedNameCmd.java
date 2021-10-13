@@ -285,6 +285,7 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryArg.input)
                             ? asEMBodyMetadata(cdmip, args.defaultGender, libraryNameExtractor, imageURLMapper)
                             : asLMLineMetadata(cdmip, libraryNameExtractor, imageURLMapper))
+                    .filter(cdmip -> cdmip != null)
                     .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath, segmentedImages, args.segmentedImageHandling, args.segmentedImageChannelBase).stream())
                     .filter(cdmip -> StringUtils.isNotBlank(cdmip.getPublishedName()))
                     .peek(cdmip -> {
@@ -416,6 +417,10 @@ public class GroupMIPsByPublishedNameCmd extends AbstractCmd {
                                                 String defaultGender,
                                                 Function<ColorDepthMIP, String> libraryNameExtractor,
                                                 Function<String, String> imageURLMapper) {
+        if (cdmip.bodyId == null || cdmip.bodyId == 0L) {
+            LOG.warn("Invalid body ID - Ignore {}", cdmip);
+            return null;
+        }
         String libraryName = libraryNameExtractor.apply(cdmip);
         ColorDepthMetadata cdMetadata = new ColorDepthMetadata();
         cdMetadata.setId(cdmip.id);
