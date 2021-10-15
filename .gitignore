@@ -8,3 +8,6 @@ target*
 local
 
 .DS_Store
+.project
+.settings
+.classpath
