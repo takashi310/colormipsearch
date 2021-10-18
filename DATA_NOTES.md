@@ -1,3 +1,21 @@
+### Release Version: 2.2.1
+
+### Release Date: 2021-10-18
+
+#### Color Depth Searches
+
+See [2.2.0](###Release-Version:-2.2.0)
+
+#### PatchPerPix (PPP) searches
+**EM data**
+* Hemibrain 1.2.1
+
+**LM data**
+* MCFO Phase 2
+
+**Notes**
+* See https://github.com/Kainmueller-Lab/PatchPerPix for information on the algorithm
+
 ### Release Version: 2.2.0
 
 ### Release Date: 2021-09-30
