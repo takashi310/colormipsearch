@@ -102,10 +102,18 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+        // we need to index by the value of parameter id-field; to match the previous implementation,
+        //  we need to make explicit that if --id-field = id, it really means relatedImageRefId:
+        final String idFieldName;
+        if (args.idFieldName == "id") {
+            idFieldName = "relatedImageRefId";
+        } else {
+            idFieldName = args.idFieldName;
+        }
         Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.getRelatedImageRefId(), mipInfo.getId()),
+                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.get(idFieldName), mipInfo.getId()),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 r -> r.get(0)
