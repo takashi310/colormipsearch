@@ -291,13 +291,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.artificialShapeScore = artificialShapeScore;
     }
 
-    private void updateArtificialShapeScore(String artificialShapeScoreValue) {
-        if (StringUtils.isBlank(artificialShapeScoreValue))
-            setArtificialShapeScore(null);
-        else
-            setArtificialShapeScore(Double.parseDouble(artificialShapeScoreValue));
-    }
-
     public Double getNormalizedScore() {
         if (normalizedGapScore != null) {
             return normalizedGapScore;
@@ -376,8 +369,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
                     return this::updateMatchingRatio;
                 case "normalizedGapScore":
                     return this::updateNormalizedGapScore;
-                case "artificialShapeScore":
-                    return this::updateArtificialShapeScore;
                 default:
                     return super.attributeValueHandler(attrName);
             }
@@ -417,8 +408,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
                 return "matchingRatio";
             case "normalizedgapscore":
                 return "normalizedGapScore";
-            case "artificialshapescore":
-                return "artificialShapeScore";
         }
         return super.mapAttr(attrName);
     }

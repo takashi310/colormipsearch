@@ -135,4 +135,11 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         return maskImageURL;
     }
 
+    public String getMaskSampleRef() {
+        return maskSampleRef;
+    }
+
+    public String getMaskRelatedImageRefId() {
+        return maskRelatedImageRefId;
+    }
 }
