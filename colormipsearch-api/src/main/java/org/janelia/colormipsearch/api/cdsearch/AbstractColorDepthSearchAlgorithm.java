@@ -83,6 +83,16 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
         return queryPositions.maxy * getQueryImage().getWidth() * queryPositions.maxx;
     }
 
+    /**
+     * Check the image dimensions if they are the same.
+     *
+     * @param target
+     * @return
+     */
+    public boolean hasDifferentShape(ImageArray<?> target) {
+        return queryImage.getWidth() != target.getWidth() || queryImage.getHeight() != target.getHeight();
+    }
+
     private PixelPositions getMaskPosArray(ImageArray<?> msk, int thresm) {
         int sumpx = msk.getPixelCount();
         List<Integer> pos = new ArrayList<>();

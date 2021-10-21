@@ -167,6 +167,10 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
         int querySize = getQuerySize();
         if (querySize == 0) {
             return new ColorMIPMatchScore(0, 0, false, null);
+        } else if (hasDifferentShape(targetImageArray)) {
+            throw new IllegalArgumentException(String.format("Invalid image size - target's image size (%d, %d) must match query's image size: (%d, %d)",
+                    getQueryImage().getWidth(), getQueryImage().getHeight(), targetImageArray.getWidth(), targetImageArray.getHeight()
+            ));
         }
         int maxMatchingPixels = calculateMaxScoreForAllTargetTransformations(
                 queryImage,
