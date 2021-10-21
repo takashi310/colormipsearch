@@ -325,6 +325,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setSourceImageType(this.sourceImageType);
         that.setSourceImageName(this.sourceImageName);
         that.setSourceImageArchivePath(this.sourceImageArchivePath);
+        that.setSourceSearchablePNG(this.sourceSearchablePNG);
         // copy score attributes
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
@@ -333,6 +334,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setHighExpressionArea(this.getHighExpressionArea());
         that.setNormalizedGapScore(this.getNormalizedGapScore());
         that.setArtificialShapeScore(this.getArtificialShapeScore());
+        that.setSearchablePNG(this.getSearchablePNG());
     }
 
     @Override
