@@ -301,7 +301,6 @@ public abstract class AbstractMetadata implements Serializable {
                 .forEach(vt -> addVariant(vt, that.getVariant(vt)));
     }
 
-
     /**
      * this method is used by the command that replaces attributes in one mip from
      * another mip; it provides get access to all public attributes that have
