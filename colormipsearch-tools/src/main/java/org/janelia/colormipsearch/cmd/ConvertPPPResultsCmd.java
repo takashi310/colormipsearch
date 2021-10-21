@@ -95,6 +95,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
         String alignmentSpace = "JRC2018_Unisex_20x_HR";
 
+        @Parameter(names = {"--anatomical-area", "-area"}, description = "Anatomical area")
+        String anatomicalArea = "Brain";
+
         @Parameter(names = {"--only-best-skeleton-matches"}, description = "Include only best skeleton matches", arity = 0)
         boolean onlyBestSkeletonMatches = false;
 
@@ -300,6 +303,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void fillInPPPMetadata(EmPPPMatch pppMatch) {
         pppMatch.setAlignmentSpace(args.alignmentSpace);
+        pppMatch.setAnatomicalArea(args.anatomicalArea);
         fillEMMMetadata(pppMatch.getSourceEmName(), pppMatch);
         fillLMMetadata(pppMatch.getSourceLmName(), pppMatch);
     }
@@ -318,7 +322,10 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         Matcher matcher = lmRegExPattern.matcher(lmFullName);
         if (matcher.find()) {
             pppMatch.setSampleName(matcher.group(1));
-            pppMatch.setObjective(matcher.group(2));
+            String objectiveCandidate = matcher.group(2);
+            if (!StringUtils.equalsIgnoreCase(args.anatomicalArea, objectiveCandidate)) {
+                pppMatch.setObjective(objectiveCandidate);
+            }
         }
     }
 

@@ -88,6 +88,7 @@ public class AbstractPPPMatch {
     private String objective;
     private String mountingProtocol;
     private String alignmentSpace;
+    private String anatomicalArea;
     private String gender;
     private Double coverageScore;
     private Double aggregateCoverage;
@@ -225,6 +226,14 @@ public class AbstractPPPMatch {
         this.alignmentSpace = alignmentSpace;
     }
 
+    public String getAnatomicalArea() {
+        return anatomicalArea;
+    }
+
+    public void setAnatomicalArea(String anatomicalArea) {
+        this.anatomicalArea = anatomicalArea;
+    }
+
     public String getGender() {
         return gender;
     }
@@ -348,8 +357,8 @@ public class AbstractPPPMatch {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("fullEmName", sourceEmName)
-                .append("fullLmName", sourceLmName)
+                .append("sourceEmName", sourceEmName)
+                .append("sourceLmName", sourceLmName)
                 .append("coverageScore", coverageScore)
                 .append("aggregateCoverage", aggregateCoverage)
                 .toString();
