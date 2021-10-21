@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
         "id", "publishedName", "libraryName",
         "pppRank", "pppScore",
-        "sampleName", "slideCode", "objective",
+        "sampleName", "slideCode", "anatomicalArea", "objective",
         "gender", "alignmentSpace", "mountingProtocol",
         "coverageScore", "aggregateCoverage", "mirrored",
         "files", "sourceImageFiles", "skeletonMatches"

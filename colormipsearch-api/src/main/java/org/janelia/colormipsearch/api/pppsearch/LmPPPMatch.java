@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "id", "publishedName", "libraryName",
         "pppRank", "pppScore",
         "neuronType", "neuronInstance",
-        "sampleId", "sampleName", "slideCode", "objective", "mountingProtocol", "gender",
+        "sampleId", "sampleName", "slideCode", "anatomicalArea", "objective", "mountingProtocol", "gender",
         "alignmentSpace",
         "coverageScore", "aggregateCoverage", "mirrored",
         "files", "sourceImageFiles", "skeletonMatches"

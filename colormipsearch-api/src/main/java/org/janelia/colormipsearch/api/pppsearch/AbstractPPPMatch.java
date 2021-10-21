@@ -85,10 +85,10 @@ public class AbstractPPPMatch {
     private String sampleId; // LM sample ID
     private String sampleName; // LM sample name
     private String slideCode;
+    private String anatomicalArea;
     private String objective;
     private String mountingProtocol;
     private String alignmentSpace;
-    private String anatomicalArea;
     private String gender;
     private Double coverageScore;
     private Double aggregateCoverage;
@@ -201,6 +201,14 @@ public class AbstractPPPMatch {
         this.slideCode = slideCode;
     }
 
+    public String getAnatomicalArea() {
+        return anatomicalArea;
+    }
+
+    public void setAnatomicalArea(String anatomicalArea) {
+        this.anatomicalArea = anatomicalArea;
+    }
+
     public String getObjective() {
         return objective;
     }
@@ -224,14 +232,6 @@ public class AbstractPPPMatch {
 
     public void setAlignmentSpace(String alignmentSpace) {
         this.alignmentSpace = alignmentSpace;
-    }
-
-    public String getAnatomicalArea() {
-        return anatomicalArea;
-    }
-
-    public void setAnatomicalArea(String anatomicalArea) {
-        this.anatomicalArea = anatomicalArea;
     }
 
     public String getGender() {
