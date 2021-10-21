@@ -113,7 +113,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        mipInfo -> StringUtils.defaultIfBlank(mipInfo.get(idFieldName), mipInfo.getId()),
+                        mipInfo -> StringUtils.defaultIfBlank(getFieldValueMIP(mipInfo, idFieldName), mipInfo.getId()),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 r -> r.get(0)
@@ -224,6 +224,32 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
             return fieldNode.textValue();
         } else {
             return null;
+        }
+    }
+
+    /**
+     * like getFieldValue, but for MIPs instead of json nodes; only supports
+     * a few attributes, the ones plausibly likely to be needed for the purpose of identifying
+     * MIPs for indexing
+     */
+    public String getFieldValueMIP(MIPMetadata mipInfo, String attrName) {
+        if (StringUtils.isBlank(attrName)) {
+            return "";
+        } else {
+            switch(attrName) {
+                case "id":
+                    return mipInfo.getId();
+                case "relatedImageRefId":
+                    return mipInfo.getRelatedImageRefId();
+                case "publishedName":
+                    return mipInfo.getPublishedName();
+                case "slideCode":
+                    return mipInfo.getSlideCode();
+                case "imageName":
+                    return mipInfo.getImageName();
+                default:
+                    return "";
+            }
         }
     }
 

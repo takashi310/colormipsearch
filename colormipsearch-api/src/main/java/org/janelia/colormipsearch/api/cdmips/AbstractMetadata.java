@@ -302,62 +302,6 @@ public abstract class AbstractMetadata implements Serializable {
     }
 
     /**
-     * this method is used by the command that replaces attributes in one mip from
-     * another mip; it provides get access to all public attributes that have
-     * attribute names, by the attribute name
-     *
-     * exception: for the use case in replaceAttribute command, I added one
-     * field that doesn't normally have an attribute name ("relatedImageRefId")
-     */
-    public String get(String attrName) {
-        if (StringUtils.isBlank(attrName)) {
-            return "";
-        } else {
-            switch(attrName) {
-                case "id":
-                    return getId();
-                case "relatedImageRefId":
-                    return getRelatedImageRefId();
-                case "publishedName":
-                    return getPublishedName();
-                case "library":
-                    return getLibraryName();
-                case "slideCode":
-                    return getSlideCode();
-                case "gender":
-                    return getGender();
-                case "anatomicalArea":
-                    return getAnatomicalArea();
-                case "alignmentSpace":
-                    return getAlignmentSpace();
-                case "objective":
-                    return getObjective();
-                case "neuronType":
-                    return getNeuronType();
-                case "neuronInstance":
-                    return getNeuronInstance();
-                case "channel":
-                    return getChannel();
-                case "mountingProtocol":
-                    return getMountingProtocol();
-                case "imageType":
-                    return getImageType();
-                case "imageName":
-                    return getImageName();
-                case "imageURL":
-                    return getImageURL();
-                case "thumbnailURL":
-                    return getThumbnailURL();
-                case "searchableName":
-                    return getSearchablePNG();
-                default:
-                    return "";
-            }
-        }
-    }
-
-
-    /**
      * This method is practically used for migrating the data from the former structure
      * that had the "attrs" map to the new one where all the attributes were moved to the top level.
      *
