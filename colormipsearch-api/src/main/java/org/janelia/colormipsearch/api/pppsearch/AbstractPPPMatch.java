@@ -201,6 +201,7 @@ public class AbstractPPPMatch {
         this.slideCode = slideCode;
     }
 
+    @JsonProperty
     public String getAnatomicalArea() {
         return anatomicalArea;
     }
