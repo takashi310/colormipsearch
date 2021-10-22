@@ -288,6 +288,14 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
                 pppMatch.setSlideCode(lmSample.slideCode);
                 pppMatch.setGender(lmSample.gender);
                 pppMatch.setMountingProtocol(lmSample.mountingProtocol);
+                if (StringUtils.isBlank(pppMatch.getObjective())) {
+                    if (CollectionUtils.size(lmSample.publishedObjectives) == 1) {
+                        pppMatch.setObjective(lmSample.publishedObjectives.get(0));
+                    } else {
+                        throw new IllegalArgumentException("Too many published objectives for sample " + lmSample +
+                                ". Cannot decide which objective to select for " + pppMatch);
+                    }
+                }
             }
             EMNeuron emNeuron = emNeurons.get(pppMatch.getNeuronName());
             if (emNeuron != null) {

@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 class CDMIPSample {
     @JsonProperty("_id")
     String id;
@@ -43,4 +45,12 @@ class CDMIPSample {
     String releaseLabel;
     @JsonProperty
     List<String> publishedObjectives;
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("name", name)
+                .toString();
+    }
 }
