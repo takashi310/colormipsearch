@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 class CDMIPSample {
@@ -39,4 +41,6 @@ class CDMIPSample {
     String status;
     @JsonProperty
     String releaseLabel;
+    @JsonProperty
+    List<String> publishedObjectives;
 }
