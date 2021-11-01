@@ -152,11 +152,15 @@ class MergeResultsCmd extends AbstractCmd {
                             .stream()
                             .flatMap(se -> se.getEntry().stream()).collect(Collectors.toList());
 
-                    ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
-                    ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
-                            CDSMatches.singletonfromResultsOfColorMIPSearchMatches(combinedResultsWithNoDuplicates),
-                            CmdUtils.getOutputFile(outputDir, new File(fn)),
-                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    if (!combinedResultsWithNoDuplicates.isEmpty()) {
+                        ColorMIPSearchResultUtils.sortCDSResults(combinedResultsWithNoDuplicates);
+                        ColorMIPSearchResultUtils.writeCDSMatchesToJSONFile(
+                                CDSMatches.singletonfromResultsOfColorMIPSearchMatches(combinedResultsWithNoDuplicates),
+                                CmdUtils.getOutputFile(outputDir, new File(fn)),
+                                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
+                    } else {
+                        LOG.info("Skip writing {} because it's empty", fn);
+                    }
                 });
     }
 
