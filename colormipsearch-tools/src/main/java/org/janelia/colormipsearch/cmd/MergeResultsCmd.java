@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.beust.jcommander.Parameter;
@@ -16,6 +17,7 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +44,9 @@ class MergeResultsCmd extends AbstractCmd {
 
         @Parameter(names = "-cleanup", description = "Cleanup results and remove fields not necessary in productiom", arity = 0)
         boolean cleanup = false;
+
+        @Parameter(names = {"--excluded-names"}, description = "Published names excluded from JSON", variableArity = true)
+        List<String> excludedNames;
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -95,10 +100,20 @@ class MergeResultsCmd extends AbstractCmd {
         } else {
             resultFileNames = Collections.emptyList();
         }
-        mergeResultFiles(resultFileNames, args.pctPositivePixels, args.cleanup, args.getOutputDir());
+        mergeResultFiles(resultFileNames,
+                args.pctPositivePixels,
+                args.cleanup,
+                CollectionUtils.isEmpty(args.excludedNames)
+                        ? Collections.emptySet()
+                        : ImmutableSet.copyOf(args.excludedNames),
+                args.getOutputDir());
     }
 
-    private void mergeResultFiles(List<String> inputResultsFilenames, double pctPositivePixels, boolean cleanup, Path outputDir) {
+    private void mergeResultFiles(List<String> inputResultsFilenames,
+                                  double pctPositivePixels,
+                                  boolean cleanup,
+                                  Set<String> excludedNames,
+                                  Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // files that have the same file name (but coming from different directories)
@@ -112,7 +127,7 @@ class MergeResultsCmd extends AbstractCmd {
                     List<String> resultList = e.getValue();
                     LOG.info("Combine results for {}", fn);
                     List<ColorMIPSearchMatchMetadata> combinedResults = resultList.stream()
-                            .map(cdsFn -> new File(cdsFn))
+                            .map(File::new)
                             .map(cdsFile -> {
                                 LOG.info("Reading {} -> {}", fn, cdsFile);
                                 CDSMatches cdsResults = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsFile, mapper);
@@ -124,6 +139,8 @@ class MergeResultsCmd extends AbstractCmd {
                             .filter(cdsResults -> CollectionUtils.isNotEmpty(cdsResults.results))
                             .flatMap(cdsResults -> cdsResults.results.stream())
                             .filter(csr -> csr.getMatchingRatio() * 100 > pctPositivePixels)
+                            .filter(csr -> excludedNames.isEmpty() ||
+                                    (!excludedNames.contains(csr.getSourcePublishedName()) && !excludedNames.contains(csr.getPublishedName())))
                             .map(csr -> cleanup ? ColorMIPSearchMatchMetadata.createReleaseCopy(csr) : csr)
                             .collect(Collectors.toList());
                     List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
