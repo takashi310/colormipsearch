@@ -50,8 +50,9 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         @Parameter(names = {"--id-field"}, required = true, description = "ID field name")
         String idFieldName;
 
-        @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated", variableArity = true)
-        Set<String> fieldsToUpdate = new HashSet<>();
+        @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated",
+                converter = MappedFieldArg.MappedFieldArgConverter.class, variableArity = true)
+        Set<MappedFieldArg> fieldsToUpdate = new HashSet<>();
 
         @ParametersDelegate
         final CommonArgs commonArgs;
@@ -105,7 +106,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         // we need to index by the value of parameter id-field; to match the previous implementation,
         //  we need to make explicit that if --id-field = id, it really means relatedImageRefId:
         final String idFieldName;
-        if (args.idFieldName == "id") {
+        if ("id".equals(args.idFieldName)) {
             idFieldName = "relatedImageRefId";
         } else {
             idFieldName = args.idFieldName;
@@ -146,7 +147,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
 
     private void replaceMIPsMetadataAttributes(List<String> inputFileNames,
                                                String idFieldName,
-                                               Set<String> atributeNames,
+                                               Set<MappedFieldArg> attributesToUpdate,
                                                Map<String, MIPMetadata> indexedTargetMIPs,
                                                Path outputDir) {
         ObjectMapper mapper = new ObjectMapper()
@@ -166,7 +167,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
                             LOG.warn("No MIP with new attributes found for {}", id);
                         } else {
                             ObjectNode newAttributesNode = mapper.valueToTree(targetMIP);
-                            atributeNames.forEach(a -> replaceMIPsAttributes(id, newAttributesNode, a, jsonNode));
+                            attributesToUpdate.forEach(a -> replaceMIPsAttributes(id, newAttributesNode, a, jsonNode));
                         }
                     });
                     writeJSONFile(jsonContent, CmdUtils.getOutputFile(outputDir, f), mapper);
@@ -209,16 +210,17 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         }
     }
 
-    private void replaceMIPsAttributes(String id, ObjectNode srcAttributes, String attributeName, ObjectNode toUpdate) {
-        String attributeValue = getFieldValue(srcAttributes, attributeName);
+    private void replaceMIPsAttributes(String id, ObjectNode srcAttributes, MappedFieldArg updatedField, ObjectNode toUpdate) {
+        String srcAttributeName = updatedField.getField();
+        String attributeValue = getFieldValue(srcAttributes, srcAttributeName);
         if (StringUtils.isNotBlank(attributeValue)) {
-            LOG.info("Setting {} for {} to {}", attributeName, id, attributeValue);
-            toUpdate.put(attributeName, attributeValue);
+            String targetAttributeName = updatedField.getFieldMapping();
+            LOG.debug("Setting {} for {} to {}", targetAttributeName, id, attributeValue);
+            toUpdate.put(targetAttributeName, attributeValue);
         }
     }
 
     private String getFieldValue(ObjectNode node, String fieldName) {
-        String value;
         JsonNode fieldNode = node.get(fieldName);
         if (fieldNode != null) {
             return fieldNode.textValue();
