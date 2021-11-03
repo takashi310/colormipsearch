@@ -47,7 +47,9 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         @Parameter(names = {"--input-files"}, variableArity = true, description = "JSON file whose image URLs have to be changed")
         List<String> inputFiles;
 
-        @Parameter(names = {"--id-field"}, required = true, description = "Indexing field - field used search the entity that has the new values")
+        @Parameter(names = {"--id-field"}, required = true,
+                converter = MappedFieldArg.MappedFieldArgConverter.class,
+                description = "Indexing field - field used search the entity that has the new values")
         MappedFieldArg indexingField;
 
         @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated",
