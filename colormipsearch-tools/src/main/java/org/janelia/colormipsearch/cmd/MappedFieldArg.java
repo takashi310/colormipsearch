@@ -27,8 +27,8 @@ class MappedFieldArg {
         }
     }
 
-    private String field;
-    private String mapping;
+    private String field; // source field name
+    private String mapping; // target field name
 
     String getField() {
         return field;

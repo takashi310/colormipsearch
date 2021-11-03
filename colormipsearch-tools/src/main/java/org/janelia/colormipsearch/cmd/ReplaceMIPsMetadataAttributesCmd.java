@@ -47,8 +47,8 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         @Parameter(names = {"--input-files"}, variableArity = true, description = "JSON file whose image URLs have to be changed")
         List<String> inputFiles;
 
-        @Parameter(names = {"--id-field"}, required = true, description = "ID field name")
-        String idFieldName;
+        @Parameter(names = {"--id-field"}, required = true, description = "Indexing field - field used search the entity that has the new values")
+        MappedFieldArg indexingField;
 
         @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated",
                 converter = MappedFieldArg.MappedFieldArgConverter.class, variableArity = true)
@@ -103,18 +103,10 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         ObjectMapper mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        // we need to index by the value of parameter id-field; to match the previous implementation,
-        //  we need to make explicit that if --id-field = id, it really means relatedImageRefId:
-        final String idFieldName;
-        if ("id".equals(args.idFieldName)) {
-            idFieldName = "relatedImageRefId";
-        } else {
-            idFieldName = args.idFieldName;
-        }
         Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        mipInfo -> StringUtils.defaultIfBlank(getFieldValueMIP(mipInfo, idFieldName), mipInfo.getId()),
+                        mipInfo -> getFieldValueMIP(mipInfo, args.indexingField.getField()),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 r -> r.get(0)
@@ -132,21 +124,21 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
                             throw new UncheckedIOException(e);
                         }
                     })
-                    .map(p -> p.toString())
+                    .map(Path::toString)
                     .collect(Collectors.toList());
         } else {
             inputFileNames = Collections.emptyList();
         }
         replaceMIPsMetadataAttributes(
                 inputFileNames,
-                args.idFieldName,
+                args.indexingField,
                 args.fieldsToUpdate,
                 indexedTargetMIPs,
                 args.getOutputDir());
     }
 
     private void replaceMIPsMetadataAttributes(List<String> inputFileNames,
-                                               String idFieldName,
+                                               MappedFieldArg indexingField,
                                                Set<MappedFieldArg> attributesToUpdate,
                                                Map<String, MIPMetadata> indexedTargetMIPs,
                                                Path outputDir) {
@@ -158,7 +150,8 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
                     File f = new File(fn);
                     JsonNode jsonContent = readJSONFile(f, mapper);
                     streamJSONNodes(jsonContent).forEach(jsonNode -> {
-                        String id = getFieldValue(jsonNode, idFieldName);
+                        // search the indexing field value in the current node using the corresponding mapped name
+                        String id = getFieldValue(jsonNode, indexingField.getFieldMapping());
                         if (id == null) {
                             return; // No <id> field found
                         }
