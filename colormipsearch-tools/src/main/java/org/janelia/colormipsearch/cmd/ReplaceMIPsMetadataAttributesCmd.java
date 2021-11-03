@@ -49,7 +49,9 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
 
         @Parameter(names = {"--id-field"}, required = true,
                 converter = MappedFieldArg.MappedFieldArgConverter.class,
-                description = "Indexing field - field used search the entity that has the new values")
+                description = "Indexing field - field used to search the entity that has the new attribute values. " +
+                        "The indexing field must uniquely identify the subset of attributes to be updated - " +
+                        "meaning that all entries that match the indexing field must have the same values for the new attributes.")
         MappedFieldArg indexingField;
 
         @Parameter(names = {"--fields-toUpdate"}, description = "Fields to be updated",
@@ -108,7 +110,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
         Map<String, MIPMetadata> indexedTargetMIPs = MIPsUtils.readMIPsFromJSON(args.targetMIPsFilename, 0, -1, Collections.emptySet(), mapper)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        mipInfo -> getFieldValueMIP(mipInfo, args.indexingField.getField()),
+                        mipInfo -> getFieldAttrValue(mipInfo, args.indexingField.getField()),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 r -> r.get(0)
@@ -229,15 +231,13 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
      * a few attributes, the ones plausibly likely to be needed for the purpose of identifying
      * MIPs for indexing
      */
-    public String getFieldValueMIP(MIPMetadata mipInfo, String attrName) {
+    public String getFieldAttrValue(MIPMetadata mipInfo, String attrName) {
         if (StringUtils.isBlank(attrName)) {
-            return "";
+            throw new IllegalArgumentException("Indexing field cannot be empty");
         } else {
             switch(attrName) {
                 case "id":
                     return mipInfo.getId();
-                case "relatedImageRefId":
-                    return mipInfo.getRelatedImageRefId();
                 case "publishedName":
                     return mipInfo.getPublishedName();
                 case "slideCode":
@@ -245,7 +245,7 @@ public class ReplaceMIPsMetadataAttributesCmd extends AbstractCmd {
                 case "imageName":
                     return mipInfo.getImageName();
                 default:
-                    return "";
+                    throw new IllegalArgumentException("Unsupported indexing field: " + attrName);
             }
         }
     }
