@@ -42,6 +42,7 @@ public class AbstractPPPMatch {
         to.setSampleId(from.getSampleId());
         to.setSampleName(from.getSampleName());
         to.setSlideCode(from.getSlideCode());
+        to.setAnatomicalArea(from.getAnatomicalArea());
         to.setObjective(from.getObjective());
         to.setMountingProtocol(from.getMountingProtocol());
         to.setAlignmentSpace(from.getAlignmentSpace());
