@@ -27,22 +27,6 @@ NEURON_P2_PARTITIONS=(
 90 91 92 93 94 95 96 97 98 99
 )
 
-NEURON_P1_PARTITIONS=(
-10
-)
-
-NEURON_P2_PARTITIONS=(
-06
-09
-10
-22
-31
-57
-58
-70
-93
-)
-
 SRCDIR=/nrs/neuronbridge/ppp_imagery/v2.3.0-pre/FlyEM_VNC_v0.6
 RESDIR=/nrs/neuronbridge/ppp_imagery/v2.3.0-pre-resized/FlyEM_VNC_v0.6
 NCORES=32
@@ -73,7 +57,7 @@ function runLocal {
     createInputParams $p1
 
     for ((jobIndex=${p2From}; jobIndex<=${p2To} && jobIndex<=$((maxJobIndex)); jobIndex++)) ; do
-	${DIR}/pad-neuron-dirs.sh < ${DIR}/inputs/RESIZE_${p1}_$((jobIndex+1)) > ${DIR}/logs/output_${jobIndex}.out
+	${DIR}/pad-neuron-dirs.sh < ${DIR}/inputs/RESIZE_${p1}_$((jobIndex+1)) > ${DIR}/logs/output_${p1}_$((jobIndex+1)).out
     done
 }
 

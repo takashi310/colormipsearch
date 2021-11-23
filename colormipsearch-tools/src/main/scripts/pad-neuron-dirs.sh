@@ -22,8 +22,8 @@ function process_neuron_dir {
 
     local nfiles=0
     for fn in ${neuronDir}/* ; do
-	echo ${DIR}/pad-single-pppimage.sh ${fn} ${RESDIR}/${neuronPartition}/${neuronName}
-	${DIR}/pad-single-pppimage.sh ${fn} ${RESDIR}/${neuronPartition}/${neuronName} &
+	echo ${DIR}/pad-single-pppimage.sh "${fn}" ${RESDIR}/${neuronPartition}/${neuronName}
+	${DIR}/pad-single-pppimage.sh "${fn}" ${RESDIR}/${neuronPartition}/${neuronName} &
 	pid=$!
 	pids=("${pids[@]}" $pid)
 	npids=${#pids[@]}
