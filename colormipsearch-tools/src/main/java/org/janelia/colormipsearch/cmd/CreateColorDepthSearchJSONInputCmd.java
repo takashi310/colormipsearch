@@ -103,6 +103,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
+        @Parameter(names = {"--releases"},
+                description = "Which specific releases to be included.",
+                required = false, variableArity = true)
+        List<String> releases;
+
         @Parameter(names = {"--librariesVariants"},
                 description = "Libraries variants descriptors. " +
                         "A library variant contains library name, variant type, location and suffix separated by colon , e.g., " +
@@ -487,6 +492,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         args.alignmentSpace,
                         libraryPaths.library,
                         args.datasets,
+                        args.releases,
                         pageOffset,
                         pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
@@ -965,14 +971,16 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                                   String alignmentSpace,
                                                                   ListArg libraryArg,
                                                                   List<String> datasets,
+                                                                  List<String> releases,
                                                                   int offset,
                                                                   int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
-                .queryParam("libraryName", libraryArg.input)
-                .queryParam("alignmentSpace", alignmentSpace)
-                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                .queryParam("offset", offset)
-                .queryParam("length", pageLength),
+                        .queryParam("libraryName", libraryArg.input)
+                        .queryParam("alignmentSpace", alignmentSpace)
+                        .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                        .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                        .queryParam("offset", offset)
+                        .queryParam("length", pageLength),
                 credentials)
                 ;
     }
