@@ -424,7 +424,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 args.authorization,
                 args.alignmentSpace,
                 libraryPaths.library.input,
-                args.datasets);
+                args.datasets,
+                args.releases);
         LOG.info("Found {} entities in library {} with alignment space {}{}",
                 cdmsCount, libraryPaths.getLibraryName(), args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
         int to = libraryPaths.library.length > 0 ? Math.min(libraryPaths.library.offset + libraryPaths.library.length, cdmsCount) : cdmsCount;
@@ -953,11 +954,13 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         return cdMetadata;
     }
 
-    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets) {
+    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
-                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                ;
         Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + target + " -> " + response);
