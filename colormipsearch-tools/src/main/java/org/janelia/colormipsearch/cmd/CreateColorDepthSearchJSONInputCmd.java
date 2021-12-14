@@ -961,6 +961,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 ;
+        LOG.info("Count color depth mips using {}", target);
         Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + target + " -> " + response);
