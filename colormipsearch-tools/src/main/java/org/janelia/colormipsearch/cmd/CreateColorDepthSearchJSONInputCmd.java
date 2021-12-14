@@ -989,6 +989,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
     }
 
     private List<ColorDepthMIP> retrieveColorDepthMips(WebTarget endpoint, String credentials) {
+        LOG.info("Get mips from {}", endpoint);
         Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
