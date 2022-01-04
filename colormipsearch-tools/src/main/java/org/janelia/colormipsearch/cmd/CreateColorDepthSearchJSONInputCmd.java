@@ -103,7 +103,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
-        @Parameter(names = {"--releases"},
+        @Parameter(names = {"--releases", "-r"},
                 description = "Which specific releases to be included.",
                 required = false, variableArity = true)
         List<String> releases;
