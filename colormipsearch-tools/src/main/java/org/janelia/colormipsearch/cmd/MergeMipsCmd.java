@@ -111,7 +111,7 @@ class MergeMipsCmd extends AbstractCmd {
                             .map(mipsFile -> {
                                 LOG.info("Reading {} -> {}", fn, mipsFile);
                                 Results<List<ColorDepthMetadata>> mipsResults = readMipsMetadata(mipsFile);
-                                if (mipsResults.hasResults()) {
+                                if (!mipsResults.hasResults()) {
                                     LOG.warn("Results file {} is empty", mipsFile);
                                 }
                                 return mipsResults;
