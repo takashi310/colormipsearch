@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,7 +83,7 @@ class MergeMipsCmd extends AbstractCmd {
             resultFileNames = args.resultsDirs.stream()
                     .flatMap(rd -> {
                         try {
-                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile());
+                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile(), FileVisitOption.FOLLOW_LINKS);
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
