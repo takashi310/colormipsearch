@@ -105,7 +105,7 @@ class MergeMipsCmd extends AbstractCmd {
                 .forEach(e -> {
                     String fn = e.getKey();
                     List<String> resultList = e.getValue();
-                    LOG.info("Combine results for {}", fn);
+                    LOG.info("Combine results for {} from {}", fn, resultList);
                     List<ColorDepthMetadata> combinedResults = resultList.stream()
                             .map(File::new)
                             .map(mipsFile -> {
