@@ -1,3 +1,25 @@
+### Release Version: 2.4.0
+
+### Release Date: 2022-01-xx
+
+#### Color Depth Searches
+
+**LM data**
+* Added Annotator MCFO lines
+
+The rest is as in [2.2.0](###Release-Version:-2.2.0)
+
+### Release Version: 2.3.0
+
+### Release Date: 2021-10-26
+
+#### Color Depth Searches
+
+**LM data**
+* Added MCFO phase 2 lines
+
+The rest is as in [2.2.0](###Release-Version:-2.2.0)
+
 ### Release Version: 2.2.1
 
 ### Release Date: 2021-10-18
