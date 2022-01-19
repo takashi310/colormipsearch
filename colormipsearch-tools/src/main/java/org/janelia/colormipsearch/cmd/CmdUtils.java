@@ -63,6 +63,15 @@ class CmdUtils {
         }
     }
 
+    @Nullable
+    static File getOutputFile(Path outputDir, String fname) {
+        if (outputDir == null) {
+            return null;
+        } else {
+            return outputDir.resolve(fname).toFile();
+        }
+    }
+
     static List<String> getFileToProcessFromDir(String dirName, int offsetParam, int lengthParam) {
         try {
             int from = Math.max(offsetParam, 0);
