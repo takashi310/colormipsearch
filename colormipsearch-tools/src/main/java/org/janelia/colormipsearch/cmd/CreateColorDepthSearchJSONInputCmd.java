@@ -666,8 +666,9 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
      * this method sets the S3 URL(s) we get via publishedImage collection
      */
     private void setPublishedImageURLs(MIPMetadata cdmip, WebTarget serverEndpoint, String credentials){
-        WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() + "/" + cdmip.getSlideCode() +
-            "/" + cdmip.getObjective());
+        WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() +
+            "/" + cdmip.getObjective() +
+            "/" + cdmip.getSlideCode());
 
         LOG.info("setPublishedImageURLs: URI = {}", endpoint.getUri());
         Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
