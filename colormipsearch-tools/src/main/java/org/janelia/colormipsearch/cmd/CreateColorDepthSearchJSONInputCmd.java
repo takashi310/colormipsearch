@@ -560,6 +560,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                 libraryPaths.listLibraryVariants(),
                                 libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
                         .peek(this::setImageURLs)
+                        .peek(cdmip -> setPublishedImageURLs(cdmip, serverEndpoint, args.authorization))
                         .forEach(cdmip -> {
                             try {
                                 gen.writeObject(cdmip);
@@ -659,6 +660,31 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
             cdmip.setImageURL(imageRelativeURL);
             cdmip.setThumbnailURL(imageRelativeURL);
         }
+    }
+
+    /**
+     * this method sets the S3 URL(s) we get via publishedImage collection
+     */
+    private void setPublishedImageURLs(MIPMetadata cdmip, WebTarget serverEndpoint, String credentials){
+        WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() + "/" + cdmip.getSlideCode() +
+            "/" + cdmip.getObjective());
+
+        LOG.info("setPublishedImageURLs: URI = {}", endpoint.getUri());
+        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+        PublishedImage image;
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
+        } else {
+            List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
+            }.getType()));
+            // api guarantees exactly one element in list:
+            image = images.get(0);
+        }
+
+        // for now, there is only one URL
+        // we don't have jacs-model, so not sure how to get this filetype?  can I hard-code what
+        //  the name of the element of the enum is?
+        cdmip.setImageStack(image.files.get("VisuallyLosslessStack"));
     }
 
     /**
