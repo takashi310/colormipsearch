@@ -46,6 +46,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageType(cdsm.getSourceImageType());
         mip.setImageURL(cdsm.getSourceImageURL());
         mip.setSearchablePNG(cdsm.getSourceSearchablePNG());
+        mip.setImageStack(cdsm.getSourceImageStack());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -60,6 +61,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageType(cdsm.getImageType());
         mip.setImageURL(cdsm.getImageURL());
         mip.setSearchablePNG(cdsm.getSearchablePNG());
+        mip.setImageStack(cdsm.getImageStack());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -75,6 +77,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceRelatedImageRefId;
     private String sourceImageURL;
     private String sourceSearchablePNG;
+    private String sourceImageStack;
     private int matchingPixels;
     private double matchingRatio;
     private boolean mirrored;
@@ -199,6 +202,15 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     public void setSourceSearchablePNG(String sourceSearchablePNG) {
         this.sourceSearchablePNG = sourceSearchablePNG;
     }
+
+    public String getSourceImageStack() {
+        return sourceImageStack;
+    }
+
+    public void setSourceImageStack(String sourceImageStack) {
+        this.sourceImageStack = sourceImageStack;
+    }
+
 
     public int getMatchingPixels() {
         return matchingPixels;
@@ -326,6 +338,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setSourceImageName(this.sourceImageName);
         that.setSourceImageArchivePath(this.sourceImageArchivePath);
         that.setSourceSearchablePNG(this.sourceSearchablePNG);
+        that.setSourceImageStack(this.sourceImageStack);
         // copy score attributes
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
@@ -335,6 +348,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setNormalizedGapScore(this.getNormalizedGapScore());
         that.setArtificialShapeScore(this.getArtificialShapeScore());
         that.setSearchablePNG(this.getSearchablePNG());
+        that.setImageStack(this.getImageStack());
     }
 
     @Override

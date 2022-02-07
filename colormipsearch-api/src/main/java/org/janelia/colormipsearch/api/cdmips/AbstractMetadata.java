@@ -30,9 +30,12 @@ public abstract class AbstractMetadata implements Serializable {
     private String imageURL;
     private String thumbnailURL;
     private String searchablePNG;
+    // imageStack is defined for LM images
+    private String imageStack;
     private String slideCode;
     private String driver;
     private String objective;
+    // neuronType and neuronInstance are defined for EM images
     private String neuronType;
     private String neuronInstance;
     // use a default for the gender for now
@@ -150,6 +153,14 @@ public abstract class AbstractMetadata implements Serializable {
 
     public void setSearchablePNG(String searchablePNG) {
         this.searchablePNG = searchablePNG;
+    }
+
+    public void setImageStack(String imageStack) {
+        this.imageStack = imageStack;
+    }
+
+    public String getImageStack() {
+        return imageStack;
     }
 
     @JsonProperty
@@ -334,6 +345,7 @@ public abstract class AbstractMetadata implements Serializable {
         that.setImageURL(this.imageURL);
         that.setThumbnailURL(this.thumbnailURL);
         that.setSearchablePNG(this.getSearchablePNG());
+        that.setImageStack(this.getImageStack());
         that.setCdmPath(this.getCdmPath());
         that.setImageType(this.getImageType());
         that.setImageName(this.getImageName());
@@ -389,6 +401,8 @@ public abstract class AbstractMetadata implements Serializable {
                     return this::setThumbnailURL;
                 case "searchableName":
                     return this::setSearchablePNG;
+                case "imageStack":
+                    return this::setImageStack;
                 default:
                     return defaultAttributeValueHandler(attrName);
             }

@@ -43,6 +43,7 @@ class ColorDepthMetadata extends AbstractMetadata {
         mipInfo.setImageURL(getImageURL());
         mipInfo.setThumbnailURL(getThumbnailURL());
         mipInfo.setSearchablePNG(getSearchablePNG());
+        mipInfo.setImageStack(getImageStack());
         mipInfo.setRelatedImageRefId(extractIdFromRef(sourceImageRef));
         return mipInfo;
     }
