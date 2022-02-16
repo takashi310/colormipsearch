@@ -103,6 +103,11 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
         List<ListArg> libraries;
 
+        @Parameter(names = {"--releases", "-r"},
+                description = "Which specific releases to be included.",
+                required = false, variableArity = true)
+        List<String> releases;
+
         @Parameter(names = {"--librariesVariants"},
                 description = "Libraries variants descriptors. " +
                         "A library variant contains library name, variant type, location and suffix separated by colon , e.g., " +
@@ -419,7 +424,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                 args.authorization,
                 args.alignmentSpace,
                 libraryPaths.library.input,
-                args.datasets);
+                args.datasets,
+                args.releases);
         LOG.info("Found {} entities in library {} with alignment space {}{}",
                 cdmsCount, libraryPaths.getLibraryName(), args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
         int to = libraryPaths.library.length > 0 ? Math.min(libraryPaths.library.offset + libraryPaths.library.length, cdmsCount) : cdmsCount;
@@ -487,6 +493,7 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                         args.alignmentSpace,
                         libraryPaths.library,
                         args.datasets,
+                        args.releases,
                         pageOffset,
                         pageSize);
                 LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + pageSize, cdmsCount);
@@ -974,11 +981,14 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
         return cdMetadata;
     }
 
-    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets) {
+    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
-                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                ;
+        LOG.info("Count color depth mips using {}, l={}, as={}, ds={}, rs={}", target, library, alignmentSpace, datasets, releases);
         Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + target + " -> " + response);
@@ -992,19 +1002,22 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                                                                   String alignmentSpace,
                                                                   ListArg libraryArg,
                                                                   List<String> datasets,
+                                                                  List<String> releases,
                                                                   int offset,
                                                                   int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
-                .queryParam("libraryName", libraryArg.input)
-                .queryParam("alignmentSpace", alignmentSpace)
-                .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                .queryParam("offset", offset)
-                .queryParam("length", pageLength),
+                        .queryParam("libraryName", libraryArg.input)
+                        .queryParam("alignmentSpace", alignmentSpace)
+                        .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                        .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                        .queryParam("offset", offset)
+                        .queryParam("length", pageLength),
                 credentials)
                 ;
     }
 
     private List<ColorDepthMIP> retrieveColorDepthMips(WebTarget endpoint, String credentials) {
+        LOG.info("Get mips from {}", endpoint);
         Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);

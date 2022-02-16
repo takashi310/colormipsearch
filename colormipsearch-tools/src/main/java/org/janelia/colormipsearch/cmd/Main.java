@@ -52,7 +52,8 @@ public class Main {
                 new ConvertPPPResultsCmd("convertPPPResults", commonArgs),
                 new CopyPPPMatchesCmd("copyPPPMatches", commonArgs),
                 new CreateReversePPPMatchesCmd("createReversePPPMatches", commonArgs),
-                new MergeMipsCmd("mergeMips", commonArgs)
+                new MergeMipsCmd("mergeMips", commonArgs),
+                new GenerateJSONSchemasCmd("schemas", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

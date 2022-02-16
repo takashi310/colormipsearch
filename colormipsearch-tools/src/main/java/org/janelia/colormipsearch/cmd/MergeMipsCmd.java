@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,7 +83,7 @@ class MergeMipsCmd extends AbstractCmd {
             resultFileNames = args.resultsDirs.stream()
                     .flatMap(rd -> {
                         try {
-                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile());
+                            return Files.find(Paths.get(rd), 1, (p, fa) -> fa.isRegularFile(), FileVisitOption.FOLLOW_LINKS);
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
@@ -105,13 +106,13 @@ class MergeMipsCmd extends AbstractCmd {
                 .forEach(e -> {
                     String fn = e.getKey();
                     List<String> resultList = e.getValue();
-                    LOG.info("Combine results for {}", fn);
+                    LOG.info("Combine results for {} from {}", fn, resultList);
                     List<ColorDepthMetadata> combinedResults = resultList.stream()
                             .map(File::new)
                             .map(mipsFile -> {
                                 LOG.info("Reading {} -> {}", fn, mipsFile);
                                 Results<List<ColorDepthMetadata>> mipsResults = readMipsMetadata(mipsFile);
-                                if (mipsResults.hasResults()) {
+                                if (!mipsResults.hasResults()) {
                                     LOG.warn("Results file {} is empty", mipsFile);
                                 }
                                 return mipsResults;
