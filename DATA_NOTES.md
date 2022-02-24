@@ -1,6 +1,6 @@
 ### Release Version: 2.4.0
 
-### Release Date: 2022-01-xx
+### Release Date: 2022-02-25
 
 #### Color Depth Searches
 
