@@ -5,7 +5,7 @@
 #### Color Depth Searches
 
 **LM data**
-* Added Annotator MCFO lines
+* Added 27,600 additional samples from the Annotator Gen1 MCFO data set, including 579 new lines. These samples were imaged with 20x and 63x objectives instead of 40x. See the FlyLight Gen1 MCFO website (https://gen1mcfo.janelia.org/cgi-bin/gen1mcfo.cgi) for all available images and citation guidance.
 
 The rest is as in [2.2.0](###Release-Version:-2.2.0)
 
