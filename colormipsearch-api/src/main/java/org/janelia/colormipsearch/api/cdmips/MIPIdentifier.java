@@ -12,6 +12,7 @@ public class MIPIdentifier {
     private final String imagePath;
     private final String cdmPath;
     private final String imageURL;
+    private final String imageStack;
 
 
     public MIPIdentifier(String id,
@@ -21,7 +22,8 @@ public class MIPIdentifier {
                          String relatedImageRefId,
                          String imagePath,
                          String cdmPath,
-                         String imageURL) {
+                         String imageURL,
+                         String imageStack) {
         this.id = id;
         this.publishedName = publishedName;
         this.libraryName = libraryName;
@@ -30,6 +32,7 @@ public class MIPIdentifier {
         this.imagePath = imagePath;
         this.cdmPath = cdmPath;
         this.imageURL = imageURL;
+        this.imageStack = imageStack;
     }
 
     public String getId() {
@@ -62,6 +65,10 @@ public class MIPIdentifier {
 
     public String getImageURL() {
         return imageURL;
+    }
+
+    public String getImageStack() {
+        return imageStack;
     }
 
     @Override
