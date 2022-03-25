@@ -2,6 +2,11 @@
 
 ### Release Date: 2022-02-25
 
+#### Notes
+* 3D files are available for download for both Color Depth Searches and PatchPerPix (PPP) searches
+* LM data: aligned image stacks can be downloaded in the h5j format
+* EM data: skeletons can be downloaded in the swc format
+
 #### Color Depth Searches
 
 **LM data**
