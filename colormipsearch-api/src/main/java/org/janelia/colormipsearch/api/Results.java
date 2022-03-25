@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Results<T> {
+    @JsonRequired
     @JsonProperty
     public final T results;
 

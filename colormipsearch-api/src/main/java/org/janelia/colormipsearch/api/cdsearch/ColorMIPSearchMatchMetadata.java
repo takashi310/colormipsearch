@@ -3,14 +3,17 @@ package org.janelia.colormipsearch.api.cdsearch;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.JsonRequired;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
+@JsonClassDescription("Color Depth Search Match")
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 
     /**
@@ -85,6 +88,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private Long gradientAreaGap;
     @JsonProperty
     private Long highExpressionArea;
+    @JsonRequired
     private Double normalizedGapScore;
     private Double artificialShapeScore;
 
