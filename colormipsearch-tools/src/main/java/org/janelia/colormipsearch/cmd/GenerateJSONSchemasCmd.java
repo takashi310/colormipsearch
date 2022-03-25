@@ -9,8 +9,6 @@ import java.util.List;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,7 +51,6 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Grooup MIPs by published name")
     private static class GenerateJSONSchemasArgs extends AbstractCmdArgs {
-
 
         @Parameter(names = {"--schemas-directory", "-sdir"}, description = "Schemas sub-directory")
         String schemasOutput = "schemas";
@@ -118,7 +115,6 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                         JsonRequired fieldAnnotation = fieldScope.getAnnotation(JsonRequired.class);
                         JsonRequired methodAnnotation = methodScope == null ? null : methodScope.getAnnotation(JsonRequired.class);
                         boolean required = fieldAnnotation != null || methodAnnotation != null;
-                        System.out.println("!!!! FIELD: " + fieldScope.getDeclaringType() + ":"  + fieldScope.getDeclaredName() + "->" + required);
                         return required;
                     })
                     .withStringFormatResolver(fieldScope -> "uri")
