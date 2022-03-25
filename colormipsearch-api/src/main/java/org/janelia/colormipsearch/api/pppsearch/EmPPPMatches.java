@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.janelia.colormipsearch.api.JsonRequired;
 import org.janelia.colormipsearch.api.Results;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -169,25 +171,30 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         return sourceNeuronName;
     }
 
+    @JsonRequired
     @JsonProperty("maskId")
     public String getNeuronId() {
         return neuronId;
     }
 
+    @JsonRequired
     @JsonProperty("maskPublishedName")
     public String getNeuronName() {
         return neuronName;
     }
 
+    @JsonProperty
     public String getNeuronType() {
         return neuronType;
     }
 
+    @JsonRequired
     @JsonProperty("maskLibraryName")
     public String getNeuronDataset() {
         return neuronDataset;
     }
 
+    @JsonProperty
     public String getNeuronInstance() {
         return neuronInstance;
     }

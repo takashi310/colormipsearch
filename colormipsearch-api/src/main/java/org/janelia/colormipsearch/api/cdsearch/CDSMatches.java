@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.api.JsonRequired;
 import org.janelia.colormipsearch.api.Results;
 import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;
 
@@ -119,26 +120,35 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
         return CollectionUtils.isEmpty(results);
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getMaskId() {
         return maskId;
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getMaskPublishedName() {
         return maskPublishedName;
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getMaskLibraryName() {
         return maskLibraryName;
     }
 
+    @JsonProperty
     public String getMaskImageURL() {
         return maskImageURL;
     }
 
+    @JsonProperty
     public String getMaskSampleRef() {
         return maskSampleRef;
     }
 
+    @JsonProperty
     public String getMaskRelatedImageRefId() {
         return maskRelatedImageRefId;
     }
