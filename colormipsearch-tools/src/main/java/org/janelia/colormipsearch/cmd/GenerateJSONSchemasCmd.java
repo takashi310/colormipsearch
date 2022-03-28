@@ -117,7 +117,13 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                         boolean required = fieldAnnotation != null || methodAnnotation != null;
                         return required;
                     })
-                    .withStringFormatResolver(fieldScope -> "uri")
+                    .withStringFormatResolver(fieldScope -> {
+                        if (fieldScope.getDeclaredName().toLowerCase().contains("url")) {
+                            return "uri";
+                        } else {
+                            return null;
+                        }
+                    })
                     ;
 
             SchemaGeneratorConfig config = configBuilder.build();
