@@ -666,26 +666,29 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
      * this method sets the S3 URL(s) we get via publishedImage collection
      */
     private void setPublishedImageURLs(MIPMetadata cdmip, WebTarget serverEndpoint, String credentials){
-        WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() +
-            "/" + cdmip.getObjective() +
-            "/" + cdmip.getSlideCode());
+        if (cdmip.hasSlideCode()) {
+            // only for LM images
+            WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() +
+                    "/" + cdmip.getObjective() +
+                    "/" + cdmip.getSlideCode());
 
-        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-        PublishedImage image;
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            // leave imageStack unset, but log it
-            LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
-            return;
+            Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+            PublishedImage image;
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                // leave imageStack unset, but log it
+                LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
+                return;
+            }
+
+            List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
+            }.getType()));
+            // api guarantees exactly one element in list:
+            image = images.get(0);
+
+            // for now, there is only one URL to set
+            // we don't have jacs-model, so I'm hard-coding the name of the element in the enum, which is kind of icky
+            cdmip.setImageStack(image.files.get("VisuallyLosslessStack"));
         }
-
-        List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
-        }.getType()));
-        // api guarantees exactly one element in list:
-        image = images.get(0);
-
-        // for now, there is only one URL to set
-        // we don't have jacs-model, so I'm hard-coding the name of the element in the enum, which is kind of icky
-        cdmip.setImageStack(image.files.get("VisuallyLosslessStack"));
     }
 
     /**
