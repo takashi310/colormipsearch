@@ -57,11 +57,7 @@ public class CachedMIPsUtils {
 
     private static Results<MIPImage> tryMIPLoad(MIPMetadata mipInfo) {
         try {
-            if (MIPsUtils.exists(mipInfo)) {
-                return new Results<>(MIPsUtils.loadMIP(mipInfo));
-            } else {
-                return new Results<>(null);
-            }
+            return new Results<>(MIPsUtils.loadMIP(mipInfo));
         } catch (Exception e) {
             LOG.error("Error loading {}", mipInfo, e);
             return new Results<>(null);
