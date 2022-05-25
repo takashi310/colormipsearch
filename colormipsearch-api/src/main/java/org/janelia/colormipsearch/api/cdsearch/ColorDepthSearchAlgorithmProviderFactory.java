@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.api.cdsearch;
 
-import java.util.function.BiPredicate;
-
 import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;

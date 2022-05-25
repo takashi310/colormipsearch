@@ -115,15 +115,15 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                         LOG.debug("Compare query# {} - {} with {} out of {} targets", mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size());
                         long startTime = System.currentTimeMillis();
                         List<ColorMIPSearchResult> srs = targetMIPsPartition.stream()
-                                .filter(MIPsUtils::exists)
-                                .map(targetMIP -> {
+                                .map(CachedMIPsUtils::loadMIP)
+                                .filter(mip -> mip != null)
+                                .map(targetImage -> {
                                     try {
-                                        MIPImage libraryImage = CachedMIPsUtils.loadMIP(targetMIP);
                                         Map<String, Supplier<ImageArray<?>>> variantImageSuppliers = new HashMap<>();
                                         if (requiredVariantTypes.contains("gradient")) {
                                             variantImageSuppliers.put("gradient", () -> {
                                                 MIPImage gradientImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        targetMIP,
+                                                        targetImage.getMipInfo(),
                                                         "gradient",
                                                         gradientsLocations,
                                                         gradientVariantSuffixMapping,
@@ -134,7 +134,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                         if (requiredVariantTypes.contains("zgap")) {
                                             variantImageSuppliers.put("zgap", () -> {
                                                 MIPImage libraryZGapMaskImage = CachedMIPsUtils.loadMIP(MIPsUtils.getMIPVariantInfo(
-                                                        targetMIP,
+                                                        targetImage.getMipInfo(),
                                                         "zgap",
                                                         zgapMasksLocations,
                                                         zgapMaskVariantSuffixMapping,
@@ -143,20 +143,20 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                             });
                                         }
                                         ColorMIPMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
-                                                MIPsUtils.getImageArray(libraryImage),
+                                                MIPsUtils.getImageArray(targetImage),
                                                 variantImageSuppliers);
                                         boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
                                         return new ColorMIPSearchResult(
                                                 queryMIP,
-                                                targetMIP,
+                                                targetImage.getMipInfo(),
                                                 colorMIPMatchScore,
                                                 isMatch,
                                                 false);
                                     } catch (Throwable e) {
-                                        LOG.warn("Error comparing mask {} with {}", queryMIP,  targetMIP, e);
+                                        LOG.warn("Error comparing mask {} with {}", queryMIP,  targetImage, e);
                                         return new ColorMIPSearchResult(
                                                 queryMIP,
-                                                targetMIP,
+                                                targetImage.getMipInfo(),
                                                 ColorMIPMatchScore.NO_MATCH,
                                                 false,
                                                 true);
