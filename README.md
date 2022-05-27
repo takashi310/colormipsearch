@@ -1,4 +1,6 @@
-# Distributed Color MIP Mask Search
+# Distributed Color Depth MIP Search
+
+[![DOI](https://zenodo.org/badge/98349943.svg)](https://zenodo.org/badge/latestdoi/98349943)
 
 This is a distributed version of the [ColorMIP_Mask_Search](https://github.com/JaneliaSciComp/ColorMIP_Mask_Search) Fiji plugin, running on Apache Spark. 
 
