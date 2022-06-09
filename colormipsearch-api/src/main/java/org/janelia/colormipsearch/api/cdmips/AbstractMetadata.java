@@ -30,8 +30,9 @@ public abstract class AbstractMetadata implements Serializable {
     private String imageURL;
     private String thumbnailURL;
     private String searchablePNG;
-    // imageStack is defined for LM images
+    // imageStack, screenImage are defined for LM images
     private String imageStack;
+    private String screenImage;
     private String slideCode;
     private String driver;
     private String objective;
@@ -161,6 +162,14 @@ public abstract class AbstractMetadata implements Serializable {
 
     public String getImageStack() {
         return imageStack;
+    }
+
+    public void setScreenImage(String screenImage) {
+        this.screenImage = screenImage;
+    }
+
+    public String getScreenImage () {
+        return screenImage;
     }
 
     @JsonProperty
@@ -346,6 +355,7 @@ public abstract class AbstractMetadata implements Serializable {
         that.setThumbnailURL(this.thumbnailURL);
         that.setSearchablePNG(this.getSearchablePNG());
         that.setImageStack(this.getImageStack());
+        that.setScreenImage(this.getScreenImage());
         that.setCdmPath(this.getCdmPath());
         that.setImageType(this.getImageType());
         that.setImageName(this.getImageName());
@@ -403,6 +413,8 @@ public abstract class AbstractMetadata implements Serializable {
                     return this::setSearchablePNG;
                 case "imageStack":
                     return this::setImageStack;
+                case "screenImage":
+                    return this::setScreenImage;
                 default:
                     return defaultAttributeValueHandler(attrName);
             }

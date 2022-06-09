@@ -634,14 +634,6 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
      */
     private void setImageURLs(MIPMetadata cdmip) {
         if (!cdmip.getImageName().isEmpty() && !cdmip.getImageURL().isEmpty()) {
-            // searchableName filename must be expressed in terms of publishedName (not internal name),
-            //  and must include the integer suffix that identifies exactly which image it is (for LM),
-            //  when there are multiple images for a given combination of parameters
-            // in practical terms, we take the filename from imageURL, which has
-            //  the publishedName in it, and graft on the required integer from imageName (for LM), which
-            //  has the internal name; we have to similarly grab _FL from EM names
-
-            // remove directories and extension (which we know is ".png") from imageURL:
             Path imagePath = Paths.get(cdmip.getImageURL());
             String matchingImageName = createMatchingSegmentationName(
                     Paths.get(cdmip.getCdmName()).getFileName().toString(),
@@ -666,26 +658,30 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
      * this method sets the S3 URL(s) we get via publishedImage collection
      */
     private void setPublishedImageURLs(MIPMetadata cdmip, WebTarget serverEndpoint, String credentials){
-        WebTarget endpoint = serverEndpoint.path("/publishedImage/image/" + cdmip.getAlignmentSpace() +
+        // this endpoint grabs two sets of URLs; the second one is null for some samples
+        WebTarget endpoint = serverEndpoint.path("/publishedImage/imageWithGen1Image/" + cdmip.getAlignmentSpace() +
             "/" + cdmip.getObjective() +
             "/" + cdmip.getSlideCode());
 
         Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-        PublishedImage image;
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            // leave imageStack unset, but log it
+            // if error, leave unset, but log it
             LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
             return;
         }
 
         List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
         }.getType()));
-        // api guarantees exactly one element in list:
-        image = images.get(0);
+        // api guarantees exactly two elements in list:
+        PublishedImage image1 = images.get(0);
+        PublishedImage image2 = images.get(1);
 
-        // for now, there is only one URL to set
-        // we don't have jacs-model, so I'm hard-coding the name of the element in the enum, which is kind of icky
-        cdmip.setImageStack(image.files.get("VisuallyLosslessStack"));
+        // we don't have jacs-model available, so we don't have access to the enum holding
+        //    these attribute names; I'm hard-coding them instead, which is kind of icky
+        cdmip.setImageStack(image1.files.get("VisuallyLosslessStack"));
+        if (image2 != null && image2.files.get("ColorDepthMip1") != null) {
+            cdmip.setScreenImage(image2.files.get("ColorDepthMip1"));
+        }
     }
 
     /**

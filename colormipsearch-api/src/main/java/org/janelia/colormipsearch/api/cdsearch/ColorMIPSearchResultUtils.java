@@ -52,18 +52,14 @@ public class ColorMIPSearchResultUtils {
                                 csr.getSourceImagePath(),
                                 csr.getSourceCdmPath(),
                                 csr.getSourceImageURL(),
-                                csr.getSourceImageStack()
+                                csr.getSourceImageStack(),
+                                csr.getSourceScreenImage()
                         ),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 l -> l.stream()
                                         .map(csr -> {
                                             csr.setSourceImageURL(null);
-                                            // re: imageStack: similar to imageURL, so assuming we don't want it in
-                                            //  this comparison; it should be redundant with other info, but we
-                                            //  need it to create match json with the attribute; in any case,
-                                            //  we didn't have it before, so it's definitely not required here
-                                            csr.setSourceImageStack(null);
                                             return csr;
                                         })
                                         .sorted(Comparator.comparing(ColorMIPSearchMatchMetadata::getMatchingPixels).reversed())
@@ -76,6 +72,7 @@ public class ColorMIPSearchResultUtils {
                         e.getKey().getRelatedImageRefId(),
                         e.getKey().getImageURL(),
                         e.getKey().getImageStack(),
+                        e.getKey().getScreenImage(),
                         e.getValue()))
                 .collect(Collectors.toList());
     }
