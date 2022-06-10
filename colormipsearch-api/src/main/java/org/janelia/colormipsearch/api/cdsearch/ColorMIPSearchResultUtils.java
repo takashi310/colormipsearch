@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -21,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.model.Results;
 import org.janelia.colormipsearch.api.ScoredEntry;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.cdmips.MIPIdentifier;

@@ -1,13 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.UncheckedIOException;
-import java.nio.channels.Channels;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -15,25 +8,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.xml.transform.Result;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.model.Results;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.AbstractPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
-import org.janelia.colormipsearch.api.pppsearch.LmPPPMatch;
-import org.janelia.colormipsearch.api.pppsearch.LmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
 import org.janelia.colormipsearch.api.pppsearch.PublishedEmPPPMatch;
 import org.slf4j.Logger;

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.model.Results;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPsUtils;
 import org.junit.Assert;

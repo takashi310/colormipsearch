@@ -25,12 +25,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.model.Results;
 import org.janelia.colormipsearch.api.Utils;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.LmPPPMatches;
 import org.janelia.colormipsearch.api.pppsearch.PPPUtils;
-import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

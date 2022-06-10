@@ -26,7 +26,7 @@ import com.github.victools.jsonschema.generator.TypeScope;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
 import org.janelia.colormipsearch.api.JsonRequired;
-import org.janelia.colormipsearch.api.Results;
+import org.janelia.colormipsearch.model.Results;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;

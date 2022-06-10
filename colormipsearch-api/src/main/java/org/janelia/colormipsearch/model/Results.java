@@ -1,7 +1,9 @@
-package org.janelia.colormipsearch.api;
+package org.janelia.colormipsearch.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.janelia.colormipsearch.api.JsonRequired;
 
 public class Results<T> {
     @JsonRequired
