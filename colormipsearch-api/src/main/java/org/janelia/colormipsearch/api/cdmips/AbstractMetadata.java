@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.api.JsonRequired;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractMetadata implements Serializable {
@@ -54,6 +56,8 @@ public abstract class AbstractMetadata implements Serializable {
     @JsonProperty
     private Map<String, String> variants = null;
 
+    @JsonRequired
+    @JsonIdentityReference
     @JsonProperty
     public String getId() {
         return id;
@@ -63,6 +67,7 @@ public abstract class AbstractMetadata implements Serializable {
         this.id = id;
     }
 
+    @JsonRequired
     @JsonProperty
     public String getPublishedName() {
         return publishedName;
@@ -131,6 +136,8 @@ public abstract class AbstractMetadata implements Serializable {
         this.imageType = imageType;
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getImageURL() {
         return imageURL;
     }
@@ -139,6 +146,7 @@ public abstract class AbstractMetadata implements Serializable {
         this.imageURL = imageURL;
     }
 
+    @JsonRequired
     @JsonProperty
     public String getThumbnailURL() {
         return thumbnailURL;
@@ -148,6 +156,8 @@ public abstract class AbstractMetadata implements Serializable {
         this.thumbnailURL = thumbnailURL;
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getSearchablePNG() {
         return searchablePNG;
     }
@@ -172,6 +182,7 @@ public abstract class AbstractMetadata implements Serializable {
         return screenImage;
     }
 
+    @JsonRequired
     @JsonProperty
     public String getLibraryName() {
         return libraryName;
@@ -242,6 +253,8 @@ public abstract class AbstractMetadata implements Serializable {
         this.anatomicalArea = anatomicalArea;
     }
 
+    @JsonRequired
+    @JsonProperty
     public String getAlignmentSpace() {
         return alignmentSpace;
     }

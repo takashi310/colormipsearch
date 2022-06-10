@@ -1,66 +1,35 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.net.URI;
-import java.nio.channels.Channels;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
+import com.github.victools.jsonschema.generator.ConfigFunction;
+import com.github.victools.jsonschema.generator.MethodScope;
+import com.github.victools.jsonschema.generator.OptionPreset;
+import com.github.victools.jsonschema.generator.SchemaGenerator;
+import com.github.victools.jsonschema.generator.SchemaGeneratorConfig;
+import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
+import com.github.victools.jsonschema.generator.SchemaVersion;
+import com.github.victools.jsonschema.generator.TypeScope;
+import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.api.JsonRequired;
 import org.janelia.colormipsearch.api.Results;
-import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api.cdsearch.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.api.pppsearch.EmPPPMatch;
 import org.janelia.colormipsearch.api.pppsearch.EmPPPMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +41,16 @@ import org.slf4j.LoggerFactory;
  */
 public class GenerateJSONSchemasCmd extends AbstractCmd {
 
+    private static final String SCHEMAS_BASE_URI = "https://neuronbridge.janelia.org/schemas/";
+
+    private static final String MIPS_SCHEMA = "mips.schema";
+    private static final String CDS_RESULTS_SCHEMA = "cdsMatches.schema";
+    private static final String PPP_RESULTS_SCHEMA = "pppMatches.schema";
+
     private static final Logger LOG = LoggerFactory.getLogger(GenerateJSONSchemasCmd.class);
 
     @Parameters(commandDescription = "Grooup MIPs by published name")
     private static class GenerateJSONSchemasArgs extends AbstractCmdArgs {
-
 
         @Parameter(names = {"--schemas-directory", "-sdir"}, description = "Schemas sub-directory")
         String schemasOutput = "schemas";
@@ -110,32 +84,92 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
         Path outputPath = Paths.get(args.commonArgs.outputDir, args.schemasOutput);
         CmdUtils.createOutputDirs(outputPath);
         try {
-            JsonSchemaGenerator jsonSchemaGenerator = new JsonSchemaGenerator(mapper);
-            JavaType mipResultstype = mapper.getTypeFactory().constructParametricType(Results.class,
-                    mapper.getTypeFactory().constructCollectionType(List.class, ColorDepthMetadata.class));
-            JsonSchema mipsSchema = jsonSchemaGenerator.generateSchema(mipResultstype);
+            JacksonModule module = new JacksonModule();
+            SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                    .with(module)
+                    ;
+
+            // we only configure the builder for fields and for types because that is what the schema generator needs right now
+            // it does not use any method for schema generation
+
+            configBuilder.forTypesInGeneral()
+                    .withIdResolver(getListTypeResultsHandler(
+                            SCHEMAS_BASE_URI + MIPS_SCHEMA + ".json",
+                            SCHEMAS_BASE_URI + CDS_RESULTS_SCHEMA + ".json",
+                            SCHEMAS_BASE_URI + PPP_RESULTS_SCHEMA + ".json"))
+                    .withTitleResolver(getListTypeResultsHandler(
+                            "Color Depth MIPs for a published EM neuron or LM line",
+                            "Color Depth Search results",
+                            "Patch per Pix search results"))
+                    .withDescriptionResolver(getListTypeResultsHandler(
+                            "Color Depth MIPs for a published EM neuron or LM line",
+                            "Color Depth Search results",
+                            "Patch per Pix search results"))
+                    ;
+
+            configBuilder.forFields()
+                    .withRequiredCheck(fieldScope -> {
+                        // we consider a field to be required if either the field or the getter
+                        // is explicitly annotated with JsonProperty
+                        MethodScope methodScope = fieldScope.findGetter();
+                        JsonRequired fieldAnnotation = fieldScope.getAnnotation(JsonRequired.class);
+                        JsonRequired methodAnnotation = methodScope == null ? null : methodScope.getAnnotation(JsonRequired.class);
+                        boolean required = fieldAnnotation != null || methodAnnotation != null;
+                        return required;
+                    })
+                    .withStringFormatResolver(fieldScope -> {
+                        if (fieldScope.getDeclaredName().toLowerCase().contains("url")) {
+                            return "uri";
+                        } else {
+                            return null;
+                        }
+                    })
+                    ;
+
+            SchemaGeneratorConfig config = configBuilder.build();
+            SchemaGenerator generator = new SchemaGenerator(config);
+            JsonNode mipsSchema = generator.generateSchema(new TypeReference<Results<List<ColorDepthMetadata>>>(){}.getType());
             writeSchemaToFile(mipsSchema,
-                    CmdUtils.getOutputFile(outputPath, "mips.schema"));
+                    CmdUtils.getOutputFile(outputPath, MIPS_SCHEMA));
 
-            JsonSchema matchesSchema = jsonSchemaGenerator.generateSchema(CDSMatches.class);
+            JsonNode matchesSchema = generator.generateSchema(CDSMatches.class);
             writeSchemaToFile(matchesSchema,
-                    CmdUtils.getOutputFile(outputPath, "cdsMatches.schema"));
+                    CmdUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
 
-            JsonSchema pppsSchema = jsonSchemaGenerator.generateSchema(EmPPPMatches.class);
+            JsonNode pppsSchema = generator.generateSchema(EmPPPMatches.class);
             writeSchemaToFile(pppsSchema,
-                    CmdUtils.getOutputFile(outputPath, "pppMatches.schema"));
+                    CmdUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
 
         } catch (Exception e) {
             LOG.error("Error generating schema", e);
         }
     }
 
-    private void writeSchemaToFile(JsonSchema schema, File f) throws IOException {
+    private void writeSchemaToFile(JsonNode schema, File f) throws IOException {
         ObjectWriter writer = args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
         if (f == null) {
             writer.writeValue(System.out, schema);
         } else {
             writer.writeValue(f, schema);
         }
+    }
+
+    private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String mipsMessage, String cdsResultsMessage, String pppResultsMessage) {
+        return scope -> {
+            if (scope.getType().getErasedType() == Results.class || scope.getType().isInstanceOf(Results.class)) {
+                if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == ColorDepthMetadata.class) {
+                    // Results<List<ColorDepthMetadata>>
+                    return mipsMessage;
+                } else if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == ColorMIPSearchMatchMetadata.class) {
+                    // Results<List<ColorMIPSearchMatchMetadata>>
+                    return cdsResultsMessage;
+                } else if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == EmPPPMatch.class) {
+                    // Results<List<EmPPPMatch>>
+                    return pppResultsMessage;
+                }
+            }
+            return null;
+        };
+
     }
 }

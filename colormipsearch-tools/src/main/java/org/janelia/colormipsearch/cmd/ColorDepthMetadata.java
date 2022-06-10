@@ -1,13 +1,16 @@
 package org.janelia.colormipsearch.cmd;
 
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeId;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api.cdmips.MIPMetadata;
 
+@JsonClassDescription("Color Depth MIP")
 class ColorDepthMetadata extends AbstractMetadata {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty

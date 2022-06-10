@@ -15,6 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api.FileType;
+import org.janelia.colormipsearch.api.JsonRequired;
 
 /**
  * These are the source PPP matches as they are imported from the original matches.
@@ -202,6 +203,7 @@ public class AbstractPPPMatch {
         this.slideCode = slideCode;
     }
 
+    @JsonRequired
     @JsonProperty
     public String getAnatomicalArea() {
         return anatomicalArea;
@@ -227,6 +229,7 @@ public class AbstractPPPMatch {
         this.mountingProtocol = mountingProtocol;
     }
 
+    @JsonRequired
     @JsonProperty
     public String getAlignmentSpace() {
         return alignmentSpace;
@@ -244,6 +247,7 @@ public class AbstractPPPMatch {
         this.gender = gender;
     }
 
+    @JsonRequired
     @JsonProperty
     public Double getCoverageScore() {
         return coverageScore;
@@ -262,6 +266,7 @@ public class AbstractPPPMatch {
         this.aggregateCoverage = aggregateCoverage;
     }
 
+    @JsonRequired
     @JsonProperty
     public Boolean getMirrored() {
         return mirrored;
@@ -271,6 +276,7 @@ public class AbstractPPPMatch {
         this.mirrored = mirrored;
     }
 
+    @JsonRequired
     @JsonProperty("pppScore")
     public int getPPPScore() {
         return coverageScore == null ? 0 : (int)Math.abs(coverageScore);
@@ -285,6 +291,7 @@ public class AbstractPPPMatch {
         return emPPPRank != null;
     }
 
+    @JsonRequired
     @JsonProperty("pppRank")
     public Double getEmPPPRank() {
         return emPPPRank;

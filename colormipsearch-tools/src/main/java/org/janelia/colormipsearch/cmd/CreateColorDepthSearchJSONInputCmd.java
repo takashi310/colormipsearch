@@ -658,29 +658,33 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
      * this method sets the S3 URL(s) we get via publishedImage collection
      */
     private void setPublishedImageURLs(MIPMetadata cdmip, WebTarget serverEndpoint, String credentials){
-        // this endpoint grabs two sets of URLs; the second one is null for some samples
-        WebTarget endpoint = serverEndpoint.path("/publishedImage/imageWithGen1Image/" + cdmip.getAlignmentSpace() +
-            "/" + cdmip.getObjective() +
-            "/" + cdmip.getSlideCode());
+        if (cdmip.hasSlideCode()) {
+            // this endpoint grabs two sets of URLs; the second one is null for some samples
+            WebTarget endpoint = serverEndpoint.path("/publishedImage/imageWithGen1Image/" + cdmip.getAlignmentSpace() +
+                    "/" + cdmip.getObjective() +
+                    "/" + cdmip.getSlideCode());
 
-        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            // if error, leave unset, but log it
-            LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
-            return;
-        }
+            Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+            PublishedImage image1;
+            PublishedImage image2;
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                // leave imageStack unset, but log it
+                LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
+                return;
+            }
 
-        List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
-        }.getType()));
-        // api guarantees exactly two elements in list:
-        PublishedImage image1 = images.get(0);
-        PublishedImage image2 = images.get(1);
+            List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
+            }.getType()));
+            // api guarantees exactly two elements in list:
+            image1 = images.get(0);
+            image2 = images.get(1);
 
-        // we don't have jacs-model available, so we don't have access to the enum holding
-        //    these attribute names; I'm hard-coding them instead, which is kind of icky
-        cdmip.setImageStack(image1.files.get("VisuallyLosslessStack"));
-        if (image2 != null && image2.files.get("ColorDepthMip1") != null) {
-            cdmip.setScreenImage(image2.files.get("ColorDepthMip1"));
+            // we don't have jacs-model available, so we don't have access to the enum holding
+            //    these attribute names; I'm hard-coding them instead, which is kind of icky
+            cdmip.setImageStack(image1.files.get("VisuallyLosslessStack"));
+            if (image2 != null && image2.files.get("ColorDepthMip1") != null) {
+                cdmip.setScreenImage(image2.files.get("ColorDepthMip1"));
+            }
         }
     }
 
