@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.api_v2.cdsearch;
 
 import java.io.Serializable;
 
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 /**
  * Creator of a ColorMIPQuerySearch for a given mask that generates a certain score type.

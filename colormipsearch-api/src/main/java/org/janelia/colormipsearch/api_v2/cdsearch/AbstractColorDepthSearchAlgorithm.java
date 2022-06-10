@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 /**
  * Common methods that can be used by various ColorDepthQuerySearchAlgorithm implementations.

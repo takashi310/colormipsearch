@@ -4,8 +4,8 @@ import java.util.Collections;
 
 import ij.ImagePlus;
 import ij.io.Opener;
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArrayUtils;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

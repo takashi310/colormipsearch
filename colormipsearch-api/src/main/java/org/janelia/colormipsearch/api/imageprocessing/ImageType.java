@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api_v2.imageprocessing;
+package org.janelia.colormipsearch.api.imageprocessing;
 
 import ij.ImagePlus;
 

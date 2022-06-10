@@ -34,7 +34,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.api_v2.cdsearch.NegativeColorDepthMatchScore;
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

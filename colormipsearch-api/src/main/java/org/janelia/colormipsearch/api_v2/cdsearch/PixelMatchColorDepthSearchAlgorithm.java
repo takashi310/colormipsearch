@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
-import org.janelia.colormipsearch.api_v2.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
 
 /**
  * PixelMatchColorDepthQuerySearchAlgorithm - implements the color depth mip comparison
