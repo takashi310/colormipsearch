@@ -7,7 +7,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public abstract class AbstractNeuronImage {
     private String id; // MIP ID
-    private String libraryName;
+    private String libraryName; // MIP library
     private String publishedName;
     private String alignmentSpace;
     private Gender gender;
