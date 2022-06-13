@@ -2,10 +2,11 @@ package org.janelia.colormipsearch.model;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public abstract class AbstractNeuronImage {
+public abstract class AbstractNeuronMetadata {
     private String id; // MIP ID
     private String libraryName; // MIP library
     private String publishedName;
@@ -58,7 +59,16 @@ public abstract class AbstractNeuronImage {
     }
 
     public void setNeuronFiles(Map<FileType, FileData> neuronFiles) {
-        this.neuronFiles = neuronFiles;
+        if (neuronFiles == null) {
+            this.neuronFiles.clear();
+        } else {
+            this.neuronFiles = neuronFiles;
+        }
+    }
+
+    public Optional<FileData> getNeuronFileData(FileType t) {
+        FileData f = neuronFiles.get(t);
+        return f != null ? Optional.of(f) : Optional.empty();
     }
 
     @Override

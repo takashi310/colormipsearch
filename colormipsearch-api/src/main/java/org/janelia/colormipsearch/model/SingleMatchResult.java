@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SingleMatchResult<I extends AbstractNeuronImage, R extends AbstractMatch<? extends AbstractNeuronImage>> {
+public class SingleMatchResult<I extends AbstractNeuronMetadata, R extends AbstractMatch<? extends AbstractNeuronMetadata>> {
     private I input;
     private R match;
 

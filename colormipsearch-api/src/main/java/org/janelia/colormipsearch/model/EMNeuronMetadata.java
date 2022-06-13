@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.model;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public abstract class EMNeuronImage extends AbstractNeuronImage {
+public class EMNeuronMetadata extends AbstractNeuronMetadata {
 
     private String neuronType;
     private String neuronInstance;

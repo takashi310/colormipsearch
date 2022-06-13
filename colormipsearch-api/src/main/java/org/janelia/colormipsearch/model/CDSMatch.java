@@ -1,6 +1,6 @@
 package org.janelia.colormipsearch.model;
 
-public class CDSMatch<I extends AbstractNeuronImage> extends AbstractMatch<I> {
+public class CDSMatch<I extends AbstractNeuronMetadata> extends AbstractMatch<I> {
     private Float normalizedScore;
     private Integer matchingPixels;
 

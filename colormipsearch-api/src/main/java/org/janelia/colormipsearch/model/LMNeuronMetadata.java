@@ -2,13 +2,22 @@ package org.janelia.colormipsearch.model;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public abstract class LMNeuronImage extends AbstractNeuronImage {
+public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
+    private String sampleRef;
     private String slideCode;
     private String objective;
     private String anatomicalArea;
     private String mountingProtocol;
     private Integer channel; // 1-based channel number
+
+    public String getSampleRef() {
+        return sampleRef;
+    }
+
+    public void setSampleRef(String sampleRef) {
+        this.sampleRef = sampleRef;
+    }
 
     public String getSlideCode() {
         return slideCode;

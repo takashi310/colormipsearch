@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.model;
 
 import java.util.List;
 
-public class PPPMatch<I extends AbstractNeuronImage> extends AbstractMatch<I> {
+public class PPPMatch<I extends AbstractNeuronMetadata> extends AbstractMatch<I> {
     private Double coverageScore;
     private Double aggregateCoverage;
     private Double rank;

@@ -1,7 +1,11 @@
 package org.janelia.colormipsearch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import org.apache.commons.lang3.StringUtils;
+
 public class FileData {
-    enum FileDataType {
+    public enum FileDataType {
         file,
         zipEntry
     };
@@ -32,5 +36,10 @@ public class FileData {
 
     public void setEntryName(String entryName) {
         this.entryName = entryName;
+    }
+
+    @JsonIgnore
+    public String getName() {
+        return StringUtils.isNotBlank(entryName) ? entryName : fileName;
     }
 }
