@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +43,26 @@ import org.slf4j.LoggerFactory;
 public class NeuronMIPUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(NeuronMIPUtils.class);
+
+    public static <N extends AbstractNeuronMetadata> List<N> loadNeuronMetadataFromJSON(String jsonFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
+        try {
+            LOG.info("Reading {}", jsonFilename);
+            List<N> content = mapper.readValue(new File(jsonFilename), new TypeReference<List<N>>() {});
+            if (CollectionUtils.isEmpty(filter)) {
+                int from = Math.max(offset, 0);
+                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), jsonFilename, from, to);
+                return content.subList(from, to);
+            } else {
+                LOG.info("Read {} from {} mips", filter, content.size());
+                return content.stream()
+                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getId())))
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
 
     /**
      * Load a Neuron image from its metadata
