@@ -45,6 +45,7 @@ class ColorDepthMIP implements Serializable {
     String sourceImageRef;
     @JsonProperty
     CDMIPSample sample;
+    String sample3DImageStack;
 
     String findLibrary(String libraryName) {
         if (CollectionUtils.isEmpty(libraries)) {

@@ -71,6 +71,10 @@ public abstract class AbstractNeuronMetadata {
         return f != null ? Optional.of(f) : Optional.empty();
     }
 
+    public void setNeuronFileData(FileType t, FileData fd) {
+        neuronFiles.put(t, fd);
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)

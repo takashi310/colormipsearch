@@ -41,7 +41,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.janelia.colormipsearch.cmd_v2.Main</mainClass>
+                            <mainClass>org.janelia.colormipsearch.cmd.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

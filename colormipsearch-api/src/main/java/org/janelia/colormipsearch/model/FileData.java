@@ -10,6 +10,12 @@ public class FileData {
         zipEntry
     };
 
+    public static FileData fromFile(String fn) {
+        FileData fd = new FileData();
+        fd.setDataType(FileDataType.file);
+        fd.setFileName(fn);
+        return fd;
+    }
     private FileDataType dataType;
     private String fileName;
     private String entryName;

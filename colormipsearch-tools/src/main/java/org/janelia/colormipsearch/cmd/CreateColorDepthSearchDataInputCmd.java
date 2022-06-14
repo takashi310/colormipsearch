@@ -52,6 +52,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api.cds.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.FileData;
+import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +72,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
-    static class ChannelBaseValidator implements IValueValidator<Integer> {
+    public static class ChannelBaseValidator implements IValueValidator<Integer> {
         @Override
         public void validate(String name, Integer value) throws ParameterException {
             if (value < 0 || value > 1) {
@@ -323,11 +327,28 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 cdmsCount, libraryPaths.getLibraryName(), args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
         int to = libraryPaths.library.length > 0 ? Math.min(libraryPaths.library.offset + libraryPaths.library.length, cdmsCount) : cdmsCount;
 
-        JsonGenerator gen = createJsonGenerator(
+        Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> {
+            String internalLibraryName = cmip.findLibrary(libraryPaths.getLibraryName());
+            if (StringUtils.isBlank(internalLibraryName)) {
+                return null;
+            } else {
+                String displayLibraryName = libraryNamesMapping.apply(internalLibraryName);
+                if (StringUtils.isBlank(displayLibraryName)) {
+                    return internalLibraryName;
+                } else {
+                    return displayLibraryName;
+                }
+            }
+        };
+
+        CDSDataInputGenerator gen = new JSONCDSDataInputGenerator(
                 outputPath,
                 StringUtils.defaultIfBlank(outputFilename, libraryPaths.getLibraryName()),
                 libraryPaths.library.offset,
-                to);
+                to,
+                args.appendOutput,
+                mapper)
+                .prepare();
 
         for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
             int currentPageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -341,7 +362,54 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     pageOffset,
                     currentPageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + currentPageSize, cdmsCount);
+            cdmipsPage.stream()
+                    .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
+                    .map(cdmip -> isEmLibrary(libraryPaths.getLibraryName())
+                            ? asEMNeuron(cdmip, libraryNameExtractor)
+                            : asLMNeuron(cdmip, libraryNameExtractor))
+                    .forEach(cdmip -> {
+                        gen.write(cdmip);
+                    });
         }
+        gen.done();
+    }
+
+    private boolean checkLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {
+        if (CollectionUtils.isNotEmpty(includedLibraries)) {
+            if (!cdmip.libraries.containsAll(includedLibraries)) {
+                return false;
+            }
+        }
+        if (CollectionUtils.isNotEmpty(excludedLibraries)) {
+            return cdmip.libraries.stream()
+                    .filter(l -> excludedLibraries.contains(l))
+                    .count() == 0;
+        }
+        return true;
+    }
+
+    boolean isEmLibrary(String lname) {
+        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") &&
+                (StringUtils.containsIgnoreCase(lname, "hemibrain") || StringUtils.containsIgnoreCase(lname, "vnc"));
+    }
+
+    private EMNeuronMetadata asEMNeuron(ColorDepthMIP cdmip,
+                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
+        EMNeuronMetadata neuronMetadata = new EMNeuronMetadata();
+        neuronMetadata.setId(cdmip.id);
+        return neuronMetadata;
+    }
+
+    private LMNeuronMetadata asLMNeuron(ColorDepthMIP cdmip,
+                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
+        LMNeuronMetadata neuronMetadata = new LMNeuronMetadata();
+        neuronMetadata.setId(cdmip.id);
+        neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+        neuronMetadata.setLibraryName(libraryName);
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromFile(cdmip.filepath));
+        return neuronMetadata;
+
     }
 
     private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
@@ -375,6 +443,9 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                         .queryParam("offset", offset)
                         .queryParam("length", pageLength),
                 credentials)
+                .stream()
+                .map(colorDepthMIP -> retrieve3DImageStack(colorDepthMIP, serverEndpoint, credentials))
+                .collect(Collectors.toList())
                 ;
     }
 
@@ -384,7 +455,28 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {}.getType()));
+            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {
+            }.getType()));
+        }
+    }
+
+    private ColorDepthMIP retrieve3DImageStack(ColorDepthMIP cdmip, WebTarget endpoint, String credentials) {
+        if (cdmip.sample != null) {
+            // only for LM images
+            WebTarget refImageEndpoint = endpoint.path("/publishedImage/image")
+                    .path(cdmip.alignmentSpace)
+                    .path(cdmip.sample.slideCode)
+                    .path(cdmip.objective);
+            Response response = createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                throw new IllegalStateException("Invalid response from " + refImageEndpoint.getUri() + " -> " + response);
+            } else {
+                SamplePublishedData samplePublishedData = response.readEntity(SamplePublishedData.class);
+                cdmip.sample3DImageStack = samplePublishedData.files.get("VisuallyLosslessStack");
+                return cdmip;
+            }
+        } else {
+            return cdmip;
         }
     }
 
@@ -448,7 +540,8 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
         }
-        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {}.getType()));
+        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {
+        }.getType()));
         Object configEntry = configJSON.get("config");
         if (!(configEntry instanceof Map)) {
             LOG.error("Config entry from {} is null or it's not a map", configJSON);
@@ -465,64 +558,5 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         return cdmLibraryNamesMapping;
     }
 
-    private JsonGenerator createJsonGenerator(Path outputPath,
-                                              String outputFileName,
-                                              int libraryFromIndex,
-                                              int libraryToIndex) {
-        String outputName;
-        if (libraryFromIndex > 0) {
-            outputName = outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json";
-        } else {
-            outputName = outputFileName + ".json";
-        }
-        try {
-            Files.createDirectories(outputPath);
-        } catch (Exception e) {
-            throw new IllegalStateException("Error creating output directory: " + outputPath, e);
-        }
-        Path outputFilePath = outputPath.resolve(outputName);
-        LOG.info("Write color depth MIPs to {}", outputFilePath);
-        if (Files.exists(outputFilePath) && args.appendOutput) {
-            return openOutputForAppend(outputFilePath.toFile());
-        } else {
-            return openOutput(outputFilePath.toFile());
-        }
-    }
-
-    private JsonGenerator openOutputForAppend(File of) {
-        try {
-            LOG.debug("Append to {}", of);
-            RandomAccessFile rf = new RandomAccessFile(of, "rw");
-            long rfLength = rf.length();
-            // position FP after the end of the last item
-            // this may not work on Windows because of the new line separator
-            // - so on windows it may need to rollback more than 4 chars
-            rf.seek(rfLength - 2);
-            OutputStream outputStream = Channels.newOutputStream(rf.getChannel());
-            outputStream.write(',');
-            long pos = rf.getFilePointer();
-            JsonGenerator gen = mapper.getFactory().createGenerator(outputStream, JsonEncoding.UTF8);
-            gen.useDefaultPrettyPrinter();
-            gen.writeStartArray();
-            gen.flush();
-            rf.seek(pos);
-            return gen;
-        } catch (IOException e) {
-            LOG.error("Error creating the output stream to be appended for {}", of, e);
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private JsonGenerator openOutput(File of) {
-        try {
-            JsonGenerator gen = mapper.getFactory().createGenerator(new FileOutputStream(of), JsonEncoding.UTF8);
-            gen.useDefaultPrettyPrinter();
-            gen.writeStartArray();
-            return gen;
-        } catch (IOException e) {
-            LOG.error("Error creating the output stream for {}", of, e);
-            throw new UncheckedIOException(e);
-        }
-    }
 
 }
