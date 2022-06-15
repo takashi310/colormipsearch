@@ -4,10 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractNeuronMetadata {
     private String id; // MIP ID
+    private String sourceFilepath; // file path of the source color depth MIP
+                                   // this is not handled like any other filedata because
+                                   // it's purpose is only to keep track of where the original mip was located
     private String libraryName; // MIP library
     private String publishedName;
     private String alignmentSpace;
@@ -20,6 +27,14 @@ public abstract class AbstractNeuronMetadata {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getSourceFilepath() {
+        return sourceFilepath;
+    }
+
+    public void setSourceFilepath(String sourceFilepath) {
+        this.sourceFilepath = sourceFilepath;
     }
 
     public String getLibraryName() {
@@ -54,6 +69,8 @@ public abstract class AbstractNeuronMetadata {
         this.gender = gender;
     }
 
+    @JsonProperty("files")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
     }
@@ -72,7 +89,11 @@ public abstract class AbstractNeuronMetadata {
     }
 
     public void setNeuronFileData(FileType t, FileData fd) {
-        neuronFiles.put(t, fd);
+        if (fd != null) {
+            neuronFiles.put(t, fd);
+        } else {
+            neuronFiles.remove(t);
+        }
     }
 
     @Override

@@ -11,7 +11,9 @@ import org.janelia.colormipsearch.model.FileData;
 public class FileDataSerializer extends JsonSerializer<FileData> {
     @Override
     public void serialize(FileData value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        if (value.getDataType() == FileData.FileDataType.zipEntry) {
+        if (value == null) {
+            gen.writeNull();
+        } if (value.getDataType() == FileData.FileDataType.zipEntry) {
             gen.writeObject(value);
         } else {
             gen.writeString(value.getFileName());

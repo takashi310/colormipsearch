@@ -1,14 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.channels.Channels;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -39,8 +31,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -223,7 +213,8 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         args = new CreateColorDepthSearchDataInputArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                ;
     }
 
     @Override
@@ -366,7 +357,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             cdmipsPage.stream()
                     .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .map(cdmip -> isEmLibrary(libraryPaths.getLibraryName())
-                            ? asEMNeuron(cdmip, libraryNameExtractor)
+                            ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping, Gender.fromVal(args.defaultGender))
                             : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
                     .forEach(cdmip -> {
                         gen.write(cdmip);
@@ -395,9 +386,24 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     }
 
     private EMNeuronMetadata asEMNeuron(ColorDepthMIP cdmip,
-                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
+                                        Function<ColorDepthMIP, String> libraryNameExtractor,
+                                        Function<String, String> urlMapping,
+                                        Gender defaultGenderForEMNeuron) {
+        String libraryName = libraryNameExtractor.apply(cdmip);
         EMNeuronMetadata neuronMetadata = new EMNeuronMetadata();
         neuronMetadata.setId(cdmip.id);
+        neuronMetadata.setSourceFilepath(cdmip.filepath);
+        neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
+        neuronMetadata.setLibraryName(libraryName);
+        neuronMetadata.setNeuronType(cdmip.neuronType);
+        neuronMetadata.setNeuronInstance(cdmip.neuronInstance);
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.asFileFromString(urlMapping.apply(cdmip.publicImageUrl)));
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.asFileFromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
+        neuronMetadata.setPublishedName(cdmip.bodyId != null ? String.valueOf(cdmip.bodyId) : null);
+        neuronMetadata.setGender(defaultGenderForEMNeuron);
+        if (cdmip.emBody != null && cdmip.emBody.files != null) {
+            neuronMetadata.setNeuronFileData(FileType.AlignedBodySWC, FileData.asFileFromString(cdmip.emBody.files.get("SkeletonSWC")));
+        }
         return neuronMetadata;
     }
 
@@ -407,20 +413,21 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         String libraryName = libraryNameExtractor.apply(cdmip);
         LMNeuronMetadata neuronMetadata = new LMNeuronMetadata();
         neuronMetadata.setId(cdmip.id);
+        neuronMetadata.setSourceFilepath(cdmip.filepath);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setSampleRef(cdmip.sampleRef);
         neuronMetadata.setAnatomicalArea(cdmip.anatomicalArea);
         neuronMetadata.setObjective(cdmip.objective);
         neuronMetadata.setChannel(Integer.valueOf(cdmip.channelNumber));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromFile(cdmip.filepath));
-        neuronMetadata.setNeuronFileData(FileType.VisuallyLosslessStack, FileData.fromFile(cdmip.sample3DImageStack));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromFile(urlMapping.apply(cdmip.publicImageUrl)));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromFile(urlMapping.apply(cdmip.publicThumbnailUrl)));
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.asFileFromString(urlMapping.apply(cdmip.publicImageUrl)));
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.asFileFromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
+        neuronMetadata.setNeuronFileData(FileType.VisuallyLosslessStack, FileData.asFileFromString(cdmip.sample3DImageStack));
+        neuronMetadata.setNeuronFileData(FileType.SignalMipExpression, FileData.asFileFromString(cdmip.sampleGen1Gal4ExpressionImage));
         if (cdmip.sample != null) {
             neuronMetadata.setPublishedName(cdmip.sample.publishingName);
             neuronMetadata.setSlideCode(cdmip.sample.slideCode);
-            neuronMetadata.setGender(Gender.valueOf(cdmip.sample.gender));
+            neuronMetadata.setGender(Gender.fromVal(cdmip.sample.gender));
             neuronMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
         } else {
             populateNeuronDataFromCDMIPName(cdmip.name, neuronMetadata);
@@ -449,7 +456,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         neuronMetadata.setObjective(MIPsHandlingUtils.extractObjectiveFromMIPName(mipName));
         String gender = MIPsHandlingUtils.extractGenderFromMIPName(mipName);
         if (gender != null) {
-            neuronMetadata.setGender(Gender.valueOf(gender));
+            neuronMetadata.setGender(Gender.fromVal(gender));
         }
     }
 
@@ -504,21 +511,20 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     private ColorDepthMIP retrieve3DImageStack(ColorDepthMIP cdmip, WebTarget endpoint, String credentials) {
         if (cdmip.sample != null) {
             // only for LM images
-            WebTarget refImageEndpoint = endpoint.path("/publishedImage/image")
+            WebTarget refImageEndpoint = endpoint.path("/publishedImage/imageWithGen1Image")
                     .path(cdmip.alignmentSpace)
                     .path(cdmip.sample.slideCode)
                     .path(cdmip.objective);
             Response response = createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-                throw new IllegalStateException("Invalid response from " + refImageEndpoint.getUri() + " -> " + response);
-            } else {
-                SamplePublishedData samplePublishedData = response.readEntity(SamplePublishedData.class);
-                cdmip.sample3DImageStack = samplePublishedData.files.get("VisuallyLosslessStack");
-                return cdmip;
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {}.getType()));
+                SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
+                SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
+                cdmip.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
+                cdmip.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
             }
-        } else {
-            return cdmip;
         }
+        return cdmip;
     }
 
     private Client createHttpClient() {
@@ -598,6 +604,5 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
         return cdmLibraryNamesMapping;
     }
-
 
 }

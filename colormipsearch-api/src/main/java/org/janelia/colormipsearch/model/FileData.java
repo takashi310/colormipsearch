@@ -16,7 +16,7 @@ public class FileData {
         zipEntry
     };
 
-    public static FileData fromFile(String fn) {
+    public static FileData asFileFromString(String fn) {
         if (StringUtils.isNotBlank(fn)) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.file);
