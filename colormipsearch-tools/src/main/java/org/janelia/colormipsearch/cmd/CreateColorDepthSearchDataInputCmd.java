@@ -55,6 +55,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -366,7 +367,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .map(cdmip -> isEmLibrary(libraryPaths.getLibraryName())
                             ? asEMNeuron(cdmip, libraryNameExtractor)
-                            : asLMNeuron(cdmip, libraryNameExtractor))
+                            : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
                     .forEach(cdmip -> {
                         gen.write(cdmip);
                     });
@@ -401,15 +402,55 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     }
 
     private LMNeuronMetadata asLMNeuron(ColorDepthMIP cdmip,
-                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
+                                        Function<ColorDepthMIP, String> libraryNameExtractor,
+                                        Function<String, String> urlMapping) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         LMNeuronMetadata neuronMetadata = new LMNeuronMetadata();
         neuronMetadata.setId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
+        neuronMetadata.setSampleRef(cdmip.sampleRef);
+        neuronMetadata.setAnatomicalArea(cdmip.anatomicalArea);
+        neuronMetadata.setObjective(cdmip.objective);
+        neuronMetadata.setChannel(Integer.valueOf(cdmip.channelNumber));
         neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromFile(cdmip.filepath));
+        neuronMetadata.setNeuronFileData(FileType.VisuallyLosslessStack, FileData.fromFile(cdmip.sample3DImageStack));
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromFile(urlMapping.apply(cdmip.publicImageUrl)));
+        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromFile(urlMapping.apply(cdmip.publicThumbnailUrl)));
+        if (cdmip.sample != null) {
+            neuronMetadata.setPublishedName(cdmip.sample.publishingName);
+            neuronMetadata.setSlideCode(cdmip.sample.slideCode);
+            neuronMetadata.setGender(Gender.valueOf(cdmip.sample.gender));
+            neuronMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
+        } else {
+            populateNeuronDataFromCDMIPName(cdmip.name, neuronMetadata);
+        }
         return neuronMetadata;
+    }
 
+    private void populateNeuronDataFromCDMIPName(String mipName, LMNeuronMetadata neuronMetadata) {
+        String[] mipNameComponents = StringUtils.split(mipName, '-');
+        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : mipName;
+        // attempt to remove the PI initials
+        int piSeparator = StringUtils.indexOf(line, '_');
+        String lineID;
+        if (piSeparator == -1) {
+            lineID = line;
+        } else {
+            lineID = line.substring(piSeparator + 1);
+        }
+        neuronMetadata.setPublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
+        String slideCode = mipNameComponents.length > 1 ? mipNameComponents[1] : null;
+        neuronMetadata.setSlideCode(slideCode);
+        int colorChannel = MIPsHandlingUtils.extractColorChannelFromMIPName(mipName);
+        if (colorChannel != -1) {
+            neuronMetadata.setChannel(colorChannel);
+        }
+        neuronMetadata.setObjective(MIPsHandlingUtils.extractObjectiveFromMIPName(mipName));
+        String gender = MIPsHandlingUtils.extractGenderFromMIPName(mipName);
+        if (gender != null) {
+            neuronMetadata.setGender(Gender.valueOf(gender));
+        }
     }
 
     private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
