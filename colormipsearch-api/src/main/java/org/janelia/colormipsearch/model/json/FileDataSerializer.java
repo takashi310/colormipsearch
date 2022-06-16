@@ -14,7 +14,11 @@ public class FileDataSerializer extends JsonSerializer<FileData> {
         if (value == null) {
             gen.writeNull();
         } if (value.getDataType() == FileData.FileDataType.zipEntry) {
-            gen.writeObject(value);
+            gen.writeStartObject();
+            gen.writeStringField("dataType", value.getDataType().toString());
+            gen.writeStringField("fileName", value.getFileName());
+            gen.writeStringField("entryName", value.getEntryName());
+            gen.writeEndObject();
         } else {
             gen.writeString(value.getFileName());
         }

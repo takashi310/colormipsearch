@@ -33,7 +33,8 @@ public class FileData {
         if (fileDataType == FileDataType.zipEntry) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.zipEntry);
-            fd.setFileName(name);
+            fd.setFileName(parent);
+            fd.setEntryName(name);
             return fd;
         } else {
             FileData fd = new FileData();

@@ -26,6 +26,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -107,9 +108,12 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 variableArity = true)
         List<LibraryVariantArg> libraryVariants;
 
-        @Parameter(names = {"--segmented-mips-variant"},
-                description = "The entry name in the variants dictionary for segmented images")
-        String segmentationVariantName;
+        @DynamicParameter(names = "--variant-filetype-mapping", description = "Dynamic variant to file type mapping")
+        Map<String, String> variantFileTypeMapping = new HashMap<String, String>() {{
+            put("searchable_neurons", FileType.ColorDepthMipInput.name());
+            put("grad", FileType.GradientImage.name());
+            put("zgap", FileType.RGBZGapImage.name());
+        }};
 
         @Parameter(names = "--included-libraries", variableArity = true, description = "If set, MIPs should also be in all these libraries")
         Set<String> includedLibraries;
@@ -231,16 +235,17 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                         createColorDepthSearchInputData(
                                 serverEndpoint,
                                 lpaths,
-                                args.segmentationVariantName,
+                                getVariantForFileType(FileType.ColorDepthMipInput),
                                 excludedNeurons,
                                 libraryNameMapping::get,
                                 getNeuronFileURLMapper(),
                                 Paths.get(args.commonArgs.outputDir),
                                 args.outputFileName
                         );
+                    } else {
+                        // generate the input in offline mode
                     }
                 });
-        // FIXME
     }
 
     private Map<String, List<LibraryVariantArg>> getLibraryVariants() {
@@ -424,6 +429,14 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             populateNeuronDataFromCDMIPName(cdmip.name, neuronMetadata);
         }
         return neuronMetadata;
+    }
+
+    private String getVariantForFileType(FileType fileType) {
+        return args.variantFileTypeMapping.entrySet().stream()
+                .filter(e -> e.getValue().equalsIgnoreCase(fileType.name()))
+                .map(e -> e.getKey())
+                .findFirst()
+                .orElse(null);
     }
 
     private void populateNeuronDataFromCDMIPName(String mipName, LMNeuronMetadata neuronMetadata) {

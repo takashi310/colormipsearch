@@ -21,10 +21,10 @@ class LibraryVariantArg {
                 throw new ParameterException("Library name is not specified");
             }
             if (value.variantType == null) {
-                throw new ParameterException("Library variant type is not specified");
+                throw new ParameterException("Library variant type is not specified for " + value);
             }
             if (StringUtils.isBlank(value.variantPath)) {
-                throw new ParameterException("Library variant path is not specified");
+                throw new ParameterException("Library variant path is not specified for " + value);
             }
         }
     }
