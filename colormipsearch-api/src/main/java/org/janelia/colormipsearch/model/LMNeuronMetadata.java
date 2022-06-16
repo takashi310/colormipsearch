@@ -11,6 +11,11 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String mountingProtocol;
     private Integer channel; // 1-based channel number
 
+    @Override
+    public String getNeuronId() {
+        return getSlideCode();
+    }
+
     public String getSampleRef() {
         return sampleRef;
     }
@@ -57,6 +62,20 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setChannel(Integer channel) {
         this.channel = channel;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <N extends AbstractNeuronMetadata> N duplicate() {
+        LMNeuronMetadata n = new LMNeuronMetadata();
+        n.copyFrom(this);
+        n.sampleRef = this.sampleRef;
+        n.slideCode = this.slideCode;
+        n.objective = this.objective;
+        n.anatomicalArea = this.anatomicalArea;
+        n.mountingProtocol = this.mountingProtocol;
+        n.channel = this.channel;
+        return (N) n;
     }
 
     @Override

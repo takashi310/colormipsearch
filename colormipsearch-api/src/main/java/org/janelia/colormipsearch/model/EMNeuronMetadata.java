@@ -7,6 +7,11 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     private String neuronType;
     private String neuronInstance;
 
+    @Override
+    public String getNeuronId() {
+        return getPublishedName();
+    }
+
     public String getNeuronType() {
         return neuronType;
     }
@@ -21,6 +26,16 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setNeuronInstance(String neuronInstance) {
         this.neuronInstance = neuronInstance;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <N extends AbstractNeuronMetadata> N duplicate() {
+        EMNeuronMetadata n = new EMNeuronMetadata();
+        n.copyFrom(this);
+        n.neuronType = this.neuronType;
+        n.neuronInstance = this.neuronInstance;
+        return (N) n;
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,6 +29,9 @@ public abstract class AbstractNeuronMetadata {
     public void setId(String id) {
         this.id = id;
     }
+
+    @JsonIgnore
+    public abstract String getNeuronId();
 
     public String getSourceFilepath() {
         return sourceFilepath;
@@ -71,11 +75,11 @@ public abstract class AbstractNeuronMetadata {
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<FileType, FileData> getNeuronFiles() {
+    Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
     }
 
-    public void setNeuronFiles(Map<FileType, FileData> neuronFiles) {
+    void setNeuronFiles(Map<FileType, FileData> neuronFiles) {
         if (neuronFiles == null) {
             this.neuronFiles.clear();
         } else {
@@ -96,6 +100,8 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
+    public abstract <N extends AbstractNeuronMetadata> N duplicate();
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
@@ -104,4 +110,15 @@ public abstract class AbstractNeuronMetadata {
                 .append("publishedName", publishedName)
                 .toString();
     }
+
+    protected <N extends AbstractNeuronMetadata> void copyFrom(N that) {
+        this.id = that.getId();
+        this.sourceFilepath = that.getSourceFilepath();
+        this.libraryName = that.getLibraryName();
+        this.publishedName = that.getPublishedName();
+        this.alignmentSpace = that.getAlignmentSpace();
+        this.gender = that.getGender();
+        this.neuronFiles.putAll(that.getNeuronFiles());
+    }
+
 }

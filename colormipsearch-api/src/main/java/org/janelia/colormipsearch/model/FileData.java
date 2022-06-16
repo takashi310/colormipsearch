@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.model;
 
+import java.nio.file.Paths;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -16,7 +18,7 @@ public class FileData {
         zipEntry
     };
 
-    public static FileData asFileFromString(String fn) {
+    public static FileData fromString(String fn) {
         if (StringUtils.isNotBlank(fn)) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.file);
@@ -26,6 +28,21 @@ public class FileData {
             return null;
         }
     }
+
+    public static FileData fromComponents(FileDataType fileDataType, String parent, String name) {
+        if (fileDataType == FileDataType.zipEntry) {
+            FileData fd = new FileData();
+            fd.setDataType(FileDataType.zipEntry);
+            fd.setFileName(name);
+            return fd;
+        } else {
+            FileData fd = new FileData();
+            fd.setDataType(FileDataType.file);
+            fd.setFileName(Paths.get(parent).resolve(name).toString());
+            return fd;
+        }
+    }
+
     private FileDataType dataType;
     private String fileName;
     private String entryName;

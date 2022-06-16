@@ -15,7 +15,7 @@ public class FileDataDeserializer extends JsonDeserializer<FileData> {
         if (p.getCurrentToken() == JsonToken.START_OBJECT || p.getCurrentToken() == JsonToken.VALUE_NULL) {
             return p.readValueAs(FileData.class);
         } else if (p.getCurrentToken() == JsonToken.VALUE_STRING) {
-            return FileData.asFileFromString(p.getValueAsString());
+            return FileData.fromString(p.getValueAsString());
         } else {
             return null;
         }
