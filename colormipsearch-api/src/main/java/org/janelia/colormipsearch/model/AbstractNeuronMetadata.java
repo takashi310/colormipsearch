@@ -71,10 +71,6 @@ public abstract class AbstractNeuronMetadata {
         return computeFiles;
     }
 
-    void setComputeFiles(Map<ComputeFileType, FileData> computeFiles) {
-        this.computeFiles = computeFiles;
-    }
-
     public Optional<FileData> getComputeFileData(ComputeFileType t) {
         FileData f = computeFiles.get(t);
         return f != null ? Optional.of(f) : Optional.empty();
@@ -97,14 +93,6 @@ public abstract class AbstractNeuronMetadata {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
-    }
-
-    void setNeuronFiles(Map<FileType, FileData> neuronFiles) {
-        if (neuronFiles == null) {
-            this.neuronFiles.clear();
-        } else {
-            this.neuronFiles = neuronFiles;
-        }
     }
 
     public void setNeuronFileData(FileType t, FileData fd) {
