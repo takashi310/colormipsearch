@@ -35,6 +35,7 @@ import org.janelia.colormipsearch.api.imageprocessing.ImageArrayUtils;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
 import org.slf4j.Logger;
@@ -67,20 +68,20 @@ public class NeuronMIPUtils {
     /**
      * Load a Neuron image from its metadata
      * @param neuronMetadata
-     * @param neuronFileType
+     * @param computeFileType
      * @return
      */
     @Nullable
-    public static <N extends AbstractNeuronMetadata> NeuronMIP<N> loadNeuronFile(@Nullable N neuronMetadata, FileType neuronFileType) {
+    public static <N extends AbstractNeuronMetadata> NeuronMIP<N> loadComputeFile(@Nullable N neuronMetadata, ComputeFileType computeFileType) {
         long startTime = System.currentTimeMillis();
         if (neuronMetadata == null) {
             return null;
         } else {
-            LOG.trace("Load MIP {}:{}", neuronMetadata, neuronFileType);
-            Optional<FileData> neuronFileData = neuronMetadata.getNeuronFileData(neuronFileType);
+            LOG.trace("Load MIP {}:{}", neuronMetadata, computeFileType);
+            Optional<FileData> computeFileData = neuronMetadata.getComputeFileData(computeFileType);
             InputStream inputStream;
             try {
-                inputStream = openInputStream(neuronFileData.orElse(null));
+                inputStream = openInputStream(computeFileData.orElse(null));
                 if (inputStream == null) {
                     return null;
                 }
@@ -88,16 +89,16 @@ public class NeuronMIPUtils {
                 throw new IllegalStateException(e);
             }
             try {
-                return new NeuronMIP<>(neuronMetadata, ImageArrayUtils.readImageArray(neuronMetadata.getId(), neuronFileData.map(FileData::getName).orElse(""), inputStream));
+                return new NeuronMIP<>(neuronMetadata, ImageArrayUtils.readImageArray(neuronMetadata.getId(), computeFileData.map(FileData::getName).orElse(""), inputStream));
             } catch (Exception e) {
-                LOG.error("Error loading {}:{}", neuronMetadata, neuronFileType, e);
+                LOG.error("Error loading {}:{}", neuronMetadata, computeFileType, e);
                 throw new IllegalStateException(e);
             } finally {
                 try {
                     inputStream.close();
                 } catch (IOException ignore) {
                 }
-                LOG.trace("Loaded MIP {}:{} in {}ms", neuronMetadata, neuronFileType, System.currentTimeMillis() - startTime);
+                LOG.trace("Loaded MIP {}:{} in {}ms", neuronMetadata, computeFileType, System.currentTimeMillis() - startTime);
             }
         }
     }

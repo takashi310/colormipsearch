@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
@@ -93,7 +94,11 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static <N extends AbstractNeuronMetadata> List<N> lookupSegmentedImages(N neuronMetadata, String segmentedDataBasePath, FileData.FileDataType fileDataType, Map<String, List<String>> segmentedImages, int segmentedImageChannelBase) {
+    private static <N extends AbstractNeuronMetadata> List<N> lookupSegmentedImages(N neuronMetadata,
+                                                                                    String inputDataBasePath,
+                                                                                    FileData.FileDataType fileDataType,
+                                                                                    Map<String, List<String>> computeInputImages,
+                                                                                    int inputImageChannelBase) {
         String indexingField = neuronMetadata.getNeuronId();
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(neuronMetadata.getLibraryName())) {
@@ -101,7 +106,7 @@ class MIPsHandlingUtils {
             segmentedImageMatcher = p -> {
                 String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
                 Preconditions.checkArgument(fn.contains(indexingField));
-                String cmFN = RegExUtils.replacePattern(Paths.get(neuronMetadata.getSourceFilepath()).getFileName().toString(), "\\.\\D*$", "");
+                String cmFN = RegExUtils.replacePattern(Paths.get(neuronMetadata.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(), "\\.\\D*$", "");
                 String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
                 String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
                 return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||
@@ -113,25 +118,26 @@ class MIPsHandlingUtils {
                 Preconditions.checkArgument(fn.contains(indexingField));
                 LMNeuronMetadata lmNeuronMetadata = (LMNeuronMetadata) neuronMetadata;
                 int channelFromMip = getColorChannel(lmNeuronMetadata);
-                int channelFromFN = extractColorChannelFromMIPName(fn.replace(indexingField, ""), segmentedImageChannelBase);
-                LOG.debug("Compare channel from {} ({}) with channel from {} ({})", neuronMetadata.getSourceFilepath(), channelFromMip, fn, channelFromFN);
+                int channelFromFN = extractColorChannelFromMIPName(fn.replace(indexingField, ""), inputImageChannelBase);
+                LOG.debug("Compare channel from {} ({}) with channel from {} ({})",
+                        neuronMetadata.getComputeFileData(ComputeFileType.SourceColorDepthImage), channelFromMip, fn, channelFromFN);
                 String objectiveFromMip = lmNeuronMetadata.getObjective();
                 String objectiveFromFN = extractObjectiveFromImageName(fn.replace(indexingField, ""));
                 return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
                         matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
             };
         }
-        if (segmentedImages.get(indexingField) == null) {
+        if (computeInputImages.get(indexingField) == null) {
             return Collections.emptyList();
         } else {
-            return segmentedImages.get(indexingField).stream()
+            return computeInputImages.get(indexingField).stream()
                     .filter(segmentedImageMatcher)
                     .map(p -> {
                         String sifn = Paths.get(p).getFileName().toString();
                         int scIndex = sifn.indexOf(indexingField);
                         Preconditions.checkArgument(scIndex != -1);
                         N segmentedNeuron = neuronMetadata.duplicate();
-                        segmentedNeuron.setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromComponents(fileDataType, segmentedDataBasePath, p));
+                        segmentedNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, FileData.fromComponents(fileDataType, inputDataBasePath, p));
                         return segmentedNeuron;
                     })
                     .collect(Collectors.toList());
@@ -196,7 +202,9 @@ class MIPsHandlingUtils {
 
     private static <N extends AbstractNeuronMetadata> N originalAsInput(N neuronMetadata) {
         N segmentedNeuron = neuronMetadata.duplicate();
-        segmentedNeuron.setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromString(neuronMetadata.getSourceFilepath()));
+        segmentedNeuron.setComputeFileData(
+                ComputeFileType.InputColorDepthImage,
+                FileData.fromString(neuronMetadata.getComputeFileName(ComputeFileType.SourceColorDepthImage)));
         return segmentedNeuron;
     }
 

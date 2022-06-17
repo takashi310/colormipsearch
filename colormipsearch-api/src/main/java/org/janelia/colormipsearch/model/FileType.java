@@ -14,9 +14,7 @@ public enum FileType {
     SignalMipExpression, // MCFO-only. A representative CDM image of the full expression of the line.
     VisuallyLosslessStack, // LMImage-only. An H5J 3D image stack of all channels of the LM image.
     AlignedBodySWC, // EMImage-only, A 3D SWC skeleton of the EM body in the alignment space.
-    AlignedBodyOBJ, // EMImage-only. A 3D OBJ representation of the EM body in the alignment space.
-    GradientImage,
-    RGBZGapImage;
+    AlignedBodyOBJ; // EMImage-only. A 3D OBJ representation of the EM body in the alignment space.
 
     private String optionalPPPSuffix; // optional suffix used only by the PPP image files
 
