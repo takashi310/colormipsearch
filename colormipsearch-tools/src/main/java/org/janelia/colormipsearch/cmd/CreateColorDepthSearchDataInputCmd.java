@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.api.cds.FileDataUtils;
 import org.janelia.colormipsearch.api.cds.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -360,11 +362,44 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                             ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping, Gender.fromVal(args.defaultGender))
                             : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
                     .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath,  segmentedImages, args.includeOriginalWithSegmentation, args.segmentedImageChannelBase).stream())
+                    .peek(cdmip -> populateOtherVariantsBasedOnSegmentation(
+                            cdmip,
+                            EnumSet.of(FileType.GradientImage, FileType.RGBZGapImage),
+                            libraryPaths.libraryVariants,
+                            libraryPaths.getLibraryVariant(segmentationVariantType).orElse(null)))
                     .forEach(cdmip -> {
                         gen.write(cdmip);
                     });
         }
         gen.done();
+    }
+
+    private void populateOtherVariantsBasedOnSegmentation(AbstractNeuronMetadata cdmip,
+                                                          Set<FileType> fileTypes,
+                                                          List<LibraryVariantArg> libraryVariants,
+                                                          LibraryVariantArg segmentationVariant) {
+        String librarySegmentationSuffix = segmentationVariant == null ? null : segmentationVariant.variantTypeSuffix;
+        libraryVariants.stream()
+                .filter(variant -> fileTypes.contains(FileType.fromName(args.variantFileTypeMapping.get(variant.variantType))))
+                .forEach(variant -> {
+                    FileType variantFileType = FileType.fromName(args.variantFileTypeMapping.get(variant.variantType));
+                    FileData variantFileData = FileDataUtils.lookupVariantFileData(
+                            cdmip.getNeuronFileName(FileType.ColorDepthMipInput),
+                            cdmip.getSourceFilepath(),
+                            Collections.singletonList(variant.variantPath),
+                            variant.variantNameSuffix,
+                            nc -> {
+                                String suffix = StringUtils.defaultIfBlank(variant.variantTypeSuffix, "");
+                                if (StringUtils.isNotBlank(librarySegmentationSuffix)) {
+                                    return StringUtils.replaceIgnoreCase(nc, librarySegmentationSuffix, "") + suffix;
+                                } else {
+                                    return nc + suffix;
+                                }
+                            }
+                    );
+                    cdmip.setNeuronFileData(variantFileType, variantFileData);
+                });
+
     }
 
     private boolean checkLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {

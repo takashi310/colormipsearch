@@ -100,6 +100,11 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
+    public String getNeuronFileName(FileType t) {
+        FileData f = neuronFiles.get(t);
+        return f != null ? f.getName() : null;
+    }
+
     public abstract <N extends AbstractNeuronMetadata> N duplicate();
 
     @Override

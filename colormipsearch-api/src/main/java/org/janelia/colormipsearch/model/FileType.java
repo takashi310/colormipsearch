@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.model;
 
+import org.apache.commons.lang3.StringUtils;
+
 public enum FileType {
     ColorDepthMip("_5_ch.png"), // The CDM of the image. For PPPM, this is the best matching channel of the matching LM stack and called 'Best Channel CDM' in the NeuronBridge GUI.
     ColorDepthMipThumbnail, // The thumbnail sized version of the ColorDepthMip, if available.
@@ -24,6 +26,15 @@ public enum FileType {
 
     FileType(String optionalPPPSuffix) {
         this.optionalPPPSuffix = optionalPPPSuffix;
+    }
+
+    public static FileType fromName(String name) {
+        for (FileType vt : values()) {
+            if (StringUtils.equalsIgnoreCase(vt.name(), name)) {
+                return vt;
+            }
+        }
+        return null;
     }
 
     public static FileType findFileTypeByPPPSuffix(String fname) {
