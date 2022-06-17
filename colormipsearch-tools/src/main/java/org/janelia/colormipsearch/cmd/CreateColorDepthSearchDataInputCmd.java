@@ -112,9 +112,13 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
 
         @DynamicParameter(names = "--variant-filetype-mapping", description = "Dynamic variant to file type mapping")
         Map<String, String> variantFileTypeMapping = new HashMap<String, String>() {{
+            put("cdm", FileType.ColorDepthMipInput.name());
             put("searchable_neurons", FileType.ColorDepthMipInput.name());
+            put("segmentation", FileType.ColorDepthMipInput.name());
             put("grad", FileType.GradientImage.name());
+            put("gradient", FileType.GradientImage.name());
             put("zgap", FileType.RGBZGapImage.name());
+            put("rgb", FileType.RGBZGapImage.name());
         }};
 
         @Parameter(names = "--included-libraries", variableArity = true, description = "If set, MIPs should also be in all these libraries")
