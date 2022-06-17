@@ -368,14 +368,13 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                             ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping, Gender.fromVal(args.defaultGender))
                             : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
                     .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath,  segmentedImages, args.includeOriginalWithSegmentation, args.segmentedImageChannelBase).stream())
+                    .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip))
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip,
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
-                            libraryPaths.libraryVariants,
+                            libraryPaths.listLibraryVariants(),
                             libraryPaths.getLibraryVariant(computationInputVariantType).orElse(null)))
-                    .forEach(cdmip -> {
-                        gen.write(cdmip);
-                    });
+                    .forEach(gen::write);
         }
         gen.done();
     }
@@ -548,8 +547,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {
-            }.getType()));
+            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {}.getType()));
         }
     }
 

@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.json.FileDataDeserializer;
 import org.janelia.colormipsearch.model.json.FileDataSerializer;
 
@@ -75,5 +78,38 @@ public class FileData {
     @JsonIgnore
     public String getName() {
         return StringUtils.isNotBlank(entryName) ? entryName : fileName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FileData fileData = (FileData) o;
+
+        return new EqualsBuilder()
+                .append(dataType, fileData.dataType)
+                .append(fileName, fileData.fileName)
+                .append(entryName, fileData.entryName)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(dataType)
+                .append(fileName)
+                .append(entryName)
+                .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("dataType", dataType)
+                .append("fileName", fileName)
+                .append("entryName", entryName)
+                .toString();
     }
 }

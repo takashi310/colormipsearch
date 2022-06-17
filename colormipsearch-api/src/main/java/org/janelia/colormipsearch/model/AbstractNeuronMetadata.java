@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -63,6 +65,7 @@ public abstract class AbstractNeuronMetadata {
         this.gender = gender;
     }
 
+    @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Map<ComputeFileType, FileData> getComputeFiles() {
         return computeFiles;
@@ -113,6 +116,28 @@ public abstract class AbstractNeuronMetadata {
     }
 
     public abstract <N extends AbstractNeuronMetadata> N duplicate();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AbstractNeuronMetadata that = (AbstractNeuronMetadata) o;
+
+        return new EqualsBuilder()
+                .append(id, that.id)
+                .append(getComputeFileData(ComputeFileType.InputColorDepthImage), that.getComputeFileData(ComputeFileType.InputColorDepthImage))
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(id)
+                .append(getComputeFileData(ComputeFileType.InputColorDepthImage))
+                .toHashCode();
+    }
 
     @Override
     public String toString() {
