@@ -89,10 +89,23 @@ public abstract class AbstractNeuronMetadata {
         return f != null ? f.getName() : null;
     }
 
+    public boolean hasComputeFile(ComputeFileType t) {
+        return computeFiles.containsKey(t);
+    }
+
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
+    }
+
+    public String getNeuronFileName(FileType t) {
+        FileData f = neuronFiles.get(t);
+        return f != null ? f.getName() : null;
+    }
+
+    public boolean hasNeuronFile(FileType t) {
+        return neuronFiles.containsKey(t);
     }
 
     public void setNeuronFileData(FileType t, FileData fd) {

@@ -9,6 +9,7 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String objective;
     private String anatomicalArea;
     private String mountingProtocol;
+    private String driver;
     private Integer channel; // 1-based channel number
 
     @Override
@@ -46,6 +47,14 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setAnatomicalArea(String anatomicalArea) {
         this.anatomicalArea = anatomicalArea;
+    }
+
+    public String getDriver() {
+        return driver;
+    }
+
+    public void setDriver(String driver) {
+        this.driver = driver;
     }
 
     public String getMountingProtocol() {

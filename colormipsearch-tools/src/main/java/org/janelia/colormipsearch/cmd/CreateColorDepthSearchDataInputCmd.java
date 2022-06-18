@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -41,10 +44,12 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.api.cds.FileDataUtils;
 import org.janelia.colormipsearch.api.cds.NeuronMIPUtils;
+import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -374,6 +379,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
                             libraryPaths.listLibraryVariants(),
                             libraryPaths.getLibraryVariant(computationInputVariantType).orElse(null)))
+                    .peek(cdmip -> updateNeuronFiles(cdmip))
                     .forEach(gen::write);
         }
         gen.done();
@@ -465,6 +471,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             neuronMetadata.setSlideCode(cdmip.sample.slideCode);
             neuronMetadata.setGender(Gender.fromVal(cdmip.sample.gender));
             neuronMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
+            neuronMetadata.setDriver(cdmip.sample.driver);
         } else {
             populateNeuronDataFromCDMIPName(cdmip.name, neuronMetadata);
         }
@@ -502,6 +509,123 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         if (gender != null) {
             neuronMetadata.setGender(Gender.fromVal(gender));
         }
+    }
+
+    private <N extends AbstractNeuronMetadata> void updateNeuronFiles(N cdmip) {
+        if (cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage) && cdmip.hasNeuronFile(FileType.ColorDepthMip)) {
+            // ColorDepthInput filename must be expressed in terms of publishedName (not internal name),
+            //  and must include the integer suffix that identifies exactly which image it is (for LM),
+            //  when there are multiple images for a given combination of parameters
+            // in practical terms, we take the filename from imageURL, which has
+            //  the publishedName in it, and graft on the required integer from imageName (for LM), which
+            //  has the internal name; we have to similarly grab _FL from EM names
+
+            // remove directories and extension (which we know is ".png") from imageURL:
+            Path imagePath = Paths.get(cdmip.getNeuronFileName(FileType.ColorDepthMip));
+            String colorDepthInputName = createColorDepthInputName(
+                    Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(),
+                    Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString(),
+                    imagePath.getFileName().toString());
+            cdmip.setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromString(colorDepthInputName));
+        }
+        if (!cdmip.hasNeuronFile(FileType.ColorDepthMip)) {
+            // set relative image URLs
+            String imageRelativeURL;
+            if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
+                imageRelativeURL = createEMImageRelativeURL((EMNeuronMetadata) cdmip);
+            } else {
+                imageRelativeURL = createLMImageRelativeURL((LMNeuronMetadata) cdmip);
+            }
+            cdmip.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(imageRelativeURL));
+            cdmip.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(imageRelativeURL));
+        }
+    }
+
+    /**
+     * Create the published name for the input image - the one that will actually be "color depth searched".
+     * @param mipFileName
+     * @param imageFileName
+     * @param displayFileName
+     * @return
+     */
+    private String createColorDepthInputName(String mipFileName, String imageFileName, String displayFileName) {
+        String mipName = RegExUtils.replacePattern(mipFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
+        String imageName = RegExUtils.replacePattern(imageFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
+        String imageSuffix = RegExUtils.replacePattern(
+                StringUtils.removeStart(imageName, mipName), // typically the segmentation name shares the same prefix with the original mip name
+                "^[-_]",
+                ""
+        ); // remove the hyphen or underscore prefix
+        String displayName = RegExUtils.replacePattern(displayFileName, "\\..*$", ""); // clear  .<ext> suffix
+        return StringUtils.isBlank(imageSuffix)
+                ? displayName + ".png"
+                : displayName + "-" + imageSuffix + ".png";
+    }
+
+    private String createEMImageRelativeURL(EMNeuronMetadata cdmip) {
+        String imageName = cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage)
+                ? Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
+                : Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        return cdmip.getAlignmentSpace() + '/' +
+                cdmip.getLibraryName() + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
+    }
+
+    private String createLMImageRelativeURL(LMNeuronMetadata cdmip) {
+        String imageName = cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage)
+                ? Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
+                : Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
+        Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)(_CDM)?)?(?<ext>\\..*$)");
+        Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
+        String seg;
+        String ext;
+        if (imageNameMatcher.find()) {
+            seg = imageNameMatcher.group("segmentation");
+            ext = imageNameMatcher.group("ext");
+        } else {
+            seg = "";
+            ext = ".png";
+        }
+        // I think we should get rid of this as well
+        String driverName;
+        if (StringUtils.isBlank(cdmip.getDriver())) {
+            driverName = "";
+        } else {
+            int driverSeparator = cdmip.getDriver().indexOf('_');
+            if (driverSeparator == -1) {
+                driverName = cdmip.getDriver();
+            } else {
+                driverName = cdmip.getDriver().substring(0, driverSeparator);
+            }
+        }
+
+        return cdmip.getAlignmentSpace() + '/' +
+                StringUtils.replace(cdmip.getLibraryName(), " ", "_") + '/' +
+                cdmip.getPublishedName() + '-' +
+                cdmip.getSlideCode() + '-' +
+                (StringUtils.isBlank(driverName) ? "" : driverName + '-') +
+                cdmip.getGender() + '-' +
+                cdmip.getObjective() + '-' +
+                StringUtils.lowerCase(cdmip.getAnatomicalArea()) + '-' +
+                cdmip.getAlignmentSpace() + '-' +
+                "CDM" +
+                (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
+                ext;
     }
 
     private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
