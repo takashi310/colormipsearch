@@ -79,7 +79,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
         private ListArg resultsDir;
 
         @Parameter(names = {"--results-file", "-rf"}, variableArity = true,
-                description = "File(s) containing original PPP results. As a note these can be either ")
+                description = "File(s) containing original PPP results.")
         private List<String> resultsFiles;
 
         @Parameter(names = "--neuron-matches-sub-dir", description = "The name of the sub-directory containing the results")

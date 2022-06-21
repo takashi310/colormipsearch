@@ -165,11 +165,8 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--append-output"}, description = "Append output if it exists", arity = 0)
         boolean appendOutput;
 
-        @ParametersDelegate
-        final CommonArgs commonArgs;
-
         CreateColorDepthSearchDataInputArgs(CommonArgs commonArgs) {
-            this.commonArgs = commonArgs;
+            super(commonArgs);
         }
 
         @Override
@@ -192,18 +189,6 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     .findFirst();
         }
 
-//        String getLibraryVariantNameSuffix(String variantType) {
-//            return getLibraryVariant(variantType)
-//                    .map(lv -> lv.variantNameSuffix)
-//                    .orElse(null);
-//        }
-//
-//        String getLibraryVariantPath(String variantType) {
-//            return getLibraryVariant(variantType)
-//                    .map(lv -> lv.variantPath)
-//                    .orElse(null);
-//        }
-
         String getLibraryName() {
             return library != null ? library.input : null;
         }
@@ -212,7 +197,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     private final CreateColorDepthSearchDataInputArgs args;
     private final ObjectMapper mapper;
 
-    CreateColorDepthSearchDataInputCmd(String commandName, org.janelia.colormipsearch.cmd.CommonArgs commonArgs) {
+    CreateColorDepthSearchDataInputCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         args = new CreateColorDepthSearchDataInputArgs(commonArgs);
         this.mapper = new ObjectMapper()

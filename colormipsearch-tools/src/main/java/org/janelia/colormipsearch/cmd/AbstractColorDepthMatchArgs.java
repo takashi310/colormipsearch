@@ -1,12 +1,11 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParametersDelegate;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -75,9 +74,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
             arity = 0)
     boolean noColorScaleLabel = false;
 
-    @ParametersDelegate
-    final CommonArgs commonArgs;
-
     @Parameter(names = {"--libraryFilter", "-lf"}, variableArity = true, description = "Filter for library mips")
     Set<String> libraryMIPsFilter;
 
@@ -95,35 +91,17 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     String queryROIMaskName;
 
     AbstractColorDepthMatchArgs(CommonArgs commonArgs) {
-        this.commonArgs = commonArgs;
+        super(commonArgs);
     }
 
-    Path getBaseOutputDir() {
-        return StringUtils.isBlank(commonArgs.outputDir) ? null : Paths.get(commonArgs.outputDir);
+    Optional<Path> getPerMaskDir() {
+        return getOutputDirArg()
+                .map(dir -> StringUtils.isNotBlank(perMaskSubdir) ? dir.resolve(perMaskSubdir) : dir);
     }
 
-    Path getPerMaskDir() {
-        if (StringUtils.isBlank(commonArgs.outputDir)) {
-            return null;
-        } else {
-            if (StringUtils.isBlank(perMaskSubdir)) {
-                return Paths.get(commonArgs.outputDir);
-            } else {
-                return Paths.get(commonArgs.outputDir, perMaskSubdir);
-            }
-        }
-    }
-
-    Path getPerLibraryDir() {
-        if (StringUtils.isBlank(commonArgs.outputDir)) {
-            return null;
-        } else {
-            if (StringUtils.isBlank(perLibrarySubdir)) {
-                return Paths.get(commonArgs.outputDir);
-            } else {
-                return Paths.get(commonArgs.outputDir, perLibrarySubdir);
-            }
-        }
+    Optional<Path> getPerLibraryDir() {
+        return getOutputDirArg()
+                .map(dir -> StringUtils.isNotBlank(perLibrarySubdir) ? dir.resolve(perLibrarySubdir) : dir);
     }
 
     boolean onlyPositiveScores() {
