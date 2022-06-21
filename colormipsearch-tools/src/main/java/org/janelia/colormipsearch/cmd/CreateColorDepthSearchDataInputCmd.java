@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,7 +48,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.api.cds.FileDataUtils;
 import org.janelia.colormipsearch.api.cds.NeuronMIPUtils;
-import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -194,17 +192,17 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     .findFirst();
         }
 
-        String getLibraryVariantNameSuffix(String variantType) {
-            return getLibraryVariant(variantType)
-                    .map(lv -> lv.variantNameSuffix)
-                    .orElse(null);
-        }
-
-        String getLibraryVariantPath(String variantType) {
-            return getLibraryVariant(variantType)
-                    .map(lv -> lv.variantPath)
-                    .orElse(null);
-        }
+//        String getLibraryVariantNameSuffix(String variantType) {
+//            return getLibraryVariant(variantType)
+//                    .map(lv -> lv.variantNameSuffix)
+//                    .orElse(null);
+//        }
+//
+//        String getLibraryVariantPath(String variantType) {
+//            return getLibraryVariant(variantType)
+//                    .map(lv -> lv.variantPath)
+//                    .orElse(null);
+//        }
 
         String getLibraryName() {
             return library != null ? library.input : null;
@@ -248,7 +246,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                         createColorDepthSearchInputData(
                                 serverEndpoint,
                                 lpaths,
-                                getVariantForFileType(ComputeFileType.InputColorDepthImage),
+                                getAllVariantsForComputeFileType(ComputeFileType.InputColorDepthImage),
                                 excludedNeurons,
                                 libraryNameMapping::get,
                                 getNeuronFileURLMapper(),
@@ -310,7 +308,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
 
     private void createColorDepthSearchInputData(WebTarget serverEndpoint,
                                                  LibraryPathsArgs libraryPaths,
-                                                 String computationInputVariantType,
+                                                 Set<String> computationInputVariantTypes,
                                                  Set<? extends AbstractNeuronMetadata> excludedNeurons,
                                                  Function<String, String> libraryNamesMapping,
                                                  Function<String, String> neuronFileURLMapping,
@@ -351,9 +349,19 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 mapper)
                 .prepare();
 
-        String librarySegmentationPath = libraryPaths.getLibraryVariantPath(computationInputVariantType);
-        Pair<FileData.FileDataType, Map<String, List<String>>> segmentedImages =
-                MIPsHandlingUtils.getLibraryImageFiles(libraryPaths.library.input, librarySegmentationPath, libraryPaths.getLibraryVariantNameSuffix(computationInputVariantType));
+        Optional<LibraryVariantArg> inputLibraryVariantChoice = computationInputVariantTypes.stream()
+                .map(variantType -> libraryPaths.getLibraryVariant(variantType).orElse(null))
+                .filter(lv -> lv != null)
+                .findFirst()
+                ;
+        Pair<FileData.FileDataType, Map<String, List<String>>> inputImages =
+                MIPsHandlingUtils.getLibraryImageFiles(
+                        libraryPaths.library.input,
+                        inputLibraryVariantChoice.map(lv -> lv.variantPath).orElse(null),
+                        inputLibraryVariantChoice.map(lv -> lv.variantNameSuffix).orElse(null));
+        LOG.info("Found {} input codes for {}",
+                inputImages.getRight().size(),
+                inputLibraryVariantChoice);
 
         for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
             int currentPageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
@@ -372,13 +380,17 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
                             ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping, Gender.fromVal(args.defaultGender))
                             : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
-                    .flatMap(cdmip -> MIPsHandlingUtils.findSegmentedMIPs(cdmip, librarySegmentationPath,  segmentedImages, args.includeOriginalWithSegmentation, args.segmentedImageChannelBase).stream())
+                    .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(cdmip,
+                            inputLibraryVariantChoice.map(lv -> lv.variantPath).orElse(null),
+                            inputImages,
+                            args.includeOriginalWithSegmentation,
+                            args.segmentedImageChannelBase).stream())
                     .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip))
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip,
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
                             libraryPaths.listLibraryVariants(),
-                            libraryPaths.getLibraryVariant(computationInputVariantType).orElse(null)))
+                            inputLibraryVariantChoice.orElse(null)))
                     .peek(cdmip -> updateNeuronFiles(cdmip))
                     .forEach(gen::write);
         }
@@ -478,12 +490,11 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         return neuronMetadata;
     }
 
-    private String getVariantForFileType(ComputeFileType computeFileType) {
+    private Set<String> getAllVariantsForComputeFileType(ComputeFileType computeFileType) {
         return args.variantFileTypeMapping.entrySet().stream()
                 .filter(e -> e.getValue().equalsIgnoreCase(computeFileType.name()))
                 .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse(null);
+                .collect(Collectors.toSet());
     }
 
     private void populateNeuronDataFromCDMIPName(String mipName, LMNeuronMetadata neuronMetadata) {

@@ -73,15 +73,15 @@ class MIPsHandlingUtils {
     }
 
 
-    static <N extends AbstractNeuronMetadata> List<N> findSegmentedMIPs(N neuronMetadata,
-                                                                        String segmentedImagesBasePath,
-                                                                        Pair<FileData.FileDataType, Map<String, List<String>>> segmentedImages,
-                                                                        boolean includeOriginal,
-                                                                        int segmentedImageChannelBase) {
-        if (StringUtils.isBlank(segmentedImagesBasePath)) {
+    static <N extends AbstractNeuronMetadata> List<N> findNeuronMIPs(N neuronMetadata,
+                                                                     String neuronImagesBasePath,
+                                                                     Pair<FileData.FileDataType, Map<String, List<String>>> neuronImages,
+                                                                     boolean includeOriginal,
+                                                                     int neuronImageChannelBase) {
+        if (StringUtils.isBlank(neuronImagesBasePath)) {
             return Collections.singletonList(originalAsInput(neuronMetadata));
         } else {
-            List<N> segmentedCDMIPs = lookupSegmentedImages(neuronMetadata, segmentedImagesBasePath, segmentedImages.getLeft(), segmentedImages.getRight(), segmentedImageChannelBase);
+            List<N> segmentedCDMIPs = lookupSegmentedImages(neuronMetadata, neuronImagesBasePath, neuronImages.getLeft(), neuronImages.getRight(), neuronImageChannelBase);
             if (includeOriginal) {
                 // return both the segmentation and the original
                 return Stream.concat(
