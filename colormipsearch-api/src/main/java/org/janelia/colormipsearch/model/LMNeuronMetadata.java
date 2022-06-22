@@ -88,6 +88,7 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
         LMNeuronMetadata n = new LMNeuronMetadata();
         n.copyFrom(this);
         n.sampleRef = this.sampleRef;
+        n.sampleName = this.sampleName;
         n.slideCode = this.slideCode;
         n.objective = this.objective;
         n.anatomicalArea = this.anatomicalArea;
