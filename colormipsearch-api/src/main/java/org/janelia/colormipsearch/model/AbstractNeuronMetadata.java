@@ -19,6 +19,7 @@ public abstract class AbstractNeuronMetadata {
     private String publishedName;
     private String alignmentSpace;
     private Gender gender;
+    private String datasetName;
     private Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
     private Map<FileType, FileData> neuronFiles = new HashMap<>();
 
@@ -116,6 +117,14 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
+    public String getDatasetName() {
+        return datasetName;
+    }
+
+    public void setDatasetName(String datasetName) {
+        this.datasetName = datasetName;
+    }
+
     public abstract <N extends AbstractNeuronMetadata> N duplicate();
 
     @Override
@@ -155,6 +164,7 @@ public abstract class AbstractNeuronMetadata {
         this.publishedName = that.getPublishedName();
         this.alignmentSpace = that.getAlignmentSpace();
         this.gender = that.getGender();
+        this.datasetName = that.getDatasetName();
         this.computeFiles.putAll(that.getComputeFiles());
         this.neuronFiles.putAll(that.getNeuronFiles());
     }

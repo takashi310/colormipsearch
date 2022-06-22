@@ -1,11 +1,11 @@
-package org.janelia.colormipsearch.api_v2;
+package org.janelia.colormipsearch.api;
 
 public class ScoredEntry<E> {
     private final String name;
     private final Number score;
     private final E entry;
 
-    ScoredEntry(String name, Number score, E entry) {
+    public ScoredEntry(String name, Number score, E entry) {
         this.name = name;
         this.score = score;
         this.entry = entry;

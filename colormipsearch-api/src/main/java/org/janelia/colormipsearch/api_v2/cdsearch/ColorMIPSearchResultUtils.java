@@ -21,7 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.Results;
-import org.janelia.colormipsearch.api_v2.ScoredEntry;
+import org.janelia.colormipsearch.api.ScoredEntry;
 import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPIdentifier;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;

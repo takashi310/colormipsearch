@@ -16,14 +16,14 @@ public enum FileType {
     AlignedBodySWC, // EMImage-only, A 3D SWC skeleton of the EM body in the alignment space.
     AlignedBodyOBJ; // EMImage-only. A 3D OBJ representation of the EM body in the alignment space.
 
-    private String optionalPPPSuffix; // optional suffix used only by the PPP image files
+    private String optionalFileSuffix; // optional suffix used only by the PPP image files
 
     FileType() {
         this(null);
     }
 
-    FileType(String optionalPPPSuffix) {
-        this.optionalPPPSuffix = optionalPPPSuffix;
+    FileType(String optionalFileSuffix) {
+        this.optionalFileSuffix = optionalFileSuffix;
     }
 
     public static FileType fromName(String name) {
@@ -37,17 +37,25 @@ public enum FileType {
 
     public static FileType findFileTypeByPPPSuffix(String fname) {
         for (FileType vt : values()) {
-            if (vt.optionalPPPSuffix == null) {
+            if (vt.optionalFileSuffix == null) {
                 // skip
                 continue;
-            } else if (fname.endsWith(vt.optionalPPPSuffix)) {
+            } else if (fname.endsWith(vt.optionalFileSuffix)) {
                 return vt;
             }
         }
         return null;
     }
 
+    public boolean hasFileSuffix() {
+        return optionalFileSuffix != null;
+    }
+
+    public String getFileSuffix() {
+        return optionalFileSuffix;
+    }
+
     public String getDisplayPPPSuffix() {
-        return optionalPPPSuffix == null ? "" : optionalPPPSuffix.substring(3); // hacky to remove the prefix _n_ for PPP
+        return optionalFileSuffix == null ? "" : optionalFileSuffix.substring(3); // hacky to remove the prefix _n_ for PPP
     }
 }

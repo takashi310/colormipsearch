@@ -3,10 +3,19 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractMatch<I extends AbstractNeuronMetadata> {
+public abstract class AbstractMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata> {
+    private M maskImage;
     private I matchedImage;
     private boolean mirrored; // if true the matchedImage was mirrored
     private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
+
+    public M getMaskImage() {
+        return maskImage;
+    }
+
+    public void setMaskImage(M maskImage) {
+        this.maskImage = maskImage;
+    }
 
     public I getMatchedImage() {
         return matchedImage;

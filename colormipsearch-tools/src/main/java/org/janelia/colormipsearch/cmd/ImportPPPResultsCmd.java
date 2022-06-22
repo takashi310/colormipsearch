@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -10,23 +11,45 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.ws.rs.client.Client;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.janelia.colormipsearch.api_v2.Utils;
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.api.PartitionUtils;
+import org.janelia.colormipsearch.api.ppp.RawPPPMatchesReader;
+import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;
+import org.janelia.colormipsearch.cmd_v2.EMNeuron;
+import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.Gender;
+import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.PPPMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ImportPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ImportPPPResultsCmd.class);
+    private static final Random RAND = new Random();
 
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class CreatePPPResultsArgs extends AbstractCmdArgs {
+        // This is a multi value argument because if I need to distribute it
+        // I would like to do some kind of load balnacing and have different instances
+        // spread the requests accross multiple servers
         @Parameter(names = {"--jacs-url", "--data-url"}, variableArity = true,
                 description = "JACS data service base URL")
         List<String> dataServiceURLs;
@@ -77,13 +100,22 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
+
+        boolean hasDataServiceURL() {
+            return CollectionUtils.isNotEmpty(dataServiceURLs);
+        }
     }
 
     private final CreatePPPResultsArgs args;
+    private final ObjectMapper mapper;
+    private final RawPPPMatchesReader rawPPPMatchesReader;
 
     public ImportPPPResultsCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new CreatePPPResultsArgs(commonArgs);
+        this.mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.rawPPPMatchesReader = new RawPPPMatchesReader();
     }
 
     @Override
@@ -113,7 +145,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
-        Utils.processPartitionStream(
+        PartitionUtils.processPartitionStream(
                 filesToProcess.parallel(),
                 args.processingPartitionSize,
                 this::processPPPFiles);
@@ -121,7 +153,18 @@ public class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
-        // FIXME
+        long start = System.currentTimeMillis();
+        Path outputDir = args.getOutputDir();
+        listOfPPPResults.stream()
+                .map(this::importPPPRResultsFromFile)
+                .forEach(pppMatch -> {
+                });
+//                .map(EmPPPMatches::pppMatchesBySingleNeuron)
+//                .forEach(pppMatches -> Utils.writeResultsToJSONFile(
+//                        pppMatches,
+//                        CmdUtils.getOutputFile(outputDir, new File(pppMatches.getNeuronName() + ".json")),
+//                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
+        LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 
     private Stream<Path> streamDirsWithPPPResults(Path startPath) {
@@ -180,6 +223,156 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         } catch (IOException e) {
             LOG.error("Error getting PPP JSON result file names from {}", pppResultsDir, e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Import PPP results from a list of file matches that are all for the same neuron.
+     *
+     * @param pppResultsFile
+     * @return
+     */
+    private List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> importPPPRResultsFromFile(Path pppResultsFile) {
+        List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatches = rawPPPMatchesReader.readPPPMatches(
+                pppResultsFile.toString(), args.onlyBestSkeletonMatches)
+                .peek(this::fillInNeuronMetadata)
+                .collect(Collectors.toList())
+                ;
+        Set<String> matchedLMSampleNames = neuronMatches.stream()
+                .map(pppMatch -> pppMatch.getMatchedImage().getSampleName())
+                .collect(Collectors.toSet());
+        Set<String> neuronNames = neuronMatches.stream()
+                .map(pppMatch -> pppMatch.getMaskImage().getPublishedName())
+                .collect(Collectors.toSet());
+
+        Map<String, CDMIPSample> lmSamples;
+        Map<String, CDMIPBody> emNeurons;
+        if (args.hasDataServiceURL()) {
+            Client httpClient = HttpHelper.createClient();
+            if (CollectionUtils.isNotEmpty(matchedLMSampleNames)) {
+                lmSamples = retrieveLMSamples(httpClient, matchedLMSampleNames);
+            } else {
+                lmSamples = Collections.emptyMap();
+            }
+            if (CollectionUtils.isNotEmpty(neuronNames)) {
+                emNeurons = retrieveEMNeurons(httpClient, neuronNames);
+            } else {
+                emNeurons = Collections.emptyMap();
+            }
+        } else {
+            lmSamples = Collections.emptyMap();
+            emNeurons = Collections.emptyMap();
+        }
+
+        neuronMatches.forEach(pppMatch -> {
+            if (pppMatch.getRank() < 500) {
+                Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
+                lookupScreenshots(screenshotsPath, pppMatch);
+            }
+            LMNeuronMetadata lmNeuron = pppMatch.getMatchedImage();
+            CDMIPSample lmSample = lmSamples.get(lmNeuron.getSampleName());
+            if (lmSample != null) {
+                lmNeuron.setDatasetName(lmSample.releaseLabel); // for now set this to the releaseLabel but this is not quite right
+                lmNeuron.setSampleRef("Sample#" + lmSample.id);
+                lmNeuron.setPublishedName(lmSample.publishingName);
+                lmNeuron.setSlideCode(lmSample.slideCode);
+                lmNeuron.setGender(Gender.fromVal(lmSample.gender));
+                lmNeuron.setMountingProtocol(lmSample.mountingProtocol);
+                if (StringUtils.isBlank(lmNeuron.getObjective())) {
+                    if (CollectionUtils.size(lmSample.publishedObjectives) == 1) {
+                        lmNeuron.setObjective(lmSample.publishedObjectives.get(0));
+                    } else {
+                        throw new IllegalArgumentException("Too many published objectives for sample " + lmSample +
+                                ". Cannot decide which objective to select for " + pppMatch);
+                    }
+                }
+            }
+            EMNeuronMetadata emNeuron = pppMatch.getMaskImage();
+            CDMIPBody emBody = emNeurons.get(emNeuron.getPublishedName());
+            if (emBody != null) {
+                emNeuron.setBodyRef("EMBody#" + emBody.id);
+                emNeuron.setEmName(emBody.name);
+                emNeuron.setDatasetName(emBody.datasetIdentifier); // this should be set to the library id which differs slightly from the EM dataset
+                emNeuron.setNeuronType(emBody.neuronType);
+                emNeuron.setNeuronInstance(emBody.neuronInstance);
+                emNeuron.setState(emBody.status);
+            }
+        });
+        return neuronMatches;
+    }
+
+    private void fillInNeuronMetadata(PPPMatch<EMNeuronMetadata, LMNeuronMetadata> pppMatch) {
+        pppMatch.setMaskImage(getEMMetadata(pppMatch.getSourceEmName()));
+        pppMatch.setMatchedImage(getLMMetadata(pppMatch.getSourceLmName()));
+    }
+
+    private EMNeuronMetadata getEMMetadata(String emFullName) {
+        EMNeuronMetadata emNeuron = new EMNeuronMetadata();
+        emNeuron.setAlignmentSpace(args.alignmentSpace);
+        Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = emRegExPattern.matcher(emFullName);
+        if (matcher.find()) {
+            emNeuron.setEmName(matcher.group(1)); // neuron name
+            emNeuron.setNeuronType(matcher.group(2));
+        }
+        return emNeuron;
+    }
+
+    private LMNeuronMetadata getLMMetadata(String lmFullName) {
+        LMNeuronMetadata lmNeuron = new LMNeuronMetadata();
+        lmNeuron.setAlignmentSpace(args.alignmentSpace);
+        lmNeuron.setAnatomicalArea(args.anatomicalArea);
+        Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = lmRegExPattern.matcher(lmFullName);
+        if (matcher.find()) {
+            lmNeuron.setSampleName(matcher.group(1));
+            String objectiveCandidate = matcher.group(2);
+            if (!StringUtils.equalsIgnoreCase(args.anatomicalArea, objectiveCandidate)) {
+                lmNeuron.setObjective(objectiveCandidate);
+            }
+        }
+        return lmNeuron;
+    }
+
+    private String selectADataServiceURL() {
+        return args.dataServiceURLs.get(RAND.nextInt(args.dataServiceURLs.size()));
+    }
+
+    private Map<String, CDMIPSample> retrieveLMSamples(Client httpClient, Set<String> sampleNames) {
+        LOG.debug("Read LM metadata for {} samples", sampleNames.size());
+        return HttpHelper.retrieveDataStream(() -> httpClient.target(selectADataServiceURL())
+                                .path("/data/samples")
+                                .queryParam("withReducedFields", true),
+                        args.authorization,
+                        args.jacsReadBatchSize,
+                        sampleNames,
+                        new TypeReference<List<CDMIPSample>>() {})
+                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
+                .collect(Collectors.toMap(n -> n.name, n -> n));
+    }
+
+    private Map<String, CDMIPBody> retrieveEMNeurons(Client httpClient, Set<String> neuronIds) {
+        LOG.debug("Read EM metadata for {} neurons", neuronIds.size());
+        return HttpHelper.retrieveDataStream(() -> httpClient.target(selectADataServiceURL())
+                        .path("/emdata/dataset")
+                        .path(args.emDataset)
+                        .path(args.emDatasetVersion),
+                args.authorization,
+                args.jacsReadBatchSize,
+                neuronIds,
+                new TypeReference<List<CDMIPBody>>() {})
+                .collect(Collectors.toMap(n -> n.name, n -> n));
+    }
+
+    private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch<?, ?> pppMatch) {
+        if (Files.exists(pppScreenshotsDir)) {
+            try(DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
+                screenshotsDirStream.forEach(f -> {
+                    pppMatch.addSourceImageFile(f.toString());
+                });
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 

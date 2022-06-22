@@ -3,8 +3,6 @@ package org.janelia.colormipsearch.cmd;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -12,18 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -34,13 +26,10 @@ import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
-import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -225,7 +214,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 })
                 .forEach(lpaths -> {
                     if (StringUtils.isNotBlank(args.dataServiceURL)) {
-                        Client httpClient = createHttpClient();
+                        Client httpClient = HttpHelper.createClient();
                         Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(httpClient, args.libraryMappingURL);
                         WebTarget serverEndpoint = httpClient.target(args.dataServiceURL);
                         createColorDepthSearchInputData(
@@ -433,6 +422,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         neuronMetadata.setId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
+        neuronMetadata.setBodyRef(cdmip.emBodyRef);
         neuronMetadata.setNeuronType(cdmip.neuronType);
         neuronMetadata.setNeuronInstance(cdmip.neuronInstance);
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
@@ -465,6 +455,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         neuronMetadata.setNeuronFileData(FileType.SignalMipExpression, FileData.fromString(cdmip.sampleGen1Gal4ExpressionImage));
         if (cdmip.sample != null) {
             neuronMetadata.setPublishedName(cdmip.sample.publishingName);
+            neuronMetadata.setSampleName(cdmip.sample.name);
             neuronMetadata.setSlideCode(cdmip.sample.slideCode);
             neuronMetadata.setGender(Gender.fromVal(cdmip.sample.gender));
             neuronMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
@@ -631,7 +622,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
         LOG.info("Count color depth mips using {}, l={}, as={}, ds={}, rs={}", target, library, alignmentSpace, datasets, releases);
-        Response response = createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
+        Response response = HttpHelper.createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + target + " -> " + response);
         } else {
@@ -663,7 +654,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
 
     private List<ColorDepthMIP> retrieveColorDepthMips(WebTarget endpoint, String credentials) {
         LOG.info("Get mips from {}", endpoint);
-        Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+        Response response = HttpHelper.createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
@@ -678,7 +669,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     .path(cdmip.alignmentSpace)
                     .path(cdmip.sample.slideCode)
                     .path(cdmip.objective);
-            Response response = createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+            Response response = HttpHelper.createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
             if (response.getStatus() == Response.Status.OK.getStatusCode()) {
                 Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {}.getType()));
                 SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
@@ -688,61 +679,6 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             }
         }
         return cdmip;
-    }
-
-    private Client createHttpClient() {
-        try {
-            SSLContext sslContext = createSSLContext();
-
-            JacksonJsonProvider jsonProvider = new JacksonJaxbJsonProvider()
-                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-            return ClientBuilder.newBuilder()
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(0, TimeUnit.SECONDS)
-                    .sslContext(sslContext)
-                    .hostnameVerifier((s, sslSession) -> true)
-                    .register(jsonProvider)
-                    .build();
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private SSLContext createSSLContext() {
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            TrustManager[] trustManagers = {
-                    new X509TrustManager() {
-                        @Override
-                        public void checkClientTrusted(X509Certificate[] x509Certificates, String authType) {
-                            // Everyone is trusted
-                        }
-
-                        @Override
-                        public void checkServerTrusted(X509Certificate[] x509Certificates, String authType) {
-                            // Everyone is trusted
-                        }
-
-                        @Override
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return new X509Certificate[0];
-                        }
-                    }
-            };
-            sslContext.init(null, trustManagers, new SecureRandom());
-            return sslContext;
-        } catch (Exception e) {
-            throw new IllegalStateException("Error initilizing SSL context", e);
-        }
-    }
-
-    private Invocation.Builder createRequestWithCredentials(Invocation.Builder requestBuilder, String credentials) {
-        if (StringUtils.isNotBlank(credentials)) {
-            return requestBuilder.header("Authorization", credentials);
-        } else {
-            return requestBuilder;
-        }
     }
 
     static Map<String, String> retrieveLibraryNameMapping(Client httpClient, String configURL) {

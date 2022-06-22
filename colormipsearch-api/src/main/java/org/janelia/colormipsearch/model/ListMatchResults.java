@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class ListMatchResults<I extends AbstractNeuronMetadata, R extends AbstractMatch<? extends AbstractNeuronMetadata>> {
+public abstract class ListMatchResults<I extends AbstractNeuronMetadata, R extends AbstractMatch<I, ? extends AbstractNeuronMetadata>> {
     private I input;
     private List<R> matches;
 

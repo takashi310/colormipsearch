@@ -8,13 +8,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
- * This is the representation of a JACS Sample.
+ * This is the representation of a JACS EM Body.
  */
 class CDMIPBody {
     @JsonProperty("_id")
     String id;
     @JsonProperty("name")
     String name;
+    @JsonProperty
+    String neuronType;
+    @JsonProperty
+    String neuronInstance;
+    @JsonProperty
+    String status;
+    @JsonProperty("dataSetIdentifier")
+    String datasetIdentifier;
     @JsonProperty
     Map<String, String> files;
 

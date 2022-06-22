@@ -5,6 +5,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     private String sampleRef;
+    private String sampleName;
     private String slideCode;
     private String objective;
     private String anatomicalArea;
@@ -23,6 +24,14 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setSampleRef(String sampleRef) {
         this.sampleRef = sampleRef;
+    }
+
+    public String getSampleName() {
+        return sampleName;
+    }
+
+    public void setSampleName(String sampleName) {
+        this.sampleName = sampleName;
     }
 
     public String getSlideCode() {

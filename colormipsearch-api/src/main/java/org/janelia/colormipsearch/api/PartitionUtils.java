@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api_v2;
+package org.janelia.colormipsearch.api;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,13 +20,12 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.ScoredEntry;
 import org.janelia.colormipsearch.model.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Utils {
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+public class PartitionUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionUtils.class);
 
     public static <T> void processPartitionStream(Stream<T> stream,
                                                   int partitionSize,
@@ -68,11 +67,11 @@ public class Utils {
                 .collect(Collectors.groupingBy(docId -> index.getAndIncrement() / partitionSize)).values();
     }
 
-    public static <T> List<ScoredEntry<List<T>>> pickBestMatches(List<T> l,
-                                                                 Function<T, String> groupingCriteria,
-                                                                 Function<T, Number> scoreExtractor,
-                                                                 int topResults,
-                                                                 int limitSubResults) {
+    public static <T> List<ScoredEntry<List<T>>> selectTopRankedElements(List<T> l,
+                                                                         Function<T, String> groupingCriteria,
+                                                                         Function<T, Number> scoreExtractor,
+                                                                         int topResults,
+                                                                         int limitSubResults) {
         Comparator<T> csrComparison = Comparator.comparing(scoreExtractor.andThen(Number::doubleValue));
         Map<String, List<T>> groupedResults = l.stream()
                 .collect(Collectors.groupingBy(
@@ -96,22 +95,6 @@ public class Utils {
             return bestResultsForSpecifiedCriteria.subList(0, topResults);
         } else {
             return bestResultsForSpecifiedCriteria;
-        }
-    }
-
-    public static <T, R extends Results<List<T>>> void writeResultsToJSONFile(R results, File f, ObjectWriter objectWriter) {
-        try {
-            if (CollectionUtils.isNotEmpty(results.getResults())) {
-                if (f == null) {
-                    objectWriter.writeValue(System.out, results);
-                } else {
-                    LOG.info("Writing {}", f);
-                    objectWriter.writeValue(f, results);
-                }
-            }
-        } catch (IOException e) {
-            LOG.error("Error writing CDS results to json file {}", f, e);
-            throw new UncheckedIOException(e);
         }
     }
 

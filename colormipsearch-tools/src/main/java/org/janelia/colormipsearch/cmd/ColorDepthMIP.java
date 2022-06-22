@@ -42,9 +42,9 @@ class ColorDepthMIP implements Serializable {
     @JsonProperty
     String sampleRef;
     @JsonProperty
-    String sourceImageRef;
-    @JsonProperty
     CDMIPSample sample;
+    @JsonProperty
+    String emBodyRef;
     @JsonProperty
     CDMIPBody emBody;
     String sample3DImageStack;
