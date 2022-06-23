@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.JsonRequired;
-import org.janelia.colormipsearch.model.Results;
+import org.janelia.colormipsearch.results.Results;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPIdentifier;
 
 public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {

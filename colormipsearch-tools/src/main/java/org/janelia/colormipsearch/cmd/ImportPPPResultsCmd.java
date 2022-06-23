@@ -30,14 +30,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.PartitionUtils;
-import org.janelia.colormipsearch.api.ppp.RawPPPMatchesReader;
-import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;
-import org.janelia.colormipsearch.cmd_v2.EMNeuron;
+import org.janelia.colormipsearch.ppp.PPPGrouping;
+import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +144,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
-        PartitionUtils.processPartitionStream(
+        ItemsHandling.processPartitionStream(
                 filesToProcess.parallel(),
                 args.processingPartitionSize,
                 this::processPPPFiles);
@@ -157,9 +156,9 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         listOfPPPResults.stream()
                 .map(this::importPPPRResultsFromFile)
+                .map(PPPGrouping::groupByNeuronBodyId)
                 .forEach(pppMatch -> {
                 });
-//                .map(EmPPPMatches::pppMatchesBySingleNeuron)
 //                .forEach(pppMatches -> Utils.writeResultsToJSONFile(
 //                        pppMatches,
 //                        CmdUtils.getOutputFile(outputDir, new File(pppMatches.getNeuronName() + ".json")),

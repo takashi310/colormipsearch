@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.model.Results;
+import org.janelia.colormipsearch.results.Results;
 import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.pppsearch.AbstractPPPMatch;
 import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;

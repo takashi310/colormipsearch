@@ -7,14 +7,14 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
-import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
-import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
-import org.janelia.colormipsearch.api.imageprocessing.LImage;
-import org.janelia.colormipsearch.api.imageprocessing.LImageUtils;
-import org.janelia.colormipsearch.api.imageprocessing.QuadFunction;
-import org.janelia.colormipsearch.api.imageprocessing.TriFunction;
+import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
+import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
+import org.janelia.colormipsearch.imageprocessing.LImage;
+import org.janelia.colormipsearch.imageprocessing.LImageUtils;
+import org.janelia.colormipsearch.imageprocessing.QuadFunction;
+import org.janelia.colormipsearch.imageprocessing.TriFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

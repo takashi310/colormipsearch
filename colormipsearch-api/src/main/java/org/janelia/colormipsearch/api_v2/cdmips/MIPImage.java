@@ -3,7 +3,7 @@ package org.janelia.colormipsearch.api_v2.cdmips;
 import java.io.Serializable;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
 public class MIPImage implements Serializable {
     private final MIPMetadata mipInfo;

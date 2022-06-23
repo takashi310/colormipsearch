@@ -26,7 +26,7 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.PartitionUtils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +98,7 @@ public class HttpHelper {
      */
     static <T> Stream<T> retrieveDataStream(Supplier<WebTarget> endpointSupplier, String authorization, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
         if (chunkSize > 0) {
-            return PartitionUtils.partitionCollection(names, chunkSize).stream().parallel()
+            return ItemsHandling.partitionCollection(names, chunkSize).stream().parallel()
                     .flatMap(namesSubset -> {
                         LOG.info("Retrieve {} items", namesSubset.size());
                         return retrieveChunk(

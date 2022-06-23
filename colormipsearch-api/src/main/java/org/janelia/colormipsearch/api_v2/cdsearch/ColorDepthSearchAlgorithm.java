@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
 /**
  * ColorMIPMaskCompare encapsulates a query image and it provides a method to search

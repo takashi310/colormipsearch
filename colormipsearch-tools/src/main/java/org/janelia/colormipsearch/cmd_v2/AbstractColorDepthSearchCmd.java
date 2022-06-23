@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearch;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api.ScoredEntry;
-import org.janelia.colormipsearch.model.Results;
+import org.janelia.colormipsearch.results.ScoredEntry;
+import org.janelia.colormipsearch.results.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,11 +1,11 @@
 package org.janelia.colormipsearch.api_v2.cdsearch;
 
-import org.janelia.colormipsearch.api.imageprocessing.ColorTransformation;
-import org.janelia.colormipsearch.api.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.api.imageprocessing.ImageProcessing;
-import org.janelia.colormipsearch.api.imageprocessing.ImageTransformation;
-import org.janelia.colormipsearch.api.imageprocessing.LImage;
-import org.janelia.colormipsearch.api.imageprocessing.LImageUtils;
+import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
+import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
+import org.janelia.colormipsearch.imageprocessing.LImage;
+import org.janelia.colormipsearch.imageprocessing.LImageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
