@@ -10,6 +10,7 @@ import java.util.stream.IntStream;
 
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +24,7 @@ public class UtilsTest {
     public void pickBestResultsWithAllSubResults() {
         List<ColorMIPSearchMatchMetadata> testData = createTestData();
         for (int i = 1; i <= 3; i++) {
-            List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
+            List<ColorMIPSearchMatchMetadata> selectedEntries = ItemsHandling.selectTopRankedElements(
                     testData,
                     csr -> csr.getPublishedName(),
                     ColorMIPSearchMatchMetadata::getMatchingPixels,
@@ -41,13 +42,13 @@ public class UtilsTest {
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
+                List<ColorMIPSearchMatchMetadata> selectedEntries = ItemsHandling.selectTopRankedElements(
                         testData,
                         ColorMIPSearchMatchMetadata::getPublishedName,
                         ColorMIPSearchMatchMetadata::getMatchingPixels,
                         i,
                         -1).stream()
-                        .flatMap(se -> Utils.pickBestMatches(
+                        .flatMap(se -> ItemsHandling.selectTopRankedElements(
                                 se.getEntry(),
                                 AbstractMetadata::getSlideCode, // pick best results by sample (identified by slide code)
                                 ColorMIPSearchMatchMetadata::getMatchingPixels,
@@ -66,13 +67,13 @@ public class UtilsTest {
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ColorMIPSearchMatchMetadata> selectedEntries = Utils.pickBestMatches(
+                List<ColorMIPSearchMatchMetadata> selectedEntries = ItemsHandling.selectTopRankedElements(
                         testData,
                         ColorMIPSearchMatchMetadata::getPublishedName,
                         ColorMIPSearchMatchMetadata::getMatchingPixels,
                         i,
                         1).stream()
-                        .flatMap(se -> Utils.pickBestMatches(
+                        .flatMap(se -> ItemsHandling.selectTopRankedElements(
                                 se.getEntry(),
                                 AbstractMetadata::getSlideCode, // pick best results by sample (identified by slide code)
                                 ColorMIPSearchMatchMetadata::getMatchingPixels,
@@ -94,7 +95,7 @@ public class UtilsTest {
                 createCSRWithMatchedIds("1", "30", "i1.1", "i30", 10),
                 createCSRWithMatchedIds("1", "30", "i1.2", "i30", 10)
         );
-        List<ColorMIPSearchMatchMetadata> resultsWithNoDuplicates = Utils.pickBestMatches(
+        List<ColorMIPSearchMatchMetadata> resultsWithNoDuplicates = ItemsHandling.selectTopRankedElements(
                 testData,
                 ColorMIPSearchMatchMetadata::getId,
                 ColorMIPSearchMatchMetadata::getMatchingPixels,

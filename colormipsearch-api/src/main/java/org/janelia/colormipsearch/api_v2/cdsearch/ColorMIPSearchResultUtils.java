@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.Results;
 import org.janelia.colormipsearch.results.ScoredEntry;
 import org.janelia.colormipsearch.api_v2.Utils;
@@ -137,7 +138,7 @@ public class ColorMIPSearchResultUtils {
                                                                                            int numberOfBestPublishedNamesToSelect,
                                                                                            int numberOfBestSamplesToSelectPerPublishedName,
                                                                                            int numberOfBestMatchesToSelectPerSample) {
-        List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = Utils.pickBestMatches(
+        List<ScoredEntry<List<ColorMIPSearchMatchMetadata>>> topResultsByPublishedName = ItemsHandling.selectTopRankedElements(
                 cdsResults,
                 csr -> StringUtils.defaultIfBlank(csr.getPublishedName(), extractPublishingNameCandidateFromImageName(csr.getImageName())), // pick best results by line
                 ColorMIPSearchMatchMetadata::getMatchingPixels,
@@ -156,7 +157,7 @@ public class ColorMIPSearchResultUtils {
                             .collect(Collectors.toList()));
         }
         return topResultsByPublishedName.stream()
-                .flatMap(se -> Utils.pickBestMatches(
+                .flatMap(se -> ItemsHandling.selectTopRankedElements(
                         se.getEntry(),
                         csr -> csr.getSlideCode(), // pick best results by sample (identified by slide code)
                         ColorMIPSearchMatchMetadata::getMatchingPixels,

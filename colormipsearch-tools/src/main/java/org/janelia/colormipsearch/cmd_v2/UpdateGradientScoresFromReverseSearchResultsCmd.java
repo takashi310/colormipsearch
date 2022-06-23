@@ -32,6 +32,7 @@ import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,7 +204,7 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
         int nFiles = filesToProcess.size();
         Path outputDir = args.getOutputDir();
-        List<CompletableFuture<List<String>>> updateGradientComputations = Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+        List<CompletableFuture<List<String>>> updateGradientComputations = ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .map(fileList -> CompletableFuture.supplyAsync(() -> {
                     long startProcessingPartition = System.currentTimeMillis();
                     for (String fn : fileList) {

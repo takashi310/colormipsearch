@@ -323,6 +323,7 @@ class MIPsHandlingUtils {
             throw new IllegalStateException("Config entry not found");
         }
         Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
+        @SuppressWarnings("unchecked")
         Map<String, Map<String, Object>> configEntryMap = (Map<String, Map<String, Object>>)configEntry;
         configEntryMap.forEach((lid, ldata) -> {
             String lname = (String) ldata.get("name");

@@ -25,6 +25,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api_v2.Utils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,7 +144,7 @@ class MergeResultsCmd extends AbstractCmd {
                                     (!excludedNames.contains(csr.getSourcePublishedName()) && !excludedNames.contains(csr.getPublishedName())))
                             .map(csr -> cleanup ? ColorMIPSearchMatchMetadata.createReleaseCopy(csr) : csr)
                             .collect(Collectors.toList());
-                    List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = Utils.pickBestMatches(
+                    List<ColorMIPSearchMatchMetadata> combinedResultsWithNoDuplicates = ItemsHandling.selectTopRankedElements(
                             combinedResults,
                             ColorMIPSearchMatchMetadata::getId,
                             ColorMIPSearchMatchMetadata::getNormalizedScore,

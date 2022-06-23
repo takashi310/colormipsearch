@@ -25,6 +25,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.MappingFunction;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,7 @@ public class SparkColorMIPSearch implements ColorMIPSearchDriver, Serializable {
                 .map(MIPsUtils::loadMIP);
         LOG.info("Created {} partitions for {} targets", targetImagesRDD.getNumPartitions(), nTargets);
 
-        List<ColorMIPSearchResult> cdsResults = Utils.partitionCollection(queryMIPS, localProcessingPartitionSize).stream().parallel()
+        List<ColorMIPSearchResult> cdsResults = ItemsHandling.partitionCollection(queryMIPS, localProcessingPartitionSize).stream().parallel()
                 .map(queriesPartition -> targetImagesRDD.mapPartitions(targetImagesItr -> {
                     List<MIPImage> localTargetImages = Lists.newArrayList(targetImagesItr);
                     return queriesPartition.stream()

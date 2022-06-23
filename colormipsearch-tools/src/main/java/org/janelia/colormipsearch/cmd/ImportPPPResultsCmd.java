@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
@@ -30,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.ppp.PPPGrouping;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -39,6 +41,7 @@ import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class ImportPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ImportPPPResultsCmd.class);
@@ -155,14 +158,23 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         long start = System.currentTimeMillis();
         Path outputDir = args.getOutputDir();
         listOfPPPResults.stream()
+                .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
                 .map(PPPGrouping::groupByNeuronBodyId)
-                .forEach(pppMatch -> {
+                .flatMap(pppResults -> {
+                    if (pppResults.size() > 1) {
+                        throw new IllegalStateException("Expected all PPP matches to be for the same neuron");
+                    }
+                    return pppResults.stream();
+                })
+                .forEach(pppMatches -> {
+                    JsonOutputHelper.writeToJSONFile(
+                            pppMatches,
+                            CmdUtils.getOutputFile(outputDir, new File(pppMatches.getKey().getPublishedName() + ".json")),
+                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()
+                            );
+                    MDC.remove("PPPFile");
                 });
-//                .forEach(pppMatches -> Utils.writeResultsToJSONFile(
-//                        pppMatches,
-//                        CmdUtils.getOutputFile(outputDir, new File(pppMatches.getNeuronName() + ".json")),
-//                        args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 

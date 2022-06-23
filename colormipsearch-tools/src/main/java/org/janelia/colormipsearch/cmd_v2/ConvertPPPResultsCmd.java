@@ -52,6 +52,7 @@ import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.pppsearch.RawPPPMatchesReader;
 import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;
 import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatches;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,7 +175,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
-        Utils.processPartitionStream(
+        ItemsHandling.processPartitionStream(
                 filesToProcess.parallel(),
                 args.processingPartitionSize,
                 this::processPPPFiles);
@@ -396,7 +397,7 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
      */
     private <T> Stream<T> retrieveDataStream(Supplier<WebTarget> endpointSupplier, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
         if (chunkSize > 0) {
-            return Utils.partitionCollection(names, chunkSize).stream().parallel()
+            return ItemsHandling.partitionCollection(names, chunkSize).stream().parallel()
                     .flatMap(namesSubset -> {
                         LOG.info("Retrieve {} items", namesSubset.size());
                         return retrieveChunk(

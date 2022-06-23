@@ -35,6 +35,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.GradientAreaGapUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.api_v2.cdsearch.NegativeColorDepthMatchScore;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +135,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         long startTime = System.currentTimeMillis();
         int nFiles = filesToProcess.size();
-        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(fileList -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     fileList.forEach(fn -> {

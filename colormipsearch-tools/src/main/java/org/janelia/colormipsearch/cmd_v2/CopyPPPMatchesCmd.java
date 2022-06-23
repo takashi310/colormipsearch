@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.Results;
 import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.pppsearch.AbstractPPPMatch;
@@ -111,7 +112,7 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        Utils.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
                 .flatMap(fileList -> fileList.stream()
                         .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper))
                         .filter(Results::hasResults)

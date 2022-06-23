@@ -24,6 +24,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.GradientAreaGapUtils;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +129,7 @@ class NormalizeScoresCmd extends AbstractCmd {
             CDSMatches cdsMatchesFromJSONFile = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(cdsFile, mapper);
             List<ColorMIPSearchMatchMetadata> cdsResults;
             if (args.cleanup) {
-                cdsResults = Utils.pickBestMatches(
+                cdsResults = ItemsHandling.selectTopRankedElements(
                         cdsMatchesFromJSONFile.results,
                         csr -> csr.getId(),
                         ColorMIPSearchMatchMetadata::getNormalizedGapScore,
