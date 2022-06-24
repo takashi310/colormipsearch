@@ -60,33 +60,39 @@ public class NeuronMIPUtils {
      */
     @Nullable
     public static <N extends AbstractNeuronMetadata> NeuronMIP<N> loadComputeFile(@Nullable N neuronMetadata, ComputeFileType computeFileType) {
-        long startTime = System.currentTimeMillis();
         if (neuronMetadata == null) {
             return null;
         } else {
             LOG.trace("Load MIP {}:{}", neuronMetadata, computeFileType);
             Optional<FileData> computeFileData = neuronMetadata.getComputeFileData(computeFileType);
-            InputStream inputStream;
-            try {
-                inputStream = openInputStream(computeFileData.orElse(null));
-                if (inputStream == null) {
-                    return null;
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
+            return new NeuronMIP<>(
+                    neuronMetadata,
+                    loadImageFromFileData(computeFileData.orElse(null))
+            );
+        }
+    }
+
+    public static ImageArray<?> loadImageFromFileData(FileData fd) {
+        long startTime = System.currentTimeMillis();
+        InputStream inputStream;
+        try {
+            inputStream = openInputStream(fd);
+            if (inputStream == null) {
+                return null;
             }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        try {
+            return ImageArrayUtils.readImageArray(fd.getName(), fd.getName(), inputStream);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        } finally {
             try {
-                return new NeuronMIP<>(neuronMetadata, ImageArrayUtils.readImageArray(neuronMetadata.getId(), computeFileData.map(FileData::getName).orElse(""), inputStream));
-            } catch (Exception e) {
-                LOG.error("Error loading {}:{}", neuronMetadata, computeFileType, e);
-                throw new IllegalStateException(e);
-            } finally {
-                try {
-                    inputStream.close();
-                } catch (IOException ignore) {
-                }
-                LOG.trace("Loaded MIP {}:{} in {}ms", neuronMetadata, computeFileType, System.currentTimeMillis() - startTime);
+                inputStream.close();
+            } catch (IOException ignore) {
             }
+            LOG.trace("Loaded image from {} in {}ms", fd, System.currentTimeMillis() - startTime);
         }
     }
 

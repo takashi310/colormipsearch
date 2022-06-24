@@ -4,10 +4,12 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import com.beust.jcommander.Parameter;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 
 class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = "--app")
@@ -115,4 +117,25 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     boolean hasColorScaleLabel() {
         return !noColorScaleLabel;
     }
+
+    ImageRegionDefinition getRegionGeneratorForTextLabels() {
+        // define the text label regions
+        return img -> {
+            int imgWidth = img.getWidth();
+            BiPredicate<Integer, Integer> colorScaleLabelRegion;
+            if (hasColorScaleLabel() && imgWidth > 270) {
+                colorScaleLabelRegion = (x, y) -> x >= imgWidth - 270 && y < 90;
+            } else {
+                colorScaleLabelRegion = (x, y) -> false;
+            }
+            BiPredicate<Integer, Integer> nameLabelRegion;
+            if (hasNameLabel()) {
+                nameLabelRegion = (x, y) -> x < 330 && y < 100;
+            } else {
+                nameLabelRegion = (x, y) -> false;
+            }
+            return colorScaleLabelRegion.or(nameLabelRegion);
+        };
+    }
+
 }
