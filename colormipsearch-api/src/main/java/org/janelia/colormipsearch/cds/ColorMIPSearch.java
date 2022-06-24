@@ -1,11 +1,10 @@
-package org.janelia.colormipsearch.api_v2.cdsearch;
+package org.janelia.colormipsearch.cds;
 
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
+import org.janelia.colormipsearch.mips.NeuronMIP;
 
 /**
  * Creates a color depth search for a given mask.
@@ -31,7 +30,7 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearchWithDefaultThreshold(MIPImage queryMIPImage) {
+    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearchWithDefaultThreshold(NeuronMIP<?> queryMIPImage) {
         try {
             return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold, 0);
         } catch(Exception e) {
@@ -39,14 +38,14 @@ public class ColorMIPSearch implements Serializable {
         }
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(MIPImage queryMIPImage, int queryThreshold, int borderSize) {
+    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(NeuronMIP<?> queryMIPImage, int queryThreshold, int borderSize) {
         return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), queryThreshold, borderSize);
     }
 
 
     public boolean isMatch(ColorMIPMatchScore colorMIPMatchScore) {
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
-        return colorMIPMatchScore.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
+        return colorMIPMatchScore.getMatchingPixNum() > 0 && colorMIPMatchScore.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
     }
 
 }

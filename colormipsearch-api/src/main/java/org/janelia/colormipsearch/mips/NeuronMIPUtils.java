@@ -64,11 +64,9 @@ public class NeuronMIPUtils {
             return null;
         } else {
             LOG.trace("Load MIP {}:{}", neuronMetadata, computeFileType);
-            Optional<FileData> computeFileData = neuronMetadata.getComputeFileData(computeFileType);
-            return new NeuronMIP<>(
-                    neuronMetadata,
-                    loadImageFromFileData(computeFileData.orElse(null))
-            );
+            return neuronMetadata.getComputeFileData(computeFileType)
+                    .map(fd -> new NeuronMIP<>(neuronMetadata, fd, loadImageFromFileData(fd)))
+                    .orElse(new NeuronMIP<>(neuronMetadata, null, null));
         }
     }
 

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;
@@ -36,7 +35,6 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.api_v2.cdsearch.NegativeColorDepthMatchScore;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmsdrivers;
+package org.janelia.colormipsearch.cmd_v2.cmsdrivers;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -15,7 +15,6 @@ import com.google.common.collect.Lists;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.janelia.colormipsearch.api_v2.Utils;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;
@@ -26,7 +25,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.MappingFunction;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
+import org.janelia.colormipsearch.cmd_v2.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

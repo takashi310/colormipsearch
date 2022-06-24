@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.model.ComputeFileType;
 
 /**
  * ColorMIPMaskCompare encapsulates a query image and it provides a method to search
@@ -38,7 +39,7 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> exten
     /**
      * @return required variant types for calculating the score.
      */
-    Set<String> getRequiredTargetVariantTypes();
+    Set<ComputeFileType> getRequiredTargetVariantTypes();
 
     /**
      * Score color depth matches between the current query (the one from the context of the current instance) and
@@ -52,9 +53,9 @@ public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> exten
      * calculate the negative impact of certain pixels to the total matching score.
      *
      * @param targetImageArray
-     * @param variantTypeSuppliers image supplier per variant type. The map key is the variant type and the value is
-     *                             the supplier that can provide the corresponding image.
+     * @param variantImageSuppliers image supplier per variant type. The map key is the variant type and the value is
+     *                              the supplier that can provide the corresponding image.
      * @return
      */
-    S calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray, Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers);
+    S calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray, Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers);
 }

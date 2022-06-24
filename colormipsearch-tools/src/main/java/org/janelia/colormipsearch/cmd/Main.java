@@ -8,9 +8,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Perform color depth mask search on a Spark cluster.
- *
- * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
+ * Entry point for some NeuronBridge tools.
  */
 public class Main {
 
@@ -26,7 +24,7 @@ public class Main {
         CommonArgs commonArgs = new CommonArgs();
         AbstractCmd[] cmds = new AbstractCmd[] {
                 new CreateColorDepthSearchDataInputCmd("createColorDepthSearchDataInput", commonArgs),
-                new ColorDepthSearchCmd("colorDepthSearch", commonArgs, () -> mainArgs.cacheSize),
+                new ColorDepthSearchCmd("colorDepthSearch", commonArgs, () -> mainArgs.cacheSize, false),
                 new ImportPPPResultsCmd("importPPPResults", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()

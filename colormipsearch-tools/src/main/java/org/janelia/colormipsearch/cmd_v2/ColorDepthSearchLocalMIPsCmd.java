@@ -17,10 +17,9 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
-import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
-import org.janelia.colormipsearch.cmsdrivers.LocalColorMIPSearch;
-import org.janelia.colormipsearch.cmsdrivers.SparkColorMIPSearch;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
+import org.janelia.colormipsearch.cmd_v2.cmsdrivers.ColorMIPSearchDriver;
+import org.janelia.colormipsearch.cmd_v2.cmsdrivers.LocalColorMIPSearch;
+import org.janelia.colormipsearch.cmd_v2.cmsdrivers.SparkColorMIPSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -8,9 +8,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Perform color depth mask search on a Spark cluster.
- *
- * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
+ * Entry point for some NeuronBridge tools.
  */
 public class Main {
 

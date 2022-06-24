@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -8,18 +7,16 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
-import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
-import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPMatchScore;
-import org.janelia.colormipsearch.cmsdrivers.ColorMIPSearchDriver;
+import org.janelia.colormipsearch.cds.ColorMIPSearch;
+import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
+import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
 
 public class ColorDepthSearchCmd extends AbstractCmd {
 
@@ -53,13 +50,16 @@ public class ColorDepthSearchCmd extends AbstractCmd {
 
     private final ColorDepthSearchArgs args;
     private final Supplier<Long> cacheSizeSupplier;
+    private final boolean useSpark;
 
     ColorDepthSearchCmd(String commandName,
                         CommonArgs commonArgs,
-                        Supplier<Long> cacheSizeSupplier) {
+                        Supplier<Long> cacheSizeSupplier,
+                        boolean useSpark) {
         super(commandName);
         this.args = new ColorDepthSearchArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
+        this.useSpark = useSpark;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     }
 
     private void runColorDepthSearch() {
-        ColorMIPSearchDriver colorMIPSearchDriver;
+        ColorMIPSearchProcessor<?, ?> colorMIPSearchProcessor;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
         if (args.onlyPositiveScores()) {
@@ -98,7 +98,8 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                     excludedRegions
             );
         }
-        
+        ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, args.maskThreshold, cdsAlgorithmProvider);
+        // !!!! TODO
     }
 
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {

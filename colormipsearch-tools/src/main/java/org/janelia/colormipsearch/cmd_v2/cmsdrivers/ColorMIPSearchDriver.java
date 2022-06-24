@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmsdrivers;
+package org.janelia.colormipsearch.cmd_v2.cmsdrivers;
 
 import java.util.List;
 

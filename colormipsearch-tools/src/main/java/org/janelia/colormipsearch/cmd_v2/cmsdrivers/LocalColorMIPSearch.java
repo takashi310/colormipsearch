@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmsdrivers;
+package org.janelia.colormipsearch.cmd_v2.cmsdrivers;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -24,7 +24,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.MappingFunction;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.utils.CachedMIPsUtils;
+import org.janelia.colormipsearch.cmd_v2.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

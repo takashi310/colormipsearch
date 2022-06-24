@@ -220,7 +220,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                         createColorDepthSearchInputData(
                                 serverEndpoint,
                                 lpaths,
-                                getAllVariantsForComputeFileType(ComputeFileType.InputColorDepthImage),
+                                getAllVariantsForColorDepthInput(),
                                 excludedNeurons,
                                 libraryNameMapping::get,
                                 getNeuronFileURLMapper(),
@@ -466,9 +466,9 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         return neuronMetadata;
     }
 
-    private Set<String> getAllVariantsForComputeFileType(ComputeFileType computeFileType) {
+    private Set<String> getAllVariantsForColorDepthInput() {
         return args.variantFileTypeMapping.entrySet().stream()
-                .filter(e -> e.getValue().equalsIgnoreCase(computeFileType.name()))
+                .filter(e -> e.getValue().equalsIgnoreCase(ComputeFileType.InputColorDepthImage.name()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }

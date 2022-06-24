@@ -1,17 +1,18 @@
 package org.janelia.colormipsearch.cds;
 
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.model.ComputeFileType;
 
 public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<ColorMIPMatchScore> {
 
-    private final Set<String> requiredVariantTypes = new LinkedHashSet<>();
     private final ColorDepthSearchAlgorithm<ColorMIPMatchScore> cdsMatchScoreCalculator;
     private final ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSearchCalculator;
 
@@ -19,8 +20,6 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
                                                                 ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> negScoreCDSearchCalculator) {
         this.cdsMatchScoreCalculator = cdsMatchScoreCalculator;
         this.negScoreCDSearchCalculator = negScoreCDSearchCalculator;
-        requiredVariantTypes.addAll(cdsMatchScoreCalculator.getRequiredTargetVariantTypes());
-        requiredVariantTypes.addAll(negScoreCDSearchCalculator.getRequiredTargetVariantTypes());
     }
 
     @Override
@@ -44,16 +43,19 @@ public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements Col
     }
 
     @Override
-    public Set<String> getRequiredTargetVariantTypes() {
-        return requiredVariantTypes;
+    public Set<ComputeFileType> getRequiredTargetVariantTypes() {
+        return Stream.concat(
+                cdsMatchScoreCalculator.getRequiredTargetVariantTypes().stream(),
+                negScoreCDSearchCalculator.getRequiredTargetVariantTypes().stream())
+                .collect(Collectors.toSet());
     }
 
     @Override
     public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
-                                                     Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
-        ColorMIPMatchScore cdsMatchScore = cdsMatchScoreCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);
+                                                     Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
+        ColorMIPMatchScore cdsMatchScore = cdsMatchScoreCalculator.calculateMatchingScore(targetImageArray, variantImageSuppliers);
         if (cdsMatchScore.getScore() > 0) {
-            NegativeColorDepthMatchScore negativeColorDepthMatchScore = negScoreCDSearchCalculator.calculateMatchingScore(targetImageArray, variantTypeSuppliers);
+            NegativeColorDepthMatchScore negativeColorDepthMatchScore = negScoreCDSearchCalculator.calculateMatchingScore(targetImageArray, variantImageSuppliers);
             return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isMirrored(), negativeColorDepthMatchScore);
         } else {
             return new ColorMIPMatchScore(cdsMatchScore.getMatchingPixNum(), cdsMatchScore.getMatchingPixNumToMaskRatio(), cdsMatchScore.isMirrored(), null);

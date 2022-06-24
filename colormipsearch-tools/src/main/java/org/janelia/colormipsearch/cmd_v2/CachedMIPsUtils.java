@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.utils;
+package org.janelia.colormipsearch.cmd_v2;
 
 import java.util.concurrent.ExecutionException;
 

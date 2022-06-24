@@ -42,27 +42,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--with-grad-scores"}, description = "If possible calculate the negative scores as well", arity = 0)
     boolean withGradientScores = false;
 
-    @Parameter(names = {"--librarySuffix"}, description = "Library suffix")
-    String librarySuffix;
-
-    @Parameter(names = {"--gradientVariant"}, description = "Gradient variant key")
-    String gradientVariantKey = "gradient";
-
-    @Parameter(names = {"--gradientPath", "-gp"}, description = "Gradient masks location", variableArity = true)
-    List<String> gradientPaths;
-
-    @Parameter(names = {"--gradientSuffix"}, description = "Gradient suffix")
-    String gradientSuffix = "_gradient";
-
-    @Parameter(names = {"--zgapVariant"}, description = "zgap variant key")
-    String zgapVariantKey = "zgap";
-
-    @Parameter(names = {"--zgapPath", "-zgp"}, description = "ZGap masks location", variableArity = true)
-    List<String> zgapPaths;
-
-    @Parameter(names = {"--zgapSuffix"}, description = "ZGap suffix")
-    String zgapSuffix;
-
     @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
     int processingPartitionSize = 100;
 

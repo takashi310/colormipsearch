@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
+import org.janelia.colormipsearch.model.ComputeFileType;
 
 /**
  * PixelMatchColorDepthQuerySearchAlgorithm - implements the color depth mip comparison
@@ -157,13 +158,13 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     }
 
     @Override
-    public Set<String> getRequiredTargetVariantTypes() {
+    public Set<ComputeFileType> getRequiredTargetVariantTypes() {
         return Collections.emptySet();
     }
 
     @Override
     public ColorMIPMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
-                                                     Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
+                                                     Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
         int querySize = getQuerySize();
         if (querySize == 0) {
             return new ColorMIPMatchScore(0, 0, false, null);
