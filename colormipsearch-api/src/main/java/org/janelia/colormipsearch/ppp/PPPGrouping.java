@@ -28,6 +28,11 @@ public class PPPGrouping {
                         (k1, k2) -> k1.getPublishedName().equals(k2.getPublishedName()),
                         AbstractNeuronMetadata::hashCode
                 ),
+                g -> {
+                    PPPMatch<EMNeuronMetadata, LMNeuronMetadata> aPPPMatch = g.getItem();
+                    aPPPMatch.resetMaskImage();
+                    return aPPPMatch;
+                },
                 Comparator.comparingDouble(aPPPMatch -> Math.abs(aPPPMatch.getRank())),
                 ResultMatches::new
         );

@@ -17,6 +17,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, I extends 
         this.maskImage = maskImage;
     }
 
+    public void resetMaskImage() {
+        this.maskImage = null;
+    }
+
     public I getMatchedImage() {
         return matchedImage;
     }
@@ -39,5 +43,13 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, I extends 
 
     public void setMatchFiles(Map<FileType, FileData> matchFiles) {
         this.matchFiles = matchFiles;
+    }
+
+    public void setMatchFileData(FileType t, FileData fd) {
+        if (fd != null) {
+            matchFiles.put(t, fd);
+        } else {
+            matchFiles.remove(t);
+        }
     }
 }

@@ -94,10 +94,10 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         boolean onlyBestSkeletonMatches = false;
 
         @Parameter(names = {"--jacs-read-batch-size"}, description = "Batch size for getting data from JACS")
-        int jacsReadBatchSize = 5000;
+        int jacsReadBatchSize = 10000;
 
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
-        int processingPartitionSize = 500;
+        int processingPartitionSize = 1000;
 
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -302,7 +302,6 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             CDMIPBody emBody = emNeurons.get(emNeuron.getPublishedName());
             if (emBody != null) {
                 emNeuron.setBodyRef("EMBody#" + emBody.id);
-                emNeuron.setEmName(emBody.name);
                 emNeuron.setDatasetName(emBody.datasetIdentifier); // this should be set to the library id which differs slightly from the EM dataset
                 emNeuron.setNeuronType(emBody.neuronType);
                 emNeuron.setNeuronInstance(emBody.neuronInstance);
@@ -323,7 +322,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
-            emNeuron.setEmName(matcher.group(1)); // neuron name
+            emNeuron.setPublishedName(matcher.group(1)); // neuron name
             emNeuron.setNeuronType(matcher.group(2));
         }
         return emNeuron;
@@ -372,7 +371,9 @@ public class ImportPPPResultsCmd extends AbstractCmd {
                 args.jacsReadBatchSize,
                 neuronIds,
                 new TypeReference<List<CDMIPBody>>() {})
-                .collect(Collectors.toMap(n -> n.name, n -> n));
+                .collect(Collectors.toMap(
+                        n -> n.name,
+                        n -> n));
     }
 
     private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch<?, ?> pppMatch) {

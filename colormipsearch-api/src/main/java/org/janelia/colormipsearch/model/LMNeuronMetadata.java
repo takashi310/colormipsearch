@@ -83,6 +83,11 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
+    public String buildNeuronSourceName() {
+        return getPublishedName() + "-" + slideCode + "-" + objective;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <N extends AbstractNeuronMetadata> N duplicate() {
         LMNeuronMetadata n = new LMNeuronMetadata();

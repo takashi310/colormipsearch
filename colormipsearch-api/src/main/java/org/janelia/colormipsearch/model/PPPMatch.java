@@ -7,8 +7,6 @@ import java.util.Map;
 import org.apache.commons.collections4.MapUtils;
 
 public class PPPMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata> extends AbstractMatch<M, I> {
-
-
     private String sourceEmName;
     private String sourceLmName;
     private Double coverageScore;
@@ -77,6 +75,26 @@ public class PPPMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuron
 
     public boolean hasSourceImageFiles() {
         return MapUtils.isNotEmpty(sourceImageFiles);
+    }
+
+    public void updateMatchFiles() {
+        if (sourceImageFiles != null) {
+            sourceImageFiles.keySet()
+                    .forEach(k -> setMatchFileData(k.getFileType(), getTargetImageRelativePath(k.getFileType())));
+        }
+    }
+
+    private FileData getTargetImageRelativePath(FileType ft) {
+        // e.g. "12/1200351200/1200351200-VT064583-20170630_64_C2-40x-JRC2018_Unisex_20x_HR-masked_inst.png"
+        String maskPublishedName = getMaskImage().getPublishedName();
+        return FileData.fromString(
+                maskPublishedName.substring(0, 2) + '/' +
+                maskPublishedName + '/' +
+                maskPublishedName + '-' +
+                getMatchedImage().buildNeuronSourceName() + "-" +
+                getMaskImage().getAlignmentSpace() + '-' +
+                ft.getDisplayPPPSuffix()
+        );
     }
 
     public List<PPPSkeletonMatch> getSkeletonMatches() {

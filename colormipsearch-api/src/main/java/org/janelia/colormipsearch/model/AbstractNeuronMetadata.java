@@ -127,6 +127,8 @@ public abstract class AbstractNeuronMetadata {
         this.datasetName = datasetName;
     }
 
+    public abstract String buildNeuronSourceName();
+
     public abstract <N extends AbstractNeuronMetadata> N duplicate();
 
     @Override

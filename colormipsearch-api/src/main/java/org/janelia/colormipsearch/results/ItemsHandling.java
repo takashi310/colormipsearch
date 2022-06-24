@@ -21,7 +21,8 @@ public class ItemsHandling {
 
     /**
      * @param items               to be grouped by a certain criteria specified by @groupingCriteria@
-     * @param groupingCriteria    criteria used for grouping @items@
+     * @param toGroupingCriteria    criteria used for grouping @items@
+     * @param fromGroupingCriteria extract element from grouping criteria
      * @param finalRankComparator comparator used for ranking grouped items
      * @param groupFactory        factory for creating an object to hold items from a group
      * @param <E>                 type of the elements that need to be grouped together
@@ -31,7 +32,8 @@ public class ItemsHandling {
      */
     public static <E, K, G extends AbstractGroupedItems<E, K>>
     List<G> groupItems(List<E> items,
-                       Function<E, GroupingCriteria<E, K>> groupingCriteria,
+                       Function<E, GroupingCriteria<E, K>> toGroupingCriteria,
+                       Function<GroupingCriteria<E, K>, E> fromGroupingCriteria,
                        Comparator<E> finalRankComparator,
                        Supplier<G> groupFactory) {
         if (CollectionUtils.isEmpty(items)) {
@@ -39,22 +41,22 @@ public class ItemsHandling {
         } else {
             return new ArrayList<>(
                     items.stream()
-                            .map(groupingCriteria)
+                            .map(toGroupingCriteria)
                             .collect(Collectors.groupingBy(
                                     item -> item,
                                     Collectors.collectingAndThen(
                                             Collectors.toList(),
                                             sameKeyItems -> {
-                                                List<E> groupElements = sameKeyItems.stream()
-                                                        .map(GroupingCriteria::getItem)
-                                                        .collect(Collectors.toList());
-                                                if (finalRankComparator != null) {
-                                                    groupElements.sort(finalRankComparator);
-                                                }
                                                 G groupedItems = groupFactory.get();
                                                 // get the key from the first item
                                                 // the grouped items should always have at least one element
                                                 groupedItems.setKey(sameKeyItems.get(0).getKey());
+                                                List<E> groupElements = sameKeyItems.stream()
+                                                        .map(fromGroupingCriteria)
+                                                        .collect(Collectors.toList());
+                                                if (finalRankComparator != null) {
+                                                    groupElements.sort(finalRankComparator);
+                                                }
                                                 groupedItems.setItems(groupElements);
                                                 return groupedItems;
                                             }
@@ -80,18 +82,19 @@ public class ItemsHandling {
             stream.map(Collections::singletonList).forEach(partitionHandler);
         } else {
             AtomicReference<List<T>> currentPartitionHolder = new AtomicReference<>(Collections.emptyList());
-            Stream<List<T>> streamOfPartitions = stream.flatMap(e -> {
-                List<T> l = currentPartitionHolder.accumulateAndGet(Collections.singletonList(e), (l1, l2) -> {
-                    if (l1.size() == partitionSize) {
-                        return l2;
-                    } else {
-                        List<T> updatedList = new ArrayList<>(l1);
-                        updatedList.addAll(l2);
-                        return updatedList;
-                    }
-                });
-                return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
-            });
+            Stream<List<T>> streamOfPartitions = stream
+                    .flatMap(e -> {
+                        List<T> l = currentPartitionHolder.accumulateAndGet(Collections.singletonList(e), (l1, l2) -> {
+                            if (l1.size() == partitionSize) {
+                                return l2;
+                            } else {
+                                List<T> updatedList = new ArrayList<>(l1);
+                                updatedList.addAll(l2);
+                                return updatedList;
+                            }
+                        });
+                        return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
+                    });
             if (stream.isParallel()) {
                 streamOfPartitions.parallel().forEach(partitionHandler);
             } else {
