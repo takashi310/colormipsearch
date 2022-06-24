@@ -37,7 +37,7 @@ public class CmdUtils {
         }
     }
 
-    static void createDirs(Path... dirs) {
+    static void createDirs(@Nullable Path... dirs) {
         for (Path dir : dirs) {
             if (dir != null) {
                 try {

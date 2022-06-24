@@ -80,10 +80,10 @@ class ColorDepthSearchJSONInputCmd extends AbstractColorDepthSearchCmd {
         CmdUtils.createOutputDirs(args.getPerLibraryDir(), args.getPerMaskDir());
         // initialize the cache
         CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
-        runColorDepthSearchFromJSONInput(args);
+        runColorDepthSearchFromJSONInput();
     }
 
-    private void runColorDepthSearchFromJSONInput(JsonMIPsSearchArgs args) {
+    private void runColorDepthSearchFromJSONInput() {
         ColorMIPSearchDriver colorMIPSearchDriver;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
         ImageRegionGenerator labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);

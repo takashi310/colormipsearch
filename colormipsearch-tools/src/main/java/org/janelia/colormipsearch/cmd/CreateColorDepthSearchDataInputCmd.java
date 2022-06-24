@@ -365,7 +365,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
                             libraryPaths.listLibraryVariants(),
                             inputLibraryVariantChoice.orElse(null)))
-                    .peek(cdmip -> updateNeuronFiles(cdmip))
+                    .peek(this::updateNeuronFiles)
                     .forEach(gen::write);
         }
         gen.done();

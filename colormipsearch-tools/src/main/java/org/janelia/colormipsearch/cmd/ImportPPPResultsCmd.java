@@ -32,13 +32,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.io.JsonOutputHelper;
-import org.janelia.colormipsearch.ppp.PPPGrouping;
-import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.ppp.PPPGrouping;
+import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
+import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -127,7 +128,6 @@ public class ImportPPPResultsCmd extends AbstractCmd {
 
     @Override
     void execute() {
-        CmdUtils.createDirs(args.getOutputDir());
         importPPPResults();
     }
 
@@ -156,7 +156,6 @@ public class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
-        Path outputDir = args.getOutputDir();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
@@ -168,11 +167,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
                     return pppResults.stream();
                 })
                 .forEach(pppMatches -> {
-                    JsonOutputHelper.writeToJSONFile(
-                            pppMatches,
-                            CmdUtils.getOutputFile(outputDir, new File(pppMatches.getKey().getPublishedName() + ".json")),
-                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()
-                            );
+                    writeResults(pppMatches);
                     MDC.remove("PPPFile");
                 });
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
@@ -385,7 +380,18 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+            pppMatch.updateMatchFiles();
         }
+    }
+
+    private void writeResults(ResultMatches<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatches) {
+        Path outputDir = args.getOutputDir();
+        CmdUtils.createDirs(outputDir);
+        JsonOutputHelper.writeToJSONFile(
+                pppMatches,
+                CmdUtils.getOutputFile(outputDir, new File(pppMatches.getKey().getPublishedName() + ".json")),
+                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()
+        );
     }
 
 }
