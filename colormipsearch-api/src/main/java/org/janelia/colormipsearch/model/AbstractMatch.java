@@ -29,6 +29,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, I extends 
         this.matchedImage = matchedImage;
     }
 
+    public void resetMatchedImage() {
+        this.matchedImage = null;
+    }
+
     public boolean isMirrored() {
         return mirrored;
     }

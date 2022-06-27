@@ -44,24 +44,12 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, I ex
     private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
     private final int localProcessingPartitionSize;
-    private final List<String> gradientsLocations;
-    private final MappingFunction<String, String> gradientVariantSuffixMapping;
-    private final List<String> zgapMasksLocations;
-    private final MappingFunction<String, String> zgapMaskVariantSuffixMapping;
 
     public LocalColorMIPSearchProcessor(ColorMIPSearch colorMIPSearch,
                                         int localProcessingPartitionSize,
-                                        List<String> gradientsLocations,
-                                        MappingFunction<String, String> gradientVariantSuffixMapping,
-                                        List<String> zgapMasksLocations,
-                                        MappingFunction<String, String> zgapMaskVariantSuffixMapping,
                                         Executor cdsExecutor) {
         this.colorMIPSearch = colorMIPSearch;
         this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
-        this.gradientsLocations = gradientsLocations;
-        this.gradientVariantSuffixMapping = gradientVariantSuffixMapping;
-        this.zgapMasksLocations = zgapMasksLocations;
-        this.zgapMaskVariantSuffixMapping = zgapMaskVariantSuffixMapping;
         this.cdsExecutor = cdsExecutor;
     }
 

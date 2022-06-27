@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd;
+package org.janelia.colormipsearch.cmd.io;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,7 +18,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
+public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(JSONCDSDataInputGenerator.class);
 
@@ -30,12 +30,12 @@ class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
     private final boolean append;
     private JsonGenerator gen;
 
-    JSONCDSDataInputGenerator(Path outputPath,
-                              String outputFileName,
-                              int libraryFromIndex,
-                              int libraryToIndex,
-                              boolean append,
-                              ObjectMapper mapper) {
+    public JSONCDSDataInputGenerator(Path outputPath,
+                                     String outputFileName,
+                                     int libraryFromIndex,
+                                     int libraryToIndex,
+                                     boolean append,
+                                     ObjectMapper mapper) {
         this.mapper = mapper;
         this.outputPath = outputPath;
         this.outputFileName = outputFileName;

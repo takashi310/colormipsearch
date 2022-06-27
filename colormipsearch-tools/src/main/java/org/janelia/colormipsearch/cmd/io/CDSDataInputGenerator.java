@@ -1,10 +1,8 @@
-package org.janelia.colormipsearch.cmd;
-
-import java.nio.file.Path;
+package org.janelia.colormipsearch.cmd.io;
 
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-interface CDSDataInputGenerator {
+public interface CDSDataInputGenerator {
     CDSDataInputGenerator prepare();
 
     void write(AbstractNeuronMetadata neuronMetadata);

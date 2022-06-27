@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 
 import java.util.List;
 
-import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 

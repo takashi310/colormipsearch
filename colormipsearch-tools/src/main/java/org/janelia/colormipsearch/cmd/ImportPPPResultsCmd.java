@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
@@ -31,15 +30,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.io.JsonOutputHelper;
+import org.janelia.colormipsearch.cmd.io.JSONPPPResultsWriter;
+import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
-import org.janelia.colormipsearch.ppp.PPPGrouping;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -159,17 +157,26 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
-                .map(PPPGrouping::groupByNeuronBodyId)
-                .flatMap(pppResults -> {
-                    if (pppResults.size() > 1) {
-                        throw new IllegalStateException("Expected all PPP matches to be for the same neuron");
-                    }
-                    return pppResults.stream();
-                })
                 .forEach(pppMatches -> {
-                    writeResults(pppMatches);
+                    ResultMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppResultsWriter = new JSONPPPResultsWriter<>(
+                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                            args.getOutputDir());
+                    pppResultsWriter.write(pppMatches);
                     MDC.remove("PPPFile");
                 });
+
+
+//                .map(PPPGrouping::groupByNeuronBodyId)
+//                .flatMap(pppResults -> {
+//                    if (pppResults.size() > 1) {
+//                        throw new IllegalStateException("Expected all PPP matches to be for the same neuron");
+//                    }
+//                    return pppResults.stream();
+//                })
+//                .forEach(pppMatches -> {
+//                    writeResults(pppMatches);
+//                    MDC.remove("PPPFile");
+//                });
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 
@@ -240,10 +247,9 @@ public class ImportPPPResultsCmd extends AbstractCmd {
      */
     private List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> importPPPRResultsFromFile(Path pppResultsFile) {
         List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatches = rawPPPMatchesReader.readPPPMatches(
-                pppResultsFile.toString(), args.onlyBestSkeletonMatches)
+                        pppResultsFile.toString(), args.onlyBestSkeletonMatches)
                 .peek(this::fillInNeuronMetadata)
-                .collect(Collectors.toList())
-                ;
+                .collect(Collectors.toList());
         Set<String> matchedLMSampleNames = neuronMatches.stream()
                 .map(pppMatch -> pppMatch.getMatchedImage().getSampleName())
                 .collect(Collectors.toSet());
@@ -351,7 +357,8 @@ public class ImportPPPResultsCmd extends AbstractCmd {
                         args.authorization,
                         args.jacsReadBatchSize,
                         sampleNames,
-                        new TypeReference<List<CDMIPSample>>() {})
+                        new TypeReference<List<CDMIPSample>>() {
+                        })
                 .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
                 .collect(Collectors.toMap(n -> n.name, n -> n));
     }
@@ -359,13 +366,14 @@ public class ImportPPPResultsCmd extends AbstractCmd {
     private Map<String, CDMIPBody> retrieveEMNeurons(Client httpClient, Set<String> neuronIds) {
         LOG.debug("Read EM metadata for {} neurons", neuronIds.size());
         return HttpHelper.retrieveDataStream(() -> httpClient.target(selectADataServiceURL())
-                        .path("/emdata/dataset")
-                        .path(args.emDataset)
-                        .path(args.emDatasetVersion),
-                args.authorization,
-                args.jacsReadBatchSize,
-                neuronIds,
-                new TypeReference<List<CDMIPBody>>() {})
+                                .path("/emdata/dataset")
+                                .path(args.emDataset)
+                                .path(args.emDatasetVersion),
+                        args.authorization,
+                        args.jacsReadBatchSize,
+                        neuronIds,
+                        new TypeReference<List<CDMIPBody>>() {
+                        })
                 .collect(Collectors.toMap(
                         n -> n.name,
                         n -> n));
@@ -373,7 +381,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
 
     private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch<?, ?> pppMatch) {
         if (Files.exists(pppScreenshotsDir)) {
-            try(DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
+            try (DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
                 screenshotsDirStream.forEach(f -> {
                     pppMatch.addSourceImageFile(f.toString());
                 });
@@ -382,16 +390,6 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             }
             pppMatch.updateMatchFiles();
         }
-    }
-
-    private void writeResults(ResultMatches<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatches) {
-        Path outputDir = args.getOutputDir();
-        CmdUtils.createDirs(outputDir);
-        JsonOutputHelper.writeToJSONFile(
-                pppMatches,
-                CmdUtils.getOutputFile(outputDir, new File(pppMatches.getKey().getPublishedName() + ".json")),
-                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()
-        );
     }
 
 }
