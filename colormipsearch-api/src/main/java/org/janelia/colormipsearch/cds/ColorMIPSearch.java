@@ -11,13 +11,13 @@ import org.janelia.colormipsearch.mips.NeuronMIP;
  */
 public class ColorMIPSearch implements Serializable {
 
-    private final ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
+    private final ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider;
     private final Integer defaultQueryThreshold;
     private final Double pctPositivePixels;
 
     public ColorMIPSearch(Double pctPositivePixels,
                           Integer defaultQueryThreshold,
-                          ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider) {
+                          ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider) {
         this.pctPositivePixels = pctPositivePixels;
         this.defaultQueryThreshold = defaultQueryThreshold;
         this.cdsAlgorithmProvider = cdsAlgorithmProvider;
@@ -30,7 +30,7 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearchWithDefaultThreshold(NeuronMIP<?> queryMIPImage) {
+    public ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> createQueryColorDepthSearchWithDefaultThreshold(NeuronMIP<?> queryMIPImage) {
         try {
             return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), defaultQueryThreshold == null ? 0 : defaultQueryThreshold, 0);
         } catch(Exception e) {
@@ -38,14 +38,14 @@ public class ColorMIPSearch implements Serializable {
         }
     }
 
-    public ColorDepthSearchAlgorithm<ColorMIPMatchScore> createQueryColorDepthSearch(NeuronMIP<?> queryMIPImage, int queryThreshold, int borderSize) {
+    public ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> createQueryColorDepthSearch(NeuronMIP<?> queryMIPImage, int queryThreshold, int borderSize) {
         return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryMIPImage.getImageArray(), queryThreshold, borderSize);
     }
 
 
-    public boolean isMatch(ColorMIPMatchScore colorMIPMatchScore) {
+    public boolean isMatch(ColorDepthPixelMatchScore pixelMatchScore) {
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
-        return colorMIPMatchScore.getMatchingPixNum() > 0 && colorMIPMatchScore.getMatchingPixNumToMaskRatio() > pixMatchRatioThreshold;
+        return pixelMatchScore.getScore() > 0 && pixelMatchScore.getNormalizedScore() > pixMatchRatioThreshold;
     }
 
 }

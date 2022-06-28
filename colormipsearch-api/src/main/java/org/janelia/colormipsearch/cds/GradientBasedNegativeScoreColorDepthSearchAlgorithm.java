@@ -156,7 +156,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         long startTime = System.currentTimeMillis();
         ImageArray<?> targetGradientImageArray = getVariantImageArray(variantImageSuppliers.get(ComputeFileType.GradientImage));
         if (targetGradientImageArray == null) {
-            return new NegativeColorDepthMatchScore(-1, -1, false);
+            return new NegativeColorDepthMatchScore(-1, -1, -1, false);
         }
         ImageArray<?> targetZGapMaskImageArray = getVariantImageArray(variantImageSuppliers.get(ComputeFileType.ZGapImage));
         LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
@@ -234,7 +234,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
         long highExpressionArea = highExpressionRegions.fold(0L, Long::sum);
         LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
-        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea, useMirroredMask);
+        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea, -1, useMirroredMask);
     }
 
 }

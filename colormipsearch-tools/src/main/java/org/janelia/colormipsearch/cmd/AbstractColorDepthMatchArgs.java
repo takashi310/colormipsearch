@@ -41,9 +41,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
     Double pctPositivePixels = 0.0;
 
-    @Parameter(names = {"--with-grad-scores"}, description = "If possible calculate the negative scores as well", arity = 0)
-    boolean withGradientScores = false;
-
     @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
     int processingPartitionSize = 100;
 
@@ -89,10 +86,6 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
         return getOutputDirArg()
                 .map(dir -> StringUtils.isNotBlank(perLibrarySubdir) ? dir.resolve(perLibrarySubdir) : dir)
                 .orElse(null);
-    }
-
-    boolean onlyPositiveScores() {
-        return !withGradientScores;
     }
 
     boolean hasNameLabel() {

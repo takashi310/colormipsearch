@@ -35,6 +35,10 @@ public class CDSMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuron
         return StringUtils.isNotBlank(errors);
     }
 
+    public boolean hasNoErrors() {
+        return StringUtils.isBlank(errors);
+    }
+
     @Override
     public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> CDSMatch<M2, T2> duplicate(MatchCopier<M, I, AbstractMatch<M, I>, M2, T2, AbstractMatch<M2, T2>> copier) {
         CDSMatch<M2, T2> clone = new CDSMatch<>();

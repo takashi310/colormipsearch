@@ -5,25 +5,27 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class NegativeColorDepthMatchScore implements ColorDepthMatchScore {
     private final long gradientAreaGap;
     private final long highExpressionArea;
+    private final long maxGradientAreaGap;
     private final boolean mirrored;
 
-    NegativeColorDepthMatchScore(long gradientAreaGap, long highExpressionArea, boolean mirrored) {
+    NegativeColorDepthMatchScore(long gradientAreaGap, long highExpressionArea,
+                                 long maxGradientAreaGap,
+                                 boolean mirrored) {
         this.gradientAreaGap = gradientAreaGap;
         this.highExpressionArea = highExpressionArea;
+        this.maxGradientAreaGap = maxGradientAreaGap;
         this.mirrored = mirrored;
     }
 
-    public long getGradientAreaGap() {
-        return gradientAreaGap;
-    }
-
-    public long getHighExpressionArea() {
-        return highExpressionArea;
+    @Override
+    public int getScore() {
+        return (int) GradientAreaGapUtils.calculateNegativeScore(gradientAreaGap, highExpressionArea);
     }
 
     @Override
-    public long getScore() {
-        return GradientAreaGapUtils.calculateNegativeScore(gradientAreaGap, highExpressionArea);
+    public float getNormalizedScore() {
+        long currentScore = getScore();
+        return maxGradientAreaGap > 0 ? currentScore / (float) maxGradientAreaGap : currentScore;
     }
 
     @Override
