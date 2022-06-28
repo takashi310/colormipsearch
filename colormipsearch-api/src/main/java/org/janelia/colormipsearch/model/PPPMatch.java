@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 
-public class PPPMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata> extends AbstractMatch<M, I> {
+public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
     private String sourceEmName;
     private String sourceLmName;
     private Double coverageScore;
@@ -104,4 +104,13 @@ public class PPPMatch<M extends AbstractNeuronMetadata, I extends AbstractNeuron
     public void setSkeletonMatches(List<PPPSkeletonMatch> skeletonMatches) {
         this.skeletonMatches = skeletonMatches;
     }
+
+    @Override
+    public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> PPPMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
+        PPPMatch<M2, T2> clone = new PPPMatch<>();
+        clone.copyFrom(this);
+        copier.copy(this, clone);
+        return clone;
+    }
+
 }

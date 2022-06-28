@@ -25,16 +25,17 @@ public class ItemsHandling {
      * @param fromGroupingCriteria extract element from grouping criteria
      * @param finalRankComparator comparator used for ranking grouped items
      * @param groupFactory        factory for creating an object to hold items from a group
-     * @param <E>                 type of the elements that need to be grouped together
+     * @param <E1>                type of the input elements that need to be grouped together
+     * @param <E2>                type of the output elements that need to be grouped together
      * @param <K>                 type of the key used to group the elements
      * @param <G>                 result group type
      * @return
      */
-    public static <E, K, G extends AbstractGroupedItems<E, K>>
-    List<G> groupItems(List<E> items,
-                       Function<E, GroupingCriteria<E, K>> toGroupingCriteria,
-                       Function<GroupingCriteria<E, K>, E> fromGroupingCriteria,
-                       Comparator<E> finalRankComparator,
+    public static <E1, E2, K, G extends AbstractGroupedItems<E2, K>>
+    List<G> groupItems(List<E1> items,
+                       Function<E1, GroupingCriteria<E2, K>> toGroupingCriteria,
+                       Function<GroupingCriteria<E2, K>, E2> fromGroupingCriteria,
+                       Comparator<E2> finalRankComparator,
                        Supplier<G> groupFactory) {
         if (CollectionUtils.isEmpty(items)) {
             return Collections.emptyList();
@@ -51,7 +52,7 @@ public class ItemsHandling {
                                                 // get the key from the first item
                                                 // the grouped items should always have at least one element
                                                 groupedItems.setKey(sameKeyItems.get(0).getKey());
-                                                List<E> groupElements = sameKeyItems.stream()
+                                                List<E2> groupElements = sameKeyItems.stream()
                                                         .map(fromGroupingCriteria)
                                                         .collect(Collectors.toList());
                                                 if (finalRankComparator != null) {

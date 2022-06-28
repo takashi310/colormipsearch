@@ -142,9 +142,17 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 args.processingPartitionSize,
                 CmdUtils.createCmdExecutor(args.commonArgs)
         );
-        List<CDSMatch<M, I>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-        ResultMatchesWriter<M, I, CDSMatch<M, I>> cdsResultsWriter = new JSONCDSResultsWriter<>(mapper);
-        cdsResultsWriter.write(cdsResults);
+        try {
+            List<CDSMatch<M, I>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
+            ResultMatchesWriter<M, I, CDSMatch<M, I>> cdsResultsWriter = new JSONCDSResultsWriter<M, I>(
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    args.getPerMaskDir(),
+                    args.getPerLibraryDir()
+            );
+            cdsResultsWriter.write(cdsResults);
+        } finally {
+            colorMIPSearchProcessor.terminate();
+        }
     }
 
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {

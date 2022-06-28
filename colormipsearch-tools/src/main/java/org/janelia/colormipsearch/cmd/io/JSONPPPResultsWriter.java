@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
-import org.janelia.colormipsearch.results.PPPGrouping;
+import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
 public class JSONPPPResultsWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements ResultMatchesWriter<M, T, PPPMatch<M, T>> {
@@ -23,7 +23,7 @@ public class JSONPPPResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
     }
 
     public void write(List<PPPMatch<M, T>> pppMatches) {
-        List<ResultMatches<M, T, PPPMatch<M, T>>> resultsByNeuronId = PPPGrouping.groupByNeuronBodyId(pppMatches, Comparator.comparingDouble(aPPPMatch -> Math.abs(aPPPMatch.getRank())));
+        List<ResultMatches<M, T, PPPMatch<M, T>>> resultsByNeuronId = MatchResultsGrouping.groupByMask(pppMatches, Comparator.comparingDouble(aPPPMatch -> Math.abs(aPPPMatch.getRank())));
         if (resultsByNeuronId.size() > 1) {
             throw new IllegalStateException("Expected all PPP matches to be for the same neuron");
         } else if (resultsByNeuronId.size() == 1) {

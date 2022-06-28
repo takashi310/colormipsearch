@@ -169,7 +169,9 @@ public abstract class AbstractNeuronMetadata {
         this.alignmentSpace = that.getAlignmentSpace();
         this.gender = that.getGender();
         this.datasetName = that.getDatasetName();
+        this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
+        this.neuronFiles.clear();
         this.neuronFiles.putAll(that.getNeuronFiles());
     }
 

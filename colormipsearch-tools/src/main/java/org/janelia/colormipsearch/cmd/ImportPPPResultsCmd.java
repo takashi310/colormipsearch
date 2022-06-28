@@ -164,19 +164,6 @@ public class ImportPPPResultsCmd extends AbstractCmd {
                     pppResultsWriter.write(pppMatches);
                     MDC.remove("PPPFile");
                 });
-
-
-//                .map(PPPGrouping::groupByNeuronBodyId)
-//                .flatMap(pppResults -> {
-//                    if (pppResults.size() > 1) {
-//                        throw new IllegalStateException("Expected all PPP matches to be for the same neuron");
-//                    }
-//                    return pppResults.stream();
-//                })
-//                .forEach(pppMatches -> {
-//                    writeResults(pppMatches);
-//                    MDC.remove("PPPFile");
-//                });
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 

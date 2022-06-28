@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
+import javax.annotation.Nullable;
+
 import com.beust.jcommander.Parameter;
 
 import org.apache.commons.lang3.StringUtils;
@@ -75,14 +77,18 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
         super(commonArgs);
     }
 
-    Optional<Path> getPerMaskDir() {
+    @Nullable
+    Path getPerMaskDir() {
         return getOutputDirArg()
-                .map(dir -> StringUtils.isNotBlank(perMaskSubdir) ? dir.resolve(perMaskSubdir) : dir);
+                .map(dir -> StringUtils.isNotBlank(perMaskSubdir) ? dir.resolve(perMaskSubdir) : dir)
+                .orElse(null);
     }
 
-    Optional<Path> getPerLibraryDir() {
+    @Nullable
+    Path getPerLibraryDir() {
         return getOutputDirArg()
-                .map(dir -> StringUtils.isNotBlank(perLibrarySubdir) ? dir.resolve(perLibrarySubdir) : dir);
+                .map(dir -> StringUtils.isNotBlank(perLibrarySubdir) ? dir.resolve(perLibrarySubdir) : dir)
+                .orElse(null);
     }
 
     boolean onlyPositiveScores() {
