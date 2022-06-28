@@ -99,9 +99,9 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         runColorDepthSearch();
     }
 
-    private <M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata> void runColorDepthSearch() {
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void runColorDepthSearch() {
         CDMIPsReader cdmiPsReader = new JSONCDMIPsReader(mapper);
-        ColorMIPSearchProcessor<M, I> colorMIPSearchProcessor;
+        ColorMIPSearchProcessor<M, T> colorMIPSearchProcessor;
         ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider;
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
         cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
@@ -118,7 +118,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
-        List<I> targetMips = (List<I>) readMIPs(cdmiPsReader,
+        List<T> targetMips = (List<T>) readMIPs(cdmiPsReader,
                 args.librariesInputs,
                 args.librariesStartIndex, args.librariesLength,
                 args.libraryMIPsFilter);
@@ -138,8 +138,8 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 CmdUtils.createCmdExecutor(args.commonArgs)
         );
         try {
-            List<CDSMatch<M, I>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            ResultMatchesWriter<M, I, CDSMatch<M, I>> cdsResultsWriter = new JSONCDSResultsWriter<M, I>(
+            List<CDSMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
+            ResultMatchesWriter<M, T, CDSMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<M, T>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()
