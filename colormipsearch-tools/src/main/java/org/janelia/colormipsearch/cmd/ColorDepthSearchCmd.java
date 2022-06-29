@@ -24,6 +24,7 @@ import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.io.CDMIPsReader;
+import org.janelia.colormipsearch.cmd.io.IOUtils;
 import org.janelia.colormipsearch.cmd.io.JSONCDSResultsWriter;
 import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
 import org.janelia.colormipsearch.cmd.io.JSONCDMIPsReader;
@@ -195,6 +196,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private void saveCDSParameters(ColorMIPSearch colorMIPSearch, Path outputDir, String fname) {
         File outputFile;
         if (outputDir != null && StringUtils.isNotBlank(fname)) {
+            IOUtils.createDirs(outputDir);
             outputFile = outputDir.resolve(fname).toFile();
         } else {
             outputFile = null;

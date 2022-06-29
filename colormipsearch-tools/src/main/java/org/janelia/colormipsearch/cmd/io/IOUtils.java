@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class IOUtils {
     private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
 
-    static void createDirs(@Nullable Path... dirs) {
+    public static void createDirs(@Nullable Path... dirs) {
         for (Path dir : dirs) {
             if (dir != null) {
                 try {
@@ -32,7 +32,7 @@ public class IOUtils {
     }
 
     @Nullable
-    static File getOutputFile(Path outputDir, File inputFile) {
+    public static File getOutputFile(Path outputDir, File inputFile) {
         if (outputDir == null) {
             return null;
         } else {
@@ -41,7 +41,7 @@ public class IOUtils {
     }
 
     @Nullable
-    static File getOutputFile(Path outputDir, String fname) {
+    public static File getOutputFile(Path outputDir, String fname) {
         if (outputDir == null) {
             return null;
         } else {
@@ -49,7 +49,7 @@ public class IOUtils {
         }
     }
 
-    static List<String> getFilesFromDir(String dirName, int offsetParam, int lengthParam) {
+    public static List<String> getFilesFromDir(String dirName, int offsetParam, int lengthParam) {
         try {
             int from = Math.max(offsetParam, 0);
             List<String> filenamesList = Files.find(Paths.get(dirName), 1, (p, fa) -> fa.isRegularFile())
