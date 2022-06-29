@@ -22,6 +22,7 @@ import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
+import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.io.CDMIPsReader;
 import org.janelia.colormipsearch.cmd.io.JSONCDSResultsWriter;
 import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
@@ -95,7 +96,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     void execute() {
         // initialize the cache
         CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
-
+        // perform color depth search for all masks against all targets
         runColorDepthSearch();
     }
 
@@ -132,14 +133,22 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         saveCDSParameters(colorMIPSearch,
                 args.getOutputDir(),
                 "masks-" + masksInputs + "-inputs-" + targetInputs + "-cdsParameters.json");
-        colorMIPSearchProcessor = new LocalColorMIPSearchProcessor<>(
-                colorMIPSearch,
-                args.processingPartitionSize,
-                CmdUtils.createCmdExecutor(args.commonArgs)
-        );
+        if (useSpark) {
+            colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
+                    args.appName,
+                    colorMIPSearch,
+                    args.processingPartitionSize
+            );
+        } else {
+            colorMIPSearchProcessor = new LocalColorMIPSearchProcessor<>(
+                    colorMIPSearch,
+                    args.processingPartitionSize,
+                    CmdUtils.createCmdExecutor(args.commonArgs)
+            );
+        }
         try {
             List<CDSMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            ResultMatchesWriter<M, T, CDSMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<M, T>(
+            ResultMatchesWriter<M, T, CDSMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()
