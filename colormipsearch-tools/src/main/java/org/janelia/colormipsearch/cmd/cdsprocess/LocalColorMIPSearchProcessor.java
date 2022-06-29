@@ -3,8 +3,7 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -13,13 +12,10 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cds.ColorDepthPixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -34,20 +30,17 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements ColorMIPSearchProcessor<M, T> {
+public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractColorMIPSearchProcessor<M, T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearchProcessor.class);
     private static final long _1M = 1024 * 1024;
 
-    private final ColorMIPSearch colorMIPSearch;
     private final Executor cdsExecutor;
-    private final int localProcessingPartitionSize;
 
     public LocalColorMIPSearchProcessor(ColorMIPSearch colorMIPSearch,
                                         int localProcessingPartitionSize,
                                         Executor cdsExecutor) {
-        this.colorMIPSearch = colorMIPSearch;
-        this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
+        super(colorMIPSearch, localProcessingPartitionSize);
         this.cdsExecutor = cdsExecutor;
     }
 
@@ -92,12 +85,11 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
                     CompletableFuture.completedFuture(Collections.emptyList())
             );
         }
-        ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage);
+        ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage.getImageArray());
         if (queryColorDepthSearch.getQuerySize() == 0) {
             LOG.info("No computation created for {} because it is empty", queryMIP);
             return Collections.emptyList();
         }
-        Set<ComputeFileType> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
         List<CompletableFuture<List<CDSMatch<M, T>>>> cdsComputations = ItemsHandling.partitionCollection(targetMIPs, localProcessingPartitionSize).stream()
                 .map(targetMIPsPartition -> {
                     Supplier<List<CDSMatch<M, T>>> searchResultSupplier = () -> {
@@ -105,46 +97,9 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
                         long startTime = System.currentTimeMillis();
                         List<CDSMatch<M, T>> srs = targetMIPsPartition.stream()
                                 .map(targetMIP -> CachedMIPsUtils.loadMIP(targetMIP, ComputeFileType.InputColorDepthImage))
-                                .filter(mip -> mip != null)
-                                .map(targetImage -> {
-                                    try {
-                                        Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers =
-                                                requiredVariantTypes.stream()
-                                                        .map(cft -> {
-                                                            Pair<ComputeFileType, Supplier<ImageArray<?>>> e =
-                                                                    ImmutablePair.of(
-                                                                            cft,
-                                                                            () -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(targetImage.getNeuronInfo(), cft))
-                                                                    );
-                                                            return e;
-                                                        })
-                                                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight))
-                                                ;
-                                        ColorDepthPixelMatchScore colorMIPMatchScore = queryColorDepthSearch.calculateMatchingScore(
-                                                NeuronMIPUtils.getImageArray(targetImage),
-                                                variantImageSuppliers);
-                                        boolean isMatch = colorMIPSearch.isMatch(colorMIPMatchScore);
-                                        if (isMatch) {
-                                            CDSMatch<M, T> match = new CDSMatch<>();
-                                            match.setMaskImage(queryImage.getNeuronInfo());
-                                            match.setMatchedImage(targetImage.getNeuronInfo());
-                                            match.setMatchingPixels(colorMIPMatchScore.getScore());
-                                            match.setMirrored(colorMIPMatchScore.isMirrored());
-                                            match.setNormalizedScore(colorMIPMatchScore.getNormalizedScore());
-                                            return match;
-                                        } else {
-                                            return null;
-                                        }
-                                    } catch (Throwable e) {
-                                        LOG.warn("Error comparing mask {} with {}", queryMIP,  targetImage, e);
-                                        CDSMatch<M, T> match = new CDSMatch<>();
-                                        match.setMaskImage(queryImage.getNeuronInfo());
-                                        match.setMatchedImage(targetImage.getNeuronInfo());
-                                        match.setErrors(e.getMessage());
-                                        return match;
-                                    }
-                                })
-                                .filter(m -> m != null && m.hasNoErrors())
+                                .filter(Objects::nonNull)
+                                .map(targetImage -> findPixelMatch(queryColorDepthSearch, queryImage, targetImage))
+                                .filter(m -> m.isMatchFound() && m.hasNoErrors())
                                 .collect(Collectors.toList());
                         LOG.info("Found {} matches comparing mask# {} - {} with {} out of {} libraries in {}ms",
                                 srs.size(), mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size(), System.currentTimeMillis() - startTime);

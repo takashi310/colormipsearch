@@ -339,7 +339,7 @@ public class MIPsUtils {
             List<MIPMetadata> content = mapper.readValue(new File(mipsJSONFilename), new TypeReference<List<MIPMetadata>>() {
             });
             if (CollectionUtils.isEmpty(filter)) {
-                int from = offset > 0 ? offset : 0;
+                int from = Math.max(offset, 0);
                 int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
                 LOG.info("Read {} mips from {} starting at {} to {}", content.size(), mipsJSONFilename, from, to);
                 return content.subList(from, to);

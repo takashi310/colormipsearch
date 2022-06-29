@@ -5,7 +5,8 @@ import java.util.List;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 
-public interface ColorMIPSearchProcessor<M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata> {
-    List<CDSMatch<M, I>> findAllColorDepthMatches(List<M> queryMIPs, List<I> targetMIPs);
+public interface ColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
+    List<CDSMatch<M, T>> findAllColorDepthMatches(List<M> queryMIPs, List<T> targetMIPs);
+
     void terminate();
 }
