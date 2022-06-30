@@ -109,6 +109,15 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> PPPMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
         PPPMatch<M2, T2> clone = new PPPMatch<>();
         clone.copyFrom(this);
+        // shallow copy the local fields
+        clone.sourceEmName = this.sourceEmName;
+        clone.sourceLmName = this.sourceLmName;
+        clone.coverageScore = this.coverageScore;
+        clone.aggregateCoverage = this.aggregateCoverage;
+        clone.rank = this.rank;
+        clone.sourceImageFiles = this.sourceImageFiles;
+        clone.skeletonMatches = this.skeletonMatches;
+        // apply the copier
         copier.copy(this, clone);
         return clone;
     }
