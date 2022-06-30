@@ -10,15 +10,23 @@ public class MatchResultsGrouping {
     /**
      * Group matches by mask.
      *
-     * @param matches
-     * @return a list of grouped PPP matches by neuron body ID
+     * @param matches to be grouped
+     * @param ranking matches sort criteria
+     * @param <M> mask type
+     * @param <T> target type
+     * @param <R> match type
+     * @return a list of grouped matches by the mask neuron
      */
+    @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> List<ResultMatches<M, T, R>> groupByMask(List<R> matches,
                                                                                                                                                                Comparator<R> ranking) {
         return ItemsHandling.groupItems(
                 matches,
-                aMatch -> new GroupingCriteria<>(
-                        aMatch,
+                aMatch -> new GroupingCriteria<R, M>(
+                        (R) aMatch.duplicate((src, dest) -> {
+                            dest.setMaskImage(src.getMaskImage());
+                            dest.setMatchedImage(src.getMatchedImage());
+                        }),
                         AbstractMatch::getMaskImage,
                         (k1, k2) -> k1.getPublishedName().equals(k2.getPublishedName()),
                         AbstractNeuronMetadata::hashCode
@@ -33,6 +41,17 @@ public class MatchResultsGrouping {
         );
     }
 
+    /**
+     * Group matches by matched image.
+     *
+     * @param matches to be grouped
+     * @param ranking sorting criteria
+     * @param <M> mask neuron type
+     * @param <T> target neuron type
+     * @param <R> type of the matches parameter
+     * @param <R1> type of the final matches
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronMetadata,
             T extends AbstractNeuronMetadata,
