@@ -70,7 +70,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
      */
     protected <M1 extends AbstractNeuronMetadata,
                T1 extends AbstractNeuronMetadata,
-               R1 extends AbstractMatch<M1, T1>> void copyFrom(R1 that) {
+               R1 extends AbstractMatch<M1, T1>> void safeFieldsCopyFrom(R1 that) {
         this.mirrored = that.isMirrored();
         this.matchFiles.clear();
         this.matchFiles.putAll(that.getMatchFiles());

@@ -53,16 +53,11 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     }
 
     @Override
-    protected <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata, R1 extends AbstractMatch<M1, T1>> void copyFrom(R1 that) {
-        super.copyFrom(that);
-    }
-
-    @Override
     public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> CDSMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
         CDSMatch<M2, T2> clone = new CDSMatch<>();
-        // copy common fields
-        clone.copyFrom(this);
-        // shallow copy local fields
+        // copy fields that are safe to copy
+        clone.safeFieldsCopyFrom(this);
+        // copy fields specific to this class
         clone.normalizedScore = this.normalizedScore;
         clone.matchingPixels = this.matchingPixels;
         clone.matchFound = this.matchFound;

@@ -108,8 +108,9 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     @Override
     public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> PPPMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
         PPPMatch<M2, T2> clone = new PPPMatch<>();
-        clone.copyFrom(this);
-        // shallow copy the local fields
+        // copy fields that are safe to copy
+        clone.safeFieldsCopyFrom(this);
+        // copy fields specific to this class
         clone.sourceEmName = this.sourceEmName;
         clone.sourceLmName = this.sourceLmName;
         clone.coverageScore = this.coverageScore;
