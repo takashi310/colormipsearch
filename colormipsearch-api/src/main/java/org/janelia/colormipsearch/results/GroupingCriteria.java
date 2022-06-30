@@ -1,21 +1,20 @@
 package org.janelia.colormipsearch.results;
 
-import java.util.function.BiPredicate;
+import java.util.List;
 import java.util.function.Function;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class GroupingCriteria<T, K> {
 
     static class WrappedKey<K1> {
         private final K1 key;
-        private final BiPredicate<K1, K1> eqTest;
-        private final Function<K1, Integer> keyHash;
+        private final List<Function<K1, ?>> keyFieldsUsedForEquality;
 
-        private WrappedKey(K1 key,
-                           BiPredicate<K1, K1> eqTest,
-                           Function<K1, Integer> keyHash) {
+        private WrappedKey(K1 key, List<Function<K1, ?>> keyFieldsUsedForEquality) {
             this.key = key;
-            this.eqTest = eqTest;
-            this.keyHash = keyHash;
+            this.keyFieldsUsedForEquality = keyFieldsUsedForEquality;
         }
 
         @Override
@@ -27,12 +26,20 @@ public class GroupingCriteria<T, K> {
             @SuppressWarnings("unchecked")
             WrappedKey<K1> that = (WrappedKey<K1>) o;
 
-            return eqTest.test(this.key, that.key);
+            EqualsBuilder eqBuilder = new EqualsBuilder();
+            for (Function<K1, ?> keyFieldSelector : keyFieldsUsedForEquality) {
+                eqBuilder.append(keyFieldSelector.apply(this.key), keyFieldSelector.apply(that.key));
+            }
+            return eqBuilder.isEquals();
         }
 
         @Override
         public int hashCode() {
-            return keyHash.apply(key);
+            HashCodeBuilder hashCodeBuilder = new HashCodeBuilder(17, 37);
+            for (Function<K1, ?> keyFieldSelector : keyFieldsUsedForEquality) {
+                hashCodeBuilder.append(keyFieldSelector.apply(this.key));
+            }
+            return hashCodeBuilder.toHashCode();
         }
     }
 
@@ -41,10 +48,9 @@ public class GroupingCriteria<T, K> {
 
     public GroupingCriteria(T item,
                             Function<T, K> keySelector,
-                            BiPredicate<K, K> keyEqTest,
-                            Function<K, Integer> keyHash) {
+                            List<Function<K, ?>> keyFieldsUsedForEquality) {
         this.item = item;
-        this.wrappedKey = new WrappedKey<>(keySelector.apply(item), keyEqTest, keyHash);
+        this.wrappedKey = new WrappedKey<>(keySelector.apply(item), keyFieldsUsedForEquality);
     }
 
     public T getItem() {

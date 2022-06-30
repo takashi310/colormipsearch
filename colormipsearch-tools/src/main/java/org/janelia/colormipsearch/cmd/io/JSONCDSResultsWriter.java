@@ -2,8 +2,10 @@ package org.janelia.colormipsearch.cmd.io;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
@@ -31,20 +33,29 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
     }
 
     public void write(List<CDSMatch<M, T>> cdsMatches) {
+        // write results by mask ID (creating the collection right before it's passed as and arg in order to type match)
         writeAllSearchResults(
-                MatchResultsGrouping.groupByMask(
+                MatchResultsGrouping.groupByMaskFields(
                         cdsMatches,
+                        Collections.singletonList(
+                                AbstractNeuronMetadata::getId
+                        ),
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 perMasksOutputDir
         );
 
+        // write results by matched ID (creating the collection right before it's passed as and arg in order to type match)
         writeAllSearchResults(
-                MatchResultsGrouping.groupByMatchedImage(
+                MatchResultsGrouping.groupByMatchedFields(
                         cdsMatches,
+                        Collections.singletonList(
+                                AbstractNeuronMetadata::getId
+                        ),
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 perMatchesOutputDir
         );
     }
+
 
     private <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(
             List<ResultMatches<M1, T1, CDSMatch<M1, T1>>> cdsMatchesList,
