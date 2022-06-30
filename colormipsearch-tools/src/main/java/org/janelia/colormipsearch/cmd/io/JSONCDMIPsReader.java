@@ -30,7 +30,7 @@ public class JSONCDMIPsReader implements CDMIPsReader {
                     new TypeReference<List<? extends AbstractNeuronMetadata>>() {});
             int from = offset > 0 ? (int) offset : 0;
             int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
-            if (from > 0 || to < length) {
+            if (from > 0 || to < content.size()) {
                 return content.subList(from, to);
             } else {
                 return content;
