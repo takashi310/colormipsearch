@@ -73,7 +73,7 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
             Path outputDir) {
         JsonOutputHelper.writeToJSONFile(
                 cdsMatches,
-                IOUtils.getOutputFile(outputDir, new File(cdsMatches.getKey().getPublishedName() + ".json")),
+                IOUtils.getOutputFile(outputDir, new File(cdsMatches.getKey().getId() + ".json")),
                 jsonWriter);
     }
 }
