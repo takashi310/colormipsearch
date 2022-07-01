@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -22,8 +23,8 @@ public abstract class AbstractNeuronMetadata {
     private String alignmentSpace;
     private Gender gender;
     private String datasetName;
-    private Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
-    private Map<FileType, FileData> neuronFiles = new HashMap<>();
+    private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
+    private final Map<FileType, FileData> neuronFiles = new HashMap<>();
 
     public String getId() {
         return id;
@@ -86,6 +87,10 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
+    public void resetComputeFileData(Set<ComputeFileType> ts) {
+        ts.forEach(t -> computeFiles.remove(t));
+    }
+
     public String getComputeFileName(ComputeFileType t) {
         FileData f = computeFiles.get(t);
         return f != null ? f.getName() : null;
@@ -120,10 +125,6 @@ public abstract class AbstractNeuronMetadata {
         } else {
             neuronFiles.remove(t);
         }
-    }
-
-    public void resetNeuronFileData() {
-        neuronFiles.clear();
     }
 
     public String getDatasetName() {

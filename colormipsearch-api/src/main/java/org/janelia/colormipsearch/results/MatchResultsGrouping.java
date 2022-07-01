@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.results;
 
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
 
@@ -8,7 +9,6 @@ import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.MatchComputeFileType;
 
 public class MatchResultsGrouping {
     /**
@@ -34,7 +34,15 @@ public class MatchResultsGrouping {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
                         }),
-                        AbstractMatch::getMaskImage,
+                        m -> {
+                            M maskImage = m.getMaskImage().duplicate();
+                            maskImage.resetComputeFileData(EnumSet.of(
+                                    ComputeFileType.InputColorDepthImage,
+                                    ComputeFileType.GradientImage,
+                                    ComputeFileType.ZGapImage
+                            ));
+                            return maskImage;
+                        },
                         maskFieldSelectors
                 ),
                 g -> {
@@ -76,14 +84,28 @@ public class MatchResultsGrouping {
                             dest.setMatchFileData(FileType.ColorDepthMipMatch,
                                     src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
                             // set compute match files
-                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedColorDepthImage,
+                            dest.setMatchComputeFileData(ComputeFileType.InputColorDepthImage,
+                                    src.getMatchedImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
+                            dest.setMatchComputeFileData(ComputeFileType.GradientImage,
+                                    src.getMatchedImage().getComputeFileData(ComputeFileType.GradientImage));
+                            dest.setMatchComputeFileData(ComputeFileType.ZGapImage,
+                                    src.getMatchedImage().getComputeFileData(ComputeFileType.ZGapImage));
+                            dest.setMatchComputeFileData(ComputeFileType.MatchedColorDepthImage,
                                     src.getMaskImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
-                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedGradientImage,
+                            dest.setMatchComputeFileData(ComputeFileType.MatchedGradientImage,
                                     src.getMaskImage().getComputeFileData(ComputeFileType.GradientImage));
-                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedZGapImage,
+                            dest.setMatchComputeFileData(ComputeFileType.MatchedZGapImage,
                                     src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
                         }),
-                        AbstractMatch::getMaskImage,
+                        m -> {
+                            T maskImage = m.getMaskImage().duplicate();
+                            maskImage.resetComputeFileData(EnumSet.of(
+                                    ComputeFileType.InputColorDepthImage,
+                                    ComputeFileType.GradientImage,
+                                    ComputeFileType.ZGapImage
+                            ));
+                            return maskImage;
+                        },
                         matchedFieldSelectors
                 ),
                 g -> {

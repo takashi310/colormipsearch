@@ -2,12 +2,10 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,7 +20,6 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,11 +81,17 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
             result.setMatchFileData(FileType.ColorDepthMipMatch,
                     targetImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
             // set compute match files
-            result.setMatchComputeFileData(MatchComputeFileType.MatchedColorDepthImage,
+            result.setMatchComputeFileData(ComputeFileType.InputColorDepthImage,
+                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
+            result.setMatchComputeFileData(ComputeFileType.GradientImage,
+                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
+            result.setMatchComputeFileData(ComputeFileType.ZGapImage,
+                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
+            result.setMatchComputeFileData(ComputeFileType.MatchedColorDepthImage,
                     targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
-            result.setMatchComputeFileData(MatchComputeFileType.MatchedGradientImage,
+            result.setMatchComputeFileData(ComputeFileType.MatchedGradientImage,
                     targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
-            result.setMatchComputeFileData(MatchComputeFileType.MatchedZGapImage,
+            result.setMatchComputeFileData(ComputeFileType.MatchedZGapImage,
                     targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
         } catch (Throwable e) {
             LOG.warn("Error comparing mask {} with {}", maskImage, targetImage, e);
