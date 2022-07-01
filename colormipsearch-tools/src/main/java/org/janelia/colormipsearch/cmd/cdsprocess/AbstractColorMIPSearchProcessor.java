@@ -20,6 +20,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,18 +82,12 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
             result.setMatchFileData(FileType.ColorDepthMipMatch,
                     targetImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
             // set compute match files
-            result.setMatchComputeFileData(ComputeFileType.InputColorDepthImage,
+            result.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
                     maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
-            result.setMatchComputeFileData(ComputeFileType.GradientImage,
+            result.setMatchComputeFileData(MatchComputeFileType.MaskGradientImage,
                     maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
-            result.setMatchComputeFileData(ComputeFileType.ZGapImage,
+            result.setMatchComputeFileData(MatchComputeFileType.MaskZGapImage,
                     maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
-            result.setMatchComputeFileData(ComputeFileType.MatchedColorDepthImage,
-                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
-            result.setMatchComputeFileData(ComputeFileType.MatchedGradientImage,
-                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
-            result.setMatchComputeFileData(ComputeFileType.MatchedZGapImage,
-                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
         } catch (Throwable e) {
             LOG.warn("Error comparing mask {} with {}", maskImage, targetImage, e);
             result.setErrors(e.getMessage());

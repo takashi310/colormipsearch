@@ -9,6 +9,7 @@ import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.MatchComputeFileType;
 
 public class MatchResultsGrouping {
     /**
@@ -87,18 +88,12 @@ public class MatchResultsGrouping {
                             dest.setMatchFileData(FileType.ColorDepthMipMatch,
                                     src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
                             // set compute match files
-                            dest.setMatchComputeFileData(ComputeFileType.InputColorDepthImage,
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
                                     src.getMatchedImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
-                            dest.setMatchComputeFileData(ComputeFileType.GradientImage,
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskGradientImage,
                                     src.getMatchedImage().getComputeFileData(ComputeFileType.GradientImage));
-                            dest.setMatchComputeFileData(ComputeFileType.ZGapImage,
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskZGapImage,
                                     src.getMatchedImage().getComputeFileData(ComputeFileType.ZGapImage));
-                            dest.setMatchComputeFileData(ComputeFileType.MatchedColorDepthImage,
-                                    src.getMaskImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
-                            dest.setMatchComputeFileData(ComputeFileType.MatchedGradientImage,
-                                    src.getMaskImage().getComputeFileData(ComputeFileType.GradientImage));
-                            dest.setMatchComputeFileData(ComputeFileType.MatchedZGapImage,
-                                    src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
                         }),
                         m -> {
                             T maskImage = m.getMaskImage().duplicate();
