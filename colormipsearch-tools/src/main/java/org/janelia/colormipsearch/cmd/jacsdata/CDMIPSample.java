@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd;
+package org.janelia.colormipsearch.cmd.jacsdata;
 
 import java.util.List;
 
@@ -9,45 +9,45 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * This is the representation of a JACS Sample.
  */
-class CDMIPSample {
+public class CDMIPSample {
     @JsonProperty("_id")
-    String id;
+    public String id;
     @JsonProperty
-    String name;
+    public String name;
     @JsonProperty
-    String dataSet;
+    public String dataSet;
     @JsonProperty
-    String gender;
+    public String gender;
     @JsonProperty
-    String mountingProtocol;
+    public String mountingProtocol;
     @JsonProperty
-    String driver;
+    public String driver;
     @JsonProperty
-    String organism;
+    public String organism;
     @JsonProperty
-    String genotype;
+    public String genotype;
     @JsonProperty
-    String flycoreId;
+    public String flycoreId;
     @JsonProperty
-    String line;
+    public String line;
     @JsonProperty
-    String slideCode;
+    public String slideCode;
     @JsonProperty
-    String publishingName;
+    public String publishingName;
     @JsonProperty
-    Boolean publishedToStaging;
+    public Boolean publishedToStaging;
     @JsonProperty
-    String publishedExternally;
+    public String publishedExternally;
     @JsonProperty
-    String crossBarcode;
+    public String crossBarcode;
     @JsonProperty
-    String sampleRef;
+    public String sampleRef;
     @JsonProperty
-    String status;
+    public String status;
     @JsonProperty
-    String releaseLabel;
+    public String releaseLabel;
     @JsonProperty
-    List<String> publishedObjectives;
+    public List<String> publishedObjectives;
 
     @Override
     public String toString() {

@@ -26,7 +26,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +70,6 @@ class MIPsHandlingUtils {
         return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") &&
                 (StringUtils.containsIgnoreCase(lname, "hemibrain") || StringUtils.containsIgnoreCase(lname, "vnc"));
     }
-
 
     static <N extends AbstractNeuronMetadata> List<N> findNeuronMIPs(N neuronMetadata,
                                                                      String neuronImagesBasePath,

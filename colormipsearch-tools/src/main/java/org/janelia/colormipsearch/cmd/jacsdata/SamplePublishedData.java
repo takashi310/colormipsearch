@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd;
+package org.janelia.colormipsearch.cmd.jacsdata;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -10,29 +10,29 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * This is the JACS representation of a PublishedImage, but the only thing it is needed for is for the 3-D stack
  */
-class SamplePublishedData implements Serializable {
+public class SamplePublishedData implements Serializable {
     @JsonProperty("_id")
-    String id;
+    public String id;
     @JsonProperty
-    String name;
+    public String name;
     @JsonProperty
-    String line;
+    public String line;
     @JsonProperty
-    String area;
+    public String area;
     @JsonProperty
-    String tile;
+    public String tile;
     @JsonProperty
-    String releaseName;
+    public String releaseName;
     @JsonProperty
-    String slideCode;
+    public String slideCode;
     @JsonProperty
-    String objective;
+    public String objective;
     @JsonProperty
-    String alignmentSpace;
+    public String alignmentSpace;
     @JsonProperty
-    String sampleRef;
+    public String sampleRef;
     @JsonProperty
-    Map<String, String> files;
+    public Map<String, String> files;
 
     // following ColorDepthMIP, adjust as needed
     @Override

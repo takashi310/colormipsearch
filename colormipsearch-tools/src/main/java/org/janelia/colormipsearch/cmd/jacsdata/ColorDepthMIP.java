@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd;
+package org.janelia.colormipsearch.cmd.jacsdata;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -12,45 +12,45 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * This is the representation of a JACS ColorDepthMIP image.
  */
-class ColorDepthMIP implements Serializable {
+public class ColorDepthMIP implements Serializable {
     @JsonProperty("_id")
-    String id;
+    public String id;
     @JsonProperty
-    String name;
+    public String name;
     @JsonProperty
-    String filepath;
+    public String filepath;
     @JsonProperty
-    String objective;
+    public String objective;
     @JsonProperty
-    String alignmentSpace;
+    public String alignmentSpace;
     @JsonProperty
-    String anatomicalArea;
+    public String anatomicalArea;
     @JsonProperty
-    String channelNumber;
+    public String channelNumber;
     @JsonProperty
-    Long bodyId;
+    public Long bodyId;
     @JsonProperty
-    String neuronType;
+    public String neuronType;
     @JsonProperty
-    String neuronInstance;
+    public String neuronInstance;
     @JsonProperty
-    String publicImageUrl;
+    public String publicImageUrl;
     @JsonProperty
-    String publicThumbnailUrl;
+    public String publicThumbnailUrl;
     @JsonProperty
-    Set<String> libraries;
+    public Set<String> libraries;
     @JsonProperty
-    String sampleRef;
+    public String sampleRef;
     @JsonProperty
-    CDMIPSample sample;
+    public CDMIPSample sample;
     @JsonProperty
-    String emBodyRef;
+    public String emBodyRef;
     @JsonProperty
-    CDMIPBody emBody;
-    String sample3DImageStack;
-    String sampleGen1Gal4ExpressionImage;
+    public CDMIPBody emBody;
+    public String sample3DImageStack;
+    public String sampleGen1Gal4ExpressionImage;
 
-    String findLibrary(String libraryName) {
+    public String findLibrary(String libraryName) {
         if (CollectionUtils.isEmpty(libraries)) {
             return null;
         } else {

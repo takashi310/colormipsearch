@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd;
+package org.janelia.colormipsearch.cmd.jacsdata;
 
 import java.util.List;
 import java.util.Map;
@@ -10,21 +10,21 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * This is the representation of a JACS EM Body.
  */
-class CDMIPBody {
+public class CDMIPBody {
     @JsonProperty("_id")
-    String id;
+    public String id;
     @JsonProperty("name")
-    String name;
+    public String name;
     @JsonProperty
-    String neuronType;
+    public String neuronType;
     @JsonProperty
-    String neuronInstance;
+    public String neuronInstance;
     @JsonProperty
-    String status;
+    public String status;
     @JsonProperty("dataSetIdentifier")
-    String datasetIdentifier;
+    public String datasetIdentifier;
     @JsonProperty
-    Map<String, String> files;
+    public Map<String, String> files;
 
     @Override
     public String toString() {

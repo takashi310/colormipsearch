@@ -32,6 +32,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.io.JSONPPPResultsWriter;
 import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
+import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
+import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;

@@ -37,6 +37,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.io.CDSDataInputGenerator;
 import org.janelia.colormipsearch.cmd.io.JSONCDSDataInputGenerator;
+import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
+import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
