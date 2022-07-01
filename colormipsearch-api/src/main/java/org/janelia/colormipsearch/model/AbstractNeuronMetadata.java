@@ -37,6 +37,7 @@ public abstract class AbstractNeuronMetadata {
     @JsonIgnore
     public abstract String getNeuronId();
 
+    @JsonRequired
     public String getLibraryName() {
         return libraryName;
     }
@@ -45,6 +46,7 @@ public abstract class AbstractNeuronMetadata {
         this.libraryName = libraryName;
     }
 
+    @JsonRequired
     public String getPublishedName() {
         return publishedName;
     }
@@ -53,6 +55,7 @@ public abstract class AbstractNeuronMetadata {
         this.publishedName = publishedName;
     }
 
+    @JsonRequired
     public String getAlignmentSpace() {
         return alignmentSpace;
     }

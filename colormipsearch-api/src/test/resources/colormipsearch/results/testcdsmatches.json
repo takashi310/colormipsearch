@@ -21,7 +21,7 @@
       "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -74,7 +74,7 @@
       "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -127,7 +127,7 @@
       "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -180,7 +180,7 @@
       "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -233,7 +233,7 @@
       "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -286,7 +286,7 @@
       "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
@@ -339,7 +339,7 @@
       "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
     }
   },
-  "matchedImage" : {
+  "image" : {
     "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",

@@ -74,6 +74,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
                     variantImageSuppliers);
             result.setMatchFound(colorMIPSearch.isMatch(pixelMatchScore));
             result.setMatchingPixels(pixelMatchScore.getScore());
+            result.setMatchingPixelsRatio(pixelMatchScore.getNormalizedScore());
             result.setMirrored(pixelMatchScore.isMirrored());
             result.setNormalizedScore(pixelMatchScore.getNormalizedScore());
             // set match files

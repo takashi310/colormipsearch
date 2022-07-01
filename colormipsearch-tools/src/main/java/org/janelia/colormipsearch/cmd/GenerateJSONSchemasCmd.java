@@ -153,10 +153,10 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
     private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String cdsResultsMessage, String pppResultsMessage) {
         return scope -> {
             if (scope.getType().getErasedType() == ResultMatches.class || scope.getType().isInstanceOf(ResultMatches.class)) {
-                if (scope.getTypeParameterFor(ResultMatches.class, 0).getTypeParameters().get(0).getErasedType() == CDSMatch.class) {
-                    // Results<List<CDSMatch>>
+                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDSMatch.class) {
+                    // ResultMatches<EM, LM, Match<EM, LM>>
                     return cdsResultsMessage;
-                } else if (scope.getTypeParameterFor(ResultMatches.class, 0).getTypeParameters().get(0).getErasedType() == PPPMatch.class) {
+                } else if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == PPPMatch.class) {
                     // Results<List<PPPMatch>>
                     return pppResultsMessage;
                 }

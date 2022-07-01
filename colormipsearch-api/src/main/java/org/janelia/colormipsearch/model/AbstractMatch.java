@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
 
@@ -25,6 +26,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.maskImage = null;
     }
 
+    @JsonProperty("image")
     public T getMatchedImage() {
         return matchedImage;
     }
@@ -66,6 +68,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         }
     }
 
+    @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, FileData> getMatchFiles() {
         return matchFiles;
