@@ -12,7 +12,7 @@ import java.util.stream.LongStream;
 
 import com.google.common.collect.Streams;
 
-import org.janelia.colormipsearch.cds.ColorDepthPixelMatchScore;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
@@ -85,7 +85,7 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
                     CompletableFuture.completedFuture(Collections.emptyList())
             );
         }
-        ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage.getImageArray());
+        ColorDepthSearchAlgorithm<PixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage.getImageArray());
         if (queryColorDepthSearch.getQuerySize() == 0) {
             LOG.info("No computation created for {} because it is empty", queryMIP);
             return Collections.emptyList();

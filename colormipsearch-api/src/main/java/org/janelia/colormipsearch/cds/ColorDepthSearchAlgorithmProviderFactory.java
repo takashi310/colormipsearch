@@ -26,7 +26,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
      * @param xyShift             - x-y translation for searching for a match
      * @return a color depth search search provider
      */
-    public static ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> createPixMatchCDSAlgorithmProvider(
+    public static ColorDepthSearchAlgorithmProvider<PixelMatchScore> createPixMatchCDSAlgorithmProvider(
             boolean mirrorMask,
             int targetThreshold,
             double pixColorFluctuation,
@@ -34,7 +34,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             ImageRegionDefinition ignoredRegionsProvider) {
         LOG.info("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
                 mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
-        return new ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore>() {
+        return new ColorDepthSearchAlgorithmProvider<PixelMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                     .setParam("mirrorMask", mirrorMask)
                     .setParam("dataThreshold", targetThreshold)
@@ -47,10 +47,10 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
-                                                                                                             int queryThreshold,
-                                                                                                             int queryBorderSize,
-                                                                                                             ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<PixelMatchScore> createColorDepthSearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                              int queryThreshold,
+                                                                                              int queryBorderSize,
+                                                                                              ColorDepthSearchParams cdsParams) {
                 Double pixColorFluctuationParam = cdsParams.getDoubleParam("pixColorFluctuation", pixColorFluctuation);
                 double zTolerance = pixColorFluctuationParam == null ? 0. : pixColorFluctuationParam / 100;
                 return new PixelMatchColorDepthSearchAlgorithm(
@@ -68,7 +68,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
         };
     }
 
-    public static ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> createNegativeMatchCDSAlgorithmProvider(
+    public static ColorDepthSearchAlgorithmProvider<ShapeMatchScore> createShapeMatchCDSAlgorithmProvider(
             boolean mirrorMask,
             int negativeRadius,
             int borderSize,
@@ -77,7 +77,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
-        return new ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore>() {
+        return new ColorDepthSearchAlgorithmProvider<ShapeMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                     .setParam("mirrorMask", mirrorMask)
                     .setParam("negativeRadius", negativeRadius)
@@ -89,10 +89,10 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             }
 
             @Override
-            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
-                                                                                                                int queryThreshold,
-                                                                                                                int queryBorderSize,
-                                                                                                                ColorDepthSearchParams cdsParams) {
+            public ColorDepthSearchAlgorithm<ShapeMatchScore> createColorDepthSearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                              int queryThreshold,
+                                                                                              int queryBorderSize,
+                                                                                              ColorDepthSearchParams cdsParams) {
                 ImageTransformation clearIgnoredRegions = ImageTransformation.clearRegion(excludedRegions.getRegion(queryImageArray));
                 ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearIgnoredRegions)
                         .applyColorTransformation(ColorTransformation.mask(queryThreshold))
@@ -113,7 +113,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                             return (p2 & 0xFFFFFF) != 0 ? 0xFF000000 : p1;
                         } // mask pixels from the 60x image if they are present in the 20x image
                 );
-                GradientBasedNegativeScoreColorDepthSearchAlgorithm maskNegativeScoresCalculator = new GradientBasedNegativeScoreColorDepthSearchAlgorithm(
+                ShapeMatchColorDepthSearchAlgorithm maskNegativeScoresCalculator = new ShapeMatchColorDepthSearchAlgorithm(
                         queryImage,
                         queryImage.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.gray8Or16ToSignal(2)).reduce(),
                         maskForRegionsWithTooMuchExpression.map(ColorTransformation.toGray16WithNoGammaCorrection()).map(ColorTransformation.gray8Or16ToSignal(0)).reduce(),

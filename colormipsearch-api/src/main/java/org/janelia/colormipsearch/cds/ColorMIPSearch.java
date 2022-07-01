@@ -11,13 +11,13 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
  */
 public class ColorMIPSearch implements Serializable {
 
-    private final ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider;
+    private final ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider;
     private final Integer defaultQueryThreshold;
     private final Double pctPositivePixels;
 
     public ColorMIPSearch(Double pctPositivePixels,
                           Integer defaultQueryThreshold,
-                          ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider) {
+                          ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider) {
         this.pctPositivePixels = pctPositivePixels;
         this.defaultQueryThreshold = defaultQueryThreshold;
         this.cdsAlgorithmProvider = cdsAlgorithmProvider;
@@ -30,16 +30,16 @@ public class ColorMIPSearch implements Serializable {
         return cdsParams;
     }
 
-    public ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> createQueryColorDepthSearchWithDefaultThreshold(ImageArray<?> queryImage) {
+    public ColorDepthSearchAlgorithm<PixelMatchScore> createQueryColorDepthSearchWithDefaultThreshold(ImageArray<?> queryImage) {
         return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryImage, defaultQueryThreshold == null ? 0 : defaultQueryThreshold, 0);
     }
 
-    public ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> createQueryColorDepthSearch(ImageArray<?> queryImage, int queryThreshold, int borderSize) {
+    public ColorDepthSearchAlgorithm<PixelMatchScore> createQueryColorDepthSearch(ImageArray<?> queryImage, int queryThreshold, int borderSize) {
         return cdsAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(queryImage, queryThreshold, borderSize);
     }
 
 
-    public boolean isMatch(ColorDepthPixelMatchScore pixelMatchScore) {
+    public boolean isMatch(PixelMatchScore pixelMatchScore) {
         double pixMatchRatioThreshold = pctPositivePixels != null ? pctPositivePixels / 100 : 0.;
         return pixelMatchScore.getScore() > 0 && pixelMatchScore.getNormalizedScore() > pixMatchRatioThreshold;
     }

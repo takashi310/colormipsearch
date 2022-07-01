@@ -1,14 +1,14 @@
 package org.janelia.colormipsearch.cds;
 
-public class ColorDepthPixelMatchScore implements ColorDepthMatchScore {
+public class PixelMatchScore implements ColorDepthMatchScore {
 
     private final int matchingPixNum;
     private final double matchingPixNumToMaskRatio;
     private final boolean mirrored;
 
-    public ColorDepthPixelMatchScore(int matchingPixNum,
-                                     double matchingPixNumToMaskRatio,
-                                     boolean mirrored) {
+    public PixelMatchScore(int matchingPixNum,
+                           double matchingPixNumToMaskRatio,
+                           boolean mirrored) {
         this.matchingPixNum = matchingPixNum;
         this.matchingPixNumToMaskRatio = matchingPixNumToMaskRatio;
         this.mirrored = mirrored;

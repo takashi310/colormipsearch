@@ -2,15 +2,13 @@ package org.janelia.colormipsearch.cds;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class NegativeColorDepthMatchScore implements ColorDepthMatchScore {
+public class ShapeMatchScore implements ColorDepthMatchScore {
     private final long gradientAreaGap;
     private final long highExpressionArea;
     private final long maxGradientAreaGap;
     private final boolean mirrored;
 
-    NegativeColorDepthMatchScore(long gradientAreaGap, long highExpressionArea,
-                                 long maxGradientAreaGap,
-                                 boolean mirrored) {
+    ShapeMatchScore(long gradientAreaGap, long highExpressionArea, long maxGradientAreaGap, boolean mirrored) {
         this.gradientAreaGap = gradientAreaGap;
         this.highExpressionArea = highExpressionArea;
         this.maxGradientAreaGap = maxGradientAreaGap;

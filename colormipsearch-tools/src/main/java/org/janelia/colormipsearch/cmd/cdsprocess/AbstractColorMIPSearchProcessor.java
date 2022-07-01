@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.cds.ColorDepthPixelMatchScore;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
@@ -60,7 +60,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
      * @return null if no match was found otherwise it returns a @CDSMatch@
      */
     @Nonnull
-    CDSMatch<M, T> findPixelMatch(ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> cdsAlgorithm,
+    CDSMatch<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
                                   NeuronMIP<M> maskImage,
                                   NeuronMIP<T> targetImage) {
         CDSMatch<M, T> result = new CDSMatch<>();
@@ -69,7 +69,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
         try {
             Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers =
                     getVariantImagesSuppliers(cdsAlgorithm.getRequiredTargetVariantTypes(), targetImage.getNeuronInfo());
-            ColorDepthPixelMatchScore pixelMatchScore = cdsAlgorithm.calculateMatchingScore(
+            PixelMatchScore pixelMatchScore = cdsAlgorithm.calculateMatchingScore(
                     NeuronMIPUtils.getImageArray(targetImage),
                     variantImageSuppliers);
             result.setMatchFound(colorMIPSearch.isMatch(pixelMatchScore));

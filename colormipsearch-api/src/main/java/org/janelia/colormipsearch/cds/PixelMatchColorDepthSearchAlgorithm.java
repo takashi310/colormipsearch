@@ -17,7 +17,7 @@ import org.janelia.colormipsearch.model.ComputeFileType;
  * and the positions after applying the specified x-y shift and mirroring transformations.
  * The mask pixels are compared against the target pixels tht
  */
-public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> {
+public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearchAlgorithm<PixelMatchScore> {
 
     private final int[][] targetMasksList;
     private final int[][] mirrorTargetMasksList;
@@ -163,11 +163,11 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
     }
 
     @Override
-    public ColorDepthPixelMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
-                                                            Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
+    public PixelMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
+                                                  Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
         int querySize = getQuerySize();
         if (querySize == 0) {
-            return new ColorDepthPixelMatchScore(0, 0, false);
+            return new PixelMatchScore(0, 0, false);
         } else if (hasDifferentShape(targetImageArray)) {
             throw new IllegalArgumentException(String.format("Invalid image size - target's image size (%d, %d) must match query's image size: (%d, %d)",
                     getQueryImage().getWidth(), getQueryImage().getHeight(), targetImageArray.getWidth(), targetImageArray.getHeight()
@@ -215,7 +215,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
             maxMatchingPixels = (int) Math.round((double)maxMatchingPixels - (double)negativeMaxMatchingPixels * querySize / (double)negQuerySize);
             maxMatchingPixelsRatio -= (double)negativeMaxMatchingPixels / (double)negQuerySize;
         }
-        return new ColorDepthPixelMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, bestScoreMirrored);
+        return new PixelMatchScore(maxMatchingPixels, maxMatchingPixelsRatio, bestScoreMirrored);
     }
 
     private int calculateMaxScoreForAllTargetTransformations(ImageArray<?> srcImageArray,

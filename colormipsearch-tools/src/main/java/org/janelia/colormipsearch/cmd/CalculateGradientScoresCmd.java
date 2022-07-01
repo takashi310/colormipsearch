@@ -1,11 +1,23 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
+import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
+import org.janelia.colormipsearch.cds.ShapeMatchScore;
+import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
+import org.janelia.colormipsearch.mips.NeuronMIPUtils;
+import org.janelia.colormipsearch.model.FileData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +53,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
     private final GradientScoresArgs args;
     private final Supplier<Long> cacheSizeSupplier;
+    private final ObjectMapper mapper;
 
     public CalculateGradientScoresCmd(String commandName,
                                       CommonArgs commonArgs,
@@ -48,6 +61,10 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         super(commandName);
         this.args = new GradientScoresArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
+        this.mapper = new ObjectMapper()
+                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        ;
     }
 
     @Override
@@ -64,7 +81,25 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private void calculateGradientScores() {
+        ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
+        ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createShapeMatchCDSAlgorithmProvider(
+                args.mirrorMask,
+                args.negativeRadius,
+                args.borderSize,
+                loadQueryROIMask(args.queryROIMaskName),
+                excludedRegions
+        );
+        Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
+
         // TODO !!!!!!
+    }
+
+    private ImageArray<?> loadQueryROIMask(String queryROIMask) {
+        if (StringUtils.isBlank(queryROIMask)) {
+            return null;
+        } else {
+            return NeuronMIPUtils.loadImageFromFileData(FileData.fromString(queryROIMask));
+        }
     }
 
 }

@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.janelia.colormipsearch.cds.ColorDepthPixelMatchScore;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
@@ -54,7 +54,7 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
                             .map(queryMIP -> NeuronMIPUtils.loadComputeFile(queryMIP, ComputeFileType.InputColorDepthImage))
                             .filter(queryImage -> queryImage != null && queryImage.hasImageArray())
                             .flatMap(queryImage -> {
-                                ColorDepthSearchAlgorithm<ColorDepthPixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage.getImageArray());
+                                ColorDepthSearchAlgorithm<PixelMatchScore> queryColorDepthSearch = colorMIPSearch.createQueryColorDepthSearchWithDefaultThreshold(queryImage.getImageArray());
                                 if (queryColorDepthSearch.getQuerySize() == 0) {
                                     return Stream.of();
                                 } else {

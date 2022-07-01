@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.cds;
 
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -23,9 +22,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
  */
-public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> {
+public class ShapeMatchColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<ShapeMatchScore> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GradientBasedNegativeScoreColorDepthSearchAlgorithm.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ShapeMatchColorDepthSearchAlgorithm.class);
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private static final int GAP_THRESHOLD = 3;
 
@@ -50,14 +49,14 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
     private final ImageProcessing negativeRadiusDilation;
     private final QuadFunction<Integer, Integer, Integer, Integer, Integer> gapOp;
 
-    GradientBasedNegativeScoreColorDepthSearchAlgorithm(LImage queryImage,
-                                                        LImage queryIntensityValues,
-                                                        LImage queryHighExpressionMask,
-                                                        LImage queryROIMaskImage,
-                                                        int queryThreshold,
-                                                        boolean mirrorQuery,
-                                                        ImageTransformation clearLabels,
-                                                        ImageProcessing negativeRadiusDilation) {
+    ShapeMatchColorDepthSearchAlgorithm(LImage queryImage,
+                                        LImage queryIntensityValues,
+                                        LImage queryHighExpressionMask,
+                                        LImage queryROIMaskImage,
+                                        int queryThreshold,
+                                        boolean mirrorQuery,
+                                        ImageTransformation clearLabels,
+                                        ImageProcessing negativeRadiusDilation) {
         this.queryImage = queryImage;
         this.queryIntensityValues = queryIntensityValues;
         this.queryHighExpressionMask = queryHighExpressionMask;
@@ -151,12 +150,12 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
      * @return
      */
     @Override
-    public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
-                                                               Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
+    public ShapeMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
+                                                  Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers) {
         long startTime = System.currentTimeMillis();
         ImageArray<?> targetGradientImageArray = getVariantImageArray(variantImageSuppliers.get(ComputeFileType.GradientImage));
         if (targetGradientImageArray == null) {
-            return new NegativeColorDepthMatchScore(-1, -1, -1, false);
+            return new ShapeMatchScore(-1, -1, -1, false);
         }
         ImageArray<?> targetZGapMaskImageArray = getVariantImageArray(variantImageSuppliers.get(ComputeFileType.ZGapImage));
         LImage targetImage = LImageUtils.create(targetImageArray).mapi(clearLabels);
@@ -165,11 +164,11 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
                 ? LImageUtils.create(targetZGapMaskImageArray)
                 : negativeRadiusDilation.applyTo(targetImage.map(ColorTransformation.mask(queryThreshold)));
 
-        NegativeColorDepthMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY, false);
+        ShapeMatchScore negativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.IDENTITY, false);
 
         if (mirrorQuery) {
             LOG.trace("Start calculating area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
-            NegativeColorDepthMatchScore mirrorNegativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.horizontalMirror(), true);
+            ShapeMatchScore mirrorNegativeScores = calculateNegativeScores(targetImage, targetGradientImage, targetZGapMaskImage, ImageTransformation.horizontalMirror(), true);
             LOG.trace("Completed area gap score for mirrored mask {}ms", System.currentTimeMillis() - startTime);
             if (mirrorNegativeScores.getScore() < negativeScores.getScore()) {
                 return mirrorNegativeScores;
@@ -186,7 +185,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         }
     }
 
-    private NegativeColorDepthMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation, boolean useMirroredMask) {
+    private ShapeMatchScore calculateNegativeScores(LImage targetImage, LImage targetGradientImage, LImage targetZGapMaskImage, ImageTransformation maskTransformation, boolean useMirroredMask) {
         long startTime = System.currentTimeMillis();
         LImage queryROIImage;
         LImage queryIntensitiesROIImage;
@@ -234,7 +233,7 @@ public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements Colo
         LOG.trace("Gradient area gap: {} (calculated in {}ms)", gradientAreaGap, System.currentTimeMillis() - startTime);
         long highExpressionArea = highExpressionRegions.fold(0L, Long::sum);
         LOG.trace("High expression area: {} (calculated in {}ms)", highExpressionArea, System.currentTimeMillis() - startTime);
-        return new NegativeColorDepthMatchScore(gradientAreaGap, highExpressionArea, -1, useMirroredMask);
+        return new ShapeMatchScore(gradientAreaGap, highExpressionArea, -1, useMirroredMask);
     }
 
 }

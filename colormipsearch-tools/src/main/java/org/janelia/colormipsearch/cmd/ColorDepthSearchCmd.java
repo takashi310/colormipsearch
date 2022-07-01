@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cds.ColorDepthPixelMatchScore;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
@@ -28,12 +28,9 @@ import org.janelia.colormipsearch.cmd.io.IOUtils;
 import org.janelia.colormipsearch.cmd.io.JSONCDMIPsReader;
 import org.janelia.colormipsearch.cmd.io.JSONCDSResultsWriter;
 import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
-import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
-import org.janelia.colormipsearch.model.FileData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +101,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void runColorDepthSearch() {
         CDMIPsReader cdmiPsReader = new JSONCDMIPsReader(mapper);
         ColorMIPSearchProcessor<M, T> colorMIPSearchProcessor;
-        ColorDepthSearchAlgorithmProvider<ColorDepthPixelMatchScore> cdsAlgorithmProvider;
+        ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider;
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
         cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
                 args.mirrorMask,
