@@ -54,6 +54,11 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 perMatchesOutputDir
         );
+
+        JsonOutputHelper.writeToJSONFile(
+                cdsMatches,
+                IOUtils.getOutputFile(perMasksOutputDir, new File("test.json")),
+                jsonWriter);
     }
 
 
