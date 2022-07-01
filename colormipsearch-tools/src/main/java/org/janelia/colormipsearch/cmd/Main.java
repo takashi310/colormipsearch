@@ -25,7 +25,8 @@ public class Main {
         AbstractCmd[] cmds = new AbstractCmd[] {
                 new CreateColorDepthSearchDataInputCmd("createColorDepthSearchDataInput", commonArgs),
                 new ColorDepthSearchCmd("colorDepthSearch", commonArgs, () -> mainArgs.cacheSize, false),
-                new ImportPPPResultsCmd("importPPPResults", commonArgs)
+                new ImportPPPResultsCmd("importPPPResults", commonArgs),
+                new GenerateJSONSchemasCmd("schemas", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd_v2;
+package org.janelia.colormipsearch.cmd;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.beust.jcommander.ParametersDelegate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,41 +24,36 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.generator.TypeScope;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
+import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.api_v2.Results;
-import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
-import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
-import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;
-import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatches;
+import org.janelia.colormipsearch.cmd.io.IOUtils;
+import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Perform color depth mask search on a Spark cluster.
- *
- * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
+ * Generate JSON schema command.
  */
 public class GenerateJSONSchemasCmd extends AbstractCmd {
 
     private static final String SCHEMAS_BASE_URI = "https://neuronbridge.janelia.org/schemas/";
 
-    private static final String MIPS_SCHEMA = "mips.schema";
     private static final String CDS_RESULTS_SCHEMA = "cdsMatches.schema";
     private static final String PPP_RESULTS_SCHEMA = "pppMatches.schema";
 
     private static final Logger LOG = LoggerFactory.getLogger(GenerateJSONSchemasCmd.class);
 
-    @Parameters(commandDescription = "Grooup MIPs by published name")
+    @Parameters(commandDescription = "Generate JSON schema command args")
     private static class GenerateJSONSchemasArgs extends AbstractCmdArgs {
 
         @Parameter(names = {"--schemas-directory", "-sdir"}, description = "Schemas sub-directory")
         String schemasOutput = "schemas";
 
-        @ParametersDelegate
-        final CommonArgs commonArgs;
-
         GenerateJSONSchemasArgs(CommonArgs commonArgs) {
-            this.commonArgs = commonArgs;
+            super(commonArgs);
         }
     }
 
@@ -82,7 +76,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
     @Override
     void execute() {
         Path outputPath = Paths.get(args.commonArgs.outputDir, args.schemasOutput);
-        CmdUtils.createOutputDirs(outputPath);
+        IOUtils.createDirs(outputPath);
         try {
             JacksonModule module = new JacksonModule();
             SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
@@ -94,15 +88,12 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
 
             configBuilder.forTypesInGeneral()
                     .withIdResolver(getListTypeResultsHandler(
-                            SCHEMAS_BASE_URI + MIPS_SCHEMA + ".json",
                             SCHEMAS_BASE_URI + CDS_RESULTS_SCHEMA + ".json",
                             SCHEMAS_BASE_URI + PPP_RESULTS_SCHEMA + ".json"))
                     .withTitleResolver(getListTypeResultsHandler(
-                            "Color Depth MIPs for a published EM neuron or LM line",
                             "Color Depth Search results",
                             "Patch per Pix search results"))
                     .withDescriptionResolver(getListTypeResultsHandler(
-                            "Color Depth MIPs for a published EM neuron or LM line",
                             "Color Depth Search results",
                             "Patch per Pix search results"))
                     ;
@@ -128,17 +119,22 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
 
             SchemaGeneratorConfig config = configBuilder.build();
             SchemaGenerator generator = new SchemaGenerator(config);
-            JsonNode mipsSchema = generator.generateSchema(new TypeReference<Results<List<ColorDepthMetadata>>>(){}.getType());
-            writeSchemaToFile(mipsSchema,
-                    CmdUtils.getOutputFile(outputPath, MIPS_SCHEMA));
 
-            JsonNode matchesSchema = generator.generateSchema(CDSMatches.class);
-            writeSchemaToFile(matchesSchema,
-                    CmdUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
+            JsonNode cdsMatchesSchema =
+                    generator.generateSchema(new TypeReference<ResultMatches<
+                            EMNeuronMetadata,
+                            LMNeuronMetadata,
+                            CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
+            writeSchemaToFile(cdsMatchesSchema,
+                    IOUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
 
-            JsonNode pppsSchema = generator.generateSchema(EmPPPMatches.class);
-            writeSchemaToFile(pppsSchema,
-                    CmdUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
+            JsonNode pppMatchesSchema =
+                    generator.generateSchema(new TypeReference<ResultMatches<
+                            EMNeuronMetadata,
+                            LMNeuronMetadata,
+                            PPPMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
+            writeSchemaToFile(pppMatchesSchema,
+                    IOUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
 
         } catch (Exception e) {
             LOG.error("Error generating schema", e);
@@ -154,22 +150,18 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
         }
     }
 
-    private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String mipsMessage, String cdsResultsMessage, String pppResultsMessage) {
+    private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String cdsResultsMessage, String pppResultsMessage) {
         return scope -> {
-            if (scope.getType().getErasedType() == Results.class || scope.getType().isInstanceOf(Results.class)) {
-                if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == ColorDepthMetadata.class) {
-                    // Results<List<ColorDepthMetadata>>
-                    return mipsMessage;
-                } else if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == ColorMIPSearchMatchMetadata.class) {
-                    // Results<List<ColorMIPSearchMatchMetadata>>
+            if (scope.getType().getErasedType() == ResultMatches.class || scope.getType().isInstanceOf(ResultMatches.class)) {
+                if (scope.getTypeParameterFor(ResultMatches.class, 0).getTypeParameters().get(0).getErasedType() == CDSMatch.class) {
+                    // Results<List<CDSMatch>>
                     return cdsResultsMessage;
-                } else if (scope.getTypeParameterFor(Results.class, 0).getTypeParameters().get(0).getErasedType() == EmPPPMatch.class) {
-                    // Results<List<EmPPPMatch>>
+                } else if (scope.getTypeParameterFor(ResultMatches.class, 0).getTypeParameters().get(0).getErasedType() == PPPMatch.class) {
+                    // Results<List<PPPMatch>>
                     return pppResultsMessage;
                 }
             }
             return null;
         };
-
     }
 }

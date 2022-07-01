@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.api_v2.cdsearch;
 
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

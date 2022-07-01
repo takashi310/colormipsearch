@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.api_v2.JsonRequired;
+import org.janelia.colormipsearch.model.JsonRequired;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractMetadata implements Serializable {

@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.results.Results;
+import org.janelia.colormipsearch.api_v2.Results;
 import org.janelia.colormipsearch.api_v2.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

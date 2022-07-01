@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import org.janelia.colormipsearch.api_v2.JsonRequired;
+import org.janelia.colormipsearch.model.JsonRequired;
 
 /**
  * These are the source PPP matches as they are imported from the original matches.

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.api_v2;
+package org.janelia.colormipsearch.model;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

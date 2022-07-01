@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.results.Results;
+import org.janelia.colormipsearch.api_v2.Results;
 
 public class LightColorMIPSearchResults extends Results<List<LightColorMIPSearchMatch>> {
 

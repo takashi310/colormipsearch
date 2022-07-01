@@ -15,7 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api_v2.FileType;
-import org.janelia.colormipsearch.api_v2.JsonRequired;
+import org.janelia.colormipsearch.model.JsonRequired;
 
 /**
  * These are the source PPP matches as they are imported from the original matches.

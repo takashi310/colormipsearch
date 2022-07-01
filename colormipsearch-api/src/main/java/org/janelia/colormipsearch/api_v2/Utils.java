@@ -8,7 +8,6 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.janelia.colormipsearch.results.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

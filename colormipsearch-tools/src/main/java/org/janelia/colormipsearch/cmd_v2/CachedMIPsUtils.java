@@ -6,7 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import org.janelia.colormipsearch.results.Results;
+import org.janelia.colormipsearch.api_v2.Results;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.api_v2.JsonRequired;
+import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 

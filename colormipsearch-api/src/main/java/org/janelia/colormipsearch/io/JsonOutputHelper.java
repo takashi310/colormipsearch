@@ -6,12 +6,11 @@ import java.io.UncheckedIOException;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import org.janelia.colormipsearch.api_v2.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JsonOutputHelper {
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JsonOutputHelper.class);
 
     public static <V> void writeToJSONFile(V v, File f, ObjectWriter objectWriter) {
         try {
