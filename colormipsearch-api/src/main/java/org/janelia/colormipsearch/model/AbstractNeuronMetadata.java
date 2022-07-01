@@ -74,9 +74,8 @@ public abstract class AbstractNeuronMetadata {
         return computeFiles;
     }
 
-    public Optional<FileData> getComputeFileData(ComputeFileType t) {
-        FileData f = computeFiles.get(t);
-        return f != null ? Optional.of(f) : Optional.empty();
+    public FileData getComputeFileData(ComputeFileType t) {
+        return computeFiles.get(t);
     }
 
     public void setComputeFileData(ComputeFileType t, FileData fd) {
@@ -111,12 +110,20 @@ public abstract class AbstractNeuronMetadata {
         return neuronFiles.containsKey(t);
     }
 
+    public FileData getNeuronFileData(FileType t) {
+        return neuronFiles.get(t);
+    }
+
     public void setNeuronFileData(FileType t, FileData fd) {
         if (fd != null) {
             neuronFiles.put(t, fd);
         } else {
             neuronFiles.remove(t);
         }
+    }
+
+    public void resetNeuronFileData() {
+        neuronFiles.clear();
     }
 
     public String getDatasetName() {

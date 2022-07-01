@@ -6,6 +6,9 @@ import java.util.function.Function;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.ComputeFileType;
+import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.MatchComputeFileType;
 
 public class MatchResultsGrouping {
     /**
@@ -68,6 +71,17 @@ public class MatchResultsGrouping {
                         (R1) aMatch.duplicate((src, dest) -> {
                             dest.setMaskImage(src.getMatchedImage());
                             dest.setMatchedImage(src.getMaskImage());
+                            dest.setMatchFileData(FileType.ColorDepthMipInput,
+                                    src.getMatchedImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            dest.setMatchFileData(FileType.ColorDepthMipMatch,
+                                    src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            // set compute match files
+                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedColorDepthImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
+                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedGradientImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.GradientImage));
+                            dest.setMatchComputeFileData(MatchComputeFileType.MatchedZGapImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
                         }),
                         AbstractMatch::getMaskImage,
                         matchedFieldSelectors

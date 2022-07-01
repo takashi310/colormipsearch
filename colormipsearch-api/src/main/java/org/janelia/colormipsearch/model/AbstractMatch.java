@@ -8,6 +8,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
     private M maskImage;
     private T matchedImage;
     private boolean mirrored; // if true the matchedImage was mirrored
+    private Map<MatchComputeFileType, FileData> matchComputeFiles = new HashMap<>();
     private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
 
     public M getMaskImage() {
@@ -42,12 +43,36 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.mirrored = mirrored;
     }
 
+    public Map<MatchComputeFileType, FileData> getMatchComputeFiles() {
+        return matchComputeFiles;
+    }
+
+    public void setMatchComputeFiles(Map<MatchComputeFileType, FileData> matchComputeFiles) {
+        this.matchComputeFiles = matchComputeFiles;
+    }
+
+    public FileData getMatchComputeFileData(MatchComputeFileType t) {
+        return matchComputeFiles.get(t);
+    }
+
+    public void setMatchComputeFileData(MatchComputeFileType t, FileData fd) {
+        if (fd != null) {
+            matchComputeFiles.put(t, fd);
+        } else {
+            matchComputeFiles.remove(t);
+        }
+    }
+
     public Map<FileType, FileData> getMatchFiles() {
         return matchFiles;
     }
 
     public void setMatchFiles(Map<FileType, FileData> matchFiles) {
         this.matchFiles = matchFiles;
+    }
+
+    public FileData getMatchFileData(FileType t) {
+        return matchFiles.get(t);
     }
 
     public void setMatchFileData(FileType t, FileData fd) {
@@ -74,6 +99,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.mirrored = that.isMirrored();
         this.matchFiles.clear();
         this.matchFiles.putAll(that.getMatchFiles());
+        this.matchComputeFiles.clear();
+        this.matchComputeFiles.putAll(that.getMatchComputeFiles());
     }
 
     public abstract <M2 extends AbstractNeuronMetadata,

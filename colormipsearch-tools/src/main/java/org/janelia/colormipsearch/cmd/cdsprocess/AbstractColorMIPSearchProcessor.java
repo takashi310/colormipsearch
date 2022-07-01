@@ -21,6 +21,8 @@ import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
+import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +78,18 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
             result.setMatchingPixels(pixelMatchScore.getScore());
             result.setMirrored(pixelMatchScore.isMirrored());
             result.setNormalizedScore(pixelMatchScore.getNormalizedScore());
+            // set match files
+            result.setMatchFileData(FileType.ColorDepthMipInput,
+                    maskImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
+            result.setMatchFileData(FileType.ColorDepthMipMatch,
+                    targetImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
+            // set compute match files
+            result.setMatchComputeFileData(MatchComputeFileType.MatchedColorDepthImage,
+                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
+            result.setMatchComputeFileData(MatchComputeFileType.MatchedGradientImage,
+                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
+            result.setMatchComputeFileData(MatchComputeFileType.MatchedZGapImage,
+                    targetImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
         } catch (Throwable e) {
             LOG.warn("Error comparing mask {} with {}", maskImage, targetImage, e);
             result.setErrors(e.getMessage());
