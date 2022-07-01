@@ -41,6 +41,9 @@ public class MatchResultsGrouping {
                                     ComputeFileType.GradientImage,
                                     ComputeFileType.ZGapImage
                             ));
+                            maskImage.resetNeuronFiles(EnumSet.of(
+                                    FileType.ColorDepthMipInput
+                            ));
                             return maskImage;
                         },
                         maskFieldSelectors
@@ -103,6 +106,9 @@ public class MatchResultsGrouping {
                                     ComputeFileType.InputColorDepthImage,
                                     ComputeFileType.GradientImage,
                                     ComputeFileType.ZGapImage
+                            ));
+                            maskImage.resetNeuronFiles(EnumSet.of(
+                                    FileType.ColorDepthMipInput
                             ));
                             return maskImage;
                         },

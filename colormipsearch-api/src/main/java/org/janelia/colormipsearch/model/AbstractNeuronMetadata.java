@@ -88,7 +88,7 @@ public abstract class AbstractNeuronMetadata {
     }
 
     public void resetComputeFileData(Set<ComputeFileType> ts) {
-        ts.forEach(t -> computeFiles.remove(t));
+        ts.forEach(computeFiles::remove);
     }
 
     public String getComputeFileName(ComputeFileType t) {
@@ -104,6 +104,10 @@ public abstract class AbstractNeuronMetadata {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
+    }
+
+    public void resetNeuronFiles(Set<FileType> ts) {
+        ts.forEach(neuronFiles::remove);
     }
 
     public String getNeuronFileName(FileType t) {
