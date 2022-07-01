@@ -34,6 +34,19 @@ public class MatchResultsGrouping {
                         (R) aMatch.duplicate((src, dest) -> {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
+                            // set match files
+                            dest.setMatchFileData(FileType.ColorDepthMipInput,
+                                    src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            dest.setMatchFileData(FileType.ColorDepthMipMatch,
+                                    src.getMatchedImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            // set compute match files
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskGradientImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.GradientImage));
+                            dest.setMatchComputeFileData(MatchComputeFileType.MaskZGapImage,
+                                    src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
+
                         }),
                         m -> {
                             M maskImage = m.getMaskImage().duplicate();
@@ -83,6 +96,7 @@ public class MatchResultsGrouping {
                         (R1) aMatch.duplicate((src, dest) -> {
                             dest.setMaskImage(src.getMatchedImage());
                             dest.setMatchedImage(src.getMaskImage());
+                            // set match files
                             dest.setMatchFileData(FileType.ColorDepthMipInput,
                                     src.getMatchedImage().getNeuronFileData(FileType.ColorDepthMipInput));
                             dest.setMatchFileData(FileType.ColorDepthMipMatch,

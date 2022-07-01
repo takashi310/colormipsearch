@@ -3,6 +3,8 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
 
     private M maskImage;
@@ -43,6 +45,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.mirrored = mirrored;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<MatchComputeFileType, FileData> getMatchComputeFiles() {
         return matchComputeFiles;
     }
@@ -63,6 +66,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, FileData> getMatchFiles() {
         return matchFiles;
     }

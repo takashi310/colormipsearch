@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
@@ -54,13 +53,7 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 perMatchesOutputDir
         );
-
-        JsonOutputHelper.writeToJSONFile(
-                cdsMatches,
-                IOUtils.getOutputFile(perMasksOutputDir, new File("test.json")),
-                jsonWriter);
     }
-
 
     private <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(
             List<ResultMatches<M1, T1, CDSMatch<M1, T1>>> cdsMatchesList,

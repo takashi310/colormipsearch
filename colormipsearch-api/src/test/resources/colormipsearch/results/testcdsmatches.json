@@ -1,3 +1,372 @@
-[
-
-]
+[ {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721623051",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1001453586",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1001453586-KCa'b'-ap1-RT_18U.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1001453586-KCa'b'-ap1-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1001453586-KCa'b'-ap1-RT_18U.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1001453586-KCa'b'-ap1-RT_18U.tif"
+    },
+    "neuronType" : "KCa'b'-ap1",
+    "neuronInstance" : "KCa'b'-ap1_R",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1001453586-KCa'b'-ap1-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1001453586-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1001453586-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777484424085515",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20141014_31_B2-20x-Brain-JRC2018_Unisex_20x_HR-2065263074239053922-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20141014_31_B2-f_20x_CH1_01.png"
+    },
+    "sampleRef" : "Sample#2065263074239053922",
+    "sampleName" : "GMR_SS01491-20141014_31_B2",
+    "slideCode" : "20141014_31_B2",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20141014_31_B2-f-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.026740948,
+  "matchingPixels" : 48
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721631243",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507131",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U.tif"
+    },
+    "neuronType" : "PEN_a(PEN1)",
+    "neuronInstance" : "PEN_a(PB06a)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507131-PEN_a(PEN1)-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777490170281995",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "m",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20140729_31_B4-20x-Brain-JRC2018_Unisex_20x_HR-2036590477708361826-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20140729_31_B4-m_20x_CH1_03.png"
+    },
+    "sampleRef" : "Sample#2036590477708361826",
+    "sampleName" : "GMR_SS01491-20140729_31_B4",
+    "slideCode" : "20140729_31_B4",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20140729_31_B4-m-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.0031152647,
+  "matchingPixels" : 9
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721631243",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507131",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U.tif"
+    },
+    "neuronType" : "PEN_a(PEN1)",
+    "neuronInstance" : "PEN_a(PB06a)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507131-PEN_a(PEN1)-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777484424085515",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20141014_31_B2-20x-Brain-JRC2018_Unisex_20x_HR-2065263074239053922-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20141014_31_B2-f_20x_CH1_01.png"
+    },
+    "sampleRef" : "Sample#2065263074239053922",
+    "sampleName" : "GMR_SS01491-20141014_31_B2",
+    "slideCode" : "20141014_31_B2",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20141014_31_B2-f-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.009691935,
+  "matchingPixels" : 28
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721631243",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507131",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U_FL.tif"
+    },
+    "neuronType" : "PEN_a(PEN1)",
+    "neuronInstance" : "PEN_a(PB06a)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507131-PEN_a(PEN1)-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777490170281995",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "m",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20140729_31_B4-20x-Brain-JRC2018_Unisex_20x_HR-2036590477708361826-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20140729_31_B4-m_20x_CH1_03.png"
+    },
+    "sampleRef" : "Sample#2036590477708361826",
+    "sampleName" : "GMR_SS01491-20140729_31_B4",
+    "slideCode" : "20140729_31_B4",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20140729_31_B4-m-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.004270463,
+  "matchingPixels" : 24
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721631243",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507131",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507131-PEN_a(PEN1)-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U_FL.tif"
+    },
+    "neuronType" : "PEN_a(PEN1)",
+    "neuronInstance" : "PEN_a(PB06a)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507131-PEN_a(PEN1)-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507131-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777484424085515",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20141014_31_B2-20x-Brain-JRC2018_Unisex_20x_HR-2065263074239053922-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20141014_31_B2-f_20x_CH1_01.png"
+    },
+    "sampleRef" : "Sample#2065263074239053922",
+    "sampleName" : "GMR_SS01491-20141014_31_B2",
+    "slideCode" : "20141014_31_B2",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20141014_31_B2-f-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.008540926,
+  "matchingPixels" : 48
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721639435",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507159",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507159-EPG-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U.tif"
+    },
+    "neuronType" : "EPG",
+    "neuronInstance" : "EPG(PB08)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507159-EPG-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507159-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507159-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777490170281995",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "m",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20140729_31_B4-m_20x_CH1_03.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20140729_31_B4-20x-Brain-JRC2018_Unisex_20x_HR-2036590477708361826-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20140729_31_B4-m_20x_CH1_03.png"
+    },
+    "sampleRef" : "Sample#2036590477708361826",
+    "sampleName" : "GMR_SS01491-20140729_31_B4",
+    "slideCode" : "20140729_31_B4",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20140729_31_B4-m-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.0059154094,
+  "matchingPixels" : 20
+}, {
+  "maskImage" : {
+    "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
+    "id" : "2943465148721639435",
+    "libraryName" : "FlyEM_Hemibrain_v1.2.1",
+    "publishedName" : "1002507159",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "GradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/1002507159-EPG-RT_18U.tif",
+      "InputColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif",
+      "ZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U.tif"
+    },
+    "neuronType" : "EPG",
+    "neuronInstance" : "EPG(PB08)_R7",
+    "files" : {
+      "AlignedBodySWC" : "/nrs/jacs/jacsData/filestore/system/EMSkeletons/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/swc/1002507159-EPG-RT_18U.swc",
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507159-JRC2018_Unisex_20x_HR-CDM.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyEM_Hemibrain_v1.2.1/1002507159-JRC2018_Unisex_20x_HR-CDM.jpg",
+      "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
+    }
+  },
+  "matchedImage" : {
+    "class" : "org.janelia.colormipsearch.model.LMNeuronMetadata",
+    "id" : "2711777484424085515",
+    "libraryName" : "FlyLight Split-GAL4 Drivers",
+    "publishedName" : "SS01491",
+    "alignmentSpace" : "JRC2018_Unisex_20x_HR",
+    "gender" : "f",
+    "computeFiles" : {
+      "InputColorDepthImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_CDM_G14/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "ZGapImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/Split2_segmented_RGB20px/SS01491-20141014_31_B2-f_20x_CH1_01.tif",
+      "SourceColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/dicksonlab_polarity_case_3/GMR_SS01491-20141014_31_B2-20x-Brain-JRC2018_Unisex_20x_HR-2065263074239053922-CH1_CDM.png",
+      "GradientImage" : "/nrs/scicompsoft/emlm/public_release_2021/split/segmented_gradient/SS01491-20141014_31_B2-f_20x_CH1_01.png"
+    },
+    "sampleRef" : "Sample#2065263074239053922",
+    "sampleName" : "GMR_SS01491-20141014_31_B2",
+    "slideCode" : "20141014_31_B2",
+    "objective" : "20x",
+    "anatomicalArea" : "Brain",
+    "mountingProtocol" : "DPX PBS Mounting",
+    "channel" : 1,
+    "files" : {
+      "ColorDepthMip" : "https://s3.amazonaws.com/janelia-flylight-color-depth/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.png",
+      "VisuallyLosslessStack" : "https://s3.amazonaws.com/janelia-flylight-imagery/VPO+2020/SS01491/SS01491-20141014_31_B2-f-20x-brain-Split_GAL4-JRC2018_Unisex_20x_HR-aligned_stack.h5j",
+      "ColorDepthMipInput" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
+      "ColorDepthMipThumbnail" : "https://s3.amazonaws.com/janelia-flylight-color-depth-thumbnails/JRC2018_Unisex_20x_HR/FlyLight_Split-GAL4_Drivers/SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1.jpg"
+    }
+  },
+  "mirrored" : false,
+  "normalizedScore" : 0.007985803,
+  "matchingPixels" : 27
+} ]
