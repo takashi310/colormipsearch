@@ -160,14 +160,6 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         }
     }
 
-    private ImageArray<?> loadQueryROIMask(String queryROIMask) {
-        if (StringUtils.isBlank(queryROIMask)) {
-            return null;
-        } else {
-            return NeuronMIPUtils.loadImageFromFileData(FileData.fromString(queryROIMask));
-        }
-    }
-
     private String inputNames(List<ListArg> mipsArg) {
         return mipsArg.stream()
                 .map(ListArg::listArgName)
