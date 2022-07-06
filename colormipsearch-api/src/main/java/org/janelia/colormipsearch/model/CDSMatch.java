@@ -1,10 +1,11 @@
 package org.janelia.colormipsearch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
 public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
     private Float normalizedScore;
     private Integer matchingPixels;
