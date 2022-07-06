@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +15,11 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     private Long highExpressionArea;
     private boolean matchFound;
     private String errors;
+
+    @JsonProperty("class")
+    public String getClassProperty() {
+        return getClass().getName();
+    }
 
     @JsonRequired
     public Float getNormalizedScore() {
