@@ -5,7 +5,14 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
 public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
 
     private M maskImage;
@@ -68,6 +75,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         }
     }
 
+    public void resetMatchComputeFiles() {
+        matchComputeFiles.clear();
+    }
+
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, FileData> getMatchFiles() {
@@ -88,6 +99,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         } else {
             matchFiles.remove(t);
         }
+    }
+
+    public void resetMatchFiles() {
+        matchFiles.clear();
     }
 
     /**
@@ -112,4 +127,31 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
 
     public abstract <M2 extends AbstractNeuronMetadata,
                      T2 extends AbstractNeuronMetadata> AbstractMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AbstractMatch<?, ?> that = (AbstractMatch<?, ?>) o;
+
+        return new EqualsBuilder().append(mirrored, that.mirrored).append(maskImage, that.maskImage).append(matchedImage, that.matchedImage).append(matchComputeFiles, that.matchComputeFiles).append(matchFiles, that.matchFiles).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37).append(maskImage).append(matchedImage).append(mirrored).append(matchComputeFiles).append(matchFiles).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("maskImage", maskImage != null ? maskImage.getId() : "<null>")
+                .append("matchedImage", matchedImage != null ? matchedImage.getId() : "<null>")
+                .append("mirrored", mirrored)
+                .append("matchComputeFiles", matchComputeFiles)
+                .append("matchFiles", matchFiles)
+                .toString();
+    }
 }

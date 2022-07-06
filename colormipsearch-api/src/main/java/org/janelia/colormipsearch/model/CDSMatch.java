@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
     private Float normalizedScore;

@@ -61,6 +61,9 @@ public class JSONFileCDMatchesReader<M extends AbstractNeuronMetadata, T extends
                                 persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
                         dest.setMaskImage(maskImage);
                         dest.setMatchedImage(targetImage);
+                        // no reason to keep these around
+                        dest.resetMatchComputeFiles();
+                        dest.resetMatchFiles();
                     });
                     return match;
                 })

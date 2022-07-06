@@ -15,7 +15,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "class")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
 public abstract class AbstractNeuronMetadata {
     private String id; // MIP ID
     private String libraryName; // MIP library

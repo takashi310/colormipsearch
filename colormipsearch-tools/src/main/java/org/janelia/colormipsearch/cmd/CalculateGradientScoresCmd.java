@@ -21,6 +21,7 @@ import org.janelia.colormipsearch.cmd.io.JSONFileCDMatchesReader;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
+import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileData;
@@ -85,10 +86,10 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         // initialize the cache
         CachedMIPsUtils.initializeCache(cacheSizeSupplier.get());
         // run gradient scoring
-        calculateGradientScores();
+        calculateAllGradientScores();
     }
 
-    private void calculateGradientScores() {
+    private void calculateAllGradientScores() {
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
         ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createShapeMatchCDSAlgorithmProvider(
                 args.mirrorMask,
@@ -107,8 +108,12 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 .forEach(partititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     partititionItems.forEach(toProcess -> {
-                        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> emToLMMatches = cdMatchesReader.readCDMatches(toProcess);
-
+                        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> scoredEmToLmMatches = calculateGradientScores(
+                                gradScoreAlgorithmProvider,
+                                cdMatchesReader,
+                                toProcess,
+                                executor
+                        );
                         // TODO !!!!!!
                     });
                     LOG.info("Finished a batch of {} in {}s - meory usage {}M out of {}M",
@@ -132,11 +137,22 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
-    private CDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> getCDMatchesReader(List<ListArg> matchesArg) {
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> CDMatchesReader<M, T> getCDMatchesReader(List<ListArg> matchesArg) {
         List<String> filesToProcess = matchesArg.stream()
                 .flatMap(arg -> IOUtils.getFiles(arg.input, arg.offset, arg.length).stream())
                 .collect(Collectors.toList());
+        // for now only handle JSON file input but in the future will handle DB data as well
         return new JSONFileCDMatchesReader<>(filesToProcess, mapper);
     }
 
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> List<CDSMatch<M, T>> calculateGradientScores(
+            ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
+            CDMatchesReader<M, T> cdsMatchesReader,
+            String cdsMatchesSource,
+            Executor executor) {
+        List<CDSMatch<M, T>> cdsMatches = cdsMatchesReader.readCDMatches(cdsMatchesSource);
+        // select best matches to process
+
+        return cdsMatches;
+    }
 }
