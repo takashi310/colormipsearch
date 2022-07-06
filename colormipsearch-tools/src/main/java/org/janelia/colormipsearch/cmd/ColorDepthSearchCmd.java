@@ -203,6 +203,5 @@ public class ColorDepthSearchCmd extends AbstractCmd {
             LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
             throw new IllegalStateException(e);
         }
-
     }
 }

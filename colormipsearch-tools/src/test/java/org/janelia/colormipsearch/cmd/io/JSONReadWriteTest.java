@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.cmd.io;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +11,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -24,12 +23,9 @@ import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class JSONReadWriteTest {
@@ -56,7 +52,7 @@ public class JSONReadWriteTest {
 
     @Before
     public void setUp() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         em2lmJsonWriter = new JSONCDSResultsWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 em2lmDir,
                 lm2emDir
@@ -67,7 +63,7 @@ public class JSONReadWriteTest {
         );
     }
 
-    @Ignore
+    @Test
     public void readWriteCDSResults() {
         List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches = readTestMatches();
         em2lmJsonWriter.write(cdsMatches);
@@ -81,9 +77,13 @@ public class JSONReadWriteTest {
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdsMatches.stream()
                             .filter(cdsMatch -> cdsMatch.getMaskImage().getId().equals(mId))
+                            .peek(cdsMatch -> {
+                                cdsMatch.resetMatchComputeFiles();
+                                cdsMatch.resetMatchFiles();
+                            })
                             .collect(Collectors.toList());
                     assertEquals("Results did not match for " + mId,
-                            testMatchesWithSameMask, matchesFromFile); // FIXME !!!
+                            testMatchesWithSameMask, matchesFromFile);
                 });
     }
 
