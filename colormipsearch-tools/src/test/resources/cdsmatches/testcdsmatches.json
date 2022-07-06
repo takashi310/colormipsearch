@@ -23,9 +23,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507170-PFL1-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U_FL.png"
   },
   "normalizedScore" : 0.03888351,
   "matchingPixels" : 241,
@@ -60,7 +60,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -86,9 +87,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507170-PFL1-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U_FL.png"
   },
   "normalizedScore" : 0.024040014,
   "matchingPixels" : 149,
@@ -123,7 +124,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -149,9 +151,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507170-PFL1-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U.png"
   },
   "normalizedScore" : 0.033235293,
   "matchingPixels" : 113,
@@ -186,7 +188,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -212,9 +215,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507170-PFL1-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507170-PFL1-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507170-PFL1-RT_18U.png"
   },
   "normalizedScore" : 0.030882353,
   "matchingPixels" : 105,
@@ -249,7 +252,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -275,9 +279,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002658094-FR2-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U_FL.png"
   },
   "normalizedScore" : 0.04030327,
   "matchingPixels" : 101,
@@ -312,7 +316,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -338,9 +343,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002658094-FR2-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U_FL.png"
   },
   "normalizedScore" : 0.0311253,
   "matchingPixels" : 78,
@@ -375,7 +380,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -401,9 +407,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002658094-FR2-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U.png"
   },
   "normalizedScore" : 0.039170507,
   "matchingPixels" : 51,
@@ -438,7 +444,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -464,9 +471,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1001453586-KCa'b'-ap1-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1001453586-KCa'b'-ap1-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1001453586-KCa'b'-ap1-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1001453586-KCa'b'-ap1-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1001453586-KCa'b'-ap1-RT_18U.png"
   },
   "normalizedScore" : 0.026740948,
   "matchingPixels" : 48,
@@ -501,7 +508,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -527,9 +535,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png"
   },
   "normalizedScore" : 0.008540926,
   "matchingPixels" : 48,
@@ -564,7 +572,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -590,9 +599,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U_FL.png"
   },
   "normalizedScore" : 0.006542056,
   "matchingPixels" : 42,
@@ -627,7 +636,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -653,9 +663,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002658094-FR2-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002658094-FR2-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002658094-FR2-RT_18U.png"
   },
   "normalizedScore" : 0.024577573,
   "matchingPixels" : 32,
@@ -690,7 +700,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -716,9 +727,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png"
   },
   "normalizedScore" : 0.009691935,
   "matchingPixels" : 28,
@@ -753,7 +764,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -779,9 +791,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U_FL.png"
   },
   "normalizedScore" : 0.0043613706,
   "matchingPixels" : 28,
@@ -816,7 +828,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -842,9 +855,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png"
   },
   "normalizedScore" : 0.007985803,
   "matchingPixels" : 27,
@@ -879,7 +892,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -905,9 +919,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U_FL.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U_FL.png"
   },
   "normalizedScore" : 0.004270463,
   "matchingPixels" : 24,
@@ -942,7 +956,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -968,9 +983,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507159-EPG-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507159-EPG-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507159-EPG-RT_18U.png"
   },
   "normalizedScore" : 0.0059154094,
   "matchingPixels" : 20,
@@ -1005,7 +1020,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -1031,9 +1047,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1002507131-PEN_a(PEN1)-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1002507131-PEN_a(PEN1)-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1002507131-PEN_a(PEN1)-RT_18U.png"
   },
   "normalizedScore" : 0.0031152647,
   "matchingPixels" : 9,
@@ -1068,7 +1084,8 @@
   "files" : {
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.model.EMNeuronMetadata",
@@ -1094,9 +1111,9 @@
   },
   "mirrored" : false,
   "matchComputeFiles" : {
-    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1001453586-KCa'b'-ap1-RT_18U.png",
     "MaskZGapImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/zgap/1001453586-KCa'b'-ap1-RT_18U.tif",
-    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1001453586-KCa'b'-ap1-RT_18U.tif"
+    "MaskColorDepthImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/cdm/1001453586-KCa'b'-ap1-RT_18U.tif",
+    "MaskGradientImage" : "/nrs/jacs/jacsData/filestore/system/ColorDepthMIPs/JRC2018_Unisex_20x_HR/flyem_hemibrain_1_2_1/grad/1001453586-KCa'b'-ap1-RT_18U.png"
   },
   "normalizedScore" : 0.0033426185,
   "matchingPixels" : 6,
@@ -1131,5 +1148,6 @@
   "files" : {
     "ColorDepthMipMatch" : "SS33510-20180608_43_D3-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-JRC_SS33510-20180608_43_D3-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
-  }
+  },
+  "class" : "org.janelia.colormipsearch.model.CDSMatch"
 } ]
