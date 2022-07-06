@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.cmd.io;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,6 +59,12 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                 ),
                 perMatchesOutputDir
         );
+        try {
+            cdsMatches.sort((m1, m2) -> -m1.getMatchingPixels());
+            jsonWriter.writeValue(perMasksOutputDir.getParent().resolve("allmatches.json").toFile(), cdsMatches);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(
