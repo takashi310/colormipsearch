@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -14,10 +15,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
+import org.janelia.colormipsearch.cmd.io.CDMatchesReader;
+import org.janelia.colormipsearch.cmd.io.IOUtils;
+import org.janelia.colormipsearch.cmd.io.JSONFileCDMatchesReader;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
+import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileData;
+import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,8 +98,30 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 excludedRegions
         );
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
+        CDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> cdMatchesReader = getCDMatchesReader(args.matches);
 
-        // TODO !!!!!!
+        long startTime = System.currentTimeMillis();
+        List<String> itemsToProcess = cdMatchesReader.listCDMatchesLocations();
+        int size = itemsToProcess.size();
+        ItemsHandling.partitionCollection(itemsToProcess, args.processingPartitionSize).stream().parallel()
+                .forEach(partititionItems -> {
+                    long startProcessingPartitionTime = System.currentTimeMillis();
+                    partititionItems.forEach(toProcess -> {
+                        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> emToLMMatches = cdMatchesReader.readCDMatches(toProcess);
+
+                        // TODO !!!!!!
+                    });
+                    LOG.info("Finished a batch of {} in {}s - meory usage {}M out of {}M",
+                            partititionItems.size(),
+                            (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
+                            (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                            (Runtime.getRuntime().totalMemory() / _1M));
+                });
+        LOG.info("Finished calculating gradient scores for {} items in {}s - memory usage {}M out of {}M",
+                size,
+                (System.currentTimeMillis() - startTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
     }
 
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {
@@ -100,6 +130,13 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         } else {
             return NeuronMIPUtils.loadImageFromFileData(FileData.fromString(queryROIMask));
         }
+    }
+
+    private CDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> getCDMatchesReader(List<ListArg> matchesArg) {
+        List<String> filesToProcess = matchesArg.stream()
+                .flatMap(arg -> IOUtils.getFiles(arg.input, arg.offset, arg.length).stream())
+                .collect(Collectors.toList());
+        return new JSONFileCDMatchesReader<>(filesToProcess, mapper);
     }
 
 }

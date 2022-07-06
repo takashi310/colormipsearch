@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,17 +50,24 @@ public class IOUtils {
         }
     }
 
-    public static List<String> getFilesFromDir(String dirName, int offsetParam, int lengthParam) {
+    public static List<String> getFiles(String location, int offsetParam, int lengthParam) {
         try {
-            int from = Math.max(offsetParam, 0);
-            List<String> filenamesList = Files.find(Paths.get(dirName), 1, (p, fa) -> fa.isRegularFile())
-                    .skip(from)
-                    .map(Path::toString)
-                    .collect(Collectors.toList());
-            if (lengthParam > 0 && lengthParam < filenamesList.size()) {
-                return filenamesList.subList(0, lengthParam);
+            Path pathLocation = Paths.get(location);
+            if (Files.isRegularFile(pathLocation)) {
+                return Collections.singletonList(pathLocation.toString());
+            } else if (Files.isDirectory(pathLocation)) {
+                int from = Math.max(offsetParam, 0);
+                List<String> filenamesList = Files.find(pathLocation, 1, (p, fa) -> fa.isRegularFile())
+                        .skip(from)
+                        .map(Path::toString)
+                        .collect(Collectors.toList());
+                if (lengthParam > 0 && lengthParam < filenamesList.size()) {
+                    return filenamesList.subList(0, lengthParam);
+                } else {
+                    return filenamesList;
+                }
             } else {
-                return filenamesList;
+                return Collections.emptyList();
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

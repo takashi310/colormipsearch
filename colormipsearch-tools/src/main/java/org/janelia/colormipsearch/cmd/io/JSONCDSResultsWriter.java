@@ -5,8 +5,10 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.collect.ImmutableList;
 
 import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -39,7 +41,8 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                         Collections.singletonList(
                                 AbstractNeuronMetadata::getId
                         ),
-                        Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
+                        Comparator.comparingDouble(m -> -m.getMatchingPixels())
+                ),
                 perMasksOutputDir
         );
 
@@ -50,7 +53,8 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                         Collections.singletonList(
                                 AbstractNeuronMetadata::getId
                         ),
-                        Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
+                        Comparator.comparingDouble(m -> -m.getMatchingPixels())
+                ),
                 perMatchesOutputDir
         );
     }
