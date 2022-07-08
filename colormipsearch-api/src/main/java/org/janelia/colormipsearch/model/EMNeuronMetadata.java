@@ -65,6 +65,7 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .appendSuper(super.toString())
                 .append("neuronType", neuronType)
                 .append("neuronInstance", neuronInstance)
                 .toString();

@@ -17,15 +17,6 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     private boolean matchFound;
     private String errors;
 
-    /**
-     * This is in order to serialize the JSON type property. The JsonTypeInfo annotation is ignored.
-     * @return
-     */
-    @JsonProperty("class")
-    public String getClassProperty() {
-        return getClass().getName();
-    }
-
     @JsonRequired
     public Float getNormalizedScore() {
         return normalizedScore;

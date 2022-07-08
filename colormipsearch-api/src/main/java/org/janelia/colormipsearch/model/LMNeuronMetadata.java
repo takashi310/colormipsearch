@@ -105,6 +105,7 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .appendSuper(super.toString())
                 .append("slideCode", slideCode)
                 .append("objective", objective)
                 .append("channel", channel)

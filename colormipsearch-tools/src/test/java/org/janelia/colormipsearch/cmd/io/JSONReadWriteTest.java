@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDSMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -27,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class JSONReadWriteTest {
@@ -36,6 +38,7 @@ public class JSONReadWriteTest {
     private static Path em2lmDir;
     private static Path lm2emDir;
 
+    private ObjectMapper mapper;
     private JSONCDSResultsWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
     private JSONFileCDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> em2lmMatchesReader;
 
@@ -53,7 +56,7 @@ public class JSONReadWriteTest {
 
     @Before
     public void setUp() {
-        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper = new ObjectMapper();
         em2lmJsonWriter = new JSONCDSResultsWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 em2lmDir,
                 lm2emDir
@@ -65,8 +68,18 @@ public class JSONReadWriteTest {
     }
 
     @Test
+    public void jsonCDSMatchSerialization() {
+        Path testJsonOutput = testDataDir.resolve("testcdsout.json");
+        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
+        JsonOutputHelper.writeToJSONFile(cdsMatches, testJsonOutput.toFile(), mapper.writerWithDefaultPrettyPrinter());
+        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> readCDSMatches = readTestMatches(testJsonOutput.toFile());
+        assertNotNull(readCDSMatches);
+        assertEquals(cdsMatches, readCDSMatches);
+    }
+
+    @Test
     public void readWriteCDSResults() {
-        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches = readTestMatches();
+        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
         em2lmJsonWriter.write(cdsMatches);
         checkResultFiles(cdsMatches, em2lmDir, m -> m.getMaskImage().getId());
         checkResultFiles(cdsMatches, lm2emDir, m -> m.getMatchedImage().getId());
@@ -99,11 +112,11 @@ public class JSONReadWriteTest {
                 });
     }
 
-    private List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> readTestMatches() {
+    private List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> readTestMatches(File f) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches =
-                    mapper.readValue(new File(TESTCDSMATCHES_FILE), new TypeReference<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>() {});
+                    mapper.readValue(f, new TypeReference<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>() {});
             cdsMatches.sort(Comparator.comparingDouble(m -> -m.getMatchingPixels()));
             return cdsMatches;
         } catch (IOException e) {
