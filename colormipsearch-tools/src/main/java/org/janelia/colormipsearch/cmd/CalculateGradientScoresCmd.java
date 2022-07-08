@@ -191,7 +191,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 ).stream())
                 .collect(Collectors.toList());
         // wait for all computation to finish
-        List<CDSMatch<M, T>> matchesWithGradScores = gradScoreComputations.stream().parallel()
+        List<CDSMatch<M, T>> matchesWithGradScores = gradScoreComputations.stream()
                 .map(CompletableFuture::join)
                 .filter(CDSMatch::hasGradScore)
                 .collect(Collectors.toList());
@@ -223,7 +223,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         args.maskThreshold,
                         args.borderSize);
         Set<ComputeFileType> requiredVariantTypes = gradScoreAlgorithm.getRequiredTargetVariantTypes();
-        return selectedMatches.stream().parallel()
+        return selectedMatches.stream()
                 .map(cdsMatch -> CompletableFuture.supplyAsync(() -> {
                             long startCalcTime = System.currentTimeMillis();
                             T matchedTarget = cdsMatch.getMatchedImage();
