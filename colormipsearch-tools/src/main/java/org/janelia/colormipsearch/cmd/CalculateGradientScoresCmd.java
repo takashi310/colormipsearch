@@ -233,7 +233,11 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                                         cdsMatch.getMaskImage(), cdsMatch.getMatchedImage());
                                 ShapeMatchScore gradScore = gradScoreAlgorithm.calculateMatchingScore(
                                         matchedTargetImage.getImageArray(),
-                                        ColorMIPProcessUtils.getVariantImagesSuppliers(requiredVariantTypes, matchedTarget)
+                                        NeuronMIPUtils.getImageLoaders(
+                                                matchedTarget,
+                                                requiredVariantTypes,
+                                                (n, cft) -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(n, cft))
+                                        )
                                 );
                                 cdsMatch.setGradientAreaGap(gradScore.getGradientAreaGap());
                                 cdsMatch.setHighExpressionArea(gradScore.getHighExpressionArea());

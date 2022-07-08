@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -20,6 +22,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageArrayUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -31,6 +35,11 @@ import org.slf4j.LoggerFactory;
 public class NeuronMIPUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(NeuronMIPUtils.class);
+
+    @FunctionalInterface
+    public interface NeuronImageFileLoader<N extends AbstractNeuronMetadata> {
+        ImageArray<?> loadImage(N neuron, ComputeFileType computeFileType);
+    }
 
     public static <N extends AbstractNeuronMetadata> List<N> loadNeuronMetadataFromJSON(String jsonFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
@@ -50,6 +59,22 @@ public class NeuronMIPUtils {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public static <N extends AbstractNeuronMetadata> Map<ComputeFileType, Supplier<ImageArray<?>>> getImageLoaders(N neuron,
+                                                                                                                   Set<ComputeFileType> fileTypes,
+                                                                                                                   NeuronImageFileLoader<N> singleNeuronImageLoader) {
+        return fileTypes.stream()
+                .map(cft -> {
+                    Pair<ComputeFileType, Supplier<ImageArray<?>>> e =
+                            ImmutablePair.of(
+                                    cft,
+                                    () -> singleNeuronImageLoader.loadImage(neuron, cft)
+                            );
+                    return e;
+                })
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight))
+                ;
     }
 
     /**

@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cds.PixelMatchScore;
+import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
@@ -34,7 +35,10 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
 
     <N extends AbstractNeuronMetadata> Map<ComputeFileType, Supplier<ImageArray<?>>> getVariantImagesSuppliers(Set<ComputeFileType> variantTypes,
                                                                                                                N neuronMIP) {
-        return ColorMIPProcessUtils.getVariantImagesSuppliers(variantTypes, neuronMIP);
+        return NeuronMIPUtils.getImageLoaders(
+                neuronMIP,
+                variantTypes,
+                (n, cft) -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(n, cft)));
     }
 
     /**
