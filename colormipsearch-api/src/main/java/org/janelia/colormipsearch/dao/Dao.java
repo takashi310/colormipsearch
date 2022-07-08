@@ -12,11 +12,12 @@ import org.janelia.colormipsearch.model.BaseEntity;
  * @param <T> entity type
  */
 public interface Dao<T extends BaseEntity> {
+    // Read operations
     T findByEntityId(Number id);
     List<T> findByEntityIds(Collection<Number> ids);
     PagedResult<T> findAll(PagedRequest pageRequest);
     long countAll();
-
+    // Write operations
     void save(T entity);
     void saveAll(List<T> entities);
     T update(Number entityId, Map<String, EntityFieldValueHandler<?>> fieldsToUpdate);

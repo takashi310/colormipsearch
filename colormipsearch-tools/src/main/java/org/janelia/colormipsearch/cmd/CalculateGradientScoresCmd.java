@@ -118,6 +118,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
         List<String> itemsToProcess = cdMatchesReader.listCDMatchesLocations();
         int size = itemsToProcess.size();
+        Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         ItemsHandling.partitionCollection(itemsToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(partititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
@@ -125,7 +126,8 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         calculateAndUpdateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesReader,
-                                toProcess
+                                toProcess,
+                                executor
                         );
                     });
                     LOG.info("Finished a batch of {} in {}s - meory usage {}M out of {}M",
@@ -160,7 +162,9 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
             CDMatchesReader<M, T> cdsMatchesReader,
-            String cdsMatchesSource) {
+            String cdsMatchesSource,
+            Executor executor) {
+        LOG.info("Read color depth matches from {}", cdsMatchesSource);
         List<CDSMatch<M, T>> allCDMatches = cdsMatchesReader.readCDMatches(cdsMatchesSource);
         // select best matches to process
         List<CDSMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
@@ -178,7 +182,6 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                                 m -> m.getComputeFileName(ComputeFileType.InputColorDepthImage)
                         )
                 );
-        Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         List<CompletableFuture<CDSMatch<M, T>>> gradScoreComputations = selectedMatchesGroupedByInput.stream()
                 .flatMap(selectedMaskMatches -> runGradScoreComputations(
                         selectedMaskMatches.getKey(),
