@@ -26,7 +26,9 @@ import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
 import org.janelia.colormipsearch.cmd.io.CDMatchesReader;
 import org.janelia.colormipsearch.cmd.io.IOUtils;
+import org.janelia.colormipsearch.cmd.io.JSONCDSUpdatesWriter;
 import org.janelia.colormipsearch.cmd.io.JSONFileCDMatchesReader;
+import org.janelia.colormipsearch.cmd.io.ResultMatchesUpdatesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIP;
@@ -120,12 +122,11 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 .forEach(partititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     partititionItems.forEach(toProcess -> {
-                        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> scoredEmToLmMatches = calculateGradientScores(
+                        calculateAndUpdateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesReader,
                                 toProcess
                         );
-                        // TODO !!!!!!
                     });
                     LOG.info("Finished a batch of {} in {}s - meory usage {}M out of {}M",
                             partititionItems.size(),
@@ -156,19 +157,19 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         return new JSONFileCDMatchesReader<>(filesToProcess, mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> List<CDSMatch<M, T>> calculateGradientScores(
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
             CDMatchesReader<M, T> cdsMatchesReader,
             String cdsMatchesSource) {
-        List<CDSMatch<M, T>> cdsMatches = cdsMatchesReader.readCDMatches(cdsMatchesSource);
+        List<CDSMatch<M, T>> allCDMatches = cdsMatchesReader.readCDMatches(cdsMatchesSource);
         // select best matches to process
         List<CDSMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
-                cdsMatches,
+                allCDMatches,
                 args.numberOfBestLines,
                 args.numberOfBestSamplesPerLine,
                 args.numberOfBestMatchesPerSample
         );
-
+        // group the matches by the mask input file - this is because we do not want to mix FL and non-FL neuron images for example
         List<ResultMatches<M, T, CDSMatch<M, T>>> selectedMatchesGroupedByInput =
                 MatchResultsGrouping.simpleGroupByMaskFields(
                         selectedMatches,
@@ -178,7 +179,6 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         )
                 );
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
-
         List<CompletableFuture<CDSMatch<M, T>>> gradScoreComputations = selectedMatchesGroupedByInput.stream()
                 .flatMap(selectedMaskMatches -> runGradScoreComputations(
                         selectedMaskMatches.getKey(),
@@ -187,7 +187,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         executor
                 ).stream())
                 .collect(Collectors.toList());
-
+        // wait for all computation to finish
         List<CDSMatch<M, T>> matchesWithGradScores = gradScoreComputations.stream().parallel()
                 .map(CompletableFuture::join)
                 .filter(CDSMatch::hasGradScore)
@@ -195,7 +195,11 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
         updateNormalizedScores(matchesWithGradScores);
 
-        return matchesWithGradScores;
+        ResultMatchesUpdatesWriter<M, T, CDSMatch<M, T>> updatesWriter = new JSONCDSUpdatesWriter<>(
+                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                args.getOutputDir()
+        );
+        updatesWriter.writeUpdates(matchesWithGradScores);
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
