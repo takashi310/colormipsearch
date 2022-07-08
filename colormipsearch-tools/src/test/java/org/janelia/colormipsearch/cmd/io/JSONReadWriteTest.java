@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -81,6 +82,7 @@ public class JSONReadWriteTest {
                                 cdsMatch.resetMatchComputeFiles();
                                 cdsMatch.resetMatchFiles();
                             })
+                            .sorted(Comparator.comparingDouble(m -> -m.getMatchingPixels()))
                             .collect(Collectors.toList());
                     assertEquals("Results did not match for " + mId,
                             testMatchesWithSameMask, matchesFromFile);
@@ -102,7 +104,7 @@ public class JSONReadWriteTest {
             ObjectMapper mapper = new ObjectMapper();
             List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> cdsMatches =
                     mapper.readValue(new File(TESTCDSMATCHES_FILE), new TypeReference<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>() {});
-            cdsMatches.sort((m1, m2) -> -m1.getMatchingPixels());
+            cdsMatches.sort(Comparator.comparingDouble(m -> -m.getMatchingPixels()));
             return cdsMatches;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

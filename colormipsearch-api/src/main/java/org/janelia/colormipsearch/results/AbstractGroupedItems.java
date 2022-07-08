@@ -2,6 +2,8 @@ package org.janelia.colormipsearch.results;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @param <T> element types to be grouped
  * @param <K> key type derived from the element type
@@ -27,4 +29,8 @@ public abstract class AbstractGroupedItems<T, K> {
         this.items = items;
     }
 
+    @JsonIgnore
+    public int getItemsCount() {
+        return items == null ? 0 : items.size();
+    }
 }

@@ -1,12 +1,8 @@
 package org.janelia.colormipsearch.api_v2;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
@@ -14,9 +10,6 @@ import org.janelia.colormipsearch.results.ItemsHandling;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class UtilsTest {
 

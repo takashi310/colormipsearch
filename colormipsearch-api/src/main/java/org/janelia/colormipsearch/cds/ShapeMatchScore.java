@@ -31,6 +31,14 @@ public class ShapeMatchScore implements ColorDepthMatchScore {
         return mirrored;
     }
 
+    public long getGradientAreaGap() {
+        return gradientAreaGap;
+    }
+
+    public long getHighExpressionArea() {
+        return highExpressionArea;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)

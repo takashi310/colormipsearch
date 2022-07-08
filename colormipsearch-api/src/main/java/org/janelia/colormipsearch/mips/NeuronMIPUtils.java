@@ -97,6 +97,14 @@ public class NeuronMIPUtils {
         }
     }
 
+    public static boolean hasImageArray(@Nullable NeuronMIP<?> neuronMIP) {
+        return neuronMIP != null && neuronMIP.hasImageArray();
+    }
+
+    public static boolean hasNoImageArray(@Nullable NeuronMIP<?> neuronMIP) {
+        return neuronMIP == null || neuronMIP.hasNoImageArray();
+    }
+
     public static ImageArray<?> getImageArray(@Nullable NeuronMIP<?> neuronMIP) {
         return neuronMIP != null ? neuronMIP.getImageArray() : null;
     }

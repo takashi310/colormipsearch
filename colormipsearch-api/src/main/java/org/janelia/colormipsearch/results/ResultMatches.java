@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.results;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.janelia.colormipsearch.model.AbstractMatch;

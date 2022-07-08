@@ -12,6 +12,33 @@ import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
 
 public class MatchResultsGrouping {
+
+    /**
+     * The method performs a simple non-optimized (in the sense that it does not remove redundant data) grouping
+     * of the results by the specified mask field selectors.
+     *
+     * @param matches
+     * @param maskKeyFieldSelectors
+     * @param <M> mask type
+     * @param <T> target type
+     * @param <R> match result type
+     * @return
+     */
+    public static <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    List<ResultMatches<M, T, R>> simpleGroupByMaskFields(List<R> matches, List<Function<M, ?>> maskKeyFieldSelectors) {
+        return ItemsHandling.groupItems(
+                matches,
+                aMatch -> new GroupingCriteria<R, M>(
+                        aMatch,
+                        AbstractMatch::getMaskImage,
+                        maskKeyFieldSelectors
+                ),
+                GroupingCriteria::getItem,
+                null, // no ranking
+                ResultMatches::new
+        );
+    }
+
     /**
      * Group matches by mask.
      *

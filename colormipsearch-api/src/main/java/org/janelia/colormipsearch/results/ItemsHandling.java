@@ -14,28 +14,30 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class ItemsHandling {
 
     /**
-     * @param items               to be grouped by a certain criteria specified by @groupingCriteria@
-     * @param toGroupingCriteria    criteria used for grouping @items@
+     * @param items                to be grouped by a certain criteria specified by @groupingCriteria@
+     * @param toGroupingCriteria   criteria used for grouping @items@
      * @param fromGroupingCriteria extract element from grouping criteria
-     * @param finalRankComparator comparator used for ranking grouped items
-     * @param groupFactory        factory for creating an object to hold items from a group
-     * @param <E1>                type of the input elements that need to be grouped together
-     * @param <E2>                type of the output elements that need to be grouped together
-     * @param <K>                 type of the key used to group the elements
-     * @param <G>                 result group type
+     * @param finalRankComparator  comparator used for ranking grouped items
+     * @param groupFactory         factory for creating an object to hold items from a group
+     * @param <E1>                 type of the input elements that need to be grouped together
+     * @param <E2>                 type of the output elements that need to be grouped together
+     * @param <K>                  type of the key used to group the elements
+     * @param <G>                  result group type
      * @return
      */
     public static <E1, E2, K, G extends AbstractGroupedItems<E2, K>>
     List<G> groupItems(List<E1> items,
                        Function<E1, GroupingCriteria<E2, K>> toGroupingCriteria,
                        Function<GroupingCriteria<E2, K>, E2> fromGroupingCriteria,
-                       Comparator<E2> finalRankComparator,
+                       @Nullable Comparator<E2> finalRankComparator,
                        Supplier<G> groupFactory) {
         if (CollectionUtils.isEmpty(items)) {
             return Collections.emptyList();

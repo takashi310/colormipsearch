@@ -3,16 +3,12 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
-import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
@@ -38,17 +34,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
 
     <N extends AbstractNeuronMetadata> Map<ComputeFileType, Supplier<ImageArray<?>>> getVariantImagesSuppliers(Set<ComputeFileType> variantTypes,
                                                                                                                N neuronMIP) {
-        return variantTypes.stream()
-                .map(cft -> {
-                    Pair<ComputeFileType, Supplier<ImageArray<?>>> e =
-                            ImmutablePair.of(
-                                    cft,
-                                    () -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(neuronMIP, cft))
-                            );
-                    return e;
-                })
-                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight))
-                ;
+        return ColorMIPProcessUtils.getVariantImagesSuppliers(variantTypes, neuronMIP);
     }
 
     /**

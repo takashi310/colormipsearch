@@ -59,12 +59,6 @@ public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends Ab
                 ),
                 perMatchesOutputDir
         );
-        try {
-            cdsMatches.sort(Comparator.comparingDouble(m -> -m.getMatchingPixels()));
-            jsonWriter.writeValue(perMasksOutputDir.getParent().resolve("allmatches.json").toFile(), cdsMatches);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(

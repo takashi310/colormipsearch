@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
 public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
@@ -16,6 +17,10 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     private boolean matchFound;
     private String errors;
 
+    /**
+     * This is in order to serialize the JSON type property. The JsonTypeInfo annotation is ignored.
+     * @return
+     */
     @JsonProperty("class")
     public String getClassProperty() {
         return getClass().getName();
@@ -61,6 +66,17 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
 
     public void setHighExpressionArea(Long highExpressionArea) {
         this.highExpressionArea = highExpressionArea;
+    }
+
+    @JsonIgnore
+    public Long getGradScore() {
+        return hasGradScore()
+                ? GradientAreaGapUtils.calculateNegativeScore(gradientAreaGap, highExpressionArea)
+                : -1;
+    }
+
+    public boolean hasGradScore() {
+        return gradientAreaGap != null && gradientAreaGap >= 0 && highExpressionArea != null && highExpressionArea > 0;
     }
 
     @JsonIgnore

@@ -97,7 +97,7 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
                         long startTime = System.currentTimeMillis();
                         List<CDSMatch<M, T>> srs = targetMIPsPartition.stream()
                                 .map(targetMIP -> CachedMIPsUtils.loadMIP(targetMIP, ComputeFileType.InputColorDepthImage))
-                                .filter(Objects::nonNull)
+                                .filter(NeuronMIPUtils::hasImageArray)
                                 .map(targetImage -> findPixelMatch(queryColorDepthSearch, queryImage, targetImage))
                                 .filter(m -> m.isMatchFound() && m.hasNoErrors())
                                 .collect(Collectors.toList());
