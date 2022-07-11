@@ -13,9 +13,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
+@PersistenceInfo(storeName ="neuronMetadata")
 public abstract class AbstractNeuronMetadata {
     private String id; // MIP ID
     private String libraryName; // MIP library

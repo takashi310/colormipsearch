@@ -23,6 +23,11 @@
         </dependency>
         <dependency>
             <groupId>org.janelia.colormipsearch</groupId>
+            <artifactId>colormipsearch-persist</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.janelia.colormipsearch</groupId>
             <artifactId>colormipsearch-tools</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
