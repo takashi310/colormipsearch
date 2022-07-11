@@ -7,7 +7,7 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 public class EntityUtils {
 
-    private static Map<Class<?>, PersistenceInfo> MONGO_MAPPING_CACHE = new LinkedHashMap<>();
+    private static final Map<Class<?>, PersistenceInfo> MONGO_MAPPING_CACHE = new LinkedHashMap<>();
 
     private static PersistenceInfo loadPersistenceInfo(Class<?> objectClass) {
         PersistenceInfo persistenceInfo = null;

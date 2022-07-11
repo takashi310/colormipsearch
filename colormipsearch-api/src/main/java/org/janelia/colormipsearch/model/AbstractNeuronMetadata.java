@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
-public abstract class AbstractNeuronMetadata {
+public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     private String id; // MIP ID
     private String libraryName; // MIP library
     private String publishedName;
