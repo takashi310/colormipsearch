@@ -1,33 +1,22 @@
 package org.janelia.colormipsearch.cmd.cdsprocess;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
-import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.ScoredEntry;
 
 public class ColorMIPProcessUtils {
-    public static <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> List<CDSMatch<M, T>> selectBestMatches(List<CDSMatch<M, T>> cdsMatches,
-                                                                                                                              int topLineMatches,
-                                                                                                                              int topSamplesPerLine,
-                                                                                                                              int topMatchesPerSample) {
-        List<ScoredEntry<List<CDSMatch<M, T>>>> topRankedLineMatches = ItemsHandling.selectTopRankedElements(
-                cdsMatches,
+    public static <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> List<CDMatch<M, T>> selectBestMatches(List<CDMatch<M, T>> CDMatches,
+                                                                                                                             int topLineMatches,
+                                                                                                                             int topSamplesPerLine,
+                                                                                                                             int topMatchesPerSample) {
+        List<ScoredEntry<List<CDMatch<M, T>>>> topRankedLineMatches = ItemsHandling.selectTopRankedElements(
+                CDMatches,
                 match -> match.getMatchedImage().getPublishedName(),
-                CDSMatch::getMatchingPixels,
+                CDMatch::getMatchingPixels,
                 topLineMatches,
                 -1);
 
@@ -35,7 +24,7 @@ public class ColorMIPProcessUtils {
                 .flatMap(se -> ItemsHandling.selectTopRankedElements( // topRankedSamplesPerLine
                         se.getEntry(),
                         match -> match.getMatchedImage().getNeuronId(),
-                        CDSMatch::getMatchingPixels,
+                        CDMatch::getMatchingPixels,
                         topSamplesPerLine,
                         topMatchesPerSample
                 ).stream())

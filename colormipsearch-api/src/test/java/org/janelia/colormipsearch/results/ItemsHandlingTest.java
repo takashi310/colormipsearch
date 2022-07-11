@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.junit.Test;
@@ -66,17 +66,17 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectAllElementsWithAllSubResults() {
-        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
 
-        Map<String, List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
-        List<ScoredEntry<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+        List<ScoredEntry<List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                 testData,
                 match -> match.getMatchedImage().getPublishedName(),
-                CDSMatch::getMatchingPixels,
+                CDMatch::getMatchingPixels,
                 -1,
                 -1);
 
@@ -89,19 +89,19 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectAllElementsWithLimitedSubResults() {
-        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
 
-        Map<String, List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
         for (int si = 1; si <= 3; si++) {
             int topSubResults = si;
-            List<ScoredEntry<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+            List<ScoredEntry<List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                     testData,
                     match -> match.getMatchedImage().getPublishedName(),
-                    CDSMatch::getMatchingPixels,
+                    CDMatch::getMatchingPixels,
                     -1,
                     topSubResults);
             assertEquals(testDataByLine.size(), rankedLines.size());
@@ -113,18 +113,18 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectTopRankedElementsWithAllSubResults() {
-        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
 
-        Map<String, List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
         for (int i = 1; i <= 3; i++) {
-            List<ScoredEntry<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+            List<ScoredEntry<List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                     testData,
                     match -> match.getMatchedImage().getPublishedName(),
-                    CDSMatch::getMatchingPixels,
+                    CDMatch::getMatchingPixels,
                     i,
                     -1);
             assertEquals(i, rankedLines.size());
@@ -144,9 +144,9 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectTopRankedElementsWithLimitedSubResults() {
-        List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testData = createTestData();
 
-        Map<String, List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
@@ -154,10 +154,10 @@ public class ItemsHandlingTest {
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ScoredEntry<List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+                List<ScoredEntry<List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                         testData,
                         match -> match.getMatchedImage().getPublishedName(),
-                        CDSMatch::getMatchingPixels,
+                        CDMatch::getMatchingPixels,
                         i,
                         topSubResults);
                 assertEquals(i, rankedLines.size());
@@ -169,7 +169,7 @@ public class ItemsHandlingTest {
         }
     }
 
-    private List<CDSMatch<EMNeuronMetadata, LMNeuronMetadata>> createTestData() {
+    private List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> createTestData() {
         return Arrays.asList(
                 // matches with line l1
                 createCDSMatch("l1", "s1.1", 45),
@@ -213,10 +213,10 @@ public class ItemsHandlingTest {
         );
     }
 
-    private CDSMatch<EMNeuronMetadata, LMNeuronMetadata> createCDSMatch(String line,
-                                                                        String slideCode,
-                                                                        int matchingPixels) {
-        CDSMatch<EMNeuronMetadata, LMNeuronMetadata> match = new CDSMatch<>();
+    private CDMatch<EMNeuronMetadata, LMNeuronMetadata> createCDSMatch(String line,
+                                                                       String slideCode,
+                                                                       int matchingPixels) {
+        CDMatch<EMNeuronMetadata, LMNeuronMetadata> match = new CDMatch<>();
         LMNeuronMetadata lmNeuronMetadata = new LMNeuronMetadata();
         lmNeuronMetadata.setPublishedName(line);
         lmNeuronMetadata.setSlideCode(slideCode);

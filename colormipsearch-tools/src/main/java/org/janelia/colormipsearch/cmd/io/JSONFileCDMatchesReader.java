@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
@@ -31,24 +31,24 @@ public class JSONFileCDMatchesReader<M extends AbstractNeuronMetadata, T extends
     }
 
     @Override
-    public List<CDSMatch<M, T>> readCDMatches(String filename) {
-        ResultMatches<M, T, CDSMatch<M, T>> cdsResults = readCDSResults(new File(filename));
+    public List<CDMatch<M, T>> readCDMatches(String filename) {
+        ResultMatches<M, T, CDMatch<M, T>> cdsResults = readCDSResults(new File(filename));
         return convertCDSResultsToListOfMatches(cdsResults);
     }
 
-    private ResultMatches<M, T, CDSMatch<M, T>> readCDSResults(File f) {
+    private ResultMatches<M, T, CDMatch<M, T>> readCDSResults(File f) {
         try {
-            return mapper.readValue(f, new TypeReference<ResultMatches<M, T, CDSMatch<M, T>>>() {});
+            return mapper.readValue(f, new TypeReference<ResultMatches<M, T, CDMatch<M, T>>>() {});
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading CDSMatches from JSON file:" + f, e);
         }
     }
 
-    private List<CDSMatch<M, T>> convertCDSResultsToListOfMatches(ResultMatches<M, T, CDSMatch<M, T>> cdsResults) {
+    private List<CDMatch<M, T>> convertCDSResultsToListOfMatches(ResultMatches<M, T, CDMatch<M, T>> cdsResults) {
         return cdsResults.getItems().stream()
                 .map(persistedMatch -> {
                     // extra assignment needed for Java type check
-                    CDSMatch<M, T> match = persistedMatch.duplicate((src, dest) -> {
+                    CDMatch<M, T> match = persistedMatch.duplicate((src, dest) -> {
                         M maskImage = cdsResults.getKey().duplicate();
                         T targetImage = persistedMatch.getMatchedImage();
                         maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,

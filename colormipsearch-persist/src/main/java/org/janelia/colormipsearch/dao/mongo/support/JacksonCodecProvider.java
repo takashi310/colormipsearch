@@ -20,6 +20,7 @@ public class JacksonCodecProvider implements CodecProvider {
 
     JacksonCodecProvider() {
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new MongoModule());
     }
 
     @Override

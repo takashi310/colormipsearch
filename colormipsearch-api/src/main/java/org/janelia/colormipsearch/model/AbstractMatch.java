@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
-@PersistenceInfo(storeName ="neuronMatch")
+@PersistenceInfo(storeName ="neuronMatches")
 public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractBaseEntity {
 
     private M maskImage;

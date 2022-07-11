@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -31,7 +30,7 @@ import org.janelia.colormipsearch.cmd.io.JSONCDSResultsWriter;
 import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,8 +145,8 @@ public class ColorDepthSearchCmd extends AbstractCmd {
             );
         }
         try {
-            List<CDSMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            ResultMatchesWriter<M, T, CDSMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<>(
+            List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
+            ResultMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()

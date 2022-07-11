@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 
-public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
+public class CDMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
     private Float normalizedScore;
     private Integer matchingPixels;
     private Float matchingPixelsRatio;
@@ -94,8 +94,8 @@ public class CDSMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
     }
 
     @Override
-    public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> CDSMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
-        CDSMatch<M2, T2> clone = new CDSMatch<>();
+    public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> CDMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
+        CDMatch<M2, T2> clone = new CDMatch<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class

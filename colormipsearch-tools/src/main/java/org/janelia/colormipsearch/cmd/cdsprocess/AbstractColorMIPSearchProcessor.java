@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
@@ -50,10 +50,10 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
      * @return null if no match was found otherwise it returns a @CDSMatch@
      */
     @Nonnull
-    CDSMatch<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
-                                  NeuronMIP<M> maskImage,
-                                  NeuronMIP<T> targetImage) {
-        CDSMatch<M, T> result = new CDSMatch<>();
+    CDMatch<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
+                                 NeuronMIP<M> maskImage,
+                                 NeuronMIP<T> targetImage) {
+        CDMatch<M, T> result = new CDMatch<>();
         result.setMaskImage(maskImage.getNeuronInfo());
         result.setMatchedImage(targetImage.getNeuronInfo());
         try {

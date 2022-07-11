@@ -17,7 +17,7 @@ import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
     }
 
     @Override
-    public List<CDSMatch<M, T>> findAllColorDepthMatches(List<M> queryMIPs, List<T> targetMIPs) {
+    public List<CDMatch<M, T>> findAllColorDepthMatches(List<M> queryMIPs, List<T> targetMIPs) {
         long startTime = System.currentTimeMillis();
         int nQueries = queryMIPs.size();
         int nTargets = targetMIPs.size();
@@ -47,7 +47,7 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T ex
         JavaRDD<T> targetMIPsRDD = sparkContext.parallelize(targetMIPs);
         LOG.info("Created {} partitions for {} targets", targetMIPsRDD.getNumPartitions(), nTargets);
 
-        List<CDSMatch<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).stream().parallel()
+        List<CDMatch<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).stream().parallel()
                 .map(queryMIPsPartition -> targetMIPsRDD.mapPartitions(targetMIPsItr -> {
                     List<T> localTargetMIPs = Lists.newArrayList(targetMIPsItr);
                     return queryMIPsPartition.stream()

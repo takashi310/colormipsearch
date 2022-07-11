@@ -9,7 +9,6 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends AbstractMongoDao<N>
                                                                       implements NeuronMetadataDao<N> {
-
     public NeuronMetadataMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);
     }
@@ -18,5 +17,4 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
     protected void createDocumentIndexes() {
         mongoCollection.createIndex(Indexes.ascending("class"));
     }
-
 }

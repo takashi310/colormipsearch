@@ -3,7 +3,7 @@ package org.janelia.colormipsearch.cmd.io;
 import java.util.List;
 
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 
 public interface CDMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
     /**
@@ -14,5 +14,5 @@ public interface CDMatchesReader<M extends AbstractNeuronMetadata, T extends Abs
      * @return
      */
     List<String> listCDMatchesLocations();
-    List<CDSMatch<M, T>> readCDMatches(String maskSource);
+    List<CDMatch<M, T>> readCDMatches(String maskSource);
 }

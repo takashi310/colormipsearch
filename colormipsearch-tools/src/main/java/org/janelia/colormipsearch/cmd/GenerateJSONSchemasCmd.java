@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -24,7 +23,7 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.generator.TypeScope;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
-import org.janelia.colormipsearch.model.CDSMatch;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.cmd.io.IOUtils;
@@ -124,7 +123,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                     generator.generateSchema(new TypeReference<ResultMatches<
                             EMNeuronMetadata,
                             LMNeuronMetadata,
-                            CDSMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
+                            CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
             writeSchemaToFile(cdsMatchesSchema,
                     IOUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
 
@@ -153,7 +152,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
     private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String cdsResultsMessage, String pppResultsMessage) {
         return scope -> {
             if (scope.getType().getErasedType() == ResultMatches.class || scope.getType().isInstanceOf(ResultMatches.class)) {
-                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDSMatch.class) {
+                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDMatch.class) {
                     // ResultMatches<EM, LM, Match<EM, LM>>
                     return cdsResultsMessage;
                 } else if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == PPPMatch.class) {
