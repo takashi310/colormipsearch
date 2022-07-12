@@ -2,13 +2,11 @@ package org.janelia.colormipsearch.model;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -17,7 +15,36 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
 public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
-    private String id; // MIP ID
+
+    public static class Builder<N extends AbstractNeuronMetadata> {
+
+        private N n;
+
+        public Builder(N from) {
+            this.n = from.duplicate();
+        }
+
+        public N get() {
+            return n;
+        }
+
+        public Builder<N> entityId(Number entityId) {
+            n.setEntityId(entityId);
+            return this;
+        }
+
+        public Builder<N> id(String id) {
+            n.setId(id);
+            return this;
+        }
+
+        public Builder<N> library(String library) {
+            n.setLibraryName(library);
+            return this;
+        }
+    }
+
+    private String id; // MIP ID - not to be confused with the entityId which is the primary key of this entity
     private String libraryName; // MIP library
     private String publishedName;
     private String alignmentSpace;

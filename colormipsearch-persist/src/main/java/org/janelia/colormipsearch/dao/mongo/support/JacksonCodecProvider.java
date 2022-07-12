@@ -3,7 +3,9 @@ package org.janelia.colormipsearch.dao.mongo.support;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -13,14 +15,22 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.janelia.colormipsearch.model.AbstractMatch;
 
 public class JacksonCodecProvider implements CodecProvider {
 
     private final ObjectMapper objectMapper;
 
     JacksonCodecProvider() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new MongoModule());
+        SimpleFilterProvider filterProvider = new SimpleFilterProvider();
+        filterProvider.addFilter("useRefIdFilter", new UseRefIdFieldFilter());
+        this.objectMapper = new ObjectMapper()
+                .registerModule(new MongoModule())
+                .addMixIn(AbstractMatch.class, AbstractMatchMixIn.class)
+                .setFilterProvider(filterProvider)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        ;
     }
 
     @Override
@@ -44,7 +54,7 @@ public class JacksonCodecProvider implements CodecProvider {
                         String json = objectMapper.writeValueAsString(value);
                         rawBsonDocumentCodec.encode(writer, Document.parse(json), encoderContext);
                     } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+                        throw new UncheckedIOException("Error encoding " + value, e);
                     }
                 }
 

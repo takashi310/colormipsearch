@@ -36,40 +36,66 @@
         </profile>
         <profile>
             <id>itest</id>
-            <properties>
-                <skip.integration.tests>false</skip.integration.tests>
-                <skip.unit.tests>true</skip.unit.tests>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>2.22.2</version>
-                        <configuration>
-                            <includes>
-                                <include>**/*ITest</include>
-                            </includes>
-                            <excludes>
-                                <exclude>test/**/*Test</exclude>
-                            </excludes>
-                        </configuration>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
+                                <id>add-integration-test-source</id>
+                                <phase>generate-test-sources</phase>
                                 <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
+                                    <goal>add-test-source</goal>
                                 </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/itest/java</source>
+                                    </sources>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>2.22.2</version>
                         <configuration>
-                            <excludes>
-                                <exclude>**/*ITest</exclude>
-                            </excludes>
+                            <!-- skip all unit tests so that tests are actually not executed twice -->
+                            <skipTests>true</skipTests>
                         </configuration>
+                        <executions>
+                            <execution>
+                                <id>unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <skipTests>false</skipTests>
+                                    <includes>
+                                        <include>**/*Test</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*ITest</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>integration-tests</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <skipTests>false</skipTests>
+                                    <includes>
+                                        <include>**/*ITest</include>
+                                    </includes>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

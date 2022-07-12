@@ -10,16 +10,20 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
+import org.janelia.colormipsearch.model.annotations.UseRefId;
 
 @PersistenceInfo(storeName ="neuronMatches")
 public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractBaseEntity {
 
+    private Number maskImageRefId;
     private M maskImage;
+    private Number matchedImageRefId;
     private T matchedImage;
     private boolean mirrored; // if true the matchedImage was mirrored
     private Map<MatchComputeFileType, FileData> matchComputeFiles = new HashMap<>();
     private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
 
+    @UseRefId
     public M getMaskImage() {
         return maskImage;
     }
@@ -32,6 +36,19 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.maskImage = null;
     }
 
+    public Number getMaskImageRefId() {
+        if (maskImage != null && maskImage.hasEntityId()) {
+            return maskImage.getEntityId();
+        } else {
+            return maskImageRefId;
+        }
+    }
+
+    public void setMaskImageRefId(Number maskImageRefId) {
+        this.maskImageRefId = maskImageRefId;
+    }
+
+    @UseRefId
     @JsonProperty("image")
     public T getMatchedImage() {
         return matchedImage;
@@ -43,6 +60,18 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
 
     public void resetMatchedImage() {
         this.matchedImage = null;
+    }
+
+    public Number getMatchedImageRefId() {
+        if (matchedImage != null && matchedImage.hasEntityId()) {
+            return matchedImage.getEntityId();
+        } else {
+            return matchedImageRefId;
+        }
+    }
+
+    public void setMatchedImageRefId(Number matchedImageRefId) {
+        this.matchedImageRefId = matchedImageRefId;
     }
 
     public boolean isMirrored() {

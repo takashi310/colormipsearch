@@ -7,14 +7,9 @@ import org.junit.Test;
 
 public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
-
-    public <N extends AbstractNeuronMetadata> NeuronMetadataDao<N> createTestDao(Class<N> neuronMetadataClass) {
-        return new NeuronMetadataMongoDao<>(testMongoDatabase, idGenerator);
-    }
-
     @Test
     public void persistEmNeuron() {
-        NeuronMetadataDao<EMNeuronMetadata> testDao = createTestDao(EMNeuronMetadata.class);
+        NeuronMetadataDao<EMNeuronMetadata> testDao = TestDBUtils.createNeuronMetadataDao(testMongoDatabase, idGenerator);
 
         EMNeuronMetadata testEmNeuron = new EMNeuronMetadata();
         testDao.save(testEmNeuron);

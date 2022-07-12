@@ -12,8 +12,8 @@ public class FileDataSerializer extends JsonSerializer<FileData> {
     @Override
     public void serialize(FileData value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if (value == null) {
-            gen.writeNull();
-        } if (value.getDataType() == FileData.FileDataType.zipEntry) {
+            serializers.defaultSerializeNull(gen);
+        } else if (value.getDataType() == FileData.FileDataType.zipEntry) {
             gen.writeStartObject();
             gen.writeStringField("dataType", value.getDataType().toString());
             gen.writeStringField("fileName", value.getFileName());
