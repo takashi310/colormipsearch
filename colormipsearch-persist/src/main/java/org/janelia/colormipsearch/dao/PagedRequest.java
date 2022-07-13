@@ -14,32 +14,36 @@ public class PagedRequest {
         return firstPageOffset;
     }
 
-    public void setFirstPageOffset(long firstPageOffset) {
+    public PagedRequest setFirstPageOffset(long firstPageOffset) {
         this.firstPageOffset = firstPageOffset;
+        return this;
     }
 
     public long getPageNumber() {
         return pageNumber;
     }
 
-    public void setPageNumber(long pageNumber) {
+    public PagedRequest setPageNumber(long pageNumber) {
         this.pageNumber = pageNumber;
+        return this;
     }
 
     public int getPageSize() {
         return pageSize;
     }
 
-    public void setPageSize(int pageSize) {
+    public PagedRequest setPageSize(int pageSize) {
         this.pageSize = pageSize;
+        return this;
     }
 
     public List<SortCriteria> getSortCriteria() {
         return sortCriteria;
     }
 
-    public void setSortCriteria(List<SortCriteria> sortCriteria) {
+    public PagedRequest setSortCriteria(List<SortCriteria> sortCriteria) {
         this.sortCriteria = sortCriteria;
+        return this;
     }
 
     public long getOffset() {

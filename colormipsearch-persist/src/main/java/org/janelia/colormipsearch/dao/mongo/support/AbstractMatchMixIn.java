@@ -1,6 +1,9 @@
 package org.janelia.colormipsearch.dao.mongo.support;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;

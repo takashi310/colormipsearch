@@ -38,6 +38,11 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
             return this;
         }
 
+        public Builder<N> publishedName(String name) {
+            n.setPublishedName(name);
+            return this;
+        }
+
         public Builder<N> library(String library) {
             n.setLibraryName(library);
             return this;
