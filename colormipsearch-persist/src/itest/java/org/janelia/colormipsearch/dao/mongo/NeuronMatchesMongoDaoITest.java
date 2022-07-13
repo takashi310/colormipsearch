@@ -17,7 +17,10 @@ import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.FileData;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.junit.After;
@@ -48,10 +51,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     public void persistCDMatchWithDummyImages() {
         CDMatch<EMNeuronMetadata, LMNeuronMetadata> testCDMatch =
                 createTestCDMatch(
-                        new AbstractNeuronMetadata.Builder<>(new EMNeuronMetadata())
+                        new AbstractNeuronMetadata.Builder<>(EMNeuronMetadata::new)
                                 .entityId(10)
                                 .get(),
-                        new AbstractNeuronMetadata.Builder<>(new LMNeuronMetadata())
+                        new AbstractNeuronMetadata.Builder<>(LMNeuronMetadata::new)
                                 .entityId(20)
                                 .get(),
                         113,
@@ -148,15 +151,23 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     }
 
     private Pair<EMNeuronMetadata, LMNeuronMetadata> createMatchingImages(NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao) {
-        EMNeuronMetadata emNeuronMetadata = new AbstractNeuronMetadata.Builder<>(new EMNeuronMetadata())
+        EMNeuronMetadata emNeuronMetadata = new AbstractNeuronMetadata.Builder<>(EMNeuronMetadata::new)
                 .id("123232232423232")
                 .publishedName("23232345")
                 .library("FlyEM Hemibrain")
+                .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mask-mipSegmentation"))
+                .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("mask-sourceMip"))
+                .fileData(FileType.ColorDepthMip, FileData.fromString("mask-cdmip"))
+                .fileData(FileType.ColorDepthMipInput, FileData.fromString("mask-cdmipInput"))
                 .get();
-        LMNeuronMetadata lmNeuronMetadata = new AbstractNeuronMetadata.Builder<>(new LMNeuronMetadata())
+        LMNeuronMetadata lmNeuronMetadata = new AbstractNeuronMetadata.Builder<>(LMNeuronMetadata::new)
                 .id("5565655454545432")
                 .publishedName("S1234")
                 .library("Split GAL4")
+                .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("match-mipSegmentation"))
+                .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("match-sourceMip"))
+                .fileData(FileType.ColorDepthMip, FileData.fromString("match-cdmip"))
+                .fileData(FileType.ColorDepthMipInput, FileData.fromString("match-cdmipInput"))
                 .get();
 
         neuronMetadataDao.save(lmNeuronMetadata);
@@ -198,10 +209,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     public void persistPPPMatchTestData() {
         PPPMatch<EMNeuronMetadata, LMNeuronMetadata> testPPPMatch =
                 createTestPPPMatch(
-                        new AbstractNeuronMetadata.Builder<>(new EMNeuronMetadata())
+                        new AbstractNeuronMetadata.Builder<>(EMNeuronMetadata::new)
                                 .entityId(10)
                                 .get(),
-                        new AbstractNeuronMetadata.Builder<>(new LMNeuronMetadata())
+                        new AbstractNeuronMetadata.Builder<>(LMNeuronMetadata::new)
                                 .entityId(20)
                                 .get(),
                         0.5

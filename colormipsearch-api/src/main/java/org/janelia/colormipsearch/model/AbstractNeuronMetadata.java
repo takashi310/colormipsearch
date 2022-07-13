@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -20,8 +21,8 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
         private N n;
 
-        public Builder(N from) {
-            this.n = from.duplicate();
+        public Builder(Supplier<N> source) {
+            this.n = source.get();
         }
 
         public N get() {
@@ -40,6 +41,16 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
         public Builder<N> publishedName(String name) {
             n.setPublishedName(name);
+            return this;
+        }
+
+        public Builder<N> fileData(FileType ft, FileData fd) {
+            n.setNeuronFileData(ft, fd);
+            return this;
+        }
+
+        public Builder<N> computeFileData(ComputeFileType ft, FileData fd) {
+            n.setComputeFileData(ft, fd);
             return this;
         }
 
