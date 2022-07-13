@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io;
 
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 

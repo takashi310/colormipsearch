@@ -26,7 +26,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.cmd.io.IOUtils;
+import org.janelia.colormipsearch.io.fs.FSUtils;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ResultMatches;
@@ -75,7 +75,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
     @Override
     void execute() {
         Path outputPath = Paths.get(args.commonArgs.outputDir, args.schemasOutput);
-        IOUtils.createDirs(outputPath);
+        FSUtils.createDirs(outputPath);
         try {
             JacksonModule module = new JacksonModule();
             SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
@@ -125,7 +125,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                             LMNeuronMetadata,
                             CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
             writeSchemaToFile(cdsMatchesSchema,
-                    IOUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
+                    FSUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
 
             JsonNode pppMatchesSchema =
                     generator.generateSchema(new TypeReference<ResultMatches<
@@ -133,7 +133,7 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                             LMNeuronMetadata,
                             PPPMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
             writeSchemaToFile(pppMatchesSchema,
-                    IOUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
+                    FSUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
 
         } catch (Exception e) {
             LOG.error("Error generating schema", e);

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io.fs;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.janelia.colormipsearch.io.CDSDataInputGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

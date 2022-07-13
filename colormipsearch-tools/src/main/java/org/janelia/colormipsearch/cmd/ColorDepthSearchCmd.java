@@ -23,11 +23,11 @@ import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
-import org.janelia.colormipsearch.cmd.io.CDMIPsReader;
-import org.janelia.colormipsearch.cmd.io.IOUtils;
-import org.janelia.colormipsearch.cmd.io.JSONCDMIPsReader;
-import org.janelia.colormipsearch.cmd.io.JSONCDSResultsWriter;
-import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
+import org.janelia.colormipsearch.io.CDMIPsReader;
+import org.janelia.colormipsearch.io.fs.FSUtils;
+import org.janelia.colormipsearch.io.fs.JSONCDMIPsReader;
+import org.janelia.colormipsearch.io.fs.JSONCDSResultsWriter;
+import org.janelia.colormipsearch.io.ResultMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -185,7 +185,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private void saveCDSParameters(ColorMIPSearch colorMIPSearch, Path outputDir, String fname) {
         File outputFile;
         if (outputDir != null && StringUtils.isNotBlank(fname)) {
-            IOUtils.createDirs(outputDir);
+            FSUtils.createDirs(outputDir);
             outputFile = outputDir.resolve(fname).toFile();
         } else {
             outputFile = null;

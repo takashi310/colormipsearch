@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io.fs;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,8 +15,11 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class IOUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(IOUtils.class);
+/**
+ * FileSystem utils for creating directories, listing files, etc.
+ */
+public class FSUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(FSUtils.class);
 
     public static void createDirs(@Nullable Path... dirs) {
         for (Path dir : dirs) {

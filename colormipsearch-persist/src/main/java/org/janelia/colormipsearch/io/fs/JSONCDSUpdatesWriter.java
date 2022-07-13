@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io.fs;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import org.janelia.colormipsearch.io.ResultMatchesUpdatesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io.fs;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +83,7 @@ public class JSONReadWriteTest {
         checkResultFiles(CDMatches, em2lmDir, m -> m.getMaskImage().getId());
         checkResultFiles(CDMatches, lm2emDir, m -> m.getMatchedImage().getId());
 
-        IOUtils.getFiles(em2lmDir.toString(), 0, -1)
+        FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile = em2lmMatchesReader.readCDMatches(f);
                     assertTrue(matchesFromFile.size() > 0);

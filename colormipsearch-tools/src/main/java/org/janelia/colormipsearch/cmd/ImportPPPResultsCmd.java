@@ -30,8 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cmd.io.JSONPPPResultsWriter;
-import org.janelia.colormipsearch.cmd.io.ResultMatchesWriter;
+import org.janelia.colormipsearch.io.fs.JSONPPPResultsWriter;
+import org.janelia.colormipsearch.io.ResultMatchesWriter;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;

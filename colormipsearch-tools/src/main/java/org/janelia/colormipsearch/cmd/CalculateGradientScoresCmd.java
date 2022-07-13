@@ -24,11 +24,11 @@ import org.janelia.colormipsearch.cds.CombinedMatchScore;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
-import org.janelia.colormipsearch.cmd.io.CDMatchesReader;
-import org.janelia.colormipsearch.cmd.io.IOUtils;
-import org.janelia.colormipsearch.cmd.io.JSONCDSUpdatesWriter;
-import org.janelia.colormipsearch.cmd.io.JSONFileCDMatchesReader;
-import org.janelia.colormipsearch.cmd.io.ResultMatchesUpdatesWriter;
+import org.janelia.colormipsearch.io.CDMatchesReader;
+import org.janelia.colormipsearch.io.fs.FSUtils;
+import org.janelia.colormipsearch.io.fs.JSONCDSUpdatesWriter;
+import org.janelia.colormipsearch.io.fs.JSONFileCDMatchesReader;
+import org.janelia.colormipsearch.io.ResultMatchesUpdatesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIP;
@@ -153,7 +153,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> CDMatchesReader<M, T> getCDMatchesReader(List<ListArg> matchesArg) {
         List<String> filesToProcess = matchesArg.stream()
-                .flatMap(arg -> IOUtils.getFiles(arg.input, arg.offset, arg.length).stream())
+                .flatMap(arg -> FSUtils.getFiles(arg.input, arg.offset, arg.length).stream())
                 .collect(Collectors.toList());
         // for now only handle JSON file input but in the future will handle DB data as well
         return new JSONFileCDMatchesReader<>(filesToProcess, mapper);

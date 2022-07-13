@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.cmd.io;
+package org.janelia.colormipsearch.io.fs;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -26,7 +26,7 @@ public class AbstractJSONCDSWriter<M extends AbstractNeuronMetadata, T extends A
             List<ResultMatches<M1, T1, CDMatch<M1, T1>>> cdsMatchesList,
             Path outputDir) {
         long startTime = System.currentTimeMillis();
-        IOUtils.createDirs(outputDir);
+        FSUtils.createDirs(outputDir);
         LOG.info("Write {} file results to {}", cdsMatchesList.size(), outputDir);
         cdsMatchesList.stream().parallel()
                 .forEach(cdsMatches -> writeSearchResults(cdsMatches, outputDir));
@@ -38,7 +38,7 @@ public class AbstractJSONCDSWriter<M extends AbstractNeuronMetadata, T extends A
             Path outputDir) {
         JsonOutputHelper.writeToJSONFile(
                 cdsMatches,
-                IOUtils.getOutputFile(outputDir, new File(cdsMatches.getKey().getId() + ".json")),
+                FSUtils.getOutputFile(outputDir, new File(cdsMatches.getKey().getId() + ".json")),
                 jsonWriter);
     }
 }
