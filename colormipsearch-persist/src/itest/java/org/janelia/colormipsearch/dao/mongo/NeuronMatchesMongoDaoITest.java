@@ -179,7 +179,8 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                             lmNeuronSelector,
                             emNeuronSelector,
                             new PagedRequest()).getResultList());
-
+            assertEquals(nTestMatches, testDao.countNeuronMatches(emNeuronSelector, lmNeuronSelector));
+            assertEquals(0, testDao.countNeuronMatches(lmNeuronSelector, emNeuronSelector));
         } finally {
             deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
         }

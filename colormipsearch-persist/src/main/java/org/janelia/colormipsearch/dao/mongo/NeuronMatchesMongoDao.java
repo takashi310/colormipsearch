@@ -103,7 +103,21 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         );
     }
 
+    @Override
+    public long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector) {
+        return countAggregate(createQueryPipeline(NO_FILTER, maskSelector, targetSelector));
+    }
+
     private List<R> findNeuronMatches(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter, Bson sortCriteria, long offset, int length) {
+        return aggregateAsList(
+                createQueryPipeline(matchFilter, maskImageFilter, matchedImageFilter),
+                sortCriteria,
+                offset,
+                length,
+                getEntityType());
+    }
+
+    private List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
         List<Bson> pipeline = new ArrayList<>();
 
         pipeline.add(Aggregates.match(matchFilter));
@@ -125,12 +139,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         pipeline.add(Aggregates.match(getMatchFilter("maskImage", maskImageFilter)));
         pipeline.add(Aggregates.match(getMatchFilter("image", matchedImageFilter)));
 
-        return aggregateAsList(
-                pipeline,
-                sortCriteria,
-                offset,
-                length,
-                getEntityType());
+        return pipeline;
     }
 
     private Bson getMatchFilter(String fieldQualifier, NeuronSelector neuronSelector) {

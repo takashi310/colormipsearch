@@ -7,5 +7,6 @@ public interface NeuronMatchesDao<M extends AbstractNeuronMetadata,
                                   T extends AbstractNeuronMetadata,
                                   R extends AbstractMatch<M, T>> extends Dao<R> {
 
+    long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector);
     PagedResult<R> findNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, PagedRequest pageRequest);
 }
