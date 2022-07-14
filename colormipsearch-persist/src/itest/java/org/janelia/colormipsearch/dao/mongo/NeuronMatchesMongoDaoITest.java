@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
+import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractMatch;
@@ -135,6 +136,55 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
         }
     }
 
+    @Test
+    public void findCDMatchesUsingNeuronSelectors() {
+        NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao =
+                TestDBUtils.createNeuronMetadataDao(testMongoDatabase, idGenerator);
+        Pair<EMNeuronMetadata, LMNeuronMetadata> neuronImages = createMatchingImages(neuronMetadataDao);
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+                TestDBUtils.createNeuronMatchesDao(testMongoDatabase, idGenerator);
+        int nTestMatches = 27;
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, testDao);
+        try {
+            int pageSize = 5;
+            NeuronSelector emNeuronSelector = new NeuronSelector()
+                    .setLibraryName("FlyEM Hemibrain")
+                    .addMipID("123232232423232")
+                    .addName("23232345");
+            NeuronSelector lmNeuronSelector = new NeuronSelector()
+                    .setLibraryName("Split GAL4")
+                    .addMipID("5565655454545432")
+                    .addName("S1234");
+            for (int i = 0; i < nTestMatches; i += pageSize) {
+                int page = i / pageSize;
+                PagedRequest pagedRequest = new PagedRequest().setPageNumber(page).setPageSize(pageSize);
+                retrieveAndCompareCDMatcheshWithImages(
+                        testCDMatches.subList(i, Math.min(testCDMatches.size(), i + pageSize)),
+                        ms -> testDao.findNeuronMatches(
+                                emNeuronSelector,
+                                lmNeuronSelector,
+                                pagedRequest).getResultList());
+            }
+            // retrieve all
+            retrieveAndCompareCDMatcheshWithImages(
+                    testCDMatches,
+                    ms -> testDao.findNeuronMatches(
+                            emNeuronSelector,
+                            lmNeuronSelector,
+                            new PagedRequest()).getResultList());
+            // retrieve none
+            retrieveAndCompareCDMatcheshWithImages(
+                    Collections.emptyList(),
+                    ms -> testDao.findNeuronMatches(
+                            lmNeuronSelector,
+                            emNeuronSelector,
+                            new PagedRequest()).getResultList());
+
+        } finally {
+            deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
+        }
+    }
+
     private void verifyMultipleCDMatcheshWithImages(int nTestMatches,
                                                     NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao,
                                                     Function<List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>,
@@ -202,6 +252,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
             assertEquals(testCDMatch.getEntityId(), persistedCDMatch.getEntityId());
             assertEquals(testCDMatch.getMaskImage(), persistedCDMatch.getMaskImage());
             assertEquals(testCDMatch.getMatchedImage(), persistedCDMatch.getMatchedImage());
+            assertEquals(testCDMatch.getCreatedDate(), persistedCDMatch.getCreatedDate());
         }
     }
 

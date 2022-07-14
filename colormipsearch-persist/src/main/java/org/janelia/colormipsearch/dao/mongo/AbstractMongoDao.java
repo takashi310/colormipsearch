@@ -108,8 +108,8 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     Bson createBsonSortCriteria(List<SortCriteria> sortCriteria, List<SortCriteria> additionalCriteria) {
         Bson bsonSortCriteria = null;
         Map<String, Object> sortCriteriaAsMap = Stream.of(sortCriteria)
-                .filter(lsc -> CollectionUtils.isNotEmpty(lsc))
-                .flatMap(lsc -> lsc.stream())
+                .filter(CollectionUtils::isNotEmpty)
+                .flatMap(Collection::stream)
                 .filter(sc -> StringUtils.isNotBlank(sc.getField()))
                 .collect(Collectors.toMap(
                         SortCriteria::getField,

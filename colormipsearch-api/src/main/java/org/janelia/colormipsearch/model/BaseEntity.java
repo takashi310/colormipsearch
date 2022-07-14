@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -16,6 +18,10 @@ public interface BaseEntity {
     default String getEntityName() {
         return getClass().getSimpleName();
     }
+
+    Date getCreatedDate();
+
+    void setCreatedDate(Date createdDate);
 
     /**
      * This is in order to serialize the JSON type property. When entities have generics the class property is not serialized

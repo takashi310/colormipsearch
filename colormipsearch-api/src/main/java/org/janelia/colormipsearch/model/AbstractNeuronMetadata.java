@@ -198,6 +198,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
         AbstractNeuronMetadata that = (AbstractNeuronMetadata) o;
 
         return new EqualsBuilder()
+                .appendSuper(super.equals(o))
                 .append(id, that.id)
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage), that.getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .isEquals();
@@ -206,6 +207,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
+                .appendSuper(super.hashCode())
                 .append(id)
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .toHashCode();
