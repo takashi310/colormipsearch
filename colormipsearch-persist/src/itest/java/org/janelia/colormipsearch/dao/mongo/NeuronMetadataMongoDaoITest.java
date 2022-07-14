@@ -12,6 +12,7 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,18 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         AbstractNeuronMetadata persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
+    }
+
+    @Test
+    public void persistLmNeuron() {
+        LMNeuronMetadata testLmNeuron = createTestNeuron(
+                LMNeuronMetadata::new,
+                "flylight_mcfo",
+                "123445");
+        testDao.save(testLmNeuron);
+        AbstractNeuronMetadata persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
+        assertEquals(testLmNeuron, persistedLmNeuron);
+        assertNotSame(testLmNeuron, persistedLmNeuron);
     }
 
     private <N extends AbstractNeuronMetadata> N createTestNeuron(Supplier<N> neuronGenerator,
