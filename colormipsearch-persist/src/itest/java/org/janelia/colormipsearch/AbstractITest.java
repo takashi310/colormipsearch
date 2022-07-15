@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
 
 public class AbstractITest {
@@ -16,6 +17,7 @@ public class AbstractITest {
     }
 
     protected static String getTestProperty(String key, String defaultValue) {
-        return ITEST_CONFIG.getProperty(key, defaultValue);
+        String value = ITEST_CONFIG.getProperty(key);
+        return StringUtils.defaultIfBlank(value, defaultValue);
     }
 }

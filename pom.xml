@@ -35,8 +35,11 @@
         <profile>
             <id>itest</id>
             <properties>
-                <db.url>mongodb://localhost:27017</db.url>
+                <db.url>mongodb://e03u04:27017</db.url>
                 <db.name>${user.name}_neuronbridge_test</db.name>
+                <db.user/>
+                <db.password/>
+                <db.replicaset/>
             </properties>
             <build>
                 <plugins>
