@@ -33,12 +33,6 @@
             </properties>
         </profile>
         <profile>
-            <id>tmpdev</id>
-            <build>
-                <directory>target-dev</directory>
-            </build>
-        </profile>
-        <profile>
             <id>itest</id>
             <properties>
                 <db.url>mongodb://localhost:27017</db.url>
