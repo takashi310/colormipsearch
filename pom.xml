@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <!-- build properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jaxrs.jersey.version>2.29.1</jaxrs.jersey.version>
         <scopes.provided>provided</scopes.provided>
@@ -19,6 +20,9 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <jackson.version>2.13.3</jackson.version>
         <slf4j.version>1.7.29</slf4j.version>
+        <!-- project properties-->
+        <db.url>mongodb://localhost:27017</db.url>
+        <db.name>neuronbridge</db.name>
     </properties>
 
     <profiles>
@@ -29,15 +33,42 @@
             </properties>
         </profile>
         <profile>
-            <id>dev</id>
+            <id>tmpdev</id>
             <build>
                 <directory>target-dev</directory>
             </build>
         </profile>
         <profile>
             <id>itest</id>
+            <properties>
+                <db.url>mongodb://localhost:27017</db.url>
+                <db.name>${user.name}_neuronbridge_test</db.name>
+            </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-integration-test-resources</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/itest/resources</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>build-helper-maven-plugin</artifactId>
@@ -83,10 +114,20 @@
                                 </configuration>
                             </execution>
                             <execution>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>2.22.2</version>
+                        <executions>
+                            <execution>
                                 <id>integration-tests</id>
                                 <phase>integration-test</phase>
                                 <goals>
-                                    <goal>test</goal>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
                                 </goals>
                                 <configuration>
                                     <skipTests>false</skipTests>
@@ -303,6 +344,12 @@
     </distributionManagement>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

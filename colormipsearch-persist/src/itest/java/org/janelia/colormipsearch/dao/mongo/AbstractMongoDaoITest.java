@@ -1,21 +1,13 @@
 package org.janelia.colormipsearch.dao.mongo;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
 import org.janelia.colormipsearch.AbstractITest;
 import org.janelia.colormipsearch.dao.Dao;
-import org.janelia.colormipsearch.dao.mongo.support.RegistryHelper;
+import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
 import org.janelia.colormipsearch.dao.support.TimebasedIdGenerator;
 import org.janelia.colormipsearch.model.BaseEntity;
@@ -30,15 +22,21 @@ public abstract class AbstractMongoDaoITest extends AbstractITest {
 
     @BeforeClass
     public static void setUpMongoClient() {
-        CodecRegistry codecRegistry = RegistryHelper.createCodecRegistry();
-        MongoClientSettings.Builder mongoClientSettingsBuilder = MongoClientSettings.builder()
-                .codecRegistry(CodecRegistries.fromRegistries(
-                        MongoClientSettings.getDefaultCodecRegistry(),
-                        codecRegistry))
-                .applyToConnectionPoolSettings(builder -> builder.maxConnectionIdleTime(60, TimeUnit.SECONDS))
-                .applyConnectionString(new ConnectionString(getTestProperty("MongoDB.ConnectionURL", "mongodb://localhost:27017")))
-                ;
-        testMongoClient = MongoClients.create(mongoClientSettingsBuilder.build());
+        testMongoClient = MongoDBHelper.createMongoClient(
+                getTestProperty("MongoDB.ConnectionURL", "mongodb://localhost:27017"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+        );
     }
 
     @Before
