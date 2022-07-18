@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io.fs;
+package org.janelia.colormipsearch.dataio.fs;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;

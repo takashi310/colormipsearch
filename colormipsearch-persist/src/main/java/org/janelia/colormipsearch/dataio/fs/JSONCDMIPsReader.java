@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io.fs;
+package org.janelia.colormipsearch.dataio.fs;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,7 +8,8 @@ import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.janelia.colormipsearch.io.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.InputParam;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +23,17 @@ public class JSONCDMIPsReader implements CDMIPsReader {
         this.mapper = mapper;
     }
 
-    public List<? extends AbstractNeuronMetadata> readMIPs(String library, long offset, int length) {
+    public List<? extends AbstractNeuronMetadata> readMIPs(InputParam inputMipsParam) {
         try {
             LOG.info("Reading {} items from {} starting at {}",
-                    (length > 0 ? String.valueOf(length) : "all"), library, offset);
+                    (inputMipsParam.hasSize() ? String.valueOf(inputMipsParam.getSize()) : "all"), inputMipsParam.getValue(),
+                    inputMipsParam.getOffset());
             List<? extends AbstractNeuronMetadata> content = mapper.readValue(
-                    new File(library),
+                    new File(inputMipsParam.getValue()),
                     new TypeReference<List<? extends AbstractNeuronMetadata>>() {});
-            int from = offset > 0 ? (int) offset : 0;
-            int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
+            int from = (int) inputMipsParam.getOffset();
+            int size = inputMipsParam.hasSize() ? inputMipsParam.getSize() : content.size();
+            int to = Math.min(from + size, content.size());
             if (from > 0 || to < content.size()) {
                 return content.subList(from, to);
             } else {

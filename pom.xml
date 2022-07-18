@@ -35,8 +35,8 @@
         <profile>
             <id>itest</id>
             <properties>
-                <db.url>mongodb://e03u04:27017</db.url>
-                <db.name>${user.name}_neuronbridge_test</db.name>
+                <db.url>mongodb://localhost:27017</db.url>
+                <db.name>neuronbridge_test</db.name>
                 <db.user/>
                 <db.password/>
                 <db.replicaset/>
@@ -111,20 +111,10 @@
                                 </configuration>
                             </execution>
                             <execution>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>2.22.2</version>
-                        <executions>
-                            <execution>
                                 <id>integration-tests</id>
                                 <phase>integration-test</phase>
                                 <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
+                                    <goal>test</goal>
                                 </goals>
                                 <configuration>
                                     <skipTests>false</skipTests>

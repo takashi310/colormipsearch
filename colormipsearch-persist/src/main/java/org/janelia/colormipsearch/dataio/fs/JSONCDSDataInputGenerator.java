@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io.fs;
+package org.janelia.colormipsearch.dataio.fs;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,9 +12,11 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.janelia.colormipsearch.io.CDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.CDSDataInputGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +26,7 @@ public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(JSONCDSDataInputGenerator.class);
 
     private final ObjectMapper mapper;
-    private final Path outputPath;
-    private final String outputFileName;
-    private final int libraryFromIndex;
-    private final int libraryToIndex;
-    private final boolean append;
-    private JsonGenerator gen;
+    private final JsonGenerator gen;
 
     public JSONCDSDataInputGenerator(Path outputPath,
                                      String outputFileName,
@@ -37,16 +34,14 @@ public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
                                      int libraryToIndex,
                                      boolean append,
                                      ObjectMapper mapper) {
+        String outputName = libraryFromIndex > 0
+                ? outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json"
+                : outputFileName + ".json";
         this.mapper = mapper;
-        this.outputPath = outputPath;
-        this.outputFileName = outputFileName;
-        this.libraryFromIndex = libraryFromIndex;
-        this.libraryToIndex = libraryToIndex;
-        this.append = append;
+        this.gen = createJsonGenerator(outputPath, outputName, append);
     }
 
     public CDSDataInputGenerator prepare() {
-        gen = createJsonGenerator(outputPath, outputFileName, libraryFromIndex, libraryToIndex);
         return this;
     }
 
@@ -70,15 +65,8 @@ public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
     }
 
     private JsonGenerator createJsonGenerator(Path outputPath,
-                                              String outputFileName,
-                                              int libraryFromIndex,
-                                              int libraryToIndex) {
-        String outputName;
-        if (libraryFromIndex > 0) {
-            outputName = outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json";
-        } else {
-            outputName = outputFileName + ".json";
-        }
+                                              String outputName,
+                                              boolean append) {
         try {
             Files.createDirectories(outputPath);
         } catch (Exception e) {
@@ -86,7 +74,7 @@ public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
         }
         Path outputFilePath = outputPath.resolve(outputName);
         LOG.info("Write color depth MIPs to {}", outputFilePath);
-        if (Files.exists(outputFilePath) && this.append) {
+        if (Files.exists(outputFilePath) && append) {
             return openOutputForAppend(outputFilePath.toFile());
         } else {
             return openOutput(outputFilePath.toFile());

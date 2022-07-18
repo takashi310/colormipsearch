@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io;
+package org.janelia.colormipsearch.dataio;
 
 import java.util.List;
 

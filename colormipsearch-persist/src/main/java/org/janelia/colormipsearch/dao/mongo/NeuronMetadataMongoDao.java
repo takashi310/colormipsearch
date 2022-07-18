@@ -1,9 +1,21 @@
 package org.janelia.colormipsearch.dao.mongo;
 
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Indexes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.UnwindOptions;
+
+import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
+import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.PagedRequest;
+import org.janelia.colormipsearch.dao.PagedResult;
+import org.janelia.colormipsearch.dao.mongo.support.NeuronSelectionHelper;
+import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -16,5 +28,26 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
     @Override
     protected void createDocumentIndexes() {
         mongoCollection.createIndex(Indexes.ascending("class"));
+        mongoCollection.createIndex(Indexes.ascending("libraryName"));
+        mongoCollection.createIndex(Indexes.ascending("publishedName"));
+        mongoCollection.createIndex(Indexes.ascending("id"));
+    }
+
+    @Override
+    public PagedResult<N> findNeuronMatches(NeuronSelector neuronSelector, PagedRequest pageRequest) {
+        return new PagedResult<>(
+                pageRequest,
+                aggregateAsList(
+                        createQueryPipeline(NeuronSelectionHelper.getNeuronMatchFilter(null, neuronSelector)),
+                        createBsonSortCriteria(pageRequest.getSortCriteria()),
+                        pageRequest.getOffset(),
+                        pageRequest.getPageSize(),
+                        getEntityType()
+                )
+        );
+    }
+
+    private List<Bson> createQueryPipeline(Bson matchFilter) {
+        return Collections.singletonList(matchFilter);
     }
 }

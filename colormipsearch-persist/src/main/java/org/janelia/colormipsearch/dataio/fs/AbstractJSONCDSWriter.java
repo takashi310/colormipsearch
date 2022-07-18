@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io.fs;
+package org.janelia.colormipsearch.dataio.fs;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import org.janelia.colormipsearch.io.JsonOutputHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.ResultMatches;
@@ -18,11 +17,11 @@ public class AbstractJSONCDSWriter<M extends AbstractNeuronMetadata, T extends A
 
     protected final ObjectWriter jsonWriter;
 
-    protected AbstractJSONCDSWriter(ObjectWriter jsonWriter) {
+    public AbstractJSONCDSWriter(ObjectWriter jsonWriter) {
         this.jsonWriter = jsonWriter;
     }
 
-    protected <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(
+    <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata> void writeAllSearchResults(
             List<ResultMatches<M1, T1, CDMatch<M1, T1>>> cdsMatchesList,
             Path outputDir) {
         long startTime = System.currentTimeMillis();

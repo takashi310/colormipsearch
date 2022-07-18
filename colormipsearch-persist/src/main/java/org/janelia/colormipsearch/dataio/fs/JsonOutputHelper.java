@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.io;
+package org.janelia.colormipsearch.dataio.fs;
 
 import java.io.File;
 import java.io.IOException;

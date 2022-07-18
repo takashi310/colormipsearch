@@ -26,7 +26,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.io.fs.FSUtils;
+import org.janelia.colormipsearch.dataio.fs.FSUtils;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ResultMatches;

@@ -20,6 +20,10 @@ class CommonArgs {
     @Parameter(names = "--no-pretty-print", description = "Do not pretty print the results", arity = 0)
     boolean noPrettyPrint = false;
 
+    @Parameter(names = {"--use-fs", "-fs"},
+               description = "If true use file system persistence, otherwise by default use database", arity = 0)
+    boolean withFSPersistence = false;
+
     @Parameter(names = {"--help", "-h"}, description = "Display the help message", help = true, arity = 0)
     boolean displayHelpMessage = false;
 

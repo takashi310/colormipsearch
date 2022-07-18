@@ -8,9 +8,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,10 +37,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.io.CDSDataInputGenerator;
-import org.janelia.colormipsearch.io.fs.JSONCDSDataInputGenerator;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
+import org.janelia.colormipsearch.dataio.CDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.db.DBCDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSDataInputGenerator;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -87,11 +90,11 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
         String alignmentSpace = "JRC2018_Unisex_20x_HR";
 
-        @Parameter(names = {"--libraries", "-l"},
-                description = "Which libraries to extract such as {flyem_hemibrain, flylight_gen1_gal4, flylight_gen1_lexa, flylight_gen1_mcfo_case_1, flylight_splitgal4_drivers}. " +
+        @Parameter(names = {"--library", "-l"},
+                description = "Which library to extract such as {flyem_hemibrain, flylight_gen1_gal4, flylight_gen1_lexa, flylight_gen1_mcfo_case_1, flylight_splitgal4_drivers}. " +
                         "The format is <libraryName>[:<offset>[:<length>]]",
-                required = true, variableArity = true, converter = ListArg.ListArgConverter.class)
-        List<ListArg> libraries;
+                required = true, converter = ListArg.ListArgConverter.class)
+        ListArg library;
 
         @Parameter(names = {"--releases", "-r"},
                 description = "Which specific releases to be included.",
@@ -166,6 +169,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         List<String> validate() {
             return Collections.emptyList();
         }
+
     }
 
     static class LibraryPathsArgs {
@@ -196,7 +200,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                ;
+        ;
     }
 
     @Override
@@ -209,32 +213,25 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         Map<String, List<LibraryVariantArg>> libraryVariants = getLibraryVariants();
         Set<? extends AbstractNeuronMetadata> excludedNeurons = getExcludedNeurons();
 
-        args.libraries.stream()
-                .map(larg -> {
-                    LibraryPathsArgs lpaths = new LibraryPathsArgs();
-                    lpaths.library = larg;
-                    lpaths.libraryVariants = libraryVariants.get(larg.input);
-                    return lpaths;
-                })
-                .forEach(lpaths -> {
-                    if (StringUtils.isNotBlank(args.dataServiceURL)) {
-                        Client httpClient = HttpHelper.createClient();
-                        Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(httpClient, args.libraryMappingURL);
-                        WebTarget serverEndpoint = httpClient.target(args.dataServiceURL);
-                        createColorDepthSearchInputData(
-                                serverEndpoint,
-                                lpaths,
-                                getAllVariantsForColorDepthInput(),
-                                excludedNeurons,
-                                libraryNameMapping::get,
-                                getNeuronFileURLMapper(),
-                                Paths.get(args.commonArgs.outputDir),
-                                args.outputFileName
-                        );
-                    } else {
-                        // generate the input in offline mode
-                    }
-                });
+        LibraryPathsArgs lpaths = new LibraryPathsArgs();
+        lpaths.library = args.library;
+        lpaths.libraryVariants = libraryVariants.get(lpaths.getLibraryName());
+
+        if (StringUtils.isNotBlank(args.dataServiceURL)) {
+            Client httpClient = HttpHelper.createClient();
+            Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(httpClient, args.libraryMappingURL);
+            WebTarget serverEndpoint = httpClient.target(args.dataServiceURL);
+            createColorDepthSearchInputData(
+                    serverEndpoint,
+                    lpaths,
+                    getAllVariantsForColorDepthInput(),
+                    excludedNeurons,
+                    libraryNameMapping::get,
+                    getNeuronFileURLMapper()
+            );
+        } else {
+            // generate the input in offline mode
+        }
     }
 
     private Map<String, List<LibraryVariantArg>> getLibraryVariants() {
@@ -289,9 +286,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                                                  Set<String> computationInputVariantTypes,
                                                  Set<? extends AbstractNeuronMetadata> excludedNeurons,
                                                  Function<String, String> libraryNamesMapping,
-                                                 Function<String, String> neuronFileURLMapping,
-                                                 Path outputPath,
-                                                 String outputFilename) {
+                                                 Function<String, String> neuronFileURLMapping) {
 
         int cdmsCount = countColorDepthMips(
                 serverEndpoint,
@@ -318,18 +313,11 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             }
         };
 
-        CDSDataInputGenerator gen = new JSONCDSDataInputGenerator(
-                outputPath,
-                StringUtils.defaultIfBlank(outputFilename, libraryPaths.getLibraryName()),
-                libraryPaths.library.offset,
-                to,
-                args.appendOutput,
-                mapper)
-                .prepare();
+        CDSDataInputGenerator gen = getCDSInputPersistence();
 
         Optional<LibraryVariantArg> inputLibraryVariantChoice = computationInputVariantTypes.stream()
                 .map(variantType -> libraryPaths.getLibraryVariant(variantType).orElse(null))
-                .filter(lv -> lv != null)
+                .filter(Objects::nonNull)
                 .findFirst()
                 ;
         Pair<FileData.FileDataType, Map<String, List<String>>> inputImages =
@@ -400,7 +388,19 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     );
                     cdmip.setComputeFileData(variantFileType, variantFileData);
                 });
+    }
 
+    private CDSDataInputGenerator getCDSInputPersistence() {
+        if (args.commonArgs.withFSPersistence) {
+            return new JSONCDSDataInputGenerator(args.getOutputDir(),
+                    args.outputFileName,
+                    args.library.offset,
+                    args.library.length,
+                    args.appendOutput,
+                    mapper);
+        } else {
+            return new DBCDSDataInputGenerator();
+        }
     }
 
     private boolean checkLibraries(ColorDepthMIP cdmip, Set<String> includedLibraries, Set<String> excludedLibraries) {

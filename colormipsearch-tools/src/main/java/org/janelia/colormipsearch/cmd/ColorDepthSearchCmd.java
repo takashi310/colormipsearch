@@ -1,8 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -15,19 +12,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
-import org.janelia.colormipsearch.io.CDMIPsReader;
-import org.janelia.colormipsearch.io.fs.FSUtils;
-import org.janelia.colormipsearch.io.fs.JSONCDMIPsReader;
-import org.janelia.colormipsearch.io.fs.JSONCDSResultsWriter;
-import org.janelia.colormipsearch.io.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.CDSParamsWriter;
+import org.janelia.colormipsearch.dataio.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
+import org.janelia.colormipsearch.dataio.db.DBCDSResultsWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSResultsWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -64,6 +63,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         public ColorDepthSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
+
     }
 
     private final ColorDepthSearchArgs args;
@@ -99,7 +99,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void runColorDepthSearch() {
-        CDMIPsReader cdmiPsReader = new JSONCDMIPsReader(mapper);
+        CDMIPsReader cdmiPsReader = getCDMipsPersistence();
         ColorMIPSearchProcessor<M, T> colorMIPSearchProcessor;
         ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider;
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
@@ -126,11 +126,10 @@ public class ColorDepthSearchCmd extends AbstractCmd {
             return;
         }
         // save CDS parameters
-        String masksInputs = inputNames(args.masksInputs);
-        String targetInputs = inputNames(args.librariesInputs);
-        saveCDSParameters(colorMIPSearch,
-                args.getOutputDir(),
-                "masks-" + masksInputs + "-inputs-" + targetInputs + "-cdsParameters.json");
+        getCDSParamsWriter().writeParams(
+                args.masksInputs.stream().map(ListArg::asInputParam).collect(Collectors.toList()),
+                args.librariesInputs.stream().map(ListArg::asInputParam).collect(Collectors.toList()),
+                colorMIPSearch.getCDSParameters());
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
                     args.appName,
@@ -146,21 +145,38 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         }
         try {
             List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            ResultMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = new JSONCDSResultsWriter<>(
-                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.getPerMaskDir(),
-                    args.getPerLibraryDir()
-            );
+            ResultMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSResultsPersistence();
             cdsResultsWriter.write(cdsResults);
         } finally {
             colorMIPSearchProcessor.terminate();
         }
     }
 
-    private String inputNames(List<ListArg> mipsArg) {
-        return mipsArg.stream()
-                .map(ListArg::listArgName)
-                .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
+    private CDMIPsReader getCDMipsPersistence() {
+        if (args.commonArgs.withFSPersistence) {
+            return new JSONCDMIPsReader(mapper);
+        } else {
+            return new DBCDMIPsReader();
+        }
+    }
+
+    private CDSParamsWriter getCDSParamsWriter() {
+        return new JSONCDSParamsWriter(
+                args.getOutputDir(),
+                mapper);
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> ResultMatchesWriter<M, T, CDMatch<M, T>>
+    getCDSResultsPersistence() {
+        if (args.commonArgs.withFSPersistence) {
+            return new DBCDSResultsWriter<>();
+        } else {
+            return new JSONCDSResultsWriter<M, T>(
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    args.getPerMaskDir(),
+                    args.getPerLibraryDir()
+            );
+        }
     }
 
     private List<? extends AbstractNeuronMetadata> readMIPs(CDMIPsReader mipsReader,
@@ -168,10 +184,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                                                             Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
         List<? extends AbstractNeuronMetadata> allMips = mipsArg.stream()
-                .flatMap(libraryInput -> mipsReader.readMIPs(
-                        libraryInput.input,
-                        libraryInput.offset,
-                        libraryInput.length).stream())
+                .flatMap(libraryInput -> mipsReader.readMIPs(ListArg.asInputParam(libraryInput)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
                         filter.contains(neuronMetadata.getPublishedName().toLowerCase()) ||
                         filter.contains(neuronMetadata.getId()))
@@ -180,27 +193,5 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         return length > 0 && length < allMips.size()
                 ? allMips.subList(0, length)
                 : allMips;
-    }
-
-    private void saveCDSParameters(ColorMIPSearch colorMIPSearch, Path outputDir, String fname) {
-        File outputFile;
-        if (outputDir != null && StringUtils.isNotBlank(fname)) {
-            FSUtils.createDirs(outputDir);
-            outputFile = outputDir.resolve(fname).toFile();
-        } else {
-            outputFile = null;
-        }
-        try {
-            if (outputFile != null) {
-                mapper.writerWithDefaultPrettyPrinter().
-                        writeValue(outputFile, colorMIPSearch.getCDSParameters());
-            } else {
-                mapper.writerWithDefaultPrettyPrinter().
-                        writeValue(System.out, colorMIPSearch.getCDSParameters());
-            }
-        } catch (IOException e) {
-            LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
-            throw new IllegalStateException(e);
-        }
     }
 }
