@@ -30,8 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.dataio.fs.JSONPPPResultsWriter;
-import org.janelia.colormipsearch.dataio.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONPPPMatchesWriter;
+import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -160,7 +160,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
                 .forEach(pppMatches -> {
-                    ResultMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppResultsWriter = new JSONPPPResultsWriter<>(
+                    NeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppResultsWriter = new JSONPPPMatchesWriter<>(
                             args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                             args.getOutputDir());
                     pppResultsWriter.write(pppMatches);

@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.janelia.colormipsearch.dataio.CDMatchesReader;
+import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.InputParam;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
@@ -17,22 +18,22 @@ import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONFileCDMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements CDMatchesReader<M, T> {
-    private final List<String> cdMatchResultFiles;
+public class JSONCDSMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements NeuronMatchesReader<M, T, CDMatch<M, T>> {
     private final ObjectMapper mapper;
 
-    public JSONFileCDMatchesReader(List<String> cdMatchResultFiles, ObjectMapper mapper) {
-        this.cdMatchResultFiles = cdMatchResultFiles;
+    public JSONCDSMatchesReader(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
     @Override
-    public List<String> listCDMatchesLocations() {
-        return cdMatchResultFiles;
+    public List<String> listMatchesLocations(List<InputParam> cdMatchInputs) {
+        return cdMatchInputs.stream()
+                .flatMap(arg -> FSUtils.getFiles(arg.getValue(), (int) arg.getOffset(), arg.getSize()).stream())
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<CDMatch<M, T>> readCDMatches(String filename) {
+    public List<CDMatch<M, T>> readMatches(String filename) {
         ResultMatches<M, T, CDMatch<M, T>> cdsResults = readCDSResults(new File(filename));
         return convertCDSResultsToListOfMatches(cdsResults);
     }

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
@@ -24,11 +25,12 @@ import org.janelia.colormipsearch.cds.CombinedMatchScore;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
-import org.janelia.colormipsearch.dataio.CDMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.FSUtils;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSUpdatesWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONFileCDMatchesReader;
-import org.janelia.colormipsearch.dataio.ResultMatchesUpdatesWriter;
+import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
+import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesUpdater;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesReader;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesUpdater;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIP;
@@ -113,10 +115,10 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 loadQueryROIMask(args.queryROIMaskName),
                 excludedRegions
         );
-        CDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> cdMatchesReader = getCDMatchesReader(args.matches);
+        NeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
 
         long startTime = System.currentTimeMillis();
-        List<String> itemsToProcess = cdMatchesReader.listCDMatchesLocations();
+        List<String> itemsToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asInputParam).collect(Collectors.toList()));
         int size = itemsToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         ItemsHandling.partitionCollection(itemsToProcess, args.processingPartitionSize).stream().parallel()
@@ -151,21 +153,33 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> CDMatchesReader<M, T> getCDMatchesReader(List<ListArg> matchesArg) {
-        List<String> filesToProcess = matchesArg.stream()
-                .flatMap(arg -> FSUtils.getFiles(arg.input, arg.offset, arg.length).stream())
-                .collect(Collectors.toList());
-        // for now only handle JSON file input but in the future will handle DB data as well
-        return new JSONFileCDMatchesReader<>(filesToProcess, mapper);
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesReader<M, T, CDMatch<M, T>> getCDMatchesReader() {
+        if (args.commonArgs.withFSPersistence) {
+            return new JSONCDSMatchesReader<>(mapper);
+        } else {
+            return new DBNeuronMatchesReader<>();
+        }
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesUpdater<M, T, CDMatch<M, T>> getCDMatchesUpdater() {
+        if (args.commonArgs.withFSPersistence) {
+            return new JSONCDSMatchesUpdater<>(
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    args.getOutputDir()
+            );
+        } else {
+            return new DBNeuronMatchesUpdater<>();
+        }
+
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
-            CDMatchesReader<M, T> cdsMatchesReader,
+            NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader,
             String cdsMatchesSource,
             Executor executor) {
         LOG.info("Read color depth matches from {}", cdsMatchesSource);
-        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readCDMatches(cdsMatchesSource);
+        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(cdsMatchesSource);
         // select best matches to process
         List<CDMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,
@@ -198,11 +212,14 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
         updateNormalizedScores(matchesWithGradScores);
 
-        ResultMatchesUpdatesWriter<M, T, CDMatch<M, T>> updatesWriter = new JSONCDSUpdatesWriter<>(
-                args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                args.getOutputDir()
-        );
-        updatesWriter.writeUpdates(matchesWithGradScores);
+        NeuronMatchesUpdater<M, T, CDMatch<M, T>> updatesWriter = getCDMatchesUpdater();
+        updatesWriter.writeUpdates(
+                matchesWithGradScores,
+                Arrays.asList(
+                        m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
+                        m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
+                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+                ));
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>

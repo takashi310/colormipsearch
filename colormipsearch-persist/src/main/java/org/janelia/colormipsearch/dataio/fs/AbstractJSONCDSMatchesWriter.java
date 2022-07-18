@@ -12,12 +12,12 @@ import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AbstractJSONCDSWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractJSONCDSWriter.class);
+public class AbstractJSONCDSMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractJSONCDSMatchesWriter.class);
 
     protected final ObjectWriter jsonWriter;
 
-    public AbstractJSONCDSWriter(ObjectWriter jsonWriter) {
+    public AbstractJSONCDSMatchesWriter(ObjectWriter jsonWriter) {
         this.jsonWriter = jsonWriter;
     }
 

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -37,8 +36,8 @@ public class JSONReadWriteTest {
     private static Path lm2emDir;
 
     private ObjectMapper mapper;
-    private JSONCDSResultsWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
-    private JSONFileCDMatchesReader<EMNeuronMetadata, LMNeuronMetadata> em2lmMatchesReader;
+    private JSONCDSMatchessWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
+    private JSONCDSMatchesReader<EMNeuronMetadata, LMNeuronMetadata> em2lmMatchesReader;
 
     @BeforeClass
     public static void createTestDataDir() throws IOException {
@@ -55,12 +54,11 @@ public class JSONReadWriteTest {
     @Before
     public void setUp() {
         mapper = new ObjectMapper();
-        em2lmJsonWriter = new JSONCDSResultsWriter<>(mapper.writerWithDefaultPrettyPrinter(),
+        em2lmJsonWriter = new JSONCDSMatchessWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 em2lmDir,
                 lm2emDir
         );
-        em2lmMatchesReader = new JSONFileCDMatchesReader<>(
-                Collections.emptyList(),
+        em2lmMatchesReader = new JSONCDSMatchesReader<>(
                 mapper
         );
     }
@@ -84,7 +82,7 @@ public class JSONReadWriteTest {
 
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
-                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile = em2lmMatchesReader.readCDMatches(f);
+                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile = em2lmMatchesReader.readMatches(f);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = CDMatches.stream()

@@ -21,12 +21,12 @@ import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSParamsWriter;
-import org.janelia.colormipsearch.dataio.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
-import org.janelia.colormipsearch.dataio.db.DBCDSResultsWriter;
+import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSResultsWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchessWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -145,7 +145,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         }
         try {
             List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            ResultMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSResultsPersistence();
+            NeuronMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSResultsPersistence();
             cdsResultsWriter.write(cdsResults);
         } finally {
             colorMIPSearchProcessor.terminate();
@@ -166,12 +166,12 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> ResultMatchesWriter<M, T, CDMatch<M, T>>
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
     getCDSResultsPersistence() {
         if (args.commonArgs.withFSPersistence) {
-            return new DBCDSResultsWriter<>();
+            return new DBNeuronMatchesWriter<>();
         } else {
-            return new JSONCDSResultsWriter<M, T>(
+            return new JSONCDSMatchessWriter<M, T>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()

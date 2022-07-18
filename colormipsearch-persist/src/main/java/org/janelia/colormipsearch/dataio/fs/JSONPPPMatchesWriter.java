@@ -9,18 +9,18 @@ import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import org.janelia.colormipsearch.dataio.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONPPPResultsWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements ResultMatchesWriter<M, T, PPPMatch<M, T>> {
+public class JSONPPPMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements NeuronMatchesWriter<M, T, PPPMatch<M, T>> {
 
     private final ObjectWriter jsonWriter;
     private final Path outputDir;
 
-    public JSONPPPResultsWriter(ObjectWriter jsonWriter, Path outputDir) {
+    public JSONPPPMatchesWriter(ObjectWriter jsonWriter, Path outputDir) {
         this.jsonWriter = jsonWriter;
         this.outputDir = outputDir;
     }

@@ -7,21 +7,21 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import org.janelia.colormipsearch.dataio.ResultMatchesWriter;
+import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 
-public class JSONCDSResultsWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
-        extends AbstractJSONCDSWriter<M, T>
-        implements ResultMatchesWriter<M, T, CDMatch<M, T>> {
+public class JSONCDSMatchessWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+        extends AbstractJSONCDSMatchesWriter<M, T>
+        implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
 
     private final Path perMasksOutputDir;
     private final Path perMatchesOutputDir;
 
-    public JSONCDSResultsWriter(ObjectWriter jsonWriter,
-                                Path perMasksOutputDir,
-                                Path perMatchesOutputDir) {
+    public JSONCDSMatchessWriter(ObjectWriter jsonWriter,
+                                 Path perMasksOutputDir,
+                                 Path perMatchesOutputDir) {
         super(jsonWriter);
         this.perMatchesOutputDir = perMatchesOutputDir;
         this.perMasksOutputDir = perMasksOutputDir;

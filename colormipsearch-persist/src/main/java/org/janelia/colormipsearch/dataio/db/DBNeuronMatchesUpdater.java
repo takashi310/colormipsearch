@@ -1,0 +1,41 @@
+package org.janelia.colormipsearch.dataio.db;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectWriter;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
+import org.janelia.colormipsearch.dao.NeuronMatchesDao;
+import org.janelia.colormipsearch.dao.support.SetFieldValueHandler;
+import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
+import org.janelia.colormipsearch.dataio.fs.AbstractJSONCDSMatchesWriter;
+import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.results.MatchResultsGrouping;
+
+public class DBNeuronMatchesUpdater<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+        implements NeuronMatchesUpdater<M, T, R> {
+
+    private NeuronMatchesDao<M, T, R> neuronMatchesDao;
+
+    @Override
+    public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
+        for (R match : matches) {
+            Map<String, EntityFieldValueHandler<?>> fieldValueHandlerMap =
+                    fieldSelectors
+                            .stream()
+                            .map(fieldSelector -> fieldSelector.apply(match))
+                            .collect(Collectors.toMap(Pair::getLeft, fld -> new SetFieldValueHandler<>(fld.getRight())));
+            neuronMatchesDao.update(match.getEntityId(), fieldValueHandlerMap);
+        }
+    }
+}
