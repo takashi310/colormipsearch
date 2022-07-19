@@ -36,7 +36,7 @@ public class JSONReadWriteTest {
     private static Path lm2emDir;
 
     private ObjectMapper mapper;
-    private JSONCDSMatchessWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
+    private JSONCDSMatchesWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
     private JSONCDSMatchesReader<EMNeuronMetadata, LMNeuronMetadata> em2lmMatchesReader;
 
     @BeforeClass
@@ -54,7 +54,7 @@ public class JSONReadWriteTest {
     @Before
     public void setUp() {
         mapper = new ObjectMapper();
-        em2lmJsonWriter = new JSONCDSMatchessWriter<>(mapper.writerWithDefaultPrettyPrinter(),
+        em2lmJsonWriter = new JSONCDSMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 em2lmDir,
                 lm2emDir
         );

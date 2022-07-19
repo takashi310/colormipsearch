@@ -30,10 +30,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONPPPMatchesWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
+import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
@@ -156,14 +160,13 @@ public class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
+        NeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatchesWriter =
+                getPPPMatchesWriter();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
                 .forEach(pppMatches -> {
-                    NeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppResultsWriter = new JSONPPPMatchesWriter<>(
-                            args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                            args.getOutputDir());
-                    pppResultsWriter.write(pppMatches);
+                    pppMatchesWriter.write(pppMatches);
                     MDC.remove("PPPFile");
                 });
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
@@ -299,6 +302,17 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             }
         });
         return neuronMatches;
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, PPPMatch<M, T>>
+    getPPPMatchesWriter() {
+        if (args.commonArgs.withFSPersistence) {
+            return new DBNeuronMatchesWriter<>();
+        } else {
+            return new JSONPPPMatchesWriter<>(
+                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    args.getOutputDir());
+        }
     }
 
     private void fillInNeuronMetadata(PPPMatch<EMNeuronMetadata, LMNeuronMetadata> pppMatch) {

@@ -26,7 +26,7 @@ import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchessWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -145,7 +145,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         }
         try {
             List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            NeuronMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSResultsPersistence();
+            NeuronMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSMatchesWriter();
             cdsResultsWriter.write(cdsResults);
         } finally {
             colorMIPSearchProcessor.terminate();
@@ -167,11 +167,11 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
-    getCDSResultsPersistence() {
+    getCDSMatchesWriter() {
         if (args.commonArgs.withFSPersistence) {
             return new DBNeuronMatchesWriter<>();
         } else {
-            return new JSONCDSMatchessWriter<M, T>(
+            return new JSONCDSMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()

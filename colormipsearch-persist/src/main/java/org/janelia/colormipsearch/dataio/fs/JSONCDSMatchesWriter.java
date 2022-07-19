@@ -12,16 +12,16 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 
-public class JSONCDSMatchessWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+public class JSONCDSMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
         extends AbstractJSONCDSMatchesWriter<M, T>
         implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
 
     private final Path perMasksOutputDir;
     private final Path perMatchesOutputDir;
 
-    public JSONCDSMatchessWriter(ObjectWriter jsonWriter,
-                                 Path perMasksOutputDir,
-                                 Path perMatchesOutputDir) {
+    public JSONCDSMatchesWriter(ObjectWriter jsonWriter,
+                                Path perMasksOutputDir,
+                                Path perMatchesOutputDir) {
         super(jsonWriter);
         this.perMatchesOutputDir = perMatchesOutputDir;
         this.perMasksOutputDir = perMasksOutputDir;
