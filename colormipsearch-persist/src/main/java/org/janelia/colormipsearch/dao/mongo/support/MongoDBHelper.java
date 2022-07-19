@@ -17,6 +17,7 @@ import com.mongodb.client.MongoDatabase;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.janelia.colormipsearch.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,34 +46,33 @@ public class MongoDBHelper {
                         codecRegistry))
                 .writeConcern(WriteConcern.JOURNALED)
                 .applyToConnectionPoolSettings(builder -> {
-                            if (connectionsPerHost > 0) {
-                                builder.maxSize(connectionsPerHost);
-                            }
-                            if (maxWaitTimeInSecs > 0) {
-                                builder.maxWaitTime(maxWaitTimeInSecs, TimeUnit.SECONDS);
-                            }
-                            if (maxConnectionIdleTimeInSecs > 0) {
-                                builder.maxConnectionIdleTime(maxConnectionIdleTimeInSecs, TimeUnit.SECONDS);
-                            }
-                            if (maxConnLifeTimeInSecs > 0) {
-                                builder.maxConnectionLifeTime(maxConnLifeTimeInSecs, TimeUnit.SECONDS);
-                            }
-                            if (maxConnecting > 0) {
-                                builder.maxConnecting(maxConnecting);
-                            }
-                        })
+                    if (connectionsPerHost > 0) {
+                        builder.maxSize(connectionsPerHost);
+                    }
+                    if (maxWaitTimeInSecs > 0) {
+                        builder.maxWaitTime(maxWaitTimeInSecs, TimeUnit.SECONDS);
+                    }
+                    if (maxConnectionIdleTimeInSecs > 0) {
+                        builder.maxConnectionIdleTime(maxConnectionIdleTimeInSecs, TimeUnit.SECONDS);
+                    }
+                    if (maxConnLifeTimeInSecs > 0) {
+                        builder.maxConnectionLifeTime(maxConnLifeTimeInSecs, TimeUnit.SECONDS);
+                    }
+                    if (maxConnecting > 0) {
+                        builder.maxConnecting(maxConnecting);
+                    }
+                })
                 .applyToSocketSettings(builder -> {
                     if (connectTimeoutInMillis > 0) {
                         builder.connectTimeout(connectTimeoutInMillis, TimeUnit.MILLISECONDS);
                     }
                 })
-                .applyToSslSettings(builder -> builder.enabled(useSSL))
-                ;
+                .applyToSslSettings(builder -> builder.enabled(useSSL));
         if (StringUtils.isNotBlank(mongoServer)) {
             List<ServerAddress> clusterMembers = Arrays.stream(StringUtils.split(mongoServer, ','))
                     .filter(StringUtils::isNotBlank)
                     .map(ServerAddress::new)
-                            .collect(Collectors.toList());
+                    .collect(Collectors.toList());
             LOG.info("Connect to {}", clusterMembers);
             mongoClientSettingsBuilder.applyToClusterSettings(builder -> builder.hosts(clusterMembers));
         } else {

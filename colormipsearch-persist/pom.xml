@@ -15,6 +15,24 @@
     <version>2.10.0</version>
     <packaging>jar</packaging>
 
+    <properties>
+        <!-- project properties-->
+        <db.url>mongodb://localhost:27017</db.url>
+        <db.server/>
+        <db.name>neuronbridge</db.name>
+        <db.authName/>
+        <db.user/>
+        <db.password/>
+        <db.replicaSet/>
+        <db.useSSL/>
+        <db.connections/>
+        <db.connTimeoutMillis/>
+        <db.maxConnecting/>
+        <db.maxConnectTimeSecs/>
+        <db.maxConnIdleSecs/>
+        <db.maxConnLifeSecs/>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.janelia.colormipsearch</groupId>
@@ -79,4 +97,25 @@
 
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>itest</id>
+            <properties>
+                <db.url>mongodb://localhost:27017</db.url>
+                <db.server/>
+                <db.name>neuronbridge_test</db.name>
+                <db.authName/>
+                <db.user/>
+                <db.password/>
+                <db.replicaSet/>
+                <db.useSSL/>
+                <db.connections/>
+                <db.connTimeoutMillis/>
+                <db.maxConnecting/>
+                <db.maxConnectTimeSecs/>
+                <db.maxConnIdleSecs/>
+                <db.maxConnLifeSecs/>
+            </properties>
+        </profile>
+    </profiles>
 </project>

@@ -28,7 +28,7 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
     @Before
     public void setUp() {
-        testDao = TestDBUtils.createNeuronMetadataDao(testMongoDatabase, idGenerator);
+        testDao = daosProvider.getNeuronMetadataDao();
     }
 
     @After

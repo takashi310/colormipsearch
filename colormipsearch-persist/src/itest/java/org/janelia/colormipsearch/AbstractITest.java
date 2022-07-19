@@ -5,19 +5,22 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.config.ConfigProvider;
+import org.janelia.colormipsearch.dao.DaosProvider;
 import org.junit.BeforeClass;
 
 public class AbstractITest {
-    private static final Properties ITEST_CONFIG = new Properties();
+    private static Config itestConfig;
 
     @BeforeClass
-    public static void setupITestsConfig() throws IOException {
-        InputStream testConfigStream = AbstractITest.class.getClassLoader().getResourceAsStream("nbdb_itest.properties");
-        ITEST_CONFIG.load(testConfigStream);
+    public static void setupITestsConfig() {
+        itestConfig = new ConfigProvider()
+                .fromResource("./nbdb_itest.properties")
+                .get();
     }
 
-    protected static String getTestProperty(String key, String defaultValue) {
-        String value = ITEST_CONFIG.getProperty(key);
-        return StringUtils.defaultIfBlank(value, defaultValue);
+    protected static Config getITestConfig() {
+        return itestConfig;
     }
 }
