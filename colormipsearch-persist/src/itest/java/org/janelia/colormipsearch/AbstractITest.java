@@ -1,13 +1,7 @@
 package org.janelia.colormipsearch;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.config.ConfigProvider;
-import org.janelia.colormipsearch.dao.DaosProvider;
 import org.junit.BeforeClass;
 
 public class AbstractITest {
@@ -15,7 +9,7 @@ public class AbstractITest {
 
     @BeforeClass
     public static void setupITestsConfig() {
-        itestConfig = new ConfigProvider()
+        itestConfig = ConfigProvider.getInstance()
                 .fromResource("./nbdb_itest.properties")
                 .get();
     }

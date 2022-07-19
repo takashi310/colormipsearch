@@ -157,7 +157,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         if (args.commonArgs.withFSPersistence) {
             return new JSONCDSMatchesReader<>(mapper);
         } else {
-            return new DBNeuronMatchesReader<>();
+            return new DBNeuronMatchesReader<>(getConfig());
         }
     }
 
@@ -168,9 +168,8 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                     args.getOutputDir()
             );
         } else {
-            return new DBNeuronMatchesUpdater<>();
+            return new DBNeuronMatchesUpdater<>(getConfig());
         }
-
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(

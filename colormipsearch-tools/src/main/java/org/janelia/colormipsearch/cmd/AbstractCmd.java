@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.cmd;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.config.ConfigProvider;
 
 abstract class AbstractCmd {
     static final long _1M = 1024 * 1024;
@@ -22,4 +24,11 @@ abstract class AbstractCmd {
     }
 
     abstract void execute();
+
+    Config getConfig() {
+        return ConfigProvider.getInstance()
+                .fromDefaultResources()
+                .fromFile(getArgs().getConfigFileName())
+                .get();
+    }
 }

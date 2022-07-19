@@ -15,8 +15,23 @@ import org.slf4j.LoggerFactory;
 public class ConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigProvider.class);
+    private static final String DEFAULT_CONFIG_RESOURCES = "/nbdb.properties";
 
-    private ConfigImpl config = new ConfigImpl();
+    public static ConfigProvider getInstance() {
+        return new ConfigProvider(new ConfigImpl());
+    }
+
+    private final ConfigImpl config;
+
+    private ConfigProvider(ConfigImpl config) {
+        this.config = config;
+    }
+
+    public ConfigProvider fromDefaultResources() {
+        return fromResource("nbdb.properties")
+                .fromProperties(System.getProperties())
+                ;
+    }
 
     public ConfigProvider fromResource(String resourceName) {
         if (StringUtils.isBlank(resourceName)) {
@@ -46,11 +61,10 @@ public class ConfigProvider {
             LOG.warn("Configuration file {} not found", fileName);
         }
         return this;
-
     }
 
-    public ConfigProvider fromMap(Map<String, String> map) {
-        config.properties.putAll(map);
+    private ConfigProvider fromProperties(Properties properties) {
+        properties.stringPropertyNames().forEach(pn -> config.properties.setProperty(pn, properties.getProperty(pn)));
         return this;
     }
 

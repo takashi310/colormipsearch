@@ -36,6 +36,10 @@ class AbstractCmdArgs {
                 .orElse(null);
     }
 
+    String getConfigFileName() {
+        return commonArgs.configFilename;
+    }
+
     List<String> validate() {
         return Collections.emptyList();
     }

@@ -3,6 +3,8 @@ package org.janelia.colormipsearch.dataio.db;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
@@ -14,8 +16,13 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> implements NeuronMatchesReader<M, T, R> {
 
-    private NeuronMetadataDao<M> neuronMetadataDao;
-    private NeuronMatchesDao<M, T, R> neuronMatchesDao;
+    private final NeuronMetadataDao<M> neuronMetadataDao;
+    private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
+
+    public DBNeuronMatchesReader(Config config) {
+        this.neuronMetadataDao = DaosProvider.getInstance(config).getNeuronMetadataDao();
+        this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
+    }
 
     @Override
     public List<String> listMatchesLocations(List<InputParam> cdMatchInputs) {

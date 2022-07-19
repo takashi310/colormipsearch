@@ -86,8 +86,8 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;
 
-        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
-        String alignmentSpace = "JRC2018_Unisex_20x_HR";
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
+        String alignmentSpace;
 
         @Parameter(names = {"--library", "-l"},
                 description = "Which library to extract such as {flyem_hemibrain, flylight_gen1_gal4, flylight_gen1_lexa, flylight_gen1_mcfo_case_1, flylight_splitgal4_drivers}. " +
@@ -392,7 +392,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                     args.appendOutput,
                     mapper);
         } else {
-            return new DBCDSDataInputGenerator();
+            return new DBCDSDataInputGenerator(getConfig());
         }
     }
 

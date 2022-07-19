@@ -12,8 +12,6 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.UnwindOptions;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;

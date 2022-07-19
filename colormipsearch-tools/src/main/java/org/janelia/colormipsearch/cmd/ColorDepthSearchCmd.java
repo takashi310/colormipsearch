@@ -156,7 +156,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         if (args.commonArgs.withFSPersistence) {
             return new JSONCDMIPsReader(mapper);
         } else {
-            return new DBCDMIPsReader();
+            return new DBCDMIPsReader(getConfig());
         }
     }
 
@@ -169,7 +169,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.withFSPersistence) {
-            return new DBNeuronMatchesWriter<>();
+            return new DBNeuronMatchesWriter<>(getConfig());
         } else {
             return new JSONCDSMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),

@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.support.SetFieldValueHandler;
@@ -25,7 +27,11 @@ import org.janelia.colormipsearch.results.MatchResultsGrouping;
 public class DBNeuronMatchesUpdater<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
         implements NeuronMatchesUpdater<M, T, R> {
 
-    private NeuronMatchesDao<M, T, R> neuronMatchesDao;
+    private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
+
+    public DBNeuronMatchesUpdater(Config config) {
+        this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
+    }
 
     @Override
     public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
