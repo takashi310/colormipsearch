@@ -1,10 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,10 +18,10 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.generator.TypeScope;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
+import org.janelia.colormipsearch.dataio.fs.JsonOutputHelper;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.dataio.fs.FSUtils;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ResultMatches;
@@ -74,9 +69,9 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
 
     @Override
     void execute() {
-        Path outputPath = Paths.get(args.commonArgs.outputDir, args.schemasOutput);
-        FSUtils.createDirs(outputPath);
         try {
+            ObjectWriter writer = args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
+
             JacksonModule module = new JacksonModule();
             SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
                     .with(module)
@@ -124,28 +119,17 @@ public class GenerateJSONSchemasCmd extends AbstractCmd {
                             EMNeuronMetadata,
                             LMNeuronMetadata,
                             CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
-            writeSchemaToFile(cdsMatchesSchema,
-                    FSUtils.getOutputFile(outputPath, CDS_RESULTS_SCHEMA));
+            JsonOutputHelper.writeJSONNode(cdsMatchesSchema, args.getOutputDir(args.schemasOutput, CDS_RESULTS_SCHEMA), writer);
 
             JsonNode pppMatchesSchema =
                     generator.generateSchema(new TypeReference<ResultMatches<
                             EMNeuronMetadata,
                             LMNeuronMetadata,
                             PPPMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
-            writeSchemaToFile(pppMatchesSchema,
-                    FSUtils.getOutputFile(outputPath, PPP_RESULTS_SCHEMA));
 
+            JsonOutputHelper.writeJSONNode(pppMatchesSchema, args.getOutputDir(args.schemasOutput, PPP_RESULTS_SCHEMA), writer);
         } catch (Exception e) {
             LOG.error("Error generating schema", e);
-        }
-    }
-
-    private void writeSchemaToFile(JsonNode schema, File f) throws IOException {
-        ObjectWriter writer = args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter();
-        if (f == null) {
-            writer.writeValue(System.out, schema);
-        } else {
-            writer.writeValue(f, schema);
         }
     }
 

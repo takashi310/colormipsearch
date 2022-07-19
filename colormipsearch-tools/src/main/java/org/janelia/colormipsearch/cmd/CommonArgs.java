@@ -24,6 +24,9 @@ class CommonArgs {
                description = "If true use file system persistence, otherwise by default use database", arity = 0)
     boolean withFSPersistence = false;
 
+    @Parameter(names = {"--config"}, description = "Configuration file name")
+    String configFilename = null;
+
     @Parameter(names = {"--help", "-h"}, description = "Display the help message", help = true, arity = 0)
     boolean displayHelpMessage = false;
 

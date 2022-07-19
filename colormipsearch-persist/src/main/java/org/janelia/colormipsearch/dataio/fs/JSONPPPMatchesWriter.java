@@ -41,7 +41,7 @@ public class JSONPPPMatchesWriter<M extends AbstractNeuronMetadata, T extends Ab
             ResultMatches<M, T, PPPMatch<M, T>> neuronPPPMatches = resultsByNeuronId.get(0);
             JsonOutputHelper.writeToJSONFile(
                     neuronPPPMatches,
-                    FSUtils.getOutputFile(outputDir, new File(neuronPPPMatches.getKey().getPublishedName() + ".json")),
+                    FSUtils.getOutputPath(outputDir, new File(neuronPPPMatches.getKey().getPublishedName() + ".json")),
                     jsonWriter);
         }
     }

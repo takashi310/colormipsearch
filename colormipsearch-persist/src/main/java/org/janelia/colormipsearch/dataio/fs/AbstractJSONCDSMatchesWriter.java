@@ -37,7 +37,7 @@ public class AbstractJSONCDSMatchesWriter<M extends AbstractNeuronMetadata, T ex
             Path outputDir) {
         JsonOutputHelper.writeToJSONFile(
                 cdsMatches,
-                FSUtils.getOutputFile(outputDir, new File(cdsMatches.getKey().getId() + ".json")),
+                FSUtils.getOutputPath(outputDir, new File(cdsMatches.getKey().getId() + ".json")),
                 jsonWriter);
     }
 }

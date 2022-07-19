@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
 /**
  * FileSystem utils for creating directories, listing files, etc.
  */
-public class FSUtils {
+class FSUtils {
     private static final Logger LOG = LoggerFactory.getLogger(FSUtils.class);
 
-    public static void createDirs(@Nullable Path... dirs) {
+    static void createDirs(@Nullable Path... dirs) {
         for (Path dir : dirs) {
             if (dir != null) {
                 try {
@@ -36,24 +36,24 @@ public class FSUtils {
     }
 
     @Nullable
-    public static File getOutputFile(Path outputDir, File inputFile) {
+    static Path getOutputPath(Path outputDir, File inputFile) {
         if (outputDir == null) {
             return null;
         } else {
-            return outputDir.resolve(inputFile.getName()).toFile();
+            return outputDir.resolve(inputFile.getName());
         }
     }
 
     @Nullable
-    public static File getOutputFile(Path outputDir, String fname) {
+    static Path getOutputPath(Path outputDir, String fname) {
         if (outputDir == null) {
             return null;
         } else {
-            return outputDir.resolve(fname).toFile();
+            return outputDir.resolve(fname);
         }
     }
 
-    public static List<String> getFiles(String location, int offsetParam, int lengthParam) {
+    static List<String> getFiles(String location, int offsetParam, int lengthParam) {
         try {
             Path pathLocation = Paths.get(location);
             if (Files.isRegularFile(pathLocation)) {

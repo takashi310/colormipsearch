@@ -67,7 +67,7 @@ public class JSONReadWriteTest {
     public void jsonCDSMatchSerialization() {
         Path testJsonOutput = testDataDir.resolve("testcdsout.json");
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> CDMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
-        JsonOutputHelper.writeToJSONFile(CDMatches, testJsonOutput.toFile(), mapper.writerWithDefaultPrettyPrinter());
+        JsonOutputHelper.writeToJSONFile(CDMatches, testJsonOutput, mapper.writerWithDefaultPrettyPrinter());
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> readCDMatches = readTestMatches(testJsonOutput.toFile());
         assertNotNull(readCDMatches);
         assertEquals(CDMatches, readCDMatches);

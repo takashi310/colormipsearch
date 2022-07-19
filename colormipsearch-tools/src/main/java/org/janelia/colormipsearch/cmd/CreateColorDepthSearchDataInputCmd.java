@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -164,12 +163,6 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         CreateColorDepthSearchDataInputArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
-
-        @Override
-        List<String> validate() {
-            return Collections.emptyList();
-        }
-
     }
 
     static class LibraryPathsArgs {
