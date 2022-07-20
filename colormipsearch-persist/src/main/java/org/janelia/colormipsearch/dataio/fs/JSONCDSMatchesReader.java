@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.InputParam;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
@@ -26,9 +26,9 @@ public class JSONCDSMatchesReader<M extends AbstractNeuronMetadata, T extends Ab
     }
 
     @Override
-    public List<String> listMatchesLocations(List<InputParam> cdMatchInputs) {
+    public List<String> listMatchesLocations(List<DataSourceParam> cdMatchInputs) {
         return cdMatchInputs.stream()
-                .flatMap(arg -> FSUtils.getFiles(arg.getValue(), (int) arg.getOffset(), arg.getSize()).stream())
+                .flatMap(arg -> FSUtils.getFiles(arg.getLocation(), (int) arg.getOffset(), arg.getSize()).stream())
                 .collect(Collectors.toList());
     }
 

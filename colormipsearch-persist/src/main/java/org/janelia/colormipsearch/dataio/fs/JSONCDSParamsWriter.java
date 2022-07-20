@@ -8,10 +8,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ij.IJ;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dataio.CDSParamsWriter;
-import org.janelia.colormipsearch.dataio.InputParam;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +26,8 @@ public class JSONCDSParamsWriter implements CDSParamsWriter {
     }
 
     @Override
-    public void writeParams(List<InputParam> masksInputs,
-                            List<InputParam> targetsInputs,
+    public void writeParams(List<DataSourceParam> masksInputs,
+                            List<DataSourceParam> targetsInputs,
                             Map<String, Object> params) {
         String masksInputValues = inputValues(masksInputs);
         String targetsInputValues = inputValues(targetsInputs);
@@ -54,9 +53,9 @@ public class JSONCDSParamsWriter implements CDSParamsWriter {
 
     }
 
-    private String inputValues(List<InputParam> inputs) {
+    private String inputValues(List<DataSourceParam> inputs) {
         return inputs.stream()
-                .map(InputParam::getValue)
+                .map(DataSourceParam::getLocation)
                 .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
     }
 

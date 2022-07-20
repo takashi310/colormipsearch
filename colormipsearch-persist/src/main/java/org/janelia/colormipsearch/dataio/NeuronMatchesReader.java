@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDMatch;
 
 public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> {
     /**
@@ -15,6 +14,6 @@ public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
      * @param matchInputs
      * @return
      */
-    List<String> listMatchesLocations(List<InputParam> matchInputs);
+    List<String> listMatchesLocations(List<DataSourceParam> matchInputs);
     List<R> readMatches(String maskSource);
 }

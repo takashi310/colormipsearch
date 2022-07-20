@@ -10,7 +10,7 @@ import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.InputParam;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -25,10 +25,10 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     }
 
     @Override
-    public List<String> listMatchesLocations(List<InputParam> cdMatchInputs) {
+    public List<String> listMatchesLocations(List<DataSourceParam> cdMatchInputs) {
         return cdMatchInputs.stream()
                         .flatMap(cdMatchInput -> neuronMetadataDao.findNeuronMatches(
-                                new NeuronSelector().setLibraryName(cdMatchInput.getValue()),
+                                new NeuronSelector().setLibraryName(cdMatchInput.getLocation()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())

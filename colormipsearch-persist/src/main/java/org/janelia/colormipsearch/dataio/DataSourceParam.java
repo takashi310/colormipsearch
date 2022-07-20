@@ -2,28 +2,27 @@ package org.janelia.colormipsearch.dataio;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class InputParam {
-    private String value;
+public class DataSourceParam {
+    private String location;
     private long offset;
     private int size;
 
-    public InputParam(String value, long offset, int size) {
-        this.value = value;
+    public DataSourceParam(String location, long offset, int size) {
+        this.location = location;
         this.offset = offset;
         this.size = size;
     }
 
-    public InputParam() {
+    public DataSourceParam() {
     }
 
-    public String getValue() {
-        return value;
+    public String getLocation() {
+        return location;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public long getOffset() {
@@ -56,14 +55,14 @@ public class InputParam {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        InputParam that = (InputParam) o;
+        DataSourceParam that = (DataSourceParam) o;
 
-        return new EqualsBuilder().append(offset, that.offset).append(size, that.size).append(value, that.value).isEquals();
+        return new EqualsBuilder().append(offset, that.offset).append(size, that.size).append(location, that.location).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(value).append(offset).append(size).toHashCode();
+        return new HashCodeBuilder(17, 37).append(location).append(offset).append(size).toHashCode();
     }
 
     @Override
@@ -75,6 +74,6 @@ public class InputParam {
         if (hasSize()) {
             sbuilder.append(':').append(getSize());
         }
-        return value;
+        return location;
     }
 }

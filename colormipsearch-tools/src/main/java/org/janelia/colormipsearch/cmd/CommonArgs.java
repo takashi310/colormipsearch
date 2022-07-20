@@ -20,9 +20,9 @@ class CommonArgs {
     @Parameter(names = "--no-pretty-print", description = "Do not pretty print the results", arity = 0)
     boolean noPrettyPrint = false;
 
-    @Parameter(names = {"--use-fs", "-fs"},
-               description = "If true use file system persistence, otherwise by default use database", arity = 0)
-    boolean withFSPersistence = false;
+    @Parameter(names = {"--results-storage"},
+               description = "Specifies the results storage - defaults to database storage")
+    StorageType resultsStorage = StorageType.DB;
 
     @Parameter(names = {"--config"}, description = "Configuration file name")
     String configFilename = null;

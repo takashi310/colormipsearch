@@ -38,9 +38,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
-import org.janelia.colormipsearch.dataio.CDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.CDSMipsWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDSDataInputGenerator;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSMipsWriter;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -58,9 +58,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
+public class CreateCDSDataInputCmd extends AbstractCmd {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CreateColorDepthSearchDataInputCmd.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreateCDSDataInputCmd.class);
 
     // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
     private static final String NO_CONSENSUS = "No Consensus";
@@ -187,7 +187,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
     private final CreateColorDepthSearchDataInputArgs args;
     private final ObjectMapper mapper;
 
-    CreateColorDepthSearchDataInputCmd(String commandName, CommonArgs commonArgs) {
+    CreateCDSDataInputCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         args = new CreateColorDepthSearchDataInputArgs(commonArgs);
         this.mapper = new ObjectMapper()
@@ -306,7 +306,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
             }
         };
 
-        CDSDataInputGenerator gen = getCDSInputPersistence();
+        CDSMipsWriter gen = getCDSInputWriter();
 
         Optional<LibraryVariantArg> inputLibraryVariantChoice = computationInputVariantTypes.stream()
                 .map(variantType -> libraryPaths.getLibraryVariant(variantType).orElse(null))
@@ -383,16 +383,16 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
                 });
     }
 
-    private CDSDataInputGenerator getCDSInputPersistence() {
-        if (args.commonArgs.withFSPersistence) {
-            return new JSONCDSDataInputGenerator(args.getOutputDir(),
+    private CDSMipsWriter getCDSInputWriter() {
+        if (args.commonArgs.resultsStorage == StorageType.DB) {
+            return new DBCDSDataInputGenerator(getConfig());
+        } else {
+            return new JSONCDSMipsWriter(args.getOutputDir(),
                     args.outputFileName,
                     args.library.offset,
                     args.library.length,
                     args.appendOutput,
                     mapper);
-        } else {
-            return new DBCDSDataInputGenerator(getConfig());
         }
     }
 

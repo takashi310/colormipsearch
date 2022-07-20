@@ -12,28 +12,26 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.janelia.colormipsearch.dataio.CDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.CDSMipsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
+public class JSONCDSMipsWriter implements CDSMipsWriter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JSONCDSDataInputGenerator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JSONCDSMipsWriter.class);
 
     private final ObjectMapper mapper;
     private final JsonGenerator gen;
 
-    public JSONCDSDataInputGenerator(Path outputPath,
-                                     String outputFileName,
-                                     int libraryFromIndex,
-                                     int libraryToIndex,
-                                     boolean append,
-                                     ObjectMapper mapper) {
+    public JSONCDSMipsWriter(Path outputPath,
+                             String outputFileName,
+                             int libraryFromIndex,
+                             int libraryToIndex,
+                             boolean append,
+                             ObjectMapper mapper) {
         String outputName = libraryFromIndex > 0
                 ? outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json"
                 : outputFileName + ".json";
@@ -41,7 +39,7 @@ public class JSONCDSDataInputGenerator implements CDSDataInputGenerator {
         this.gen = createJsonGenerator(outputPath, outputName, append);
     }
 
-    public CDSDataInputGenerator prepare() {
+    public CDSMipsWriter prepare() {
         return this;
     }
 

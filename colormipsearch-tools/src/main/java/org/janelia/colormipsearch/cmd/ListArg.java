@@ -11,7 +11,7 @@ import com.beust.jcommander.IStringConverter;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.dataio.InputParam;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 
 class ListArg {
 
@@ -35,8 +35,8 @@ class ListArg {
         }
     }
 
-    static InputParam asInputParam(ListArg listArg) {
-        return new InputParam(listArg.input, listArg.offset, listArg.length);
+    static DataSourceParam asDataSourceParam(ListArg listArg) {
+        return new DataSourceParam(listArg.input, listArg.offset, listArg.length);
     }
 
     String input;

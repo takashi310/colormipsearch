@@ -23,7 +23,7 @@ public class Main {
         MainArgs mainArgs = new MainArgs();
         CommonArgs commonArgs = new CommonArgs();
         AbstractCmd[] cmds = new AbstractCmd[] {
-                new CreateColorDepthSearchDataInputCmd("createColorDepthSearchDataInput", commonArgs),
+                new CreateCDSDataInputCmd("createColorDepthSearchDataInput", commonArgs),
                 new ColorDepthSearchCmd("colorDepthSearch", commonArgs, () -> mainArgs.cacheSize, false),
                 new CalculateGradientScoresCmd("gradientScores", commonArgs, () -> mainArgs.cacheSize),
                 new ImportPPPResultsCmd("importPPPResults", commonArgs),

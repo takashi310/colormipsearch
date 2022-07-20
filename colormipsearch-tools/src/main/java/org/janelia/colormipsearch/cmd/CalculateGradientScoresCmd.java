@@ -118,7 +118,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         NeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
 
         long startTime = System.currentTimeMillis();
-        List<String> itemsToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asInputParam).collect(Collectors.toList()));
+        List<String> itemsToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = itemsToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         ItemsHandling.partitionCollection(itemsToProcess, args.processingPartitionSize).stream().parallel()
@@ -154,21 +154,21 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesReader<M, T, CDMatch<M, T>> getCDMatchesReader() {
-        if (args.commonArgs.withFSPersistence) {
-            return new JSONCDSMatchesReader<>(mapper);
-        } else {
+        if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
+        } else {
+            return new JSONCDSMatchesReader<>(mapper);
         }
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesUpdater<M, T, CDMatch<M, T>> getCDMatchesUpdater() {
-        if (args.commonArgs.withFSPersistence) {
+        if (args.commonArgs.resultsStorage == StorageType.DB) {
+            return new DBNeuronMatchesUpdater<>(getConfig());
+        } else {
             return new JSONCDSMatchesUpdater<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getOutputDir()
             );
-        } else {
-            return new DBNeuronMatchesUpdater<>(getConfig());
         }
     }
 

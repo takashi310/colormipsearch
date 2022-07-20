@@ -3,10 +3,10 @@ package org.janelia.colormipsearch.dataio.db;
 import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
-import org.janelia.colormipsearch.dataio.CDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.CDSMipsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public class DBCDSDataInputGenerator implements CDSDataInputGenerator {
+public class DBCDSDataInputGenerator implements CDSMipsWriter {
 
     private final NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao;
 
