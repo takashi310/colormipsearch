@@ -23,11 +23,12 @@ public class DaosProvider {
         return instance;
     }
 
+    private final MongoClient mongoClient;
     private final MongoDatabase mongoDatabase;
     private final IdGenerator idGenerator;
 
     private DaosProvider(Config config) {
-        MongoClient mongoClient = MongoDBHelper.createMongoClient(config.getStringPropertyValue("MongoDB.ConnectionURL"),
+        mongoClient = MongoDBHelper.createMongoClient(config.getStringPropertyValue("MongoDB.ConnectionURL"),
                 config.getStringPropertyValue("MongoDB.Server"),
                 config.getStringPropertyValue("MongoDB.AuthDatabase"),
                 config.getStringPropertyValue("MongoDB.Username"),
