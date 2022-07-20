@@ -3,23 +3,32 @@ package org.janelia.colormipsearch.dao.mongo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UnwindOptions;
+import com.mongodb.client.model.Updates;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
+import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.dao.mongo.support.NeuronSelectionHelper;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
+import org.janelia.colormipsearch.dao.support.SetFieldValueHandler;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -78,7 +87,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                         NeuronSelectionHelper.NO_FILTER,
                         null,
                         null,
-                        createBsonSortCriteria(pageRequest.getSortCriteria()),
+                        MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize()
                 )
@@ -93,7 +102,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                         NeuronSelectionHelper.NO_FILTER,
                         maskSelector,
                         targetSelector,
-                        createBsonSortCriteria(pageRequest.getSortCriteria()),
+                        MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize()
                 )
@@ -137,6 +146,50 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronMatchFilter("image", matchedImageFilter)));
 
         return pipeline;
+    }
+
+    @Override
+    public void saveOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+        matches.forEach(m -> {
+            if (isIdentifiable(m)) {
+                findAndUpdate(m, fieldsToUpdateSelectors);
+            } else {
+                save(m);
+            }
+        });
+    }
+
+    private R findAndUpdate(R match, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+        FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
+        updateOptions.upsert(true);
+        updateOptions.returnDocument(ReturnDocument.AFTER);
+        List<Bson> selectFilters = new ArrayList<>();
+        if (!match.hasEntityId()) {
+            // set entity ID just in case we need to insert it
+            match.setEntityId(idGenerator.generateId());
+            match.setCreatedDate(new Date());
+            selectFilters.add(Filters.eq("class", match.getClass().getName()));
+        } else {
+            selectFilters.add(Filters.eq("_id", match.getEntityId()));
+        }
+        if (match.hasMaskImageRefId() && match.hasMatchedImageRefId()) {
+            selectFilters.add(Filters.eq("maskImageRefId", match.getMaskImageRefId()));
+            selectFilters.add(Filters.eq("matchedImageRefId", match.getMatchedImageRefId()));
+        }
+
+        return mongoCollection.findOneAndUpdate(
+                MongoDaoHelper.createBsonFilterCriteria(selectFilters),
+                getUpdates(
+                        fieldsToUpdateSelectors.stream()
+                                .map(fieldSelector -> fieldSelector.apply(match))
+                                .collect(Collectors.toMap(Pair::getLeft, p -> new SetFieldValueHandler<>(p.getRight())))
+                ),
+                updateOptions
+        );
+    }
+
+    private boolean isIdentifiable(R match) {
+        return match.hasEntityId() || (match.hasMaskImageRefId() && match.hasMatchedImageRefId());
     }
 
 }

@@ -48,6 +48,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.maskImageRefId = maskImageRefId;
     }
 
+    public boolean hasMaskImageRefId() {
+        return maskImage != null && maskImage.hasEntityId() || maskImageRefId != null;
+    }
+
     @UseRefId
     @JsonProperty("image")
     public T getMatchedImage() {
@@ -72,6 +76,10 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
 
     public void setMatchedImageRefId(Number matchedImageRefId) {
         this.matchedImageRefId = matchedImageRefId;
+    }
+
+    public boolean hasMatchedImageRefId() {
+        return matchedImage != null && matchedImage.hasEntityId() || matchedImageRefId != null;
     }
 
     public boolean isMirrored() {

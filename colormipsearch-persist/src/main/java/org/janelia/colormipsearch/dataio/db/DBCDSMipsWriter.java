@@ -6,11 +6,11 @@ import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.CDSMipsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public class DBCDSDataInputGenerator implements CDSMipsWriter {
+public class DBCDSMipsWriter implements CDSMipsWriter {
 
     private final NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao;
 
-    public DBCDSDataInputGenerator(Config config) {
+    public DBCDSMipsWriter(Config config) {
         this.neuronMetadataDao = DaosProvider.getInstance(config).getNeuronMetadataDao();
     }
 

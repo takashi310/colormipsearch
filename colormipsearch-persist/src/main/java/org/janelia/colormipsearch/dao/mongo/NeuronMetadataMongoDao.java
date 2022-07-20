@@ -36,7 +36,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
                 pageRequest,
                 aggregateAsList(
                         createQueryPipeline(NeuronSelectionHelper.getNeuronMatchFilter(null, neuronSelector)),
-                        createBsonSortCriteria(pageRequest.getSortCriteria()),
+                        MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize(),
                         getEntityType()

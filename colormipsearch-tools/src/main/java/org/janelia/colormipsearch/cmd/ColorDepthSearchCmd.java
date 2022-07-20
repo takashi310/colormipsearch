@@ -23,6 +23,7 @@ import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSParamsWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
+import org.janelia.colormipsearch.dataio.db.DBCDScoresWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
@@ -43,6 +44,9 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--mips-storage"},
                 description = "Specifies MIPs storage")
         StorageType mipsStorage = StorageType.DB;
+
+        @Parameter(names = {"--update-results"}, description = "If set updates existing results", arity = 0)
+        boolean updateResults = false;
 
         @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing images to search")
@@ -173,7 +177,11 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBNeuronMatchesWriter<>(getConfig());
+            if (args.updateResults) {
+                return new DBCDScoresWriter<>(getConfig());
+            } else {
+                return new DBNeuronMatchesWriter<>(getConfig());
+            }
         } else {
             return new JSONCDSMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),

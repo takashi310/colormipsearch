@@ -85,42 +85,21 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
 
     @Override
     public List<T> findByEntityIds(Collection<Number> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
-        } else {
-            return findAsList(Filters.in("_id", ids), null, 0, 0, getEntityType());
-        }
+        return MongoDaoHelper.findByIds(ids, mongoCollection, getEntityType());
     }
 
     @Override
     public PagedResult<T> findAll(PagedRequest pageRequest) {
         return new PagedResult<>(pageRequest,
-                findAsList(null,
-                        createBsonSortCriteria(pageRequest.getSortCriteria()),
+                MongoDaoHelper.find(
+                        null,
+                        MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize(),
-                        getEntityType()));
-    }
-
-    Bson createBsonSortCriteria(List<SortCriteria> sortCriteria) {
-        return createBsonSortCriteria(sortCriteria, Collections.emptyList());
-    }
-
-    Bson createBsonSortCriteria(List<SortCriteria> sortCriteria, List<SortCriteria> additionalCriteria) {
-        Bson bsonSortCriteria = null;
-        Map<String, Object> sortCriteriaAsMap = Stream.of(sortCriteria)
-                .filter(CollectionUtils::isNotEmpty)
-                .flatMap(Collection::stream)
-                .filter(sc -> StringUtils.isNotBlank(sc.getField()))
-                .collect(Collectors.toMap(
-                        SortCriteria::getField,
-                        sc -> sc.getDirection() == SortDirection.DESC ? -1 : 1,
-                        (sc1, sc2) -> sc2,
-                        LinkedHashMap::new));
-        if (!sortCriteriaAsMap.isEmpty()) {
-            bsonSortCriteria = new Document(sortCriteriaAsMap);
-        }
-        return bsonSortCriteria;
+                        mongoCollection,
+                        getEntityType()
+                )
+        );
     }
 
     @Override
@@ -128,11 +107,11 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
         return mongoCollection.countDocuments();
     }
 
-    <R> List<R> findAsList(Bson queryFilter, Bson sortCriteria, long offset, int length, Class<R> resultType) {
-        List<R> results = new ArrayList<>();
-        findIterable(queryFilter, sortCriteria, offset, length, resultType).forEach(results::add);
-        return results;
-    }
+//    <R> List<R> findAsList(Bson queryFilter, Bson sortCriteria, long offset, int length, Class<R> resultType) {
+//        List<R> results = new ArrayList<>();
+//        findIterable(queryFilter, sortCriteria, offset, length, resultType).forEach(results::add);
+//        return results;
+//    }
 
     <R> Iterable<R> findIterable(Bson queryFilter, Bson sortCriteria, long offset, int length, Class<R> resultType) {
         FindIterable<R> results = mongoCollection.find(resultType);
@@ -246,7 +225,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
         }
     }
 
-    private Bson getUpdates(Map<String, EntityFieldValueHandler<?>> fieldsToUpdate) {
+    protected Bson getUpdates(Map<String, EntityFieldValueHandler<?>> fieldsToUpdate) {
         List<Bson> fieldUpdates = fieldsToUpdate.entrySet().stream()
                 .map(e -> getFieldUpdate(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());

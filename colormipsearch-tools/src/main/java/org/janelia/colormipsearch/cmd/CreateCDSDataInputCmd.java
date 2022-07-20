@@ -39,7 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
 import org.janelia.colormipsearch.dataio.CDSMipsWriter;
-import org.janelia.colormipsearch.dataio.db.DBCDSDataInputGenerator;
+import org.janelia.colormipsearch.dataio.db.DBCDSMipsWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSMipsWriter;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
@@ -385,7 +385,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
 
     private CDSMipsWriter getCDSInputWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBCDSDataInputGenerator(getConfig());
+            return new DBCDSMipsWriter(getConfig());
         } else {
             return new JSONCDSMipsWriter(args.getOutputDir(),
                     args.outputFileName,

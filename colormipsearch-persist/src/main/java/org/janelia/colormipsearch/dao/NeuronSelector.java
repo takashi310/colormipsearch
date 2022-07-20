@@ -7,9 +7,23 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class NeuronSelector {
+    private String neuronClassname;
     private String libraryName;
     private List<String> names = new ArrayList<>();
     private List<String> mipIDs = new ArrayList<>();
+
+    public String getNeuronClassname() {
+        return neuronClassname;
+    }
+
+    public NeuronSelector setNeuronClassname(String neuronClassname) {
+        this.neuronClassname = neuronClassname;
+        return this;
+    }
+
+    public boolean hasNeuronClassname() {
+        return StringUtils.isNotBlank(neuronClassname);
+    }
 
     public String getLibraryName() {
         return libraryName;
