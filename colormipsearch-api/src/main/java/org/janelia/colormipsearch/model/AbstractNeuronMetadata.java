@@ -66,7 +66,9 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     private String alignmentSpace;
     private Gender gender;
     private String datasetName;
+    // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
+    // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, FileData> neuronFiles = new HashMap<>();
 
     public String getId() {

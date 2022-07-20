@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -195,6 +196,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     public void save(T entity) {
         if (!entity.hasEntityId()) {
             entity.setEntityId(idGenerator.generateId());
+            entity.setCreatedDate(new Date());
             try {
                 mongoCollection.insertOne(entity);
             } catch (MongoWriteException e) {
@@ -208,9 +210,11 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     public void saveAll(List<T> entities) {
         Iterator<Number> idIterator = idGenerator.generateIdList(entities.size()).iterator();
         List<T> toInsert = new ArrayList<>();
+        Date currentDate = new Date();
         entities.forEach(e -> {
             if (!e.hasEntityId()) {
                 e.setEntityId(idIterator.next());
+                e.setCreatedDate(currentDate);
                 toInsert.add(e);
             }
         });

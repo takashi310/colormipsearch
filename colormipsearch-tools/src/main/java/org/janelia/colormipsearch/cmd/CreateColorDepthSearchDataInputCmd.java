@@ -428,7 +428,9 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         neuronMetadata.setPublishedName(cdmip.bodyId != null ? String.valueOf(cdmip.bodyId) : null);
         neuronMetadata.setGender(defaultGenderForEMNeuron);
         if (cdmip.emBody != null && cdmip.emBody.files != null) {
-            neuronMetadata.setNeuronFileData(FileType.AlignedBodySWC, FileData.fromString(cdmip.emBody.files.get("SkeletonSWC")));
+            FileData swcData = FileData.fromString(cdmip.emBody.files.get("SkeletonSWC"));
+            neuronMetadata.setComputeFileData(ComputeFileType.SWCBody, swcData);
+            neuronMetadata.setNeuronFileData(FileType.AlignedBodySWC, swcData);
         }
         return neuronMetadata;
     }
