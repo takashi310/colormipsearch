@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.dao.mongo.support;
+package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +10,11 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 
-public class NeuronSelectionHelper {
+class NeuronSelectionHelper {
 
-    public static final Document NO_FILTER = new Document();
+    private static final Document NO_FILTER = new Document();
 
-    public static Bson getNeuronMatchFilter(String fieldQualifier, NeuronSelector neuronSelector) {
+    static Bson getNeuronMatchFilter(String fieldQualifier, NeuronSelector neuronSelector) {
         if (neuronSelector == null || neuronSelector.isEmpty()) {
             return NO_FILTER;
         }

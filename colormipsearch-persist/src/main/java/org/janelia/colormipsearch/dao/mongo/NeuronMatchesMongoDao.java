@@ -23,7 +23,6 @@ import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
-import org.janelia.colormipsearch.dao.mongo.support.NeuronSelectionHelper;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
 import org.janelia.colormipsearch.dao.support.SetFieldValueHandler;
@@ -103,7 +102,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        NeuronSelectionHelper.NO_FILTER,
+                        MongoDaoHelper.createFilterByClass(matchType),
                         maskSelector,
                         targetSelector,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
