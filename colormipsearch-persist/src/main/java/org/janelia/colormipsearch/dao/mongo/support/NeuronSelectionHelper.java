@@ -30,7 +30,13 @@ public class NeuronSelectionHelper {
         if (neuronSelector.hasMipIDs()) {
             filter.add(Filters.in(qualifier + "id", neuronSelector.getMipIDs()));
         }
-        return filter.isEmpty() ? NO_FILTER : Filters.and(filter);
+        if (filter.isEmpty()) {
+            return NO_FILTER;
+        } else if (filter.size() == 1) {
+            return filter.get(0);
+        } else {
+            return Filters.and(filter);
+        }
     }
 
 }

@@ -6,6 +6,9 @@ import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
+import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.PagedRequest;
+import org.janelia.colormipsearch.dao.PagedResult;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.ComputeFileType;
@@ -58,6 +61,23 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         AbstractNeuronMetadata persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
         assertEquals(testLmNeuron, persistedLmNeuron);
         assertNotSame(testLmNeuron, persistedLmNeuron);
+    }
+
+    @Test
+    public void findByLibrary() {
+        String testLibrary = "flyem";
+        EMNeuronMetadata testEmNeuron = createTestNeuron(
+                EMNeuronMetadata::new,
+                testLibrary,
+                "123445");
+        testDao.save(testEmNeuron);
+        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeuronMatches(
+                new NeuronSelector().setLibraryName(testLibrary),
+                new PagedRequest());
+        assertEquals(1, persistedEmNeurons.getResultList().size());
+        AbstractNeuronMetadata persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
+        assertEquals(testEmNeuron, persistedEmNeuron);
+        assertNotSame(testEmNeuron, persistedEmNeuron);
     }
 
     private <N extends AbstractNeuronMetadata> N createTestNeuron(Supplier<N> neuronGenerator,

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Indexes;
 
 import org.bson.conversions.Bson;
@@ -44,6 +45,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
     }
 
     private List<Bson> createQueryPipeline(Bson matchFilter) {
-        return Collections.singletonList(matchFilter);
+        return Collections.singletonList(Aggregates.match(matchFilter));
     }
 }
