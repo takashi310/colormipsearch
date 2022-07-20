@@ -86,7 +86,7 @@ public class CreateColorDepthSearchDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;
 
-        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
         String alignmentSpace;
 
         @Parameter(names = {"--library", "-l"},
