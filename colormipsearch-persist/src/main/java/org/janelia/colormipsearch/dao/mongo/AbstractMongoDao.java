@@ -3,15 +3,12 @@ package org.janelia.colormipsearch.dao.mongo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.mongodb.ErrorCategory;
@@ -26,7 +23,6 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.AbstractDao;
@@ -34,8 +30,6 @@ import org.janelia.colormipsearch.dao.Dao;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
-import org.janelia.colormipsearch.dao.SortCriteria;
-import org.janelia.colormipsearch.dao.SortDirection;
 import org.janelia.colormipsearch.dao.support.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
@@ -79,8 +73,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
 
     @Override
     public T findByEntityId(Number id) {
-        Iterator<T> entityDocsItr = findIterable(getIdMatchFilter(id), null, 0, 2, getEntityType()).iterator();
-        return entityDocsItr.hasNext() ? entityDocsItr.next() : null;
+        return MongoDaoHelper.findById(id, mongoCollection, getEntityType());
     }
 
     @Override
@@ -106,12 +99,6 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     public long countAll() {
         return mongoCollection.countDocuments();
     }
-
-//    <R> List<R> findAsList(Bson queryFilter, Bson sortCriteria, long offset, int length, Class<R> resultType) {
-//        List<R> results = new ArrayList<>();
-//        findIterable(queryFilter, sortCriteria, offset, length, resultType).forEach(results::add);
-//        return results;
-//    }
 
     <R> Iterable<R> findIterable(Bson queryFilter, Bson sortCriteria, long offset, int length, Class<R> resultType) {
         FindIterable<R> results = mongoCollection.find(resultType);

@@ -15,7 +15,6 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UnwindOptions;
-import com.mongodb.client.model.Updates;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,7 +23,6 @@ import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
-import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.dao.mongo.support.NeuronSelectionHelper;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
