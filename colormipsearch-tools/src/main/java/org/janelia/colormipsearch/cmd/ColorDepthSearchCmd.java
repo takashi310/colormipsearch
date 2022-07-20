@@ -23,7 +23,7 @@ import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSParamsWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
-import org.janelia.colormipsearch.dataio.db.DBCDScoresWriter;
+import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
@@ -45,8 +45,10 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 description = "Specifies MIPs storage")
         StorageType mipsStorage = StorageType.DB;
 
-        @Parameter(names = {"--update-results"}, description = "If set updates existing results", arity = 0)
-        boolean updateResults = false;
+        @Parameter(names = {"--always-new-matches"},
+                description = "If set a new color depth search run will always create new results; " +
+                        "the default behavior is to update entries that match same images", arity = 0)
+        boolean alwaysNewMatches = false;
 
         @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing images to search")
@@ -177,10 +179,12 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            if (args.updateResults) {
-                return new DBCDScoresWriter<>(getConfig());
-            } else {
+            if (args.alwaysNewMatches) {
+                // always create new matches
                 return new DBNeuronMatchesWriter<>(getConfig());
+            } else {
+                // only update the scores if a match exists
+                return new DBCDScoresOnlyWriter<>(getConfig());
             }
         } else {
             return new JSONCDSMatchesWriter<>(

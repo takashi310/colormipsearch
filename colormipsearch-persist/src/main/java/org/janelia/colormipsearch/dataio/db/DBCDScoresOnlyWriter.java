@@ -19,12 +19,12 @@ import org.janelia.colormipsearch.model.CDMatch;
  * @param <M> mask type
  * @param <T>
  */
-public class DBCDScoresWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+public class DBCDScoresOnlyWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
         implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
 
     private final NeuronMatchesDao<M, T, CDMatch<M, T>> neuronMatchesDao;
 
-    public DBCDScoresWriter(Config config) {
+    public DBCDScoresOnlyWriter(Config config) {
         this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
     }
 
