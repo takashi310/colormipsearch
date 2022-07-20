@@ -100,18 +100,21 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void findAllCDMatchesWithoutPagination() {
         NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
                 daosProvider.getNeuronMatchesDao();
 
+        Class<?> searchedType = CDMatch.class;
         verifyMultipleCDMatcheshWithImages(
                 20,
                 testDao,
-                ms -> testDao.findAll(new PagedRequest()).getResultList()
+                ms -> testDao.findAll((Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) searchedType, new PagedRequest()).getResultList()
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void findAllCDMatchesWithPagination() {
         NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
@@ -122,18 +125,21 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, testDao);
         try {
             int pageSize = 5;
+            Class<?> searchedType = CDMatch.class;
             for (int i = 0; i < nTestMatches; i += pageSize) {
                 int page = i / pageSize;
                 retrieveAndCompareCDMatcheshWithImages(
                         testCDMatches.subList(i, Math.min(testCDMatches.size(), i + pageSize)),
-                        ms -> testDao.findAll(new PagedRequest().setPageNumber(page).setPageSize(pageSize)).getResultList());
-
+                        ms -> testDao.findAll(
+                                (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) searchedType,
+                                new PagedRequest().setPageNumber(page).setPageSize(pageSize)).getResultList());
             }
         } finally {
             deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void findCDMatchesUsingNeuronSelectors() {
         NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
@@ -144,6 +150,9 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, testDao);
         try {
             int pageSize = 5;
+            // I cannot cast directly CDMatch.class to Class<CDMatch<EmNeuronMetadata, LmNeuronMetadata>>
+            // I have to go thorugh Class<?>
+            Class<?> matchesType = CDMatch.class;
             NeuronSelector emNeuronSelector = new NeuronSelector()
                     .setLibraryName("FlyEM Hemibrain")
                     .addMipID("123232232423232")
@@ -160,6 +169,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                         ms -> testDao.findNeuronMatches(
                                 emNeuronSelector,
                                 lmNeuronSelector,
+                                (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchesType,
                                 pagedRequest).getResultList());
             }
             // retrieve all
@@ -168,6 +178,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                     ms -> testDao.findNeuronMatches(
                             emNeuronSelector,
                             lmNeuronSelector,
+                            (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchesType,
                             new PagedRequest()).getResultList());
             // retrieve none
             retrieveAndCompareCDMatcheshWithImages(
@@ -175,9 +186,20 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                     ms -> testDao.findNeuronMatches(
                             lmNeuronSelector,
                             emNeuronSelector,
+                            (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchesType,
                             new PagedRequest()).getResultList());
-            assertEquals(nTestMatches, testDao.countNeuronMatches(emNeuronSelector, lmNeuronSelector));
-            assertEquals(0, testDao.countNeuronMatches(lmNeuronSelector, emNeuronSelector));
+            assertEquals(
+                    nTestMatches,
+                    testDao.countNeuronMatches(
+                            emNeuronSelector,
+                            lmNeuronSelector,
+                            (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchesType));
+            assertEquals(
+                    0,
+                    testDao.countNeuronMatches(
+                            lmNeuronSelector,
+                            emNeuronSelector,
+                            (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchesType));
         } finally {
             deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
         }

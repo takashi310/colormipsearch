@@ -25,8 +25,8 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     }
 
     @Override
-    public List<String> listMatchesLocations(List<DataSourceParam> cdMatchInputs) {
-        return cdMatchInputs.stream()
+    public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
+        return matchesSource.stream()
                         .flatMap(cdMatchInput -> neuronMetadataDao.findNeuronMatches(
                                 new NeuronSelector().setLibraryName(cdMatchInput.getLocation()),
                                 new PagedRequest()
@@ -38,10 +38,11 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     }
 
     @Override
-    public List<R> readMatches(String maskSource) {
+    public List<R> readMatches(String maskSource, Class<R> matchesType) {
         return neuronMatchesDao.findNeuronMatches(
                         new NeuronSelector().addMipID(maskSource),
                         new NeuronSelector(),
+                        matchesType,
                         new PagedRequest()
                 ).getResultList();
     }

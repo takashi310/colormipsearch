@@ -32,6 +32,7 @@
         <profile>
             <id>itest</id>
             <build>
+                <defaultGoal>integration-test</defaultGoal>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>

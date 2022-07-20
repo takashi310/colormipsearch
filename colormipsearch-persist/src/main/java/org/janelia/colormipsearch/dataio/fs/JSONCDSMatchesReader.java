@@ -26,14 +26,14 @@ public class JSONCDSMatchesReader<M extends AbstractNeuronMetadata, T extends Ab
     }
 
     @Override
-    public List<String> listMatchesLocations(List<DataSourceParam> cdMatchInputs) {
-        return cdMatchInputs.stream()
+    public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
+        return matchesSource.stream()
                 .flatMap(arg -> FSUtils.getFiles(arg.getLocation(), (int) arg.getOffset(), arg.getSize()).stream())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<CDMatch<M, T>> readMatches(String filename) {
+    public List<CDMatch<M, T>> readMatches(String filename, Class<CDMatch<M, T>> matchesType) {
         ResultMatches<M, T, CDMatch<M, T>> cdsResults = readCDSResults(new File(filename));
         return convertCDSResultsToListOfMatches(cdsResults);
     }

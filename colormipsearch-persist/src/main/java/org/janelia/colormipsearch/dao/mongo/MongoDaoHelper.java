@@ -60,7 +60,7 @@ class MongoDaoHelper {
     }
 
     static Bson createFilterByClass(Class<?> clazz) {
-        return Filters.eq("class", clazz.getName());
+        return clazz != null ? Filters.eq("class", clazz.getName()) : new Document();
     }
 
     static <I, T, R> R findById(I id, MongoCollection<T> mongoCollection, Class<R> documentType) {

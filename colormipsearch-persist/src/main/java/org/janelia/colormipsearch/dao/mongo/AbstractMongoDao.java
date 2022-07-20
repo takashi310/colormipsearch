@@ -82,10 +82,10 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     }
 
     @Override
-    public PagedResult<T> findAll(PagedRequest pageRequest) {
+    public PagedResult<T> findAll(Class<T> type, PagedRequest pageRequest) {
         return new PagedResult<>(pageRequest,
                 MongoDaoHelper.find(
-                        null,
+                        MongoDaoHelper.createFilterByClass(type),
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize(),

@@ -80,6 +80,23 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         assertNotSame(testEmNeuron, persistedEmNeuron);
     }
 
+    @Test
+    public void findByLibraryAndType() {
+        String testLibrary = "flyem";
+        EMNeuronMetadata testEmNeuron = createTestNeuron(
+                EMNeuronMetadata::new,
+                testLibrary,
+                "123445");
+        testDao.save(testEmNeuron);
+        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeuronMatches(
+                new NeuronSelector().setLibraryName(testLibrary).setNeuronClassname(EMNeuronMetadata.class.getName()),
+                new PagedRequest());
+        assertEquals(1, persistedEmNeurons.getResultList().size());
+        AbstractNeuronMetadata persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
+        assertEquals(testEmNeuron, persistedEmNeuron);
+        assertNotSame(testEmNeuron, persistedEmNeuron);
+    }
+
     private <N extends AbstractNeuronMetadata> N createTestNeuron(Supplier<N> neuronGenerator,
                                                                   String libraryName,
                                                                   String name) {

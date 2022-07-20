@@ -14,6 +14,6 @@ public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
      * @param matchInputs
      * @return
      */
-    List<String> listMatchesLocations(List<DataSourceParam> matchInputs);
-    List<R> readMatches(String maskSource);
+    List<String> listMatchesLocations(List<DataSourceParam> matchesSource);
+    List<R> readMatches(String maskSource, Class<R> matchesType);
 }

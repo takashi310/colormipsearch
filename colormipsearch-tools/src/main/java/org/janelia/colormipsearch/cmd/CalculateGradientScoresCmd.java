@@ -172,13 +172,16 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
             NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader,
             String cdsMatchesSource,
             Executor executor) {
         LOG.info("Read color depth matches from {}", cdsMatchesSource);
-        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(cdsMatchesSource);
+        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(
+                cdsMatchesSource,
+                (Class<CDMatch<M,T>>) ((Class<?>) CDMatch.class));
         // select best matches to process
         List<CDMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,

@@ -78,11 +78,11 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
     }
 
     @Override
-    public PagedResult<R> findAll(PagedRequest pageRequest) {
+    public PagedResult<R> findAll(Class<R> type, PagedRequest pageRequest) {
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        NeuronSelectionHelper.NO_FILTER,
+                        MongoDaoHelper.createFilterByClass(type),
                         null,
                         null,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
@@ -93,7 +93,13 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
     }
 
     @Override
-    public PagedResult<R> findNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, PagedRequest pageRequest) {
+    public long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, Class<R> matchType) {
+        return countAggregate(createQueryPipeline(MongoDaoHelper.createFilterByClass(matchType), maskSelector, targetSelector));
+    }
+
+    @Override
+    public PagedResult<R> findNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, Class<R> matchType,
+                                            PagedRequest pageRequest) {
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
@@ -105,11 +111,6 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                         pageRequest.getPageSize()
                 )
         );
-    }
-
-    @Override
-    public long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector) {
-        return countAggregate(createQueryPipeline(NeuronSelectionHelper.NO_FILTER, maskSelector, targetSelector));
     }
 
     private List<R> findNeuronMatches(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter, Bson sortCriteria, long offset, int length) {

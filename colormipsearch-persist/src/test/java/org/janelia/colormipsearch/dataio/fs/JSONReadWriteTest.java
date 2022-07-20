@@ -73,19 +73,22 @@ public class JSONReadWriteTest {
         assertEquals(CDMatches, readCDMatches);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void readWriteCDSResults() {
-        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> CDMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
-        em2lmJsonWriter.write(CDMatches);
-        checkResultFiles(CDMatches, em2lmDir, m -> m.getMaskImage().getId());
-        checkResultFiles(CDMatches, lm2emDir, m -> m.getMatchedImage().getId());
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
+        em2lmJsonWriter.write(cdMatches);
+        checkResultFiles(cdMatches, em2lmDir, m -> m.getMaskImage().getId());
+        checkResultFiles(cdMatches, lm2emDir, m -> m.getMatchedImage().getId());
 
+        Class<?> matchType = CDMatch.class;
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
-                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile = em2lmMatchesReader.readMatches(f);
+                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile =
+                            em2lmMatchesReader.readMatches(f, (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchType);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
-                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = CDMatches.stream()
+                    List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdMatches.stream()
                             .filter(cdsMatch -> cdsMatch.getMaskImage().getId().equals(mId))
                             .peek(cdsMatch -> {
                                 cdsMatch.resetMatchComputeFiles();
