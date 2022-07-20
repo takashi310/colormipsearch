@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class MongoNumberBigIntegerDeserializer extends JsonDeserializer<Number> {
 
     @Override
@@ -16,7 +18,12 @@ public class MongoNumberBigIntegerDeserializer extends JsonDeserializer<Number> 
         if (node.get("$numberLong") != null) {
             return new BigInteger(node.get("$numberLong").asText());
         } else {
-            return new BigInteger(node.asText());
+            String nText = node.asText();
+            if (StringUtils.isNotBlank(nText)) {
+                return new BigInteger(node.asText());
+            } else {
+                return null;
+            }
         }
     }
 }
