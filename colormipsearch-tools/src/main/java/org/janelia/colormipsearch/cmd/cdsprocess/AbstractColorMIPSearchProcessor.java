@@ -67,18 +67,6 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
             result.setMatchingPixelsRatio(pixelMatchScore.getNormalizedScore());
             result.setMirrored(pixelMatchScore.isMirrored());
             result.setNormalizedScore(pixelMatchScore.getNormalizedScore());
-            // set match files
-            result.setMatchFileData(FileType.ColorDepthMipInput,
-                    maskImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
-            result.setMatchFileData(FileType.ColorDepthMipMatch,
-                    targetImage.getNeuronInfo().getNeuronFileData(FileType.ColorDepthMipInput));
-            // set compute match files
-            result.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
-                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.InputColorDepthImage));
-            result.setMatchComputeFileData(MatchComputeFileType.MaskGradientImage,
-                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.GradientImage));
-            result.setMatchComputeFileData(MatchComputeFileType.MaskZGapImage,
-                    maskImage.getNeuronInfo().getComputeFileData(ComputeFileType.ZGapImage));
         } catch (Throwable e) {
             LOG.warn("Error comparing mask {} with {}", maskImage, targetImage, e);
             result.setErrors(e.getMessage());

@@ -73,7 +73,6 @@ public class MatchResultsGrouping {
                                     src.getMaskImage().getComputeFileData(ComputeFileType.GradientImage));
                             dest.setMatchComputeFileData(MatchComputeFileType.MaskZGapImage,
                                     src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
-
                         }),
                         m -> {
                             M maskImage = m.getMaskImage().duplicate();
