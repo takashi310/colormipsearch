@@ -169,13 +169,13 @@ public class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.withFSPersistence) {
-            return new DBNeuronMatchesWriter<>(getConfig());
-        } else {
             return new JSONCDSMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
                     args.getPerLibraryDir()
             );
+        } else {
+            return new DBNeuronMatchesWriter<>(getConfig());
         }
     }
 

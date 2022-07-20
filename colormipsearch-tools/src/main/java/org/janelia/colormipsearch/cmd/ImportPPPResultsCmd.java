@@ -307,11 +307,11 @@ public class ImportPPPResultsCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, PPPMatch<M, T>>
     getPPPMatchesWriter() {
         if (args.commonArgs.withFSPersistence) {
-            return new DBNeuronMatchesWriter<>(getConfig());
-        } else {
             return new JSONPPPMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getOutputDir());
+        } else {
+            return new DBNeuronMatchesWriter<>(getConfig());
         }
     }
 
