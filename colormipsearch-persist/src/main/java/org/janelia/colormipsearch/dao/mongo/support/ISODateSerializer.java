@@ -15,7 +15,7 @@ public class ISODateSerializer extends JsonSerializer<Date> {
     @Override
     public void serialize(Date value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if (value == null) {
-            gen.writeNull();
+            serializers.defaultSerializeNull(gen);
         } else {
             gen.writeStartObject();
             gen.writeFieldName("$date");
