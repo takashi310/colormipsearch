@@ -9,12 +9,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
+import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 class NeuronSelectionHelper {
 
     private static final Document NO_FILTER = new Document();
 
-    static Bson getNeuronMatchFilter(String fieldQualifier, NeuronSelector neuronSelector) {
+    static Bson getNeuronFilter(String fieldQualifier, NeuronSelector neuronSelector) {
         if (neuronSelector == null || neuronSelector.isEmpty()) {
             return NO_FILTER;
         }
@@ -42,4 +45,23 @@ class NeuronSelectionHelper {
         }
     }
 
+    static <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+    Bson getNeuronsMatchFilter(NeuronsMatchFilter<R> neuronsMatchFilter) {
+        if (neuronsMatchFilter == null || neuronsMatchFilter.isEmpty()) {
+            return NO_FILTER;
+        }
+        List<Bson> filter = new ArrayList<>();
+        if (neuronsMatchFilter.hasMatchType()) {
+            filter.add(MongoDaoHelper.createFilterByClass(neuronsMatchFilter.getMatchType()));
+        }
+        neuronsMatchFilter.getScoreSelectors().forEach(s -> filter.add(Filters.gte(s.getFieldName(), s.getMinScore())));
+        if (filter.isEmpty()) {
+            return NO_FILTER;
+        } else if (filter.size() == 1) {
+            return filter.get(0);
+        } else {
+            return Filters.and(filter);
+        }
+
+    }
 }

@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.dataio;
 
 import java.util.List;
 
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -15,5 +16,5 @@ public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
      * @return
      */
     List<String> listMatchesLocations(List<DataSourceParam> matchesSource);
-    List<R> readMatches(String maskSource, Class<R> matchesType);
+    List<R> readMatches(String maskSource, NeuronsMatchFilter<R> matchesFilter);
 }

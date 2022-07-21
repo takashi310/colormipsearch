@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -81,11 +82,10 @@ public class JSONReadWriteTest {
         checkResultFiles(cdMatches, em2lmDir, m -> m.getMaskImage().getId());
         checkResultFiles(cdMatches, lm2emDir, m -> m.getMatchedImage().getId());
 
-        Class<?> matchType = CDMatch.class;
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile =
-                            em2lmMatchesReader.readMatches(f, (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) matchType);
+                            em2lmMatchesReader.readMatches(f, new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>().setMatchType(CDMatch.class.getName()));
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdMatches.stream()

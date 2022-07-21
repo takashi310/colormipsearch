@@ -25,6 +25,7 @@ import org.janelia.colormipsearch.cds.CombinedMatchScore;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
@@ -179,9 +180,12 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
             String cdsMatchesSource,
             Executor executor) {
         LOG.info("Read color depth matches from {}", cdsMatchesSource);
-        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(
-                cdsMatchesSource,
-                (Class<CDMatch<M,T>>) ((Class<?>) CDMatch.class));
+        NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
+        neuronsMatchFilter.setMatchType(CDMatch.class.getName());
+        if (args.pctPositivePixels > 0) {
+            neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
+        }
+        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(cdsMatchesSource, neuronsMatchFilter);
         // select best matches to process
         List<CDMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,

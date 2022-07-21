@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -33,7 +34,7 @@ public class JSONCDSMatchesReader<M extends AbstractNeuronMetadata, T extends Ab
     }
 
     @Override
-    public List<CDMatch<M, T>> readMatches(String filename, Class<CDMatch<M, T>> matchesType) {
+    public List<CDMatch<M, T>> readMatches(String filename, NeuronsMatchFilter<CDMatch<M, T>> matchesFilter) {
         ResultMatches<M, T, CDMatch<M, T>> cdsResults = readCDSResults(new File(filename));
         return convertCDSResultsToListOfMatches(cdsResults);
     }

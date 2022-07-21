@@ -8,6 +8,7 @@ import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -38,11 +39,11 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     }
 
     @Override
-    public List<R> readMatches(String maskSource, Class<R> matchesType) {
+    public List<R> readMatches(String maskSource, NeuronsMatchFilter<R> matchesFilter) {
         return neuronMatchesDao.findNeuronMatches(
+                        matchesFilter,
                         new NeuronSelector().addMipID(maskSource),
                         new NeuronSelector(),
-                        matchesType,
                         new PagedRequest()
                 ).getResultList();
     }

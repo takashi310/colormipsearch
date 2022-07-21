@@ -18,12 +18,12 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UnwindOptions;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
@@ -96,19 +96,23 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
     }
 
     @Override
-    public long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, Class<R> matchType) {
+    public long countNeuronMatches(NeuronsMatchFilter<R> neuronsMatchFilter,
+                                   NeuronSelector maskSelector,
+                                   NeuronSelector targetSelector) {
         return MongoDaoHelper.countAggregate(
-                createQueryPipeline(MongoDaoHelper.createFilterByClass(matchType), maskSelector, targetSelector),
+                createQueryPipeline(NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter), maskSelector, targetSelector),
                 mongoCollection);
     }
 
     @Override
-    public PagedResult<R> findNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, Class<R> matchType,
+    public PagedResult<R> findNeuronMatches(NeuronsMatchFilter<R> neuronsMatchFilter,
+                                            NeuronSelector maskSelector,
+                                            NeuronSelector targetSelector,
                                             PagedRequest pageRequest) {
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        MongoDaoHelper.createFilterByClass(matchType),
+                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
                         maskSelector,
                         targetSelector,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
@@ -147,8 +151,8 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         UnwindOptions unwindOptions = new UnwindOptions().preserveNullAndEmptyArrays(true);
         pipeline.add(Aggregates.unwind("$maskImage", unwindOptions));
         pipeline.add(Aggregates.unwind("$image", unwindOptions));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronMatchFilter("maskImage", maskImageFilter)));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronMatchFilter("image", matchedImageFilter)));
+        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("maskImage", maskImageFilter)));
+        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("image", matchedImageFilter)));
 
         return pipeline;
     }
