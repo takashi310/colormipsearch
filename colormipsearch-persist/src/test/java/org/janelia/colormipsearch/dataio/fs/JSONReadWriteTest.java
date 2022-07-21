@@ -38,7 +38,7 @@ public class JSONReadWriteTest {
 
     private ObjectMapper mapper;
     private JSONCDSMatchesWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
-    private JSONCDSMatchesReader<EMNeuronMetadata, LMNeuronMetadata> em2lmMatchesReader;
+    private JSONNeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> em2lmMatchesReader;
 
     @BeforeClass
     public static void createTestDataDir() throws IOException {
@@ -59,7 +59,7 @@ public class JSONReadWriteTest {
                 em2lmDir,
                 lm2emDir
         );
-        em2lmMatchesReader = new JSONCDSMatchesReader<>(
+        em2lmMatchesReader = new JSONNeuronMatchesReader<>(
                 mapper
         );
     }

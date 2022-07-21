@@ -27,11 +27,11 @@ public class JSONCDSMatchesWriter<M extends AbstractNeuronMetadata, T extends Ab
         this.perMasksOutputDir = perMasksOutputDir;
     }
 
-    public void write(List<CDMatch<M, T>> CDMatches) {
+    public void write(List<CDMatch<M, T>> cdMatches) {
         // write results by mask ID (creating the collection right before it's passed as and arg in order to type match)
         writeAllSearchResults(
                 MatchResultsGrouping.groupByMaskFields(
-                        CDMatches,
+                        cdMatches,
                         Collections.singletonList(
                                 AbstractNeuronMetadata::getId
                         ),
@@ -43,7 +43,7 @@ public class JSONCDSMatchesWriter<M extends AbstractNeuronMetadata, T extends Ab
         // write results by matched ID (creating the collection right before it's passed as and arg in order to type match)
         writeAllSearchResults(
                 MatchResultsGrouping.groupByMatchedFields(
-                        CDMatches,
+                        cdMatches,
                         Collections.singletonList(
                                 AbstractNeuronMetadata::getId
                         ),

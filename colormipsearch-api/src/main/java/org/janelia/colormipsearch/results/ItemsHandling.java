@@ -78,7 +78,8 @@ public class ItemsHandling {
 
     public static <T> void processPartitionStream(Stream<T> stream,
                                                   int partitionSize,
-                                                  Consumer<List<T>> partitionHandler) {
+                                                  Consumer<List<T>> partitionHandler,
+                                                  boolean parallel) {
         if (partitionSize == 1) {
             // trivial cause because the other one gets messed up
             // it's here only for completion purpose
@@ -98,10 +99,10 @@ public class ItemsHandling {
                         });
                         return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
                     });
-            if (stream.isParallel()) {
+            if (parallel) {
                 streamOfPartitions.parallel().forEach(partitionHandler);
             } else {
-                streamOfPartitions.forEach(partitionHandler);
+                streamOfPartitions.sequential().forEach(partitionHandler);
             }
             List<T> leftContent = currentPartitionHolder.get();
             if (leftContent.size() > 0 && leftContent.size() < partitionSize) {

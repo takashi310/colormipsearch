@@ -22,6 +22,7 @@ import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSParamsWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
@@ -34,6 +35,9 @@ import org.janelia.colormipsearch.model.CDMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Command that runs the Color Depth Search.
+ */
 public class ColorDepthSearchCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchCmd.class);
@@ -184,13 +188,18 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 return new DBNeuronMatchesWriter<>(getConfig());
             } else {
                 // only update the scores if a match exists
-                return new DBCDScoresOnlyWriter<>(getConfig());
+                // since this writes items one at a time - partition and process partitions in parallel
+                return new PartitionedNeuronMatchesWriter<>(
+                        new DBCDScoresOnlyWriter<>(getConfig()),
+                        args.processingPartitionSize,
+                        true
+                );
             }
         } else {
             return new JSONCDSMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     args.getPerMaskDir(),
-                    args.getPerLibraryDir()
+                    args.getPerTargetDir()
             );
         }
     }

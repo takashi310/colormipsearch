@@ -28,10 +28,11 @@ import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
+import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchessUpdater;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesUpdater;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesUpdater;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIP;
@@ -48,6 +49,9 @@ import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Command to calculate the gradient scores.
+ */
 public class CalculateGradientScoresCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
@@ -158,13 +162,17 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
         } else {
-            return new JSONCDSMatchesReader<>(mapper);
+            return new JSONNeuronMatchesReader<>(mapper);
         }
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesUpdater<M, T, CDMatch<M, T>> getCDMatchesUpdater() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBNeuronMatchesUpdater<>(getConfig());
+            return new PartitionedNeuronMatchessUpdater<>(
+                    new DBNeuronMatchesUpdater<>(getConfig()),
+                    args.processingPartitionSize,
+                    true
+            );
         } else {
             return new JSONCDSMatchesUpdater<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),

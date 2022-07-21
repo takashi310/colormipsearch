@@ -1,8 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
@@ -63,8 +61,8 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
     String perMaskSubdir;
 
-    @Parameter(names = {"--perLibrarySubdir"}, description = "Results subdirectory for results grouped by library MIP ID")
-    String perLibrarySubdir;
+    @Parameter(names = {"--perTargetSubdir"}, description = "Results subdirectory for results grouped by target MIP ID")
+    String perTargetSubdir;
 
     @Parameter(names = {"--query-roi-mask"}, description = "Global ROI mask applied to all query images. " +
             "For example this could be the hemibrain mask when searching against hemibrain libraries.")
@@ -82,9 +80,9 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     }
 
     @Nullable
-    Path getPerLibraryDir() {
+    Path getPerTargetDir() {
         return getOutputDirArg()
-                .map(dir -> StringUtils.isNotBlank(perLibrarySubdir) ? dir.resolve(perLibrarySubdir) : dir)
+                .map(dir -> StringUtils.isNotBlank(perTargetSubdir) ? dir.resolve(perTargetSubdir) : dir)
                 .orElse(null);
     }
 

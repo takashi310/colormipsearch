@@ -38,6 +38,5 @@ public class JSONCDSMatchesUpdater<M extends AbstractNeuronMetadata, T extends A
                 ),
                 outputDir
         );
-
     }
 }

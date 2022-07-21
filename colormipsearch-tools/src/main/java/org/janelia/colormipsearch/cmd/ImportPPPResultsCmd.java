@@ -152,9 +152,10 @@ public class ImportPPPResultsCmd extends AbstractCmd {
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
         }
         ItemsHandling.processPartitionStream(
-                filesToProcess.parallel(),
+                filesToProcess,
                 args.processingPartitionSize,
-                this::processPPPFiles);
+                this::processPPPFiles,
+                true);
         LOG.info("Processed all files in {}s", (System.currentTimeMillis() - startTime) / 1000.);
     }
 

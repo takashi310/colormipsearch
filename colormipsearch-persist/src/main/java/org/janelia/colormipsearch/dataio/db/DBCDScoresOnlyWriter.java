@@ -2,8 +2,10 @@ package org.janelia.colormipsearch.dataio.db;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
@@ -23,20 +25,19 @@ public class DBCDScoresOnlyWriter<M extends AbstractNeuronMetadata, T extends Ab
         implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
 
     private final NeuronMatchesDao<M, T, CDMatch<M, T>> neuronMatchesDao;
+    private final List<Function<CDMatch<M, T>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
+            m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
+            m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
+            m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
+            m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
+            m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+    );
 
     public DBCDScoresOnlyWriter(Config config) {
         this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
     }
 
     public void write(List<CDMatch<M, T>> matches) {
-        neuronMatchesDao.saveOrUpdateAll(
-                matches,
-                Arrays.asList(
-                        m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
-                        m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
-                        m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
-                        m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
-                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
-                ));
+        neuronMatchesDao.saveOrUpdateAll(matches, fieldsToUpdate);
     }
 }

@@ -37,7 +37,8 @@ public class ItemsHandlingTest {
             ItemsHandling.processPartitionStream(
                     IntStream.range(0, maxValue).boxed().parallel(),
                     partitionSize,
-                    listOfList::add
+                    listOfList::add,
+                    true
             );
 
             int exactPartitionAdjustment = maxValue % partitionSize == 0 ? 0 : 1;
