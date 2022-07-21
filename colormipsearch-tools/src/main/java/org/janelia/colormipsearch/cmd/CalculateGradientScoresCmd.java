@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 
 public class CalculateGradientScoresCmd extends AbstractCmd {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchCmd.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
 
     @Parameters(commandDescription = "Color depth search for a batch of MIPs")
     static class GradientScoresArgs extends AbstractColorDepthMatchArgs {
@@ -132,7 +132,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                                 executor
                         );
                     });
-                    LOG.info("Finished a batch of {} in {}s - meory usage {}M out of {}M",
+                    LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
                             partititionItems.size(),
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
