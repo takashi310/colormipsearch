@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
@@ -19,6 +20,7 @@ import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fs.JSONPPPMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.CDMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,14 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--match-type"}, required = true, // this is required because PPPs are handled a bit differently
                 description = "Specifies neuron match type whether it's color depth search, PPP, etc.")
         MatchResultTypes matchResultTypes = MatchResultTypes.CDS;
+
+        @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
+        Double pctPositivePixels = 0.0;
+
+        @Parameter(names = {"--with-grad-scores"},
+                description = "Select matches with gradient scores",
+                arity = 0)
+        boolean withGradScores = false;
 
         @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
         String perMaskSubdir;
@@ -84,6 +94,16 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
     void exportNeuronMatches() {
         NeuronMatchesReader<M, T, R> neuronMatchesReader = getMatchesReader();
         NeuronMatchesWriter<M, T, R> neuronMatchesWriter = getMatchesWriter();
+
+        NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
+        neuronsMatchFilter.setMatchType(args.matchResultTypes.getMatchType());
+        if (args.pctPositivePixels > 0) {
+            neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
+        }
+        if (args.withGradScores) {
+            neuronsMatchFilter.addSScore("gradientAreaGap", 0);
+        }
+
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>

@@ -9,8 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 public class NeuronSelector {
     private String neuronClassname;
     private String libraryName;
-    private List<String> names = new ArrayList<>();
-    private List<String> mipIDs = new ArrayList<>();
+    private final List<String> names = new ArrayList<>();
+    private final List<String> mipIDs = new ArrayList<>();
 
     public String getNeuronClassname() {
         return neuronClassname;
@@ -43,12 +43,12 @@ public class NeuronSelector {
     }
 
     public NeuronSelector addName(String name) {
-        this.names.add(name);
+        if (StringUtils.isNotBlank(name)) this.names.add(name);
         return this;
     }
 
     public NeuronSelector addNames(List<String> names) {
-        this.names.addAll(names);
+        names.forEach(this::addName);
         return this;
     }
 
@@ -61,12 +61,12 @@ public class NeuronSelector {
     }
 
     public NeuronSelector addMipID(String mipID) {
-        this.mipIDs.add(mipID);
+        if (StringUtils.isNotBlank(mipID)) this.mipIDs.add(mipID);
         return this;
     }
 
     public NeuronSelector addMipIDs(List<String> mipIDs) {
-        this.mipIDs.addAll(mipIDs);
+        mipIDs.forEach(this::addMipID);
         return this;
     }
 
