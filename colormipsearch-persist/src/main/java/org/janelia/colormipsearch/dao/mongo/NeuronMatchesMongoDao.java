@@ -21,6 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
@@ -28,6 +29,7 @@ import org.janelia.colormipsearch.dao.PagedResult;
 import org.janelia.colormipsearch.dao.support.EntityUtils;
 import org.janelia.colormipsearch.dao.support.IdGenerator;
 import org.janelia.colormipsearch.dao.support.SetFieldValueHandler;
+import org.janelia.colormipsearch.dao.support.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -95,7 +97,9 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
 
     @Override
     public long countNeuronMatches(NeuronSelector maskSelector, NeuronSelector targetSelector, Class<R> matchType) {
-        return countAggregate(createQueryPipeline(MongoDaoHelper.createFilterByClass(matchType), maskSelector, targetSelector));
+        return MongoDaoHelper.countAggregate(
+                createQueryPipeline(MongoDaoHelper.createFilterByClass(matchType), maskSelector, targetSelector),
+                mongoCollection);
     }
 
     @Override
@@ -115,11 +119,12 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
     }
 
     private List<R> findNeuronMatches(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter, Bson sortCriteria, long offset, int length) {
-        return aggregateAsList(
+        return MongoDaoHelper.aggregateAsList(
                 createQueryPipeline(matchFilter, maskImageFilter, matchedImageFilter),
                 sortCriteria,
                 offset,
                 length,
+                mongoCollection,
                 getEntityType());
     }
 
@@ -164,14 +169,14 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
         List<Bson> selectFilters = new ArrayList<>();
-        Stream<Function<R, Pair<String, ?>>> createSetters;
+        Stream<EntityFieldNameValueHandler<?>> createSetters;
         if (!match.hasEntityId()) {
             // set entity ID just in case we need to insert it
             match.setEntityId(idGenerator.generateId());
             match.setCreatedDate(new Date());
             createSetters = Stream.of(
-                    m -> ImmutablePair.of("_id", m.getEntityId()),
-                    m -> ImmutablePair.of("createdDate", m.getCreatedDate())
+                    new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(match.getEntityId())),
+                    new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(match.getCreatedDate()))
             );
             selectFilters.add(Filters.eq("class", match.getClass().getName()));
         } else {
@@ -186,9 +191,15 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         return mongoCollection.findOneAndUpdate(
                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                 getUpdates(
-                        Stream.concat(createSetters, fieldsToUpdateSelectors.stream())
-                                .map(fieldSelector -> fieldSelector.apply(match))
-                                .collect(Collectors.toMap(Pair::getLeft, p -> new SetFieldValueHandler<>(p.getRight())))
+                        Stream.concat(
+                                createSetters,
+                                fieldsToUpdateSelectors.stream()
+                                        .map(fieldSelector -> fieldSelector.apply(match))
+                                        .map(p -> new EntityFieldNameValueHandler<>(p.getLeft(), new SetFieldValueHandler<>(p.getRight())))
+                                )
+                                .collect(Collectors.toMap(
+                                        EntityFieldNameValueHandler::getFieldName,
+                                        EntityFieldNameValueHandler::getValueHandler))
                 ),
                 updateOptions
         );

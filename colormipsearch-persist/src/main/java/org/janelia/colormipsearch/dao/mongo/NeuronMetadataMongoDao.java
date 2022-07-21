@@ -33,11 +33,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
     public PagedResult<N> findNeuronMatches(NeuronSelector neuronSelector, PagedRequest pageRequest) {
         return new PagedResult<>(
                 pageRequest,
-                aggregateAsList(
+                MongoDaoHelper.aggregateAsList(
                         createQueryPipeline(NeuronSelectionHelper.getNeuronMatchFilter(null, neuronSelector)),
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
                         pageRequest.getOffset(),
                         pageRequest.getPageSize(),
+                        mongoCollection,
                         getEntityType()
                 )
         );
