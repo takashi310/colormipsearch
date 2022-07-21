@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -17,6 +18,7 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UnwindOptions;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
@@ -162,12 +164,18 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
         List<Bson> selectFilters = new ArrayList<>();
+        Stream<Function<R, Pair<String, ?>>> createSetters;
         if (!match.hasEntityId()) {
             // set entity ID just in case we need to insert it
             match.setEntityId(idGenerator.generateId());
             match.setCreatedDate(new Date());
+            createSetters = Stream.of(
+                    m -> ImmutablePair.of("_id", m.getEntityId()),
+                    m -> ImmutablePair.of("createdDate", m.getCreatedDate())
+            );
             selectFilters.add(Filters.eq("class", match.getClass().getName()));
         } else {
+            createSetters = Stream.of();
             selectFilters.add(Filters.eq("_id", match.getEntityId()));
         }
         if (match.hasMaskImageRefId() && match.hasMatchedImageRefId()) {
@@ -178,7 +186,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         return mongoCollection.findOneAndUpdate(
                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                 getUpdates(
-                        fieldsToUpdateSelectors.stream()
+                        Stream.concat(createSetters, fieldsToUpdateSelectors.stream())
                                 .map(fieldSelector -> fieldSelector.apply(match))
                                 .collect(Collectors.toMap(Pair::getLeft, p -> new SetFieldValueHandler<>(p.getRight())))
                 ),
