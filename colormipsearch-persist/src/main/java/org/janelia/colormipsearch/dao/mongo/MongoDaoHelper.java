@@ -108,6 +108,10 @@ class MongoDaoHelper {
         }
     }
 
+    static <T> Bson createAttributeFilter(String attributeName, T attributeValue) {
+        return Filters.eq(attributeName, attributeValue);
+    }
+
     static <I> Bson createFilterById(I id) {
         return Filters.eq("_id", id);
     }

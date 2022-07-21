@@ -39,12 +39,22 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     }
 
     @Override
-    public List<R> readMatches(String maskSource, NeuronsMatchFilter<R> matchesFilter) {
+    public List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds, NeuronsMatchFilter<R> matchesFilter) {
         return neuronMatchesDao.findNeuronMatches(
-                        matchesFilter,
-                        new NeuronSelector().addMipID(maskSource),
-                        new NeuronSelector(),
-                        new PagedRequest()
-                ).getResultList();
+                matchesFilter,
+                new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds),
+                new NeuronSelector(),
+                new PagedRequest()
+        ).getResultList();
+    }
+
+    @Override
+    public List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds, NeuronsMatchFilter<R> matchesFilter) {
+        return neuronMatchesDao.findNeuronMatches(
+                matchesFilter,
+                new NeuronSelector(),
+                new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds),
+                new PagedRequest()
+        ).getResultList();
     }
 }

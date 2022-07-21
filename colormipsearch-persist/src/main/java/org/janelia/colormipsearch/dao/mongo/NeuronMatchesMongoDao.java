@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
@@ -50,7 +49,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
     @Override
     public R findByEntityId(Number id) {
         List<R> results = findNeuronMatches(
-                Filters.eq("_id", id),
+                MongoDaoHelper.createFilterById(id),
                 null,
                 null,
                 null,
@@ -70,7 +69,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
             return Collections.emptyList();
         } else {
             return findNeuronMatches(
-                    Filters.in("_id", ids),
+                    MongoDaoHelper.createFilterByIds(ids),
                     null,
                     null,
                     null,
@@ -182,14 +181,14 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                     new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(match.getEntityId())),
                     new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(match.getCreatedDate()))
             );
-            selectFilters.add(Filters.eq("class", match.getClass().getName()));
+            selectFilters.add(MongoDaoHelper.createFilterByClass(match.getClass()));
         } else {
             createSetters = Stream.of();
-            selectFilters.add(Filters.eq("_id", match.getEntityId()));
+            selectFilters.add(MongoDaoHelper.createFilterById(match.getEntityId()));
         }
         if (match.hasMaskImageRefId() && match.hasMatchedImageRefId()) {
-            selectFilters.add(Filters.eq("maskImageRefId", match.getMaskImageRefId()));
-            selectFilters.add(Filters.eq("matchedImageRefId", match.getMatchedImageRefId()));
+            selectFilters.add(MongoDaoHelper.createAttributeFilter("maskImageRefId", match.getMaskImageRefId()));
+            selectFilters.add(MongoDaoHelper.createAttributeFilter("matchedImageRefId", match.getMatchedImageRefId()));
         }
 
         return mongoCollection.findOneAndUpdate(

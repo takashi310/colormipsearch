@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -51,10 +52,10 @@ public class MatchResultsGrouping {
      */
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronMetadata,
-            T extends AbstractNeuronMetadata,
-            R extends AbstractMatch<M, T>> List<ResultMatches<M, T, R>> groupByMaskFields(List<R> matches,
-                                                                                          List<Function<M, ?>> maskFieldSelectors,
-                                                                                          Comparator<R> ranking) {
+                   T extends AbstractNeuronMetadata,
+                   R extends AbstractMatch<M, T>> List<ResultMatches<M, T, R>> groupByMaskFields(List<R> matches,
+                                                                                                 List<Function<M, ?>> maskFieldSelectors,
+                                                                                                 Comparator<R> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R, M>(
@@ -111,11 +112,11 @@ public class MatchResultsGrouping {
      */
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronMetadata,
-            T extends AbstractNeuronMetadata,
-            R extends AbstractMatch<M, T>,
-            R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByMatchedFields(List<R> matches,
-                                                                                               List<Function<T, ?>> matchedFieldSelectors,
-                                                                                               Comparator<R1> ranking) {
+                   T extends AbstractNeuronMetadata,
+                   R extends AbstractMatch<M, T>,
+                   R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByMatchedFields(List<R> matches,
+                                                                                                      List<Function<T, ?>> matchedFieldSelectors,
+                                                                                                      Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R1, T>(
@@ -157,6 +158,61 @@ public class MatchResultsGrouping {
                 ranking,
                 ResultMatches::new
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <M extends AbstractNeuronMetadata,
+                   T extends AbstractNeuronMetadata,
+                   R extends AbstractMatch<M, T>> List<R> expandResultsByMask(ResultMatches<M, T, R> matchesResults) {
+        return matchesResults.getItems().stream()
+                .map(persistedMatch -> {
+                    return (R) persistedMatch.duplicate((src, dest) -> {
+                        M maskImage = matchesResults.getKey().duplicate();
+                        T targetImage = persistedMatch.getMatchedImage();
+                        maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage));
+                        maskImage.setComputeFileData(ComputeFileType.GradientImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskGradientImage));
+                        maskImage.setComputeFileData(ComputeFileType.ZGapImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskZGapImage));
+                        maskImage.setNeuronFileData(FileType.ColorDepthMipInput,
+                                persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
+                        dest.setMaskImage(maskImage);
+                        dest.setMatchedImage(targetImage);
+                        // no reason to keep these around
+                        dest.resetMatchComputeFiles();
+                        dest.resetMatchFiles();
+                    });
+                })
+                .collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <M extends AbstractNeuronMetadata,
+                   T extends AbstractNeuronMetadata,
+                   R1 extends AbstractMatch<T, M>,
+                   R extends AbstractMatch<M, T>> List<R> expandResultsByTarget(ResultMatches<T, M, R1> matchesResults) {
+        return matchesResults.getItems().stream()
+                .map(persistedMatch -> {
+                    return (R) persistedMatch.duplicate((src, dest) -> {
+                        T maskImage = matchesResults.getKey().duplicate();
+                        M targetImage = persistedMatch.getMatchedImage();
+                        maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage));
+                        maskImage.setComputeFileData(ComputeFileType.GradientImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskGradientImage));
+                        maskImage.setComputeFileData(ComputeFileType.ZGapImage,
+                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskZGapImage));
+                        maskImage.setNeuronFileData(FileType.ColorDepthMipInput,
+                                persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
+                        dest.setMaskImage(targetImage);
+                        dest.setMatchedImage(maskImage);
+                        // no reason to keep these around
+                        dest.resetMatchComputeFiles();
+                        dest.resetMatchFiles();
+                    });
+                })
+                .collect(Collectors.toList());
     }
 
 }

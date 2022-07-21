@@ -181,19 +181,32 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
+    /**
+     * The method calculates and updates the gradient scores for all color depth matches of the given mask MIP ID.
+     *
+     * @param gradScoreAlgorithmProvider grad score algorithm provider
+     * @param cdsMatchesReader reader for all matches of the given mask MIP ID
+     * @param maskCDMipId mask MIP ID
+     * @param executor task executor
+     * @param <M> mask type
+     * @param <T> target type
+     */
     @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
             NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader,
-            String cdsMatchesSource,
+            String maskCDMipId,
             Executor executor) {
-        LOG.info("Read color depth matches from {}", cdsMatchesSource);
+        LOG.info("Read color depth matches from {}", maskCDMipId);
         NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
         neuronsMatchFilter.setMatchType(CDMatch.class.getName());
         if (args.pctPositivePixels > 0) {
             neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
-        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatches(cdsMatchesSource, neuronsMatchFilter);
+        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
+                null,
+                Collections.singletonList(maskCDMipId),
+                neuronsMatchFilter);
         // select best matches to process
         List<CDMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,

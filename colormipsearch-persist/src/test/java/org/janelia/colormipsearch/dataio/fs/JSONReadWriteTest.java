@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -85,7 +86,10 @@ public class JSONReadWriteTest {
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>  matchesFromFile =
-                            em2lmMatchesReader.readMatches(f, new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>().setMatchType(CDMatch.class.getName()));
+                            em2lmMatchesReader.readMatchesForMasks(
+                                    null,
+                                    Collections.singletonList(f),
+                                    new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>().setMatchType(CDMatch.class.getName()));
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdMatches.stream()

@@ -3,12 +3,15 @@ package org.janelia.colormipsearch.dataio.fs;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
@@ -19,6 +22,7 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
 public class JSONNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> implements NeuronMatchesReader<M, T, R> {
@@ -35,42 +39,34 @@ public class JSONNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<R> readMatches(String filename, NeuronsMatchFilter<R> matchesFilter) {
-        ResultMatches<M, T, R> matches = readMatchesResults(new File(filename));
-        return convertMatchesResultsToListOfMatches(matches);
+    public List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds,
+                                       NeuronsMatchFilter<R> matchesFilter) {
+        return (List<R>) maskMipIds.stream()
+                .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
+                .map(this::readMatchesResults)
+                .flatMap(resultMatches -> MatchResultsGrouping.expandResultsByMask(resultMatches).stream())
+                .collect(Collectors.toList());
     }
 
-    private ResultMatches<M, T, R> readMatchesResults(File f) {
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds,
+                                         NeuronsMatchFilter<R> matchesFilter) {
+        return (List<R>) targetMipIds.stream()
+                .map(targetMipId -> StringUtils.isNotBlank(targetLibrary) ? Paths.get(targetLibrary, targetMipId).toFile() : new File(targetMipId))
+                .map(this::readMatchesResults)
+                .flatMap(resultMatches -> MatchResultsGrouping.expandResultsByTarget(resultMatches).stream())
+                .collect(Collectors.toList());
+    }
+
+    private <M1 extends AbstractNeuronMetadata, T1 extends AbstractNeuronMetadata, R1 extends AbstractMatch<M1, T1>> ResultMatches<M1, T1, R1> readMatchesResults(File f) {
         try {
-            return mapper.readValue(f, new TypeReference<ResultMatches<M, T, R>>() {});
+            return mapper.readValue(f, new TypeReference<ResultMatches<M1, T1, R1>>() {});
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading CDSMatches from JSON file:" + f, e);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private List<R> convertMatchesResultsToListOfMatches(ResultMatches<M, T, R> matchesResults) {
-        return matchesResults.getItems().stream()
-                .map(persistedMatch -> {
-                    return (R) persistedMatch.duplicate((src, dest) -> {
-                        M maskImage = matchesResults.getKey().duplicate();
-                        T targetImage = persistedMatch.getMatchedImage();
-                        maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,
-                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage));
-                        maskImage.setComputeFileData(ComputeFileType.GradientImage,
-                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskGradientImage));
-                        maskImage.setComputeFileData(ComputeFileType.ZGapImage,
-                                persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskZGapImage));
-                        maskImage.setNeuronFileData(FileType.ColorDepthMipInput,
-                                persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
-                        dest.setMaskImage(maskImage);
-                        dest.setMatchedImage(targetImage);
-                        // no reason to keep these around
-                        dest.resetMatchComputeFiles();
-                        dest.resetMatchFiles();
-                    });
-                })
-                .collect(Collectors.toList());
-    }
 }
