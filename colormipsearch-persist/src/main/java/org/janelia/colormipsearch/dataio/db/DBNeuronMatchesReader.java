@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.dataio.db;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +18,8 @@ import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> implements NeuronMatchesReader<M, T, R> {
+
+    private final static int PAGE_SIZE = 10000;
 
     private final NeuronMetadataDao<M> neuronMetadataDao;
     private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
@@ -44,12 +47,9 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
                                        List<String> maskMipIds,
                                        NeuronsMatchFilter<R> matchesFilter,
                                        List<SortCriteria> sortCriteriaList) {
-        return neuronMatchesDao.findNeuronMatches(
-                matchesFilter,
-                new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds),
-                new NeuronSelector(),
-                new PagedRequest().setSortCriteria(sortCriteriaList)
-        ).getResultList();
+        NeuronSelector maskSelector = new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds);
+        NeuronSelector targetSelector = new NeuronSelector();
+        return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
     }
 
     @Override
@@ -57,11 +57,27 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
                                          List<String> targetMipIds,
                                          NeuronsMatchFilter<R> matchesFilter,
                                          List<SortCriteria> sortCriteriaList) {
-        return neuronMatchesDao.findNeuronMatches(
-                matchesFilter,
-                new NeuronSelector(),
-                new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds),
-                new PagedRequest().setSortCriteria(sortCriteriaList)
-        ).getResultList();
+        NeuronSelector maskSelector = new NeuronSelector();
+        NeuronSelector targetSelector = new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds);
+        return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
+    }
+
+    private List<R> readMatches(NeuronsMatchFilter<R> matchesFilter,
+                                NeuronSelector maskSelector,
+                                NeuronSelector targetSelector,
+                                List<SortCriteria> sortCriteriaList) {
+        long nMatches = neuronMatchesDao.countNeuronMatches(matchesFilter, maskSelector, targetSelector);
+        PagedRequest pagedRequest = new PagedRequest().setSortCriteria(sortCriteriaList).setPageSize(PAGE_SIZE);
+        List<R> matches = new ArrayList<>();
+        for (long offset = 0; offset < nMatches; offset += PAGE_SIZE) {
+            matches.addAll(neuronMatchesDao.findNeuronMatches(
+                            matchesFilter,
+                            maskSelector,
+                            targetSelector,
+                            pagedRequest.setFirstPageOffset(offset)
+                    ).getResultList()
+            );
+        }
+        return matches;
     }
 }
