@@ -13,6 +13,7 @@ import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -66,17 +67,19 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
                                 NeuronSelector maskSelector,
                                 NeuronSelector targetSelector,
                                 List<SortCriteria> sortCriteriaList) {
-        long nMatches = neuronMatchesDao.countNeuronMatches(matchesFilter, maskSelector, targetSelector);
         PagedRequest pagedRequest = new PagedRequest().setSortCriteria(sortCriteriaList).setPageSize(PAGE_SIZE);
         List<R> matches = new ArrayList<>();
-        for (long offset = 0; offset < nMatches; offset += PAGE_SIZE) {
-            matches.addAll(neuronMatchesDao.findNeuronMatches(
-                            matchesFilter,
-                            maskSelector,
-                            targetSelector,
-                            pagedRequest.setFirstPageOffset(offset)
-                    ).getResultList()
+        for (long offset = 0; ; offset += PAGE_SIZE) {
+            PagedResult<R> currentMatches = neuronMatchesDao.findNeuronMatches(
+                    matchesFilter,
+                    maskSelector,
+                    targetSelector,
+                    pagedRequest.setFirstPageOffset(offset)
             );
+            if (currentMatches.isEmpty()) {
+                break;
+            }
+            matches.addAll(currentMatches.getResultList());
         }
         return matches;
     }
