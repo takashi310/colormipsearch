@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -28,7 +29,7 @@ import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -54,16 +55,6 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                         "the default behavior is to update entries that match same images", arity = 0)
         boolean alwaysNewMatches = false;
 
-        @Parameter(names = {"--images", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
-                description = "Comma-delimited list of JSON configs containing images to search")
-        List<ListArg> librariesInputs;
-
-        @Parameter(names = {"--images-index"}, description = "Input image file(s) start index")
-        long librariesStartIndex;
-
-        @Parameter(names = {"--images-length"}, description = "Input image file(s) length")
-        int librariesLength;
-
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
         List<ListArg> masksInputs;
@@ -73,6 +64,16 @@ public class ColorDepthSearchCmd extends AbstractCmd {
 
         @Parameter(names = {"--masks-length"}, description = "Mask file(s) length")
         int masksLength;
+
+        @Parameter(names = {"--targets", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
+                description = "Comma-delimited list of JSON configs containing images to search")
+        List<ListArg> targetsInputs;
+
+        @Parameter(names = {"--targets-index"}, description = "Input image file(s) start index")
+        long targetsStartIndex;
+
+        @Parameter(names = {"--targets-length"}, description = "Input image file(s) length")
+        int targetsLength;
 
         public ColorDepthSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -132,8 +133,8 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
         List<T> targetMips = (List<T>) readMIPs(cdmiPsReader,
-                args.librariesInputs,
-                args.librariesStartIndex, args.librariesLength,
+                args.targetsInputs,
+                args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
         if (maskMips.isEmpty() || targetMips.isEmpty()) {
             LOG.info("Nothing to do for {} masks and {} targets", maskMips.size(), targetMips.size());
@@ -142,7 +143,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         // save CDS parameters
         getCDSParamsWriter().writeParams(
                 args.masksInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
-                args.librariesInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
+                args.targetsInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters());
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
@@ -196,8 +197,10 @@ public class ColorDepthSearchCmd extends AbstractCmd {
                 );
             }
         } else {
-            return new JSONCDSMatchesWriter<>(
+            return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    AbstractNeuronMetadata::getId, // group results by neuron MIP ID
+                    Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                     args.getPerMaskDir(),
                     args.getPerTargetDir()
             );

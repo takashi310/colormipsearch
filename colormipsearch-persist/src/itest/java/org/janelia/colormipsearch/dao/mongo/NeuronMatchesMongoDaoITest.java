@@ -42,10 +42,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
             T extends AbstractNeuronMetadata>
     void tearDown() {
         // delete the data that was created for testing
-        NeuronMatchesDao<M, T, AbstractMatch<M, T>> testDao = daosProvider.getNeuronMatchesDao();
+        NeuronMatchesDao<M, T, AbstractMatch<M, T>> neuronMatchesDao = daosProvider.getNeuronMatchesDao();
         @SuppressWarnings("unchecked")
         List<AbstractMatch<M, T>> toDelete = (List<AbstractMatch<M, T>>) testData;
-        deleteAll(testDao, toDelete);
+        deleteAll(neuronMatchesDao, toDelete);
     }
 
     @Test
@@ -61,10 +61,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                         113,
                         .5
                 );
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
-        testDao.save(testCDMatch);
-        CDMatch<EMNeuronMetadata, LMNeuronMetadata> persistedCDMatch = testDao.findByEntityId(testCDMatch.getEntityId());
+        neuronMatchesDao.save(testCDMatch);
+        CDMatch<EMNeuronMetadata, LMNeuronMetadata> persistedCDMatch = neuronMatchesDao.findByEntityId(testCDMatch.getEntityId());
         assertNotNull(persistedCDMatch);
         assertNotSame(testCDMatch, persistedCDMatch);
         assertEquals(testCDMatch.getEntityId(), persistedCDMatch.getEntityId());
@@ -76,24 +76,24 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
 
     @Test
     public void persistCDMatchWithImages() {
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
 
         verifyMultipleCDMatcheshWithImages(
                 1,
-                testDao,
-                ms -> Collections.singletonList(testDao.findByEntityId(ms.get(0).getEntityId())));
+                neuronMatchesDao,
+                ms -> Collections.singletonList(neuronMatchesDao.findByEntityId(ms.get(0).getEntityId())));
     }
 
     @Test
     public void findMultipleCDMatchesByEntityIds() {
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
 
         verifyMultipleCDMatcheshWithImages(
                 20,
-                testDao,
-                ms -> testDao.findByEntityIds(
+                neuronMatchesDao,
+                ms -> neuronMatchesDao.findByEntityIds(
                         ms.stream()
                                 .map(AbstractBaseEntity::getEntityId)
                                 .collect(Collectors.toList())
@@ -104,14 +104,14 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     @SuppressWarnings("unchecked")
     @Test
     public void findAllCDMatchesWithoutPagination() {
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
 
         Class<?> searchedType = CDMatch.class;
         verifyMultipleCDMatcheshWithImages(
                 20,
-                testDao,
-                ms -> testDao.findAll((Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) searchedType, new PagedRequest()).getResultList()
+                neuronMatchesDao,
+                ms -> neuronMatchesDao.findAll((Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) searchedType, new PagedRequest()).getResultList()
         );
     }
 
@@ -120,10 +120,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     public void findAllCDMatchesWithPagination() {
         NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
         Pair<EMNeuronMetadata, LMNeuronMetadata> neuronImages = createMatchingImages(neuronMetadataDao);
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
         int nTestMatches = 27;
-        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, testDao);
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, neuronMatchesDao);
         try {
             int pageSize = 5;
             Class<?> searchedType = CDMatch.class;
@@ -131,7 +131,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 int page = i / pageSize;
                 retrieveAndCompareCDMatcheshWithImages(
                         testCDMatches.subList(i, Math.min(testCDMatches.size(), i + pageSize)),
-                        ms -> testDao.findAll(
+                        ms -> neuronMatchesDao.findAll(
                                 (Class<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>) searchedType,
                                 new PagedRequest().setPageNumber(page).setPageSize(pageSize)).getResultList());
             }
@@ -145,10 +145,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
     public void findCDMatchesUsingNeuronSelectors() {
         NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
         Pair<EMNeuronMetadata, LMNeuronMetadata> neuronImages = createMatchingImages(neuronMetadataDao);
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
         int nTestMatches = 27;
-        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, testDao);
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = createTestCDMatches(nTestMatches, neuronImages, neuronMatchesDao);
         try {
             int pageSize = 5;
             NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> matchesFilter =
@@ -167,7 +167,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 PagedRequest pagedRequest = new PagedRequest().setPageNumber(page).setPageSize(pageSize);
                 retrieveAndCompareCDMatcheshWithImages(
                         testCDMatches.subList(i, Math.min(testCDMatches.size(), i + pageSize)),
-                        ms -> testDao.findNeuronMatches(
+                        ms -> neuronMatchesDao.findNeuronMatches(
                                 matchesFilter,
                                 emNeuronSelector,
                                 lmNeuronSelector,
@@ -176,7 +176,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
             // retrieve all
             retrieveAndCompareCDMatcheshWithImages(
                     testCDMatches,
-                    ms -> testDao.findNeuronMatches(
+                    ms -> neuronMatchesDao.findNeuronMatches(
                             matchesFilter,
                             emNeuronSelector,
                             lmNeuronSelector,
@@ -184,23 +184,62 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
             // retrieve none
             retrieveAndCompareCDMatcheshWithImages(
                     Collections.emptyList(),
-                    ms -> testDao.findNeuronMatches(
+                    ms -> neuronMatchesDao.findNeuronMatches(
                             matchesFilter,
                             lmNeuronSelector,
                             emNeuronSelector,
                             new PagedRequest()).getResultList());
             assertEquals(
                     nTestMatches,
-                    testDao.countNeuronMatches(
+                    neuronMatchesDao.countNeuronMatches(
                             matchesFilter,
                             emNeuronSelector,
                             lmNeuronSelector));
             assertEquals(
                     0,
-                    testDao.countNeuronMatches(
+                    neuronMatchesDao.countNeuronMatches(
                             matchesFilter,
                             lmNeuronSelector,
                             emNeuronSelector));
+        } finally {
+            deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void findAndUpdate() {
+        NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
+        Pair<EMNeuronMetadata, LMNeuronMetadata> neuronImages = createMatchingImages(neuronMetadataDao);
+        try {
+
+            NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
+                    daosProvider.getNeuronMatchesDao();
+
+            CDMatch<EMNeuronMetadata, LMNeuronMetadata> testCDMatch =
+                    createTestCDMatch(neuronImages.getLeft(), neuronImages.getRight(), 113, 0.76);
+
+            List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testCDMatches = Collections.singletonList(testCDMatch);
+
+            List<Function<CDMatch<EMNeuronMetadata, LMNeuronMetadata>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
+                    m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
+                    m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
+                    m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
+                    m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
+                    m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+            );
+
+            // save the matches multiple times and check the count is still 1
+            for (int i = 0; i < 3; i++) {
+                testCDMatch.setMatchingPixels(testCDMatch.getMatchingPixels() + i);
+                testCDMatch.setMatchingPixelsRatio(testCDMatch.getMatchingPixelsRatio() / (i + 1));
+                neuronMatchesDao.saveOrUpdateAll(testCDMatches, fieldsToUpdate);
+                // check that it was saved
+                assertEquals(
+                        1,
+                        neuronMatchesDao.countNeuronMatches(null, null, null)
+                );
+            }
         } finally {
             deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
         }
@@ -289,10 +328,10 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                                 .get(),
                         0.5
                 );
-        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> testDao =
+        NeuronMatchesDao<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatchesDao =
                 daosProvider.getNeuronMatchesDao();
-        testDao.save(testPPPMatch);
-        PPPMatch<EMNeuronMetadata, LMNeuronMetadata> persistedPPPMatch = testDao.findByEntityId(testPPPMatch.getEntityId());
+        neuronMatchesDao.save(testPPPMatch);
+        PPPMatch<EMNeuronMetadata, LMNeuronMetadata> persistedPPPMatch = neuronMatchesDao.findByEntityId(testPPPMatch.getEntityId());
         assertNotNull(persistedPPPMatch);
         assertNotSame(testPPPMatch, persistedPPPMatch);
         assertEquals(testPPPMatch.getEntityId(), persistedPPPMatch.getEntityId());
@@ -325,7 +364,6 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
 
     @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> void addTestData(R o) {
-        List<AbstractMatch<M, T>> addTo = (List<AbstractMatch<M, T>>) testData;
-        addTo.add(o);
+        ((List<AbstractMatch<M, T>>) testData).add(o);
     }
 }

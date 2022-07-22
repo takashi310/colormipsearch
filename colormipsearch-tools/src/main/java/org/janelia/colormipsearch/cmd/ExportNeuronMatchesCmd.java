@@ -1,6 +1,9 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -12,18 +15,23 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.JSONPPPMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This command is used to export data from the database to the file system in order to upload it to S3.
+ */
 public class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExportNeuronMatchesCmd.class);
@@ -43,11 +51,20 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                 arity = 0)
         boolean withGradScores = false;
 
+        @Parameter(names = {"--masks"}, description = "Masks library")
+        String masksLibrary;
+
         @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
         String perMaskSubdir;
 
+        @Parameter(names = {"--targets"}, description = "Targets library")
+        String targetsLibrary;
+
         @Parameter(names = {"--perTargetSubdir"}, description = "Results subdirectory for results grouped by target MIP ID")
         String perTargetSubdir;
+
+        @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
+        int processingPartitionSize = 100;
 
         public ExportMatchesCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -93,9 +110,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatches() {
         NeuronMatchesReader<M, T, R> neuronMatchesReader = getMatchesReader();
-        NeuronMatchesWriter<M, T, R> neuronMatchesWriter = getMatchesWriter();
+        NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
+        NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
 
-        NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
+        NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<>();
         neuronsMatchFilter.setMatchType(args.matchResultTypes.getMatchType());
         if (args.pctPositivePixels > 0) {
             neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
@@ -104,6 +122,48 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
             neuronsMatchFilter.addSScore("gradientAreaGap", 0);
         }
 
+        if (perMaskNeuronMatchesWriter != null)
+            exportNeuronMatchesPerMask(neuronsMatchFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
+        if (perTargetNeuronMatchesWriter != null)
+            exportNeuronMatchesPerTarget(neuronsMatchFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    void exportNeuronMatchesPerMask(NeuronsMatchFilter<R> neuronsMatchFilter,
+                                    NeuronMatchesReader<M, T, R> neuronMatchesReader,
+                                    NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter) {
+
+        List<String> masks = neuronMatchesReader.listMatchesLocations(
+                Collections.singletonList(new DataSourceParam(args.masksLibrary, 0, -1)));
+        ItemsHandling.partitionCollection(masks, args.processingPartitionSize).stream().parallel()
+                .forEach(partititionItems -> {
+                    partititionItems.forEach(maskId -> {
+                        LOG.info("Read color depth matches for {}", maskId);
+                        List<R> matchesForMask = neuronMatchesReader.readMatchesForMasks(
+                                null,
+                                Collections.singletonList(maskId),
+                                neuronsMatchFilter);
+                        perMaskNeuronMatchesWriter.write(matchesForMask);
+                    });
+                });
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    void exportNeuronMatchesPerTarget(NeuronsMatchFilter<R> neuronsMatchFilter,
+                                      NeuronMatchesReader<M, T, R> neuronMatchesReader,
+                                      NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter) {
+        List<String> targets = neuronMatchesReader.listMatchesLocations(
+                Collections.singletonList(new DataSourceParam(args.targetsLibrary, 0, -1)));
+        ItemsHandling.partitionCollection(targets, args.processingPartitionSize).stream().parallel()
+                .forEach(partititionItems -> {
+                    partititionItems.forEach(targetId -> {
+                        LOG.info("Read color depth matches for {}", targetId);
+                        List<R> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
+                                null,
+                                Collections.singletonList(targetId),
+                                neuronsMatchFilter);
+                    });
+                });
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
@@ -115,23 +175,18 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-    NeuronMatchesWriter<M, T, R> getMatchesWriter() {
-        if (args.matchResultTypes == MatchResultTypes.CDS) {
-            return (NeuronMatchesWriter<M, T, R>) new JSONCDSMatchesWriter<>(
+    NeuronMatchesWriter<M, T, R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
+        if (perMaskDir != null || perTargetDir != null) {
+            return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.getPerMaskDir(),
-                    args.getPerTargetDir()
+                    args.matchResultTypes.getMatchGrouping(),
+                    args.matchResultTypes.getMatchOrdering(),
+                    perMaskDir,
+                    perTargetDir
             );
-        } else if (args.matchResultTypes == MatchResultTypes.PPP) {
-            return (NeuronMatchesWriter<M, T, R>) new JSONPPPMatchesWriter<>(
-                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.getOutputDir()
-            );
-        } else {
-            throw new IllegalArgumentException("Invalid match result type: " + args.matchResultTypes);
-        }
+        } else
+            return null;
     }
 
 }

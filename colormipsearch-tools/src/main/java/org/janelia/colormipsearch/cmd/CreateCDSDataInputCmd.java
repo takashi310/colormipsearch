@@ -38,9 +38,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
-import org.janelia.colormipsearch.dataio.CDSMipsWriter;
-import org.janelia.colormipsearch.dataio.db.DBCDSMipsWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMipsWriter;
+import org.janelia.colormipsearch.dataio.CDMIPsWriter;
+import org.janelia.colormipsearch.dataio.db.DBCDMIPsWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsWriter;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -306,7 +306,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
             }
         };
 
-        CDSMipsWriter gen = getCDSInputWriter();
+        CDMIPsWriter gen = getCDSInputWriter();
 
         Optional<LibraryVariantArg> inputLibraryVariantChoice = computationInputVariantTypes.stream()
                 .map(variantType -> libraryPaths.getLibraryVariant(variantType).orElse(null))
@@ -322,6 +322,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
                 inputImages.getRight().size(),
                 inputLibraryVariantChoice);
 
+        gen.open();
         for (int pageOffset = libraryPaths.library.offset; pageOffset < to; pageOffset += DEFAULT_PAGE_LENGTH) {
             int currentPageSize = Math.min(DEFAULT_PAGE_LENGTH, to - pageOffset);
             List<ColorDepthMIP> cdmipsPage = retrieveColorDepthMipsWithSamples(
@@ -353,7 +354,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
                     .peek(this::updateNeuronFiles)
                     .forEach(gen::write);
         }
-        gen.done();
+        gen.close();
     }
 
     private void populateOtherComputeFilesFromInput(AbstractNeuronMetadata cdmip,
@@ -383,11 +384,11 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
                 });
     }
 
-    private CDSMipsWriter getCDSInputWriter() {
+    private CDMIPsWriter getCDSInputWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBCDSMipsWriter(getConfig());
+            return new DBCDMIPsWriter(getConfig());
         } else {
-            return new JSONCDSMipsWriter(args.getOutputDir(),
+            return new JSONCDMIPsWriter(args.getOutputDir(),
                     args.outputFileName,
                     args.library.offset,
                     args.library.length,

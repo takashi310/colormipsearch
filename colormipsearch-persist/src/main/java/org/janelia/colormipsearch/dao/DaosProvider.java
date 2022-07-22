@@ -7,8 +7,6 @@ import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.mongo.NeuronMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
-import org.janelia.colormipsearch.dao.support.IdGenerator;
-import org.janelia.colormipsearch.dao.support.TimebasedIdGenerator;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 

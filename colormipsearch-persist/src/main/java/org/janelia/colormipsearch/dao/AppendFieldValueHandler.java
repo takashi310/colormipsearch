@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.dao.support;
+package org.janelia.colormipsearch.dao;
 
 /**
  * @param <T> field value type

@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.dao.support;
+package org.janelia.colormipsearch.dao;
 
 /**
  * Set value only first time when the document is created.

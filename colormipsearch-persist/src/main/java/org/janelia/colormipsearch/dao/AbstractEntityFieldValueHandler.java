@@ -1,8 +1,7 @@
-package org.janelia.colormipsearch.dao.support;
+package org.janelia.colormipsearch.dao;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 
 /**
  * @param <T> field value type

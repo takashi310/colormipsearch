@@ -38,7 +38,7 @@ public class JSONReadWriteTest {
     private static Path lm2emDir;
 
     private ObjectMapper mapper;
-    private JSONCDSMatchesWriter<EMNeuronMetadata, LMNeuronMetadata> em2lmJsonWriter;
+    private JSONNeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> em2lmJsonWriter;
     private JSONNeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> em2lmMatchesReader;
 
     @BeforeClass
@@ -56,7 +56,9 @@ public class JSONReadWriteTest {
     @Before
     public void setUp() {
         mapper = new ObjectMapper();
-        em2lmJsonWriter = new JSONCDSMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
+        em2lmJsonWriter = new JSONNeuronMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
+                AbstractNeuronMetadata::getId, // group results by neuron MIP ID
+                Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                 em2lmDir,
                 lm2emDir
         );

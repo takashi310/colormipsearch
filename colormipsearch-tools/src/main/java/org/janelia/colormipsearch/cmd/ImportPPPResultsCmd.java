@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,14 +31,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONPPPMatchesWriter;
-import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
+import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
@@ -310,9 +309,13 @@ public class ImportPPPResultsCmd extends AbstractCmd {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesWriter<>(getConfig());
         } else {
-            return new JSONPPPMatchesWriter<>(
+            return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.getOutputDir());
+                    AbstractNeuronMetadata::getPublishedName, // PPP results are grouped by published name
+                    Comparator.comparingDouble(m -> (((PPPMatch<?,?>) m).getRank())), // ascending order by rank
+                    args.getOutputDir(),
+                    null // only write results per mask
+            );
         }
     }
 

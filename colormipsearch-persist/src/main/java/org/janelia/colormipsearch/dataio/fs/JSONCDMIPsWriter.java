@@ -14,33 +14,40 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.janelia.colormipsearch.dataio.CDSMipsWriter;
+import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JSONCDSMipsWriter implements CDSMipsWriter {
+public class JSONCDMIPsWriter implements CDMIPsWriter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JSONCDSMipsWriter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JSONCDMIPsWriter.class);
 
     private final ObjectMapper mapper;
-    private final JsonGenerator gen;
+    private final Path outputPath;
+    private final File outputFile;
+    private final boolean append;
+    private JsonGenerator gen;
 
-    public JSONCDSMipsWriter(Path outputPath,
-                             String outputFileName,
-                             int libraryFromIndex,
-                             int libraryToIndex,
-                             boolean append,
-                             ObjectMapper mapper) {
+    public JSONCDMIPsWriter(Path outputPath,
+                            String outputFileName,
+                            int libraryFromIndex,
+                            int libraryToIndex,
+                            boolean append,
+                            ObjectMapper mapper) {
         String outputName = libraryFromIndex > 0
                 ? outputFileName + "-" + libraryFromIndex + "-" + libraryToIndex + ".json"
                 : outputFileName + ".json";
+        this.outputPath = outputPath;
+        this.outputFile = outputPath.resolve(outputName).toFile();
+        this.append = append;
         this.mapper = mapper;
-        this.gen = createJsonGenerator(outputPath, outputName, append);
     }
 
-    public CDSMipsWriter prepare() {
-        return this;
+    @Override
+    public void open() {
+        FSUtils.createDirs(outputPath);
+        this.gen = createJsonGenerator();
     }
 
     @Override
@@ -53,7 +60,7 @@ public class JSONCDSMipsWriter implements CDSMipsWriter {
     }
 
     @Override
-    public void done() {
+    public void close() {
         try {
             gen.writeEndArray();
             gen.flush();
@@ -62,27 +69,19 @@ public class JSONCDSMipsWriter implements CDSMipsWriter {
         }
     }
 
-    private JsonGenerator createJsonGenerator(Path outputPath,
-                                              String outputName,
-                                              boolean append) {
-        try {
-            Files.createDirectories(outputPath);
-        } catch (Exception e) {
-            throw new IllegalStateException("Error creating output directory: " + outputPath, e);
-        }
-        Path outputFilePath = outputPath.resolve(outputName);
-        LOG.info("Write color depth MIPs to {}", outputFilePath);
-        if (Files.exists(outputFilePath) && append) {
-            return openOutputForAppend(outputFilePath.toFile());
+    private JsonGenerator createJsonGenerator() {
+        LOG.info("Write color depth MIPs to {}", outputFile);
+        if (outputFile.exists() && append) {
+            return openOutputForAppend();
         } else {
-            return openOutput(outputFilePath.toFile());
+            return openOutput();
         }
     }
 
-    private JsonGenerator openOutputForAppend(File of) {
+    private JsonGenerator openOutputForAppend() {
         try {
-            LOG.debug("Append to {}", of);
-            RandomAccessFile rf = new RandomAccessFile(of, "rw");
+            LOG.debug("Append to {}", outputFile);
+            RandomAccessFile rf = new RandomAccessFile(outputFile, "rw");
             long rfLength = rf.length();
             // position FP after the end of the last item
             // this may not work on Windows because of the new line separator
@@ -98,19 +97,19 @@ public class JSONCDSMipsWriter implements CDSMipsWriter {
             rf.seek(pos);
             return gen;
         } catch (IOException e) {
-            LOG.error("Error creating the output stream to be appended for {}", of, e);
+            LOG.error("Error creating the output stream to be appended for {}", outputFile, e);
             throw new UncheckedIOException(e);
         }
     }
 
-    private JsonGenerator openOutput(File of) {
+    private JsonGenerator openOutput() {
         try {
-            JsonGenerator gen = mapper.getFactory().createGenerator(new FileOutputStream(of), JsonEncoding.UTF8);
+            JsonGenerator gen = mapper.getFactory().createGenerator(new FileOutputStream(outputFile), JsonEncoding.UTF8);
             gen.useDefaultPrettyPrinter();
             gen.writeStartArray();
             return gen;
         } catch (IOException e) {
-            LOG.error("Error creating the output stream for {}", of, e);
+            LOG.error("Error creating the output stream for {}", outputFile, e);
             throw new UncheckedIOException(e);
         }
     }

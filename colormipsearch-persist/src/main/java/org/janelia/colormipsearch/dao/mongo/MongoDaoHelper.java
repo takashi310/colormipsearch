@@ -24,9 +24,9 @@ import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.dao.SortCriteria;
 import org.janelia.colormipsearch.dao.SortDirection;
-import org.janelia.colormipsearch.dao.support.AppendFieldValueHandler;
-import org.janelia.colormipsearch.dao.support.IncFieldValueHandler;
-import org.janelia.colormipsearch.dao.support.SetOnCreateValueHandler;
+import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
+import org.janelia.colormipsearch.dao.IncFieldValueHandler;
+import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

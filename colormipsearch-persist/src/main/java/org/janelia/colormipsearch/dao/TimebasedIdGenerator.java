@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.dao.support;
+package org.janelia.colormipsearch.dao;
 
 import java.math.BigInteger;
 import java.net.InetAddress;

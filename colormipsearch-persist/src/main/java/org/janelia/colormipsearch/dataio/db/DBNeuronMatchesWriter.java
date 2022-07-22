@@ -18,7 +18,9 @@ public class DBNeuronMatchesWriter<M extends AbstractNeuronMetadata, T extends A
         this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
     }
 
+    @Override
     public void write(List<R> matches) {
         neuronMatchesDao.saveAll(matches);
     }
+
 }

@@ -120,22 +120,25 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 loadQueryROIMask(args.queryROIMaskName),
                 excludedRegions
         );
-        NeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
-
         long startTime = System.currentTimeMillis();
-        List<String> itemsToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
-        int size = itemsToProcess.size();
+        NeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
+        List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
+        int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
-        ItemsHandling.partitionCollection(itemsToProcess, args.processingPartitionSize).stream().parallel()
+        // partition matches and process all partitions concurrently
+        ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize).stream().parallel()
                 .forEach(partititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
-                    partititionItems.forEach(toProcess -> {
-                        calculateAndUpdateGradientScores(
-                                gradScoreAlgorithmProvider,
-                                cdMatchesReader,
-                                toProcess,
-                                executor
-                        );
+                    // process each item from the current partition sequentially 
+                    partititionItems.forEach(maskIdToProcess -> {
+                        // read all matches for the current mask
+                        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
+                        // calculate the grad scores
+                        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWithGradScores = calculateGradientScores(
+                                        gradScoreAlgorithmProvider,
+                                        cdMatchesForMask,
+                                        executor);
+                        updateCDMatches(cdMatchesWithGradScores);
                     });
                     LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
                             partititionItems.size(),
@@ -150,6 +153,12 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 (Runtime.getRuntime().totalMemory() / _1M));
     }
 
+    /**
+     * The ROI mask is typically the hemibrain mask that should be applied when the color depth search is done from LM to EM.
+     * 
+     * @param queryROIMask the location of the ROI mask
+     * @return
+     */
     private ImageArray<?> loadQueryROIMask(String queryROIMask) {
         if (StringUtils.isBlank(queryROIMask)) {
             return null;
@@ -185,39 +194,21 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
      * The method calculates and updates the gradient scores for all color depth matches of the given mask MIP ID.
      *
      * @param gradScoreAlgorithmProvider grad score algorithm provider
-     * @param cdsMatchesReader reader for all matches of the given mask MIP ID
-     * @param maskCDMipId mask MIP ID
+     * @param cdMatches color depth matches for which the grad score will be computed
      * @param executor task executor
      * @param <M> mask type
      * @param <T> target type
      */
     @SuppressWarnings("unchecked")
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void calculateAndUpdateGradientScores(
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+    List<CDMatch<M, T>> calculateGradientScores(
             ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
-            NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader,
-            String maskCDMipId,
+            List<CDMatch<M, T>> cdMatches,
             Executor executor) {
-        LOG.info("Read color depth matches from {}", maskCDMipId);
-        NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
-        neuronsMatchFilter.setMatchType(CDMatch.class.getName());
-        if (args.pctPositivePixels > 0) {
-            neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
-        }
-        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
-                null,
-                Collections.singletonList(maskCDMipId),
-                neuronsMatchFilter);
-        // select best matches to process
-        List<CDMatch<M, T>> selectedMatches = ColorMIPProcessUtils.selectBestMatches(
-                allCDMatches,
-                args.numberOfBestLines,
-                args.numberOfBestSamplesPerLine,
-                args.numberOfBestMatchesPerSample
-        );
         // group the matches by the mask input file - this is because we do not want to mix FL and non-FL neuron images for example
         List<ResultMatches<M, T, CDMatch<M, T>>> selectedMatchesGroupedByInput =
                 MatchResultsGrouping.simpleGroupByMaskFields(
-                        selectedMatches,
+                        cdMatches,
                         Arrays.asList(
                                 AbstractNeuronMetadata::getId,
                                 m -> m.getComputeFileName(ComputeFileType.InputColorDepthImage)
@@ -239,14 +230,39 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
         updateNormalizedScores(matchesWithGradScores);
 
+        return matchesWithGradScores;
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void updateCDMatches(List<CDMatch<M, T>> cdMatches) {
         NeuronMatchesUpdater<M, T, CDMatch<M, T>> updatesWriter = getCDMatchesUpdater();
         updatesWriter.writeUpdates(
-                matchesWithGradScores,
+                cdMatches,
                 Arrays.asList(
                         m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
                         m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
                         m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
                 ));
+    }
+
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+    List<CDMatch<M, T>> getCDMatchesForMask(NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader, String maskCDMipId) {
+        LOG.info("Read color depth matches from {}", maskCDMipId);
+        NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
+        neuronsMatchFilter.setMatchType(CDMatch.class.getName());
+        if (args.pctPositivePixels > 0) {
+            neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
+        }
+        List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
+                null,
+                Collections.singletonList(maskCDMipId),
+                neuronsMatchFilter);
+        // select best matches to process
+        return ColorMIPProcessUtils.selectBestMatches(
+                allCDMatches,
+                args.numberOfBestLines,
+                args.numberOfBestSamplesPerLine,
+                args.numberOfBestMatchesPerSample
+        );
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>

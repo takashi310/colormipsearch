@@ -12,7 +12,7 @@ import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.PagedRequest;
 import org.janelia.colormipsearch.dao.PagedResult;
-import org.janelia.colormipsearch.dao.support.IdGenerator;
+import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends AbstractMongoDao<N>
