@@ -56,6 +56,7 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     public <N extends AbstractNeuronMetadata> N duplicate() {
         EMNeuronMetadata n = new EMNeuronMetadata();
         n.copyFrom(this);
+        n.bodyRef = this.bodyRef;
         n.neuronType = this.neuronType;
         n.neuronInstance = this.neuronInstance;
         n.state = this.state;
