@@ -33,6 +33,8 @@ import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesUpdater;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesUpdater;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
+import org.janelia.colormipsearch.datarequests.SortCriteria;
+import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.mips.NeuronMIP;
@@ -246,7 +248,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
     List<CDMatch<M, T>> getCDMatchesForMask(NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader, String maskCDMipId) {
-        LOG.info("Read color depth matches from {}", maskCDMipId);
+        LOG.info("Read all color depth matches for {}", maskCDMipId);
         NeuronsMatchFilter<CDMatch<M, T>> neuronsMatchFilter = new NeuronsMatchFilter<>();
         neuronsMatchFilter.setMatchType(CDMatch.class.getName());
         if (args.pctPositivePixels > 0) {
@@ -255,8 +257,12 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
         List<CDMatch<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
                 null,
                 Collections.singletonList(maskCDMipId),
-                neuronsMatchFilter);
+                neuronsMatchFilter,
+                Collections.singletonList(
+                        new SortCriteria("normalizedScore", SortDirection.DESC)
+                ));
         // select best matches to process
+        LOG.info("Select best color depth matches for {}", maskCDMipId);
         return ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,
                 args.numberOfBestLines,

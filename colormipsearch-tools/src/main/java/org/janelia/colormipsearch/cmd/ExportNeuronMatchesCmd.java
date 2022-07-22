@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -21,6 +22,8 @@ import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
+import org.janelia.colormipsearch.datarequests.SortCriteria;
+import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
@@ -142,7 +145,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                         List<R> matchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 null,
                                 Collections.singletonList(maskId),
-                                neuronsMatchFilter);
+                                neuronsMatchFilter,
+                                Collections.singletonList(
+                                        new SortCriteria("normalizedScore", SortDirection.DESC)
+                                ));
                         perMaskNeuronMatchesWriter.write(matchesForMask);
                     });
                 });
@@ -161,7 +167,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                         List<R> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
                                 null,
                                 Collections.singletonList(targetId),
-                                neuronsMatchFilter);
+                                neuronsMatchFilter,
+                                Collections.singletonList(
+                                        new SortCriteria("normalizedScore", SortDirection.DESC)
+                                ));
                     });
                 });
     }

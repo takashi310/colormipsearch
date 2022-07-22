@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.BaseEntity;
 
 /**

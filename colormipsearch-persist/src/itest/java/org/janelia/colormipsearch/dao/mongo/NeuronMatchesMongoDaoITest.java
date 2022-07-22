@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
-import org.janelia.colormipsearch.dao.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;

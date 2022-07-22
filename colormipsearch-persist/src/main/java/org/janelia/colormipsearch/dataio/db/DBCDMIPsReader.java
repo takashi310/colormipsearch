@@ -6,7 +6,7 @@ import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
-import org.janelia.colormipsearch.dao.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;

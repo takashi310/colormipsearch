@@ -91,7 +91,8 @@ public class JSONReadWriteTest {
                             em2lmMatchesReader.readMatchesForMasks(
                                     null,
                                     Collections.singletonList(f),
-                                    new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>().setMatchType(CDMatch.class.getName()));
+                                    new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>().setMatchType(CDMatch.class.getName()),
+                                    null);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdMatches.stream()

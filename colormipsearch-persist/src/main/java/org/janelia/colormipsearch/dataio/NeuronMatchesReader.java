@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dataio;
 import java.util.List;
 
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
+import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
@@ -27,7 +28,8 @@ public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
      * @return
      */
     List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds,
-                                NeuronsMatchFilter<R> matchesFilter);
+                                NeuronsMatchFilter<R> matchesFilter,
+                                List<SortCriteria> sortCriteriaList);
 
     /**
      * Read matches for the specified targets library and mips. A null or empty list will ignore that filter.
@@ -38,5 +40,6 @@ public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
      * @return
      */
     List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds,
-                                  NeuronsMatchFilter<R> matchesFilter);
+                                  NeuronsMatchFilter<R> matchesFilter,
+                                  List<SortCriteria> sortCriteriaList);
 }

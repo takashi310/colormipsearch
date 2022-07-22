@@ -10,8 +10,8 @@ import com.mongodb.client.model.Indexes;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
-import org.janelia.colormipsearch.dao.PagedRequest;
-import org.janelia.colormipsearch.dao.PagedResult;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
