@@ -3,19 +3,23 @@ package org.janelia.colormipsearch.results;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -44,7 +48,7 @@ public class MatchResultsGroupingTest {
     public void groupByMatched() {
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatches = readTestMatches();
         checkGroupedResults(
-                MatchResultsGrouping.groupByMatchedFields(
+                MatchResultsGrouping.groupByTargetFields(
                         testMatches,
                         Collections.singletonList(
                                 AbstractNeuronMetadata::getId
@@ -70,6 +74,56 @@ public class MatchResultsGroupingTest {
                 assertTrue(CDMatch.getMatchComputeFiles().size() > 0);
             }
         }
+    }
+
+    @Test
+    public void expandResultsGroupedByMask() {
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatches = readTestMatches();
+        List<ResultMatches<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>>> groupedResults = MatchResultsGrouping.groupByMaskFields(
+                testMatches,
+                Collections.singletonList(
+                        AbstractNeuronMetadata::getId
+                ),
+                Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore())));
+        Comparator<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> ordering =
+                Comparator.comparing(m -> m.getMaskImage().getId() + m.getMatchedImage().getId() + m.getMatchingPixels());
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> expectedResults =
+                testMatches.stream()
+                        .peek(m -> { m.resetMatchFiles(); m.resetMatchComputeFiles(); })
+                        .sorted(ordering)
+                        .collect(Collectors.toList());
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> expandedResults =
+                groupedResults.stream()
+                        .map(MatchResultsGrouping::expandResultsByMask)
+                        .flatMap(Collection::stream)
+                        .sorted(ordering)
+                        .collect(Collectors.toList());
+        assertArrayEquals(expectedResults.toArray(), expandedResults.toArray());
+    }
+
+    @Test
+    public void expandResultsGroupedByTarget() {
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatches = readTestMatches();
+        List<ResultMatches<LMNeuronMetadata, EMNeuronMetadata, CDMatch<LMNeuronMetadata, EMNeuronMetadata>>> groupedResults = MatchResultsGrouping.groupByTargetFields(
+                testMatches,
+                Collections.singletonList(
+                        AbstractNeuronMetadata::getId
+                ),
+                Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore())));
+        Comparator<AbstractMatch<EMNeuronMetadata, LMNeuronMetadata>> ordering =
+                Comparator.comparing(m -> m.getMaskImage().getId() + m.getMatchedImage().getId() + ((CDMatch<?,?>) m).getMatchingPixels());
+        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> expectedResults =
+                testMatches.stream()
+                        .peek(m -> { m.resetMatchFiles(); m.resetMatchComputeFiles(); })
+                        .sorted(ordering)
+                        .collect(Collectors.toList());
+        List<AbstractMatch<EMNeuronMetadata, LMNeuronMetadata>> expandedResults =
+                groupedResults.stream()
+                        .map(MatchResultsGrouping::expandResultsByTarget)
+                        .flatMap(Collection::stream)
+                        .sorted(ordering)
+                        .collect(Collectors.toList());
+        assertArrayEquals(expectedResults.toArray(), expandedResults.toArray());
     }
 
     private List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> readTestMatches() {

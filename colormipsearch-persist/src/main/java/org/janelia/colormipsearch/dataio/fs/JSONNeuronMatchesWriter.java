@@ -66,7 +66,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronMetadata, T extends
                 resultsGrouping::apply
         );
         Comparator<AbstractMatch<T, M>> ordering = matchOrdering::compare;
-        List<ResultMatches<T, M, AbstractMatch<T, M>>> resultMatches = MatchResultsGrouping.groupByMatchedFields(
+        List<ResultMatches<T, M, AbstractMatch<T, M>>> resultMatches = MatchResultsGrouping.groupByTargetFields(
                 matches,
                 grouping,
                 ordering

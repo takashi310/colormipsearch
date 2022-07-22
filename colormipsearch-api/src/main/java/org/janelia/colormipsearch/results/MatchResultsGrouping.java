@@ -114,9 +114,9 @@ public class MatchResultsGrouping {
     public static <M extends AbstractNeuronMetadata,
                    T extends AbstractNeuronMetadata,
                    R extends AbstractMatch<M, T>,
-                   R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByMatchedFields(List<R> matches,
-                                                                                                      List<Function<T, ?>> matchedFieldSelectors,
-                                                                                                      Comparator<R1> ranking) {
+                   R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByTargetFields(List<R> matches,
+                                                                                                     List<Function<T, ?>> matchedFieldSelectors,
+                                                                                                     Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R1, T>(
