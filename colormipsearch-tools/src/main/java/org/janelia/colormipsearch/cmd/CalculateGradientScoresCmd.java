@@ -136,6 +136,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         // read all matches for the current mask
                         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         // calculate the grad scores
+                        LOG.info("Calculate grad scores for {} matches of {}", cdMatchesForMask.size(), maskIdToProcess);
                         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWithGradScores = calculateGradientScores(
                                         gradScoreAlgorithmProvider,
                                         cdMatchesForMask,
