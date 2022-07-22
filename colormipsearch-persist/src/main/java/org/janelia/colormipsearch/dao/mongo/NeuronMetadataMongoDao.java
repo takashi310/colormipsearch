@@ -23,10 +23,10 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
 
     @Override
     protected void createDocumentIndexes() {
-        mongoCollection.createIndex(Indexes.ascending("class"));
-        mongoCollection.createIndex(Indexes.ascending("libraryName"));
-        mongoCollection.createIndex(Indexes.ascending("publishedName"));
-        mongoCollection.createIndex(Indexes.ascending("id"));
+        mongoCollection.createIndex(Indexes.hashed("class"));
+        mongoCollection.createIndex(Indexes.hashed("libraryName"));
+        mongoCollection.createIndex(Indexes.hashed("publishedName"));
+        mongoCollection.createIndex(Indexes.hashed("id"));
     }
 
     @Override

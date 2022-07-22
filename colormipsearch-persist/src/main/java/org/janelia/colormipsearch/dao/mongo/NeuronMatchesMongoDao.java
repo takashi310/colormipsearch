@@ -43,7 +43,9 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
 
     @Override
     protected void createDocumentIndexes() {
-        mongoCollection.createIndex(Indexes.ascending("class"));
+        mongoCollection.createIndex(Indexes.hashed("class"));
+        mongoCollection.createIndex(Indexes.hashed("maskImageRefId"));
+        mongoCollection.createIndex(Indexes.hashed("matchedImageRefId"));
     }
 
     @Override
