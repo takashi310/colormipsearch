@@ -52,15 +52,14 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <N extends AbstractNeuronMetadata> N duplicate() {
+    public EMNeuronMetadata duplicate() {
         EMNeuronMetadata n = new EMNeuronMetadata();
         n.copyFrom(this);
         n.bodyRef = this.bodyRef;
         n.neuronType = this.neuronType;
         n.neuronInstance = this.neuronInstance;
         n.state = this.state;
-        return (N) n;
+        return n;
     }
 
     @Override

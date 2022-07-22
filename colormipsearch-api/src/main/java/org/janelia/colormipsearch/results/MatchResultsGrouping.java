@@ -76,7 +76,7 @@ public class MatchResultsGrouping {
                                     src.getMaskImage().getComputeFileData(ComputeFileType.ZGapImage));
                         }),
                         m -> {
-                            M maskImage = m.getMaskImage().duplicate();
+                            M maskImage = (M) m.getMaskImage().duplicate();
                             maskImage.resetComputeFileData(EnumSet.of(
                                     ComputeFileType.InputColorDepthImage,
                                     ComputeFileType.GradientImage,
@@ -137,7 +137,7 @@ public class MatchResultsGrouping {
                                     src.getMatchedImage().getComputeFileData(ComputeFileType.ZGapImage));
                         }),
                         m -> {
-                            T maskImage = m.getMaskImage().duplicate();
+                            T maskImage = (T) m.getMaskImage().duplicate();
                             maskImage.resetComputeFileData(EnumSet.of(
                                     ComputeFileType.InputColorDepthImage,
                                     ComputeFileType.GradientImage,
@@ -167,7 +167,7 @@ public class MatchResultsGrouping {
         return matchesResults.getItems().stream()
                 .map(persistedMatch -> {
                     return (R) persistedMatch.duplicate((src, dest) -> {
-                        M maskImage = matchesResults.getKey().duplicate();
+                        M maskImage = (M) matchesResults.getKey().duplicate();
                         T targetImage = persistedMatch.getMatchedImage();
                         maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage));
@@ -195,7 +195,7 @@ public class MatchResultsGrouping {
         return matchesResults.getItems().stream()
                 .map(persistedMatch -> {
                     return (R) persistedMatch.duplicate((src, dest) -> {
-                        T maskImage = matchesResults.getKey().duplicate();
+                        T maskImage = (T) matchesResults.getKey().duplicate();
                         M targetImage = persistedMatch.getMatchedImage();
                         maskImage.setComputeFileData(ComputeFileType.InputColorDepthImage,
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage));

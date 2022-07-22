@@ -92,6 +92,7 @@ class MIPsHandlingUtils {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <N extends AbstractNeuronMetadata> List<N> lookupSegmentedImages(N neuronMetadata,
                                                                                     String inputDataBasePath,
                                                                                     FileData.FileDataType fileDataType,
@@ -134,7 +135,7 @@ class MIPsHandlingUtils {
                         String sifn = Paths.get(p).getFileName().toString();
                         int scIndex = sifn.indexOf(indexingField);
                         Preconditions.checkArgument(scIndex != -1);
-                        N segmentedNeuron = neuronMetadata.duplicate();
+                        N segmentedNeuron = (N) neuronMetadata.duplicate();
                         segmentedNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, FileData.fromComponents(fileDataType, inputDataBasePath, p));
                         return segmentedNeuron;
                     })
@@ -198,8 +199,9 @@ class MIPsHandlingUtils {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <N extends AbstractNeuronMetadata> N originalAsInput(N neuronMetadata) {
-        N segmentedNeuron = neuronMetadata.duplicate();
+        N segmentedNeuron = (N) neuronMetadata.duplicate();
         segmentedNeuron.setComputeFileData(
                 ComputeFileType.InputColorDepthImage,
                 FileData.fromString(neuronMetadata.getComputeFileName(ComputeFileType.SourceColorDepthImage)));

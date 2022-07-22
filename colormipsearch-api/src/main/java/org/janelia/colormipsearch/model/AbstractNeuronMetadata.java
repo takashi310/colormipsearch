@@ -189,7 +189,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
     public abstract String buildNeuronSourceName();
 
-    public abstract <N extends AbstractNeuronMetadata> N duplicate();
+    public abstract AbstractNeuronMetadata duplicate();
 
     @Override
     public boolean equals(Object o) {

@@ -88,8 +88,7 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <N extends AbstractNeuronMetadata> N duplicate() {
+    public LMNeuronMetadata duplicate() {
         LMNeuronMetadata n = new LMNeuronMetadata();
         n.copyFrom(this);
         n.sampleRef = this.sampleRef;
@@ -99,7 +98,7 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
         n.anatomicalArea = this.anatomicalArea;
         n.mountingProtocol = this.mountingProtocol;
         n.channel = this.channel;
-        return (N) n;
+        return n;
     }
 
     @Override
