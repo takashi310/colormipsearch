@@ -105,9 +105,11 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
         this.skeletonMatches = skeletonMatches;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> PPPMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
-        PPPMatch<M2, T2> clone = new PPPMatch<>();
+    public PPPMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
+            MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier) {
+        PPPMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> clone = new PPPMatch<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
@@ -119,7 +121,7 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
         clone.sourceImageFiles = this.sourceImageFiles;
         clone.skeletonMatches = this.skeletonMatches;
         // apply the copier
-        copier.copy(this, clone);
+        copier.copy((AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>) this, clone);
         return clone;
     }
 

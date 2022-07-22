@@ -90,12 +90,14 @@ public class CDMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronM
     }
 
     public boolean hasNoErrors() {
-        return StringUtils.isBlank(errors);
+        return !hasErrors();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <M2 extends AbstractNeuronMetadata, T2 extends AbstractNeuronMetadata> CDMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier) {
-        CDMatch<M2, T2> clone = new CDMatch<>();
+    public CDMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
+            MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier) {
+        CDMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> clone = new CDMatch<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
@@ -107,7 +109,7 @@ public class CDMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronM
         clone.matchFound = this.matchFound;
         clone.errors = this.errors;
         // apply the copier
-        copier.copy(this, clone);
+        copier.copy((AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>) this, clone);
         return clone;
     }
 

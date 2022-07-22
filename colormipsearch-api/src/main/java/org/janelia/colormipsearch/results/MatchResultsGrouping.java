@@ -59,7 +59,7 @@ public class MatchResultsGrouping {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R, M>(
-                        (R) aMatch.duplicate((src, dest) -> {
+                        (R) aMatch.duplicate((AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> src, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> dest) -> {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
                             // set match files

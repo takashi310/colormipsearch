@@ -161,8 +161,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.matchComputeFiles.putAll(that.getMatchComputeFiles());
     }
 
-    public abstract <M2 extends AbstractNeuronMetadata,
-                     T2 extends AbstractNeuronMetadata> AbstractMatch<M2, T2> duplicate(MatchCopier<M, T, AbstractMatch<M, T>, M2, T2, AbstractMatch<M2, T2>> copier);
+    public abstract AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
+            MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier);
 
     @Override
     public boolean equals(Object o) {
