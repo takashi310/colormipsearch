@@ -114,6 +114,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private void calculateAllGradientScores() {
+        long startTime = System.currentTimeMillis();
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
         ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createShapeMatchCDSAlgorithmProvider(
                 args.mirrorMask,
@@ -122,7 +123,6 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 loadQueryROIMask(args.queryROIMaskName),
                 excludedRegions
         );
-        long startTime = System.currentTimeMillis();
         NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
