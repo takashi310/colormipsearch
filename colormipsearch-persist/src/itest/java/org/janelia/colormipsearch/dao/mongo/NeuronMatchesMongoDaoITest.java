@@ -152,8 +152,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
         try {
             int pageSize = 5;
             NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> matchesFilter =
-                    new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>()
-                        .setMatchType(CDMatch.class.getName());
+                    new NeuronsMatchFilter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>>();
             NeuronSelector emNeuronSelector = new NeuronSelector()
                     .setLibraryName("FlyEM Hemibrain")
                     .addMipID("123232232423232")
