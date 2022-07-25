@@ -30,7 +30,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends Ab
     }
 
     @Override
-    public PagedResult<N> findNeuronMatches(NeuronSelector neuronSelector, PagedRequest pageRequest) {
+    public PagedResult<N> findNeurons(NeuronSelector neuronSelector, PagedRequest pageRequest) {
         return new PagedResult<>(
                 pageRequest,
                 MongoDaoHelper.aggregateAsList(

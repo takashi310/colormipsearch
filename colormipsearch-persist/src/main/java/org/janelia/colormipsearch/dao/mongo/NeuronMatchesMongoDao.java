@@ -101,7 +101,10 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                                    NeuronSelector maskSelector,
                                    NeuronSelector targetSelector) {
         return MongoDaoHelper.countAggregate(
-                createQueryPipeline(NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter), maskSelector, targetSelector),
+                createQueryPipeline(
+                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter, maskSelector, targetSelector),
+                        maskSelector,
+                        targetSelector),
                 mongoCollection);
     }
 
@@ -113,7 +116,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
+                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter, maskSelector, targetSelector),
                         maskSelector,
                         targetSelector,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
@@ -135,6 +138,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
 
     private List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
         List<Bson> pipeline = new ArrayList<>();
+
 
         pipeline.add(Aggregates.match(matchFilter));
         pipeline.add(Aggregates.lookup(
@@ -189,8 +193,8 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
             selectFilters.add(MongoDaoHelper.createFilterById(match.getEntityId()));
         }
         if (match.hasMaskImageRefId() && match.hasMatchedImageRefId()) {
-            selectFilters.add(MongoDaoHelper.createAttributeFilter("maskImageRefId", match.getMaskImageRefId()));
-            selectFilters.add(MongoDaoHelper.createAttributeFilter("matchedImageRefId", match.getMatchedImageRefId()));
+            selectFilters.add(MongoDaoHelper.createEqFilter("maskImageRefId", match.getMaskImageRefId()));
+            selectFilters.add(MongoDaoHelper.createEqFilter("matchedImageRefId", match.getMatchedImageRefId()));
         }
 
         return mongoCollection.findOneAndUpdate(

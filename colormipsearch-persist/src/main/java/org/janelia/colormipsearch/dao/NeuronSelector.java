@@ -11,6 +11,7 @@ public class NeuronSelector {
     private String libraryName;
     private final List<String> names = new ArrayList<>();
     private final List<String> mipIDs = new ArrayList<>();
+    private final List<Number> entityIds = new ArrayList<>();
 
     public String getNeuronClassname() {
         return neuronClassname;
@@ -74,10 +75,29 @@ public class NeuronSelector {
         return CollectionUtils.isNotEmpty(mipIDs);
     }
 
+    public List<Number> getEntityIds() {
+        return entityIds;
+    }
+
+    public NeuronSelector addEntityId(Number entityId) {
+        if (entityId != null) this.entityIds.add(entityId);
+        return this;
+    }
+
+    public NeuronSelector addEntityIds(List<Number> entityIds) {
+        entityIds.forEach(this::addEntityId);
+        return this;
+    }
+
+    public boolean hasEntityIds() {
+        return CollectionUtils.isNotEmpty(entityIds);
+    }
+
     public boolean isEmpty() {
         return !hasLibraryName()
                 && !hasNames()
-                && !hasMipIDs();
+                && !hasMipIDs()
+                && !hasEntityIds();
     }
 
 }

@@ -28,6 +28,7 @@ public class NeuronsMatchFilter<R extends AbstractMatch<? extends AbstractNeuron
     }
 
     private String matchType;
+
     private final List<ScoreField> scoreSelectors = new ArrayList<>();
 
     public String getMatchType() {

@@ -263,7 +263,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));
         // select best matches to process
-        LOG.info("Select best color depth matches for {}", maskCDMipId);
+        LOG.info("Select best color depth matches for {} out of {} total matches", maskCDMipId, allCDMatches.size());
         return ColorMIPProcessUtils.selectBestMatches(
                 allCDMatches,
                 args.numberOfBestLines,

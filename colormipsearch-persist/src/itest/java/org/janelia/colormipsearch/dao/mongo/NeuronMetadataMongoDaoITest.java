@@ -69,7 +69,7 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 testLibrary,
                 "123445");
         testDao.save(testEmNeuron);
-        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeuronMatches(
+        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeurons(
                 new NeuronSelector().setLibraryName(testLibrary),
                 new PagedRequest());
         assertEquals(1, persistedEmNeurons.getResultList().size());
@@ -86,7 +86,7 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 testLibrary,
                 "123445");
         testDao.save(testEmNeuron);
-        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeuronMatches(
+        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeurons(
                 new NeuronSelector().setLibraryName(testLibrary).setNeuronClassname(EMNeuronMetadata.class.getName()),
                 new PagedRequest());
         assertEquals(1, persistedEmNeurons.getResultList().size());

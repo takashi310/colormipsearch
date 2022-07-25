@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dataio.db;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +23,7 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
 
     private final static int PAGE_SIZE = 10000;
 
-    private final NeuronMetadataDao<M> neuronMetadataDao;
+    private final NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao;
     private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
 
     public DBNeuronMatchesReader(Config config) {
@@ -33,7 +34,7 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     @Override
     public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
         return matchesSource.stream()
-                        .flatMap(cdMatchInput -> neuronMetadataDao.findNeuronMatches(
+                        .flatMap(cdMatchInput -> neuronMetadataDao.findNeurons(
                                 new NeuronSelector().setLibraryName(cdMatchInput.getLocation()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
@@ -49,6 +50,7 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
                                        NeuronsMatchFilter<R> matchesFilter,
                                        List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds);
+        maskSelector.addEntityIds(getNeuronEntityIds(maskSelector));
         NeuronSelector targetSelector = new NeuronSelector();
         return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
     }
@@ -60,7 +62,19 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
                                          List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector();
         NeuronSelector targetSelector = new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds);
+        targetSelector.addEntityIds(getNeuronEntityIds(targetSelector));
         return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
+    }
+
+    private List<Number> getNeuronEntityIds(NeuronSelector neuronSelector) {
+        if (neuronSelector.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return neuronMetadataDao.findNeurons(neuronSelector, new PagedRequest())
+                    .getResultList().stream()
+                    .map(AbstractNeuronMetadata::getEntityId)
+                    .collect(Collectors.toList());
+        }
     }
 
     private List<R> readMatches(NeuronsMatchFilter<R> matchesFilter,

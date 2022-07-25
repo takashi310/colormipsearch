@@ -46,22 +46,27 @@ class NeuronSelectionHelper {
     }
 
     static <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
-    Bson getNeuronsMatchFilter(NeuronsMatchFilter<R> neuronsMatchFilter) {
-        if (neuronsMatchFilter == null || neuronsMatchFilter.isEmpty()) {
-            return NO_FILTER;
-        }
+    Bson getNeuronsMatchFilter(NeuronsMatchFilter<R> neuronsMatchFilter, NeuronSelector maskSelector, NeuronSelector targetSelector) {
         List<Bson> filter = new ArrayList<>();
+        addNeuronMatchesFilters(neuronsMatchFilter, filter);
+        if (maskSelector != null && maskSelector.hasEntityIds()) {
+            filter.add(MongoDaoHelper.createInFilter("maskImageRefId", maskSelector.getEntityIds()));
+        }
+        if (targetSelector != null && targetSelector.hasEntityIds()) {
+            filter.add(MongoDaoHelper.createInFilter("matchedImageRefId", targetSelector.getEntityIds()));
+        }
+        return MongoDaoHelper.createBsonFilterCriteria(filter);
+    }
+
+    static private <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+    void addNeuronMatchesFilters(NeuronsMatchFilter<R> neuronsMatchFilter, List<Bson> filter) {
+        if ((neuronsMatchFilter == null || neuronsMatchFilter.isEmpty())) {
+            return;
+        }
         if (neuronsMatchFilter.hasMatchType()) {
             filter.add(MongoDaoHelper.createFilterByClass(neuronsMatchFilter.getMatchType()));
         }
         neuronsMatchFilter.getScoreSelectors().forEach(s -> filter.add(Filters.gte(s.getFieldName(), s.getMinScore())));
-        if (filter.isEmpty()) {
-            return NO_FILTER;
-        } else if (filter.size() == 1) {
-            return filter.get(0);
-        } else {
-            return Filters.and(filter);
-        }
-
     }
+
 }
