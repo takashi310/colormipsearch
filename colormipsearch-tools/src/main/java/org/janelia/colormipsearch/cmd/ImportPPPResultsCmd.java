@@ -47,7 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-public class ImportPPPResultsCmd extends AbstractCmd {
+class ImportPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ImportPPPResultsCmd.class);
     private static final Random RAND = new Random();
 
@@ -116,7 +116,7 @@ public class ImportPPPResultsCmd extends AbstractCmd {
     private final ObjectMapper mapper;
     private final RawPPPMatchesReader rawPPPMatchesReader;
 
-    public ImportPPPResultsCmd(String commandName, CommonArgs commonArgs) {
+    ImportPPPResultsCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new CreatePPPResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()

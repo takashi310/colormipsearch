@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command that runs the Color Depth Search.
  */
-public class ColorDepthSearchCmd extends AbstractCmd {
+class ColorDepthSearchCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchCmd.class);
 
@@ -75,7 +75,7 @@ public class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--targets-length"}, description = "Input image file(s) length")
         int targetsLength;
 
-        public ColorDepthSearchArgs(CommonArgs commonArgs) {
+        ColorDepthSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 

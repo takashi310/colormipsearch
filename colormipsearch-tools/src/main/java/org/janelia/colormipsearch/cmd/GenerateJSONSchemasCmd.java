@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Generate JSON schema command.
  */
-public class GenerateJSONSchemasCmd extends AbstractCmd {
+class GenerateJSONSchemasCmd extends AbstractCmd {
 
     private static final String SCHEMAS_BASE_URI = "https://neuronbridge.janelia.org/schemas/";
 

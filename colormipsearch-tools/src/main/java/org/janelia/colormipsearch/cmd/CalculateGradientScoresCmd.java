@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command to calculate the gradient scores.
  */
-public class CalculateGradientScoresCmd extends AbstractCmd {
+class CalculateGradientScoresCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
 
@@ -79,7 +79,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                 description = "Number of best matches for each sample to be used for gradient scoring")
         int numberOfBestMatchesPerSample;
 
-        public GradientScoresArgs(CommonArgs commonArgs) {
+        GradientScoresArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
     }

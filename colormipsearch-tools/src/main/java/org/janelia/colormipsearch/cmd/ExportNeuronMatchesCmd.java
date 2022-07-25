@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This command is used to export data from the database to the file system in order to upload it to S3.
  */
-public class ExportNeuronMatchesCmd extends AbstractCmd {
+class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExportNeuronMatchesCmd.class);
 
@@ -75,7 +75,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
 
-        public ExportMatchesCmdArgs(CommonArgs commonArgs) {
+        ExportMatchesCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 
