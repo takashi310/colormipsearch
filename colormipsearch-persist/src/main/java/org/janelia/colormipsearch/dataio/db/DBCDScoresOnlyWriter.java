@@ -24,7 +24,7 @@ import org.janelia.colormipsearch.model.CDMatch;
 public class DBCDScoresOnlyWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
         implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
 
-    private final NeuronMatchesDao<M, T, CDMatch<M, T>> neuronMatchesDao;
+    private final NeuronMatchesDao<CDMatch<M, T>> neuronMatchesDao;
     private final List<Function<CDMatch<M, T>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
             m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
             m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),

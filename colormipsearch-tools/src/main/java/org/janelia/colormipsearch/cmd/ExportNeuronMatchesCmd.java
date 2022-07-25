@@ -122,7 +122,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatches() {
-        NeuronMatchesReader<M, T, R> neuronMatchesReader = getMatchesReader();
+        NeuronMatchesReader<R> neuronMatchesReader = getMatchesReader();
         NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
         NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
 
@@ -151,7 +151,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
-                                    NeuronMatchesReader<M, T, R> neuronMatchesReader,
+                                    NeuronMatchesReader<R> neuronMatchesReader,
                                     NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter) {
 
         List<String> masks = neuronMatchesReader.listMatchesLocations(
@@ -177,7 +177,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
-                                      NeuronMatchesReader<M, T, R> neuronMatchesReader,
+                                      NeuronMatchesReader<R> neuronMatchesReader,
                                       NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter) {
         List<String> targets = neuronMatchesReader.listMatchesLocations(
                 Collections.singletonList(new DataSourceParam(args.targetsLibrary, 0, -1)));
@@ -201,7 +201,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-    NeuronMatchesReader<M, T, R> getMatchesReader() {
+    NeuronMatchesReader<R> getMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
         } else {

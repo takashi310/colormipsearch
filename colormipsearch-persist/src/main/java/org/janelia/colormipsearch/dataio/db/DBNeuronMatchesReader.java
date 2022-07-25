@@ -20,12 +20,12 @@ import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> implements NeuronMatchesReader<M, T, R> {
+public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> implements NeuronMatchesReader<R> {
 
     private final static int PAGE_SIZE = 10000;
 
     private final NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao;
-    private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
+    private final NeuronMatchesDao<R> neuronMatchesDao;
 
     public DBNeuronMatchesReader(Config config) {
         this.neuronMetadataDao = DaosProvider.getInstance(config).getNeuronMetadataDao();

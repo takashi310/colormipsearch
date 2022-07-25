@@ -123,7 +123,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 excludedRegions
         );
         long startTime = System.currentTimeMillis();
-        NeuronMatchesReader<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
+        NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
@@ -170,7 +170,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesReader<M, T, CDMatch<M, T>> getCDMatchesReader() {
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesReader<CDMatch<M, T>> getCDMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
         } else {
@@ -248,7 +248,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
-    List<CDMatch<M, T>> getCDMatchesForMask(NeuronMatchesReader<M, T, CDMatch<M, T>> cdsMatchesReader, String maskCDMipId) {
+    List<CDMatch<M, T>> getCDMatchesForMask(NeuronMatchesReader<CDMatch<M, T>> cdsMatchesReader, String maskCDMipId) {
         LOG.info("Read all color depth matches for {}", maskCDMipId);
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
         neuronsMatchScoresFilter.setEntityType(CDMatch.class.getName());

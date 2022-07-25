@@ -9,9 +9,7 @@ import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public interface NeuronMatchesDao<M extends AbstractNeuronMetadata,
-                                  T extends AbstractNeuronMetadata,
-                                  R extends AbstractMatch<M, T>> extends Dao<R> {
+public interface NeuronMatchesDao<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> extends Dao<R> {
     /**
      * Count neuron matches filtered by the type and scores specified by neuronsMatchFilter and/or by the specified
      * mask and target selectors.

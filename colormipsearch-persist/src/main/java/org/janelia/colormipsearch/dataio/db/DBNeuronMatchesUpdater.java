@@ -18,7 +18,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 public class DBNeuronMatchesUpdater<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
         implements NeuronMatchesUpdater<M, T, R> {
 
-    private final NeuronMatchesDao<M, T, R> neuronMatchesDao;
+    private final NeuronMatchesDao<R> neuronMatchesDao;
 
     public DBNeuronMatchesUpdater(Config config) {
         this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();

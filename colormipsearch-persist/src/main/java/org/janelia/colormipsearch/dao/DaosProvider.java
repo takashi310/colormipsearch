@@ -44,7 +44,7 @@ public class DaosProvider {
         this.idGenerator = new TimebasedIdGenerator(config.getIntegerPropertyValue("TimebasedId.Context", 0));
     }
 
-    public <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> NeuronMatchesDao<M, T, R>
+    public <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> NeuronMatchesDao<R>
     getNeuronMatchesDao() {
         return new NeuronMatchesMongoDao<>(mongoDatabase, idGenerator);
     }

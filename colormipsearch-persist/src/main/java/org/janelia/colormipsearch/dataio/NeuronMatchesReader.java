@@ -7,7 +7,7 @@ import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public interface NeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> {
+public interface NeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
     /**
      * This method will list the location for all color depth matches.
      *

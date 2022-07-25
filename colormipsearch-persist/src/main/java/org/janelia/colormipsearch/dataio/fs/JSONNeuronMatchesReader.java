@@ -27,7 +27,7 @@ import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> implements NeuronMatchesReader<M, T, R> {
+public class JSONNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> implements NeuronMatchesReader<R> {
     private final ObjectMapper mapper;
 
     public JSONNeuronMatchesReader(ObjectMapper mapper) {
