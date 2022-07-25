@@ -25,7 +25,6 @@ import org.janelia.colormipsearch.cds.CombinedMatchScore;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
-import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
 import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchessUpdater;
@@ -89,9 +88,9 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
     private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
 
-    public CalculateGradientScoresCmd(String commandName,
-                                      CommonArgs commonArgs,
-                                      Supplier<Long> cacheSizeSupplier) {
+    CalculateGradientScoresCmd(String commandName,
+                               CommonArgs commonArgs,
+                               Supplier<Long> cacheSizeSupplier) {
         super(commandName);
         this.args = new GradientScoresArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
@@ -139,9 +138,9 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
                         // calculate the grad scores
                         LOG.info("Calculate grad scores for {} matches of {}", cdMatchesForMask.size(), maskIdToProcess);
                         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWithGradScores = calculateGradientScores(
-                                        gradScoreAlgorithmProvider,
-                                        cdMatchesForMask,
-                                        executor);
+                                gradScoreAlgorithmProvider,
+                                cdMatchesForMask,
+                                executor);
                         updateCDMatches(cdMatchesWithGradScores);
                     });
                     LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
@@ -159,7 +158,7 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
 
     /**
      * The ROI mask is typically the hemibrain mask that should be applied when the color depth search is done from LM to EM.
-     * 
+     *
      * @param queryROIMask the location of the ROI mask
      * @return
      */
@@ -198,10 +197,10 @@ public class CalculateGradientScoresCmd extends AbstractCmd {
      * The method calculates and updates the gradient scores for all color depth matches of the given mask MIP ID.
      *
      * @param gradScoreAlgorithmProvider grad score algorithm provider
-     * @param cdMatches color depth matches for which the grad score will be computed
-     * @param executor task executor
-     * @param <M> mask type
-     * @param <T> target type
+     * @param cdMatches                  color depth matches for which the grad score will be computed
+     * @param executor                   task executor
+     * @param <M>                        mask type
+     * @param <T>                        target type
      */
     @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>

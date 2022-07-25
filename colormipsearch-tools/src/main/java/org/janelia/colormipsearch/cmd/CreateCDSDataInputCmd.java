@@ -131,8 +131,8 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
         List<String> datasets;
 
         @Parameter(names = "--include-original-mip-in-segmentation",
-                   description = "If set include original mip in the segmentation",
-                   arity = 0)
+                description = "If set include original mip in the segmentation",
+                arity = 0)
         boolean includeOriginalWithSegmentation = false;
 
         @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
@@ -223,7 +223,8 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
                     getNeuronFileURLMapper()
             );
         } else {
-            // generate the input in offline mode
+            // offline mode is not supported yet in this version
+            LOG.error("No datasservice URL has been provided");
         }
     }
 
@@ -311,8 +312,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
         Optional<LibraryVariantArg> inputLibraryVariantChoice = computationInputVariantTypes.stream()
                 .map(variantType -> libraryPaths.getLibraryVariant(variantType).orElse(null))
                 .filter(Objects::nonNull)
-                .findFirst()
-                ;
+                .findFirst();
         Pair<FileData.FileDataType, Map<String, List<String>>> inputImages =
                 MIPsHandlingUtils.getLibraryImageFiles(
                         libraryPaths.library.input,
@@ -530,6 +530,7 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
 
     /**
      * Create the published name for the input image - the one that will actually be "color depth searched".
+     *
      * @param mipFileName
      * @param imageFileName
      * @param displayFileName
@@ -658,7 +659,8 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
         } else {
-            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {}.getType()));
+            return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {
+            }.getType()));
         }
     }
 
@@ -671,7 +673,8 @@ public class CreateCDSDataInputCmd extends AbstractCmd {
                     .path(cdmip.objective);
             Response response = HttpHelper.createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
             if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-                Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {}.getType()));
+                Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {
+                }.getType()));
                 SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
                 SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
                 cdmip.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;

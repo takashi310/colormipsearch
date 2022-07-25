@@ -35,7 +35,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExportNeuronMatchesCmd.class);
 
-    @Parameters(commandDescription = "Color depth search for a batch of MIPs")
+    @Parameters(commandDescription = "Export neuron matches")
     static class ExportMatchesCmdArgs extends AbstractCmdArgs {
 
         @Parameter(names = {"--match-type"}, required = true, // this is required because PPPs are handled a bit differently
@@ -101,7 +101,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
     private final ExportMatchesCmdArgs args;
     private final ObjectMapper mapper;
 
-    public ExportNeuronMatchesCmd(String commandName, CommonArgs commonArgs) {
+    ExportNeuronMatchesCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new ExportMatchesCmdArgs(commonArgs);
         this.mapper = new ObjectMapper()

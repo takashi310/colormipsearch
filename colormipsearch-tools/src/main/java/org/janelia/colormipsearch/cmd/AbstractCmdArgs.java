@@ -15,7 +15,7 @@ class AbstractCmdArgs {
     @ParametersDelegate
     final CommonArgs commonArgs;
 
-    public AbstractCmdArgs(CommonArgs commonArgs) {
+    AbstractCmdArgs(CommonArgs commonArgs) {
         this.commonArgs = commonArgs;
     }
 
