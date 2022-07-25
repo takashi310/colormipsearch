@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -27,10 +28,10 @@ import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
-import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchessUpdater;
+import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesUpdater;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesUpdater;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSMatchesUpdater;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesByMaskUpdater;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
@@ -178,16 +179,17 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesUpdater<M, T, CDMatch<M, T>> getCDMatchesUpdater() {
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesUpdater<CDMatch<M, T>> getCDMatchesUpdater() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new PartitionedNeuronMatchessUpdater<>(
+            return new PartitionedNeuronMatchesUpdater<>(
                     new DBNeuronMatchesUpdater<>(getConfig()),
                     args.processingPartitionSize,
                     true
             );
         } else {
-            return new JSONCDSMatchesUpdater<>(
+            return new JSONNeuronMatchesByMaskUpdater<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
+                    Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getNormalizedScore())), // descending order by matching pixels
                     args.getOutputDir()
             );
         }
@@ -237,7 +239,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void updateCDMatches(List<CDMatch<M, T>> cdMatches) {
-        NeuronMatchesUpdater<M, T, CDMatch<M, T>> updatesWriter = getCDMatchesUpdater();
+        NeuronMatchesUpdater<CDMatch<M, T>> updatesWriter = getCDMatchesUpdater();
         updatesWriter.writeUpdates(
                 cdMatches,
                 Arrays.asList(

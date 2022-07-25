@@ -7,6 +7,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public interface NeuronMatchesUpdater<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> {
+public interface NeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
     void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors);
 }

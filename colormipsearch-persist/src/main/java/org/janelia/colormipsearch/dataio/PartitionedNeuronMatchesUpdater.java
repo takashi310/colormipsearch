@@ -8,14 +8,14 @@ import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.results.ItemsHandling;
 
-public class PartitionedNeuronMatchessUpdater<M extends AbstractNeuronMetadata,
-                                            T extends AbstractNeuronMetadata,
-                                            R extends AbstractMatch<M, T>> implements NeuronMatchesUpdater<M, T, R> {
-    private final NeuronMatchesUpdater<M, T, R> updater;
+public class PartitionedNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronMetadata,
+                                                                     ? extends AbstractNeuronMetadata>>
+        implements NeuronMatchesUpdater<R> {
+    private final NeuronMatchesUpdater<R> updater;
     private final int partitionSize;
     private final boolean parallel;
 
-    public PartitionedNeuronMatchessUpdater(NeuronMatchesUpdater<M, T, R> updater, int partitionSize, boolean parallel) {
+    public PartitionedNeuronMatchesUpdater(NeuronMatchesUpdater<R> updater, int partitionSize, boolean parallel) {
         this.updater = updater;
         this.partitionSize = partitionSize;
         this.parallel = parallel;

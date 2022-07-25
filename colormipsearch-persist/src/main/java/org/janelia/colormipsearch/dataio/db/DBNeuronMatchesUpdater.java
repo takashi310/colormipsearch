@@ -15,8 +15,8 @@ import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public class DBNeuronMatchesUpdater<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-        implements NeuronMatchesUpdater<M, T, R> {
+public class DBNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+        implements NeuronMatchesUpdater<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
 

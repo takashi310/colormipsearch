@@ -9,8 +9,8 @@ import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
-public class DBNeuronMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-        implements NeuronMatchesWriter<M, T, R> {
+public class DBNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+        implements NeuronMatchesWriter<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
 

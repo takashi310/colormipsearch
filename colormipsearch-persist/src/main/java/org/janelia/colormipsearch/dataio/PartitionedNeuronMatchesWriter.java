@@ -6,14 +6,14 @@ import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.results.ItemsHandling;
 
-public class PartitionedNeuronMatchesWriter<M extends AbstractNeuronMetadata,
-                                            T extends AbstractNeuronMetadata,
-                                            R extends AbstractMatch<M, T>> implements NeuronMatchesWriter<M, T, R> {
-    private final NeuronMatchesWriter<M, T, R> writer;
+public class PartitionedNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronMetadata,
+                                                                    ? extends AbstractNeuronMetadata>>
+        implements NeuronMatchesWriter<R> {
+    private final NeuronMatchesWriter<R> writer;
     private final int partitionSize;
     private final boolean parallel;
 
-    public PartitionedNeuronMatchesWriter(NeuronMatchesWriter<M, T, R> writer, int partitionSize, boolean parallel) {
+    public PartitionedNeuronMatchesWriter(NeuronMatchesWriter<R> writer, int partitionSize, boolean parallel) {
         this.writer = writer;
         this.partitionSize = partitionSize;
         this.parallel = parallel;

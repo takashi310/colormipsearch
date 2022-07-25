@@ -123,8 +123,8 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatches() {
         NeuronMatchesReader<R> neuronMatchesReader = getMatchesReader();
-        NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
-        NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
+        NeuronMatchesWriter<R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
+        NeuronMatchesWriter<R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
 
         ScoresFilter neuronsMatchScoresFilter = getScoresFilter();
 
@@ -152,7 +152,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
                                     NeuronMatchesReader<R> neuronMatchesReader,
-                                    NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter) {
+                                    NeuronMatchesWriter<R> perMaskNeuronMatchesWriter) {
 
         List<String> masks = neuronMatchesReader.listMatchesLocations(
                 Collections.singletonList(new DataSourceParam(args.masksLibrary, 0, -1)));
@@ -178,7 +178,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
                                       NeuronMatchesReader<R> neuronMatchesReader,
-                                      NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter) {
+                                      NeuronMatchesWriter<R> perTargetNeuronMatchesWriter) {
         List<String> targets = neuronMatchesReader.listMatchesLocations(
                 Collections.singletonList(new DataSourceParam(args.targetsLibrary, 0, -1)));
         ItemsHandling.partitionCollection(targets, args.processingPartitionSize).stream().parallel()
@@ -210,7 +210,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-    NeuronMatchesWriter<M, T, R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
+    NeuronMatchesWriter<R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
         if (perMaskDir != null || perTargetDir != null) {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),

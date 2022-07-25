@@ -160,7 +160,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
         }
         try {
             List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            NeuronMatchesWriter<M, T, CDMatch<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+            NeuronMatchesWriter<CDMatch<M, T>> cdsResultsWriter = getCDSMatchesWriter();
             cdsResultsWriter.write(cdsResults);
         } finally {
             colorMIPSearchProcessor.terminate();
@@ -181,7 +181,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             if (args.alwaysNewMatches) {

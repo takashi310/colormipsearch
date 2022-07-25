@@ -2,15 +2,13 @@ package org.janelia.colormipsearch.results;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.results.AbstractGroupedItems;
 
-public class ResultMatches<M extends AbstractNeuronMetadata, I extends AbstractNeuronMetadata, R extends AbstractMatch<M, I>> extends AbstractGroupedItems<R, M> {
+public class ResultMatches<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>> extends AbstractGroupedItems<R, M> {
 
     @JsonRequired
     @JsonProperty("inputImage")

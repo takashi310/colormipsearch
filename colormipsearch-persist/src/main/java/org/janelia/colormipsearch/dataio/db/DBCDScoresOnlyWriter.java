@@ -10,6 +10,7 @@ import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
+import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 
@@ -18,26 +19,25 @@ import org.janelia.colormipsearch.model.CDMatch;
  * if the match already exists.
  * If the match does not exist it will create it.
  *
- * @param <M> mask type
- * @param <T>
+ * @param <R> match type
  */
-public class DBCDScoresOnlyWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
-        implements NeuronMatchesWriter<M, T, CDMatch<M, T>> {
+public class DBCDScoresOnlyWriter<R extends CDMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> implements NeuronMatchesWriter<R> {
 
-    private final NeuronMatchesDao<CDMatch<M, T>> neuronMatchesDao;
-    private final List<Function<CDMatch<M, T>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
-            m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
-            m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
-            m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
-            m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
-            m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
-    );
+    private final NeuronMatchesDao<R> neuronMatchesDao;
+    private final List<Function<R, Pair<String, ?>>> fieldsToUpdate =
+            Arrays.asList(
+                    m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
+                    m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
+                    m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
+                    m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
+                    m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+            );
 
     public DBCDScoresOnlyWriter(Config config) {
         this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
     }
 
-    public void write(List<CDMatch<M, T>> matches) {
+    public void write(List<R> matches) {
         neuronMatchesDao.saveOrUpdateAll(matches, fieldsToUpdate);
     }
 }

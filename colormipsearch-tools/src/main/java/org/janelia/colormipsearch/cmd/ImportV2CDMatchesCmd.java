@@ -76,7 +76,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
 
         NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
-        NeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWriter = getCDSMatchesWriter();
+        NeuronMatchesWriter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWriter = getCDSMatchesWriter();
 
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
@@ -106,7 +106,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         return new JSONV2Em2LmMatchesReader(mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, CDMatch<M, T>>
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             // always create new matches

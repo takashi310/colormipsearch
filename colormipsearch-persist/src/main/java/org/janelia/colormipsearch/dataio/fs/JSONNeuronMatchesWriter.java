@@ -15,7 +15,7 @@ import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
 public class JSONNeuronMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-        implements NeuronMatchesWriter<M, T, R> {
+        implements NeuronMatchesWriter<R> {
 
     private final JSONResultMatchesWriter resultMatchesWriter;
     // results grouping is used both for grouping the matches and for getting the filename

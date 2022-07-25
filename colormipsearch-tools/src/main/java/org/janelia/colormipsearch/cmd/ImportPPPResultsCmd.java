@@ -160,8 +160,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
-        NeuronMatchesWriter<EMNeuronMetadata, LMNeuronMetadata, PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatchesWriter =
-                getPPPMatchesWriter();
+        NeuronMatchesWriter<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
@@ -304,7 +303,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         return neuronMatches;
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<M, T, PPPMatch<M, T>>
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<PPPMatch<M, T>>
     getPPPMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesWriter<>(getConfig());
