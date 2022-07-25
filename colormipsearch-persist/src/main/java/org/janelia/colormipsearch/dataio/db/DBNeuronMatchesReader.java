@@ -15,6 +15,7 @@ import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.datarequests.PagedResult;
+import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -47,23 +48,29 @@ public class DBNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends A
     @Override
     public List<R> readMatchesForMasks(String maskLibrary,
                                        List<String> maskMipIds,
-                                       NeuronsMatchFilter<R> matchesFilter,
+                                       ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds);
-        maskSelector.addEntityIds(getNeuronEntityIds(maskSelector));
         NeuronSelector targetSelector = new NeuronSelector();
-        return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
+        NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
+                .setScoresFilter(matchScoresFilter)
+                .setMaskEntityIds(getNeuronEntityIds(maskSelector));
+
+        return readMatches(neuronsMatchFilter, maskSelector, targetSelector, sortCriteriaList);
     }
 
     @Override
     public List<R> readMatchesForTargets(String targetLibrary,
                                          List<String> targetMipIds,
-                                         NeuronsMatchFilter<R> matchesFilter,
+                                         ScoresFilter matchScoresFilter,
                                          List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector();
         NeuronSelector targetSelector = new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds);
-        targetSelector.addEntityIds(getNeuronEntityIds(targetSelector));
-        return readMatches(matchesFilter, maskSelector, targetSelector, sortCriteriaList);
+        NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
+                .setScoresFilter(matchScoresFilter)
+                .setTargetEntityIds(getNeuronEntityIds(targetSelector));
+
+        return readMatches(neuronsMatchFilter, maskSelector, targetSelector, sortCriteriaList);
     }
 
     private List<Number> getNeuronEntityIds(NeuronSelector neuronSelector) {

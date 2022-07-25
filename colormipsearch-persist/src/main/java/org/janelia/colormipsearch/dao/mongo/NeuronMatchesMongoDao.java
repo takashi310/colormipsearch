@@ -102,7 +102,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
                                    NeuronSelector targetSelector) {
         return MongoDaoHelper.countAggregate(
                 createQueryPipeline(
-                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter, maskSelector, targetSelector),
+                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
                         maskSelector,
                         targetSelector),
                 mongoCollection);
@@ -116,7 +116,7 @@ public class NeuronMatchesMongoDao<M extends AbstractNeuronMetadata,
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter, maskSelector, targetSelector),
+                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
                         maskSelector,
                         targetSelector,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),

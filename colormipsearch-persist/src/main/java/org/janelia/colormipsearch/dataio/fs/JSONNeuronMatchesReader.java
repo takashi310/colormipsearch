@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
@@ -43,7 +44,7 @@ public class JSONNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
     @SuppressWarnings("unchecked")
     @Override
     public List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds,
-                                       NeuronsMatchFilter<R> matchesFilter,
+                                       ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
                 .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
@@ -55,7 +56,7 @@ public class JSONNeuronMatchesReader<M extends AbstractNeuronMetadata, T extends
     @SuppressWarnings("unchecked")
     @Override
     public List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds,
-                                         NeuronsMatchFilter<R> matchesFilter,
+                                         ScoresFilter matchScoresFilter,
                                          List<SortCriteria> sortCriteriaList) {
         return (List<R>) targetMipIds.stream()
                 .map(targetMipId -> StringUtils.isNotBlank(targetLibrary) ? Paths.get(targetLibrary, targetMipId).toFile() : new File(targetMipId))

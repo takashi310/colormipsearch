@@ -4,57 +4,49 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class NeuronsMatchFilter<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
-    public static class ScoreField {
-        private final String fieldName;
-        private final Double minScore;
 
-        private ScoreField(String fieldName, Double minScore) {
-            this.fieldName = fieldName;
-            this.minScore = minScore;
-        }
+    private ScoresFilter scoresFilter;
+    private List<Number> maskEntityIds;
+    private List<Number> targetEntityIds;
 
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        public Double getMinScore() {
-            return minScore;
-        }
+    public ScoresFilter getScoresFilter() {
+        return scoresFilter;
     }
 
-    private String matchType;
-
-    private final List<ScoreField> scoreSelectors = new ArrayList<>();
-
-    public String getMatchType() {
-        return matchType;
-    }
-
-    public boolean hasMatchType() {
-        return matchType != null;
-    }
-
-    public NeuronsMatchFilter<R> setMatchType(String matchType) {
-        this.matchType = matchType;
+    public NeuronsMatchFilter<R> setScoresFilter(ScoresFilter scoresFilter) {
+        this.scoresFilter = scoresFilter;
         return this;
     }
 
-    public List<ScoreField> getScoreSelectors() {
-        return scoreSelectors;
+    public List<Number> getMaskEntityIds() {
+        return maskEntityIds;
     }
 
-    public NeuronsMatchFilter<R> addSScore(String scoreField, double minScore) {
-        scoreSelectors.add(new ScoreField(scoreField, minScore));
+    public NeuronsMatchFilter<R> setMaskEntityIds(List<Number> maskEntityIds) {
+        this.maskEntityIds = maskEntityIds;
+        return this;
+    }
+
+    public List<Number> getTargetEntityIds() {
+        return targetEntityIds;
+    }
+
+    public NeuronsMatchFilter<R> setTargetEntityIds(List<Number> targetEntityIds) {
+        this.targetEntityIds = targetEntityIds;
         return this;
     }
 
     public boolean isEmpty() {
-        return matchType == null && scoreSelectors.isEmpty();
+        return (scoresFilter == null || scoresFilter.isEmpty())
+            && CollectionUtils.isEmpty(maskEntityIds)
+            && CollectionUtils.isEmpty(targetEntityIds);
     }
 
 }

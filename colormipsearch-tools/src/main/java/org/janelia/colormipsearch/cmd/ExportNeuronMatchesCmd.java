@@ -22,6 +22,7 @@ import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
+import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.model.AbstractMatch;
@@ -116,23 +117,23 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
         NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
 
-        NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<>();
-        neuronsMatchFilter.setMatchType(args.matchResultTypes.getMatchType());
+        ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
+        neuronsMatchScoresFilter.setEntityType(args.matchResultTypes.getMatchType());
         if (args.pctPositivePixels > 0) {
-            neuronsMatchFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
+            neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
         if (args.withGradScores) {
-            neuronsMatchFilter.addSScore("gradientAreaGap", 0);
+            neuronsMatchScoresFilter.addSScore("gradientAreaGap", 0);
         }
 
         if (perMaskNeuronMatchesWriter != null)
-            exportNeuronMatchesPerMask(neuronsMatchFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
+            exportNeuronMatchesPerMask(neuronsMatchScoresFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
         if (perTargetNeuronMatchesWriter != null)
-            exportNeuronMatchesPerTarget(neuronsMatchFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
+            exportNeuronMatchesPerTarget(neuronsMatchScoresFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-    void exportNeuronMatchesPerMask(NeuronsMatchFilter<R> neuronsMatchFilter,
+    void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
                                     NeuronMatchesReader<M, T, R> neuronMatchesReader,
                                     NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter) {
 
@@ -145,7 +146,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                         List<R> matchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 null,
                                 Collections.singletonList(maskId),
-                                neuronsMatchFilter,
+                                neuronsMatchesScoresFilter,
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
@@ -155,7 +156,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
-    void exportNeuronMatchesPerTarget(NeuronsMatchFilter<R> neuronsMatchFilter,
+    void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
                                       NeuronMatchesReader<M, T, R> neuronMatchesReader,
                                       NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter) {
         List<String> targets = neuronMatchesReader.listMatchesLocations(
@@ -167,7 +168,7 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                         List<R> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
                                 null,
                                 Collections.singletonList(targetId),
-                                neuronsMatchFilter,
+                                neuronsMatchesScoresFilter,
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
