@@ -90,7 +90,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private Long highExpressionArea;
     @JsonRequired
     private Double normalizedGapScore;
-    private Double artificialShapeScore;
 
     /**
      * This is field will not written for every match in a result file because it only adds a lot of noise.
@@ -299,19 +298,11 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
             setGradientAreaGap(Long.parseLong(gradientAreaGapValue));
     }
 
-    public Double getArtificialShapeScore() {
-        return artificialShapeScore;
-    }
-
-    public void setArtificialShapeScore(Double artificialShapeScore) {
-        this.artificialShapeScore = artificialShapeScore;
-    }
-
-    public Double getNormalizedScore() {
+    public double getNormalizedScore() {
         if (normalizedGapScore != null) {
             return normalizedGapScore;
         } else {
-            return artificialShapeScore != null ? artificialShapeScore : getMatchingPixels();
+            return getMatchingPixels();
         }
     }
 
@@ -350,7 +341,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setGradientAreaGap(this.getGradientAreaGap());
         that.setHighExpressionArea(this.getHighExpressionArea());
         that.setNormalizedGapScore(this.getNormalizedGapScore());
-        that.setArtificialShapeScore(this.getArtificialShapeScore());
         that.setSearchablePNG(this.getSearchablePNG());
         that.setImageStack(this.getImageStack());
     }

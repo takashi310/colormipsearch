@@ -45,7 +45,6 @@ public class Main {
                         commonArgs,
                         () -> mainArgs.cacheSize),
                 new MergeResultsCmd("mergeResults", commonArgs),
-                new NormalizeScoresCmd("normalizeScores", commonArgs),
                 new CopyColorDepthMIPVariantsCmd("copyMIPSegmentation", commonArgs),
                 new ConvertPPPResultsCmd("convertPPPResults", commonArgs),
                 new CopyPPPMatchesCmd("copyPPPMatches", commonArgs),
