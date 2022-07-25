@@ -1,9 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -15,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
@@ -27,8 +24,6 @@ import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDMatch;
-import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +46,19 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         Double pctPositivePixels = 0.0;
 
         @Parameter(names = {"--with-grad-scores"},
-                description = "Select matches with gradient scores",
+                description = "Select matches with gradient scores (automatically should pick only CDS matches)",
                 arity = 0)
         boolean withGradScores = false;
+
+        @Parameter(names = {"--with-rank"},
+                description = "Select matches with rank (automatically should pick only PPP matches)",
+                arity = 0)
+        boolean withRank = false;
+
+        @Parameter(names = {"--skip-release-cleanup"},
+                description = "If set do not perform any fields cleanup that is typically performed for released data",
+                arity = 0)
+        boolean skipReleaseCleanup = false;
 
         @Parameter(names = {"--masks"}, description = "Masks library")
         String masksLibrary;
@@ -87,6 +92,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                     .map(dir -> StringUtils.isNotBlank(perTargetSubdir) ? dir.resolve(perTargetSubdir) : dir)
                     .orElse(null);
         }
+
+        boolean withCleanup() {
+            return !skipReleaseCleanup;
+        }
     }
 
     private final ExportMatchesCmdArgs args;
@@ -117,6 +126,15 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         NeuronMatchesWriter<M, T, R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
         NeuronMatchesWriter<M, T, R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
 
+        ScoresFilter neuronsMatchScoresFilter = getScoresFilter();
+
+        if (perMaskNeuronMatchesWriter != null)
+            exportNeuronMatchesPerMask(neuronsMatchScoresFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
+        if (perTargetNeuronMatchesWriter != null)
+            exportNeuronMatchesPerTarget(neuronsMatchScoresFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
+    }
+
+    private ScoresFilter getScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
         neuronsMatchScoresFilter.setEntityType(args.matchResultTypes.getMatchType());
         if (args.pctPositivePixels > 0) {
@@ -125,11 +143,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
         if (args.withGradScores) {
             neuronsMatchScoresFilter.addSScore("gradientAreaGap", 0);
         }
-
-        if (perMaskNeuronMatchesWriter != null)
-            exportNeuronMatchesPerMask(neuronsMatchScoresFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
-        if (perTargetNeuronMatchesWriter != null)
-            exportNeuronMatchesPerTarget(neuronsMatchScoresFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
+        if (args.withRank) {
+            neuronsMatchScoresFilter.addSScore("rank", 0);
+        }
+        return neuronsMatchScoresFilter;
     }
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
@@ -150,6 +167,9 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
+                        if (args.withCleanup()) {
+                            matchesForMask.forEach(AbstractMatch::cleanupForRelease);
+                        }
                         perMaskNeuronMatchesWriter.write(matchesForMask);
                     });
                 });
@@ -172,6 +192,10 @@ public class ExportNeuronMatchesCmd extends AbstractCmd {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
+                        if (args.withCleanup()) {
+                            matchesForTarget.forEach(AbstractMatch::cleanupForRelease);
+                        }
+                        perTargetNeuronMatchesWriter.write(matchesForTarget);
                     });
                 });
     }

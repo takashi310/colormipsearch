@@ -113,4 +113,10 @@ public class CDMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronM
         return clone;
     }
 
+    @Override
+    public void cleanupForRelease() {
+        super.cleanupForRelease();
+        gradientAreaGap = null;
+        highExpressionArea = null;
+    }
 }

@@ -97,8 +97,16 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
         n.objective = this.objective;
         n.anatomicalArea = this.anatomicalArea;
         n.mountingProtocol = this.mountingProtocol;
+        n.driver = this.driver;
         n.channel = this.channel;
         return n;
+    }
+
+    @Override
+    public void cleanupForRelease() {
+        super.cleanupForRelease();
+        sampleName = null;
+        sampleRef = null;
     }
 
     @Override

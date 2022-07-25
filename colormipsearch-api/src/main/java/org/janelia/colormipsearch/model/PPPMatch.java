@@ -125,4 +125,12 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
         return clone;
     }
 
+    @Override
+    public void cleanupForRelease() {
+        super.cleanupForRelease();
+        sourceEmName = null;
+        sourceLmName = null;
+        sourceImageFiles = null;
+        skeletonMatches = null;
+    }
 }

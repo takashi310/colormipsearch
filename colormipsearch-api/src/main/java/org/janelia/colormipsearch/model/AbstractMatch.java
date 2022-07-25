@@ -164,6 +164,17 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
     public abstract AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
             MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier);
 
+    /**
+     * Remove all internal fields that should not be released.
+     */
+    public void cleanupForRelease() {
+        maskImageRefId = null;
+        matchedImageRefId = null;
+        if (maskImage != null) maskImage.cleanupForRelease();
+        if (matchedImage != null) matchedImage.cleanupForRelease();
+        resetMatchComputeFiles();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

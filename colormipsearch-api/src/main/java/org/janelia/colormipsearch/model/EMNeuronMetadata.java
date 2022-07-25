@@ -63,6 +63,12 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
+    public void cleanupForRelease() {
+        super.cleanupForRelease();
+        bodyRef = null;
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .appendSuper(super.toString())

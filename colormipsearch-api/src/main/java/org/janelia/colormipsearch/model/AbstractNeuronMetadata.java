@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -190,6 +191,11 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     public abstract String buildNeuronSourceName();
 
     public abstract AbstractNeuronMetadata duplicate();
+
+    public void cleanupForRelease() {
+        resetComputeFileData(EnumSet.allOf(ComputeFileType.class));
+        datasetName = null;
+    }
 
     @Override
     public boolean equals(Object o) {
