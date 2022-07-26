@@ -1,6 +1,12 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
@@ -107,6 +113,23 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
         super.cleanupForRelease();
         sampleName = null;
         sampleRef = null;
+    }
+
+    @Override
+    public List<Pair<String, ?>> updatableFields() {
+        return Stream.concat(
+                super.updatableFields().stream(),
+                Stream.of(
+                        ImmutablePair.of("sampleRef", getSampleRef()),
+                        ImmutablePair.of("sampleName", getSampleName()),
+                        ImmutablePair.of("slideCode", getSlideCode()),
+                        ImmutablePair.of("objective", getObjective()),
+                        ImmutablePair.of("anatomicalArea", getAnatomicalArea()),
+                        ImmutablePair.of("mountingProtocol", getMountingProtocol()),
+                        ImmutablePair.of("driver", getDriver()),
+                        ImmutablePair.of("channel", getChannel())
+                )
+        ).collect(Collectors.toList());
     }
 
     @Override

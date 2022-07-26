@@ -95,8 +95,8 @@ class MongoDaoHelper {
         if (CollectionUtils.isNotEmpty(sortCriteria)) {
             Map<String, Object> sortCriteriaAsMap = sortCriteria.stream()
                     .filter(sc -> StringUtils.isNotBlank(sc.getField()))
-                    // Convert "id" to "_id" if necessary
-                    .map(sc -> new SortCriteria("id".equals(sc.getField()) ? "_id" : sc.getField(), sc.getDirection()))
+                    // Convert "entityId" to "_id" if necessary
+                    .map(sc -> new SortCriteria("entityId".equals(sc.getField()) ? "_id" : sc.getField(), sc.getDirection()))
                     .collect(Collectors.toMap(
                             SortCriteria::getField,
                             sc -> sc.getDirection() == SortDirection.DESC ? -1 : 1,

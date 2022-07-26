@@ -11,7 +11,7 @@ import org.janelia.colormipsearch.model.PPPMatch;
 public enum MatchResultTypes {
     // color depth search matches
     CDS(CDMatch.class,
-            AbstractNeuronMetadata::getId, // grouped by MIP ID
+            AbstractNeuronMetadata::getMipId, // grouped by MIP ID
             Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getNormalizedScore()))), // sorted by normalized score descending
     // PPP matches
     PPP(PPPMatch.class,

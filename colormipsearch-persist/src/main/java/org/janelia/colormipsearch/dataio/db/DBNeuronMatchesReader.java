@@ -40,7 +40,7 @@ public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeu
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
-                        ).getResultList().stream().map(AbstractNeuronMetadata::getId))
+                        ).getResultList().stream().map(AbstractNeuronMetadata::getMipId))
                 .distinct()
                 .collect(Collectors.toList());
     }

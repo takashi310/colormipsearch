@@ -89,7 +89,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
                     .map(v2CDMatch -> {
                         CDMatch<EMNeuronMetadata, LMNeuronMetadata> cdMatch = new CDMatch<>();
                         EMNeuronMetadata emNeuronMetadata = new EMNeuronMetadata();
-                        emNeuronMetadata.setId(v2CDMatch.getSourceId());
+                        emNeuronMetadata.setMipId(v2CDMatch.getSourceId());
                         emNeuronMetadata.setPublishedName(v2CDMatch.getSourcePublishedName());
                         emNeuronMetadata.setLibraryName(v2CDMatch.getSourceLibraryName());
 
@@ -104,7 +104,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
                         cdMatch.setMaskImage(emNeuronMetadata);
 
                         LMNeuronMetadata lmNeuronMetadata = new LMNeuronMetadata();
-                        lmNeuronMetadata.setId(v2CDMatch.getId());
+                        lmNeuronMetadata.setMipId(v2CDMatch.getId());
                         lmNeuronMetadata.setPublishedName(v2CDMatch.getPublishedName());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
                         lmNeuronMetadata.setChannel(v2CDMatch.getChannelValue());

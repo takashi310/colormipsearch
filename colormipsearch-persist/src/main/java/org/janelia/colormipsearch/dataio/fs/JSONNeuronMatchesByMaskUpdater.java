@@ -12,7 +12,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
@@ -37,7 +36,7 @@ public class JSONNeuronMatchesByMaskUpdater<M extends AbstractNeuronMetadata,
     public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
         // write results by mask ID, ignoring the field selectors since we are writing all the results
         List<Function<M, ?>> grouping = Collections.singletonList(
-                AbstractNeuronMetadata::getId
+                AbstractNeuronMetadata::getMipId
         );
         Comparator<R> ordering = matchOrdering::compare;
         List<ResultMatches<M, T, R>> resultMatches = MatchResultsGrouping.groupByMaskFields(
@@ -45,6 +44,6 @@ public class JSONNeuronMatchesByMaskUpdater<M extends AbstractNeuronMetadata,
                 grouping,
                 ordering
         );
-        resultMatchesWriter.writeResultMatchesList(resultMatches, AbstractNeuronMetadata::getId, outputDir);
+        resultMatchesWriter.writeResultMatchesList(resultMatches, AbstractNeuronMetadata::getMipId, outputDir);
     }
 }

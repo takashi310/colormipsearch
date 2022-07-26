@@ -96,6 +96,17 @@ public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeu
     }
 
     @Override
+    public void createOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+        matches.forEach(m -> {
+            if (isIdentifiable(m)) {
+                findAndUpdate(m, fieldsToUpdateSelectors);
+            } else {
+                save(m);
+            }
+        });
+    }
+
+    @Override
     public long countNeuronMatches(NeuronsMatchFilter<R> neuronsMatchFilter,
                                    NeuronSelector maskSelector,
                                    NeuronSelector targetSelector) {
@@ -138,7 +149,6 @@ public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeu
     private List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
         List<Bson> pipeline = new ArrayList<>();
 
-
         pipeline.add(Aggregates.match(matchFilter));
         pipeline.add(Aggregates.lookup(
                 EntityUtils.getPersistenceInfo(AbstractNeuronMetadata.class).storeName(),
@@ -161,18 +171,7 @@ public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeu
         return pipeline;
     }
 
-    @Override
-    public void saveOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
-        matches.forEach(m -> {
-            if (isIdentifiable(m)) {
-                findAndUpdate(m, fieldsToUpdateSelectors);
-            } else {
-                save(m);
-            }
-        });
-    }
-
-    private R findAndUpdate(R match, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+    private void findAndUpdate(R match, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
         FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
@@ -196,7 +195,7 @@ public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeu
             selectFilters.add(MongoDaoHelper.createEqFilter("matchedImageRefId", match.getMatchedImageRefId()));
         }
 
-        return mongoCollection.findOneAndUpdate(
+        mongoCollection.findOneAndUpdate(
                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                 getUpdates(
                         Stream.concat(

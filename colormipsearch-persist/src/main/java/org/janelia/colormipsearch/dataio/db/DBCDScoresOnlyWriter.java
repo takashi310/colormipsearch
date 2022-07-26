@@ -10,7 +10,6 @@ import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
-import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 
@@ -38,6 +37,6 @@ public class DBCDScoresOnlyWriter<R extends CDMatch<? extends AbstractNeuronMeta
     }
 
     public void write(List<R> matches) {
-        neuronMatchesDao.saveOrUpdateAll(matches, fieldsToUpdate);
+        neuronMatchesDao.createOrUpdateAll(matches, fieldsToUpdate);
     }
 }

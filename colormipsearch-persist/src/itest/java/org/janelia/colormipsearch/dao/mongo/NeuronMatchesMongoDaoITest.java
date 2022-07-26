@@ -232,7 +232,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
             for (int i = 0; i < 3; i++) {
                 testCDMatch.setMatchingPixels(testCDMatch.getMatchingPixels() + i);
                 testCDMatch.setMatchingPixelsRatio(testCDMatch.getMatchingPixelsRatio() / (i + 1));
-                neuronMatchesDao.saveOrUpdateAll(testCDMatches, fieldsToUpdate);
+                neuronMatchesDao.createOrUpdateAll(testCDMatches, fieldsToUpdate);
                 // check that it was saved
                 assertEquals(
                         1,

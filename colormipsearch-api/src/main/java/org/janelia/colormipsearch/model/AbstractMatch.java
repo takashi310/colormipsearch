@@ -194,8 +194,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("maskImage", maskImage != null ? maskImage.getId() : "<null>")
-                .append("matchedImage", matchedImage != null ? matchedImage.getId() : "<null>")
+                .append("maskImage", maskImage != null ? maskImage.getMipId() : "<null>")
+                .append("matchedImage", matchedImage != null ? matchedImage.getMipId() : "<null>")
                 .append("mirrored", mirrored)
                 .append("matchComputeFiles", matchComputeFiles)
                 .append("matchFiles", matchFiles)

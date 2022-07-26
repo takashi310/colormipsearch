@@ -215,7 +215,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 MatchResultsGrouping.simpleGroupByMaskFields(
                         cdMatches,
                         Arrays.asList(
-                                AbstractNeuronMetadata::getId,
+                                AbstractNeuronMetadata::getMipId,
                                 m -> m.getComputeFileName(ComputeFileType.InputColorDepthImage)
                         )
                 );

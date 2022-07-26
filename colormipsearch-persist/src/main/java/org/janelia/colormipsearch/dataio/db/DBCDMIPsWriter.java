@@ -21,7 +21,7 @@ public class DBCDMIPsWriter implements CDMIPsWriter {
 
     @Override
     public void write(AbstractNeuronMetadata neuronMetadata) {
-        neuronMetadataDao.save(neuronMetadata);
+        neuronMetadataDao.createOrUpdate(neuronMetadata);
     }
 
     @Override

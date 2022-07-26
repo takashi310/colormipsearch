@@ -1,18 +1,24 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
@@ -36,7 +42,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
         }
 
         public Builder<N> id(String id) {
-            n.setId(id);
+            n.setMipId(id);
             return this;
         }
 
@@ -61,23 +67,27 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
         }
     }
 
-    private String id; // MIP ID - not to be confused with the entityId which is the primary key of this entity
+    private String mipId; // MIP ID - not to be confused with the entityId which is the primary key of this entity
     private String libraryName; // MIP library
     private String publishedName;
     private String alignmentSpace;
     private Gender gender;
-    private String datasetName;
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, FileData> neuronFiles = new HashMap<>();
 
-    public String getId() {
-        return id;
+    @JsonProperty("id")
+    public String getMipId() {
+        return mipId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setMipId(String mipId) {
+        this.mipId = mipId;
+    }
+
+    public boolean hasMipID() {
+        return StringUtils.isNotBlank(mipId);
     }
 
     @JsonIgnore
@@ -180,21 +190,22 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
         }
     }
 
-    public String getDatasetName() {
-        return datasetName;
-    }
-
-    public void setDatasetName(String datasetName) {
-        this.datasetName = datasetName;
-    }
-
     public abstract String buildNeuronSourceName();
 
     public abstract AbstractNeuronMetadata duplicate();
 
     public void cleanupForRelease() {
         resetComputeFileData(EnumSet.allOf(ComputeFileType.class));
-        datasetName = null;
+    }
+
+    public List<Pair<String, ?>> updatableFields() {
+        return Arrays.asList(
+                ImmutablePair.of("libraryName", getLibraryName()),
+                ImmutablePair.of("publishedName", getPublishedName()),
+                ImmutablePair.of("alignmentSpace", getAlignmentSpace()),
+                ImmutablePair.of("gender", getGender()),
+                ImmutablePair.of("computeFiles", getComputeFiles())
+        );
     }
 
     @Override
@@ -207,7 +218,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
         return new EqualsBuilder()
                 .appendSuper(super.equals(o))
-                .append(id, that.id)
+                .append(mipId, that.mipId)
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage), that.getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .isEquals();
     }
@@ -216,7 +227,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
                 .appendSuper(super.hashCode())
-                .append(id)
+                .append(mipId)
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .toHashCode();
     }
@@ -224,19 +235,18 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("id", id)
+                .append("id", mipId)
                 .append("libraryName", libraryName)
                 .append("publishedName", publishedName)
                 .toString();
     }
 
     protected <N extends AbstractNeuronMetadata> void copyFrom(N that) {
-        this.id = that.getId();
+        this.mipId = that.getMipId();
         this.libraryName = that.getLibraryName();
         this.publishedName = that.getPublishedName();
         this.alignmentSpace = that.getAlignmentSpace();
         this.gender = that.getGender();
-        this.datasetName = that.getDatasetName();
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
         this.neuronFiles.clear();

@@ -199,7 +199,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
         } else {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    AbstractNeuronMetadata::getId, // group results by neuron MIP ID
+                    AbstractNeuronMetadata::getMipId, // group results by neuron MIP ID
                     Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                     args.getPerMaskDir(),
                     args.getPerTargetDir()
@@ -215,7 +215,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 .flatMap(libraryInput -> mipsReader.readMIPs(ListArg.asDataSourceParam(libraryInput)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
                         filter.contains(neuronMetadata.getPublishedName().toLowerCase()) ||
-                        filter.contains(neuronMetadata.getId()))
+                        filter.contains(neuronMetadata.getMipId()))
                 .skip(startIndex)
                 .collect(Collectors.toList());
         return length > 0 && length < allMips.size()

@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
@@ -57,7 +56,7 @@ public class JSONReadWriteTest {
     public void setUp() {
         mapper = new ObjectMapper();
         em2lmJsonWriter = new JSONNeuronMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
-                AbstractNeuronMetadata::getId, // group results by neuron MIP ID
+                AbstractNeuronMetadata::getMipId, // group results by neuron MIP ID
                 Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                 em2lmDir,
                 lm2emDir
@@ -82,8 +81,8 @@ public class JSONReadWriteTest {
     public void readWriteCDSResults() {
         List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
         em2lmJsonWriter.write(cdMatches);
-        checkResultFiles(cdMatches, em2lmDir, m -> m.getMaskImage().getId());
-        checkResultFiles(cdMatches, lm2emDir, m -> m.getMatchedImage().getId());
+        checkResultFiles(cdMatches, em2lmDir, m -> m.getMaskImage().getMipId());
+        checkResultFiles(cdMatches, lm2emDir, m -> m.getMatchedImage().getMipId());
 
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
@@ -96,7 +95,7 @@ public class JSONReadWriteTest {
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> testMatchesWithSameMask = cdMatches.stream()
-                            .filter(cdsMatch -> cdsMatch.getMaskImage().getId().equals(mId))
+                            .filter(cdsMatch -> cdsMatch.getMaskImage().getMipId().equals(mId))
                             .peek(cdsMatch -> {
                                 cdsMatch.resetMatchComputeFiles();
                                 cdsMatch.resetMatchFiles();

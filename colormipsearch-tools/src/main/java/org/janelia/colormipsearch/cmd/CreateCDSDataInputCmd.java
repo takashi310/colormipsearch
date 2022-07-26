@@ -417,7 +417,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                         Gender defaultGenderForEMNeuron) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         EMNeuronMetadata neuronMetadata = new EMNeuronMetadata();
-        neuronMetadata.setId(cdmip.id);
+        neuronMetadata.setMipId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setBodyRef(cdmip.emBodyRef);
@@ -441,7 +441,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                         Function<String, String> urlMapping) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         LMNeuronMetadata neuronMetadata = new LMNeuronMetadata();
-        neuronMetadata.setId(cdmip.id);
+        neuronMetadata.setMipId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setSampleRef(cdmip.sampleRef);

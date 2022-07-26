@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -53,7 +52,7 @@ public class NeuronMIPUtils {
             } else {
                 LOG.info("Read {} from {} mips", filter, content.size());
                 return content.stream()
-                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getId())))
+                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getMipId())))
                         .collect(Collectors.toList());
             }
         } catch (Exception e) {

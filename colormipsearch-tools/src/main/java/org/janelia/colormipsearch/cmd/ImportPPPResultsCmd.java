@@ -275,7 +275,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
             LMNeuronMetadata lmNeuron = pppMatch.getMatchedImage();
             CDMIPSample lmSample = lmSamples.get(lmNeuron.getSampleName());
             if (lmSample != null) {
-                lmNeuron.setDatasetName(lmSample.releaseLabel); // for now set this to the releaseLabel but this is not quite right
                 lmNeuron.setSampleRef("Sample#" + lmSample.id);
                 lmNeuron.setPublishedName(lmSample.publishingName);
                 lmNeuron.setSlideCode(lmSample.slideCode);
@@ -294,7 +293,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
             CDMIPBody emBody = emNeurons.get(emNeuron.getPublishedName());
             if (emBody != null) {
                 emNeuron.setBodyRef("EMBody#" + emBody.id);
-                emNeuron.setDatasetName(emBody.datasetIdentifier); // this should be set to the library id which differs slightly from the EM dataset
                 emNeuron.setNeuronType(emBody.neuronType);
                 emNeuron.setNeuronInstance(emBody.neuronInstance);
                 emNeuron.setState(emBody.status);

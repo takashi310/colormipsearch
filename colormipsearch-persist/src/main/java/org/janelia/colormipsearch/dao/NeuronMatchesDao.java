@@ -11,6 +11,14 @@ import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public interface NeuronMatchesDao<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> extends Dao<R> {
     /**
+     * Create or update matches. If a matcb, for the given mask entity ID and target entity ID, exists then update the fields
+     * otherwise create it.
+     * @param matches to create or update
+     * @param fieldsToUpdateSelectors fields to update if the record exists
+     */
+    void createOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
+
+    /**
      * Count neuron matches filtered by the type and scores specified by neuronsMatchFilter and/or by the specified
      * mask and target selectors.
      *
@@ -37,6 +45,4 @@ public interface NeuronMatchesDao<R extends AbstractMatch<? extends AbstractNeur
                                      NeuronSelector maskSelector,
                                      NeuronSelector targetSelector,
                                      PagedRequest pageRequest);
-    // if a match exists it will update it otherwise it will create it.
-    void saveOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
 }
