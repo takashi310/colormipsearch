@@ -7,11 +7,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class NeuronSelector {
-    private String neuronClassname;
-    private String libraryName;
-    private final List<String> names = new ArrayList<>();
-    private final List<String> mipIDs = new ArrayList<>();
-    private final List<Number> entityIds = new ArrayList<>();
+    private String neuronClassname; // full class name
+    private String libraryName; // library name
+    private final List<String> names = new ArrayList<>(); // matching published names
+    private final List<String> mipIDs = new ArrayList<>(); // matching MIP IDs
+    private final List<Number> entityIds = new ArrayList<>(); // matching internal entity IDs
 
     public String getNeuronClassname() {
         return neuronClassname;

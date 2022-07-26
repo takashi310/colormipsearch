@@ -258,6 +258,11 @@ public abstract class AbstractMetadata implements Serializable {
         return channel;
     }
 
+    @JsonIgnore
+    public Integer getChannelValue() {
+        return StringUtils.isNotBlank(channel) ? Integer.valueOf(channel) : null;
+    }
+
     public void setChannel(String channel) {
         this.channel = channel;
     }

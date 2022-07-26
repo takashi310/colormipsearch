@@ -1,20 +1,17 @@
 package org.janelia.colormipsearch.dao;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatch;
 import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
 
 public class NeuronsMatchFilter<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
 
-    private ScoresFilter scoresFilter;
-    private List<Number> maskEntityIds;
-    private List<Number> targetEntityIds;
+    private ScoresFilter scoresFilter; // score filter
+    private List<Number> maskEntityIds; // mask entity IDs
+    private List<Number> targetEntityIds; // target entity IDs
 
     public ScoresFilter getScoresFilter() {
         return scoresFilter;

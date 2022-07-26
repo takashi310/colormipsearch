@@ -27,7 +27,7 @@ public interface NeuronMatchesDao<R extends AbstractMatch<? extends AbstractNeur
      * Retrieve neuron matches filtered by the type and scores specified by neuronsMatchFilter and/or by the specified
      * mask and target selectors.
      *
-     * @param neuronsMatchFilter matches score filter
+     * @param neuronsMatchFilter score filter as well as mask and target entity IDs
      * @param maskSelector filter by mask attributes
      * @param targetSelector filter by target attributes
      * @param pageRequest pagination parameters

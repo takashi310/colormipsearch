@@ -107,6 +107,9 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
                         lmNeuronMetadata.setId(v2CDMatch.getId());
                         lmNeuronMetadata.setPublishedName(v2CDMatch.getPublishedName());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
+                        lmNeuronMetadata.setChannel(v2CDMatch.getChannelValue());
+                        lmNeuronMetadata.setObjective(v2CDMatch.getObjective());
+                        lmNeuronMetadata.setMountingProtocol(v2CDMatch.getMountingProtocol());
 
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getCdmPath()));
