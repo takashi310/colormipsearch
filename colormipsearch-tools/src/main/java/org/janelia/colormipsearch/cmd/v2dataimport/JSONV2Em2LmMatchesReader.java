@@ -24,6 +24,7 @@ import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileData;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronMetadata;
 
 public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> {
@@ -97,6 +98,9 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
                         emNeuronMetadata.setComputeFileData(ComputeFileType.InputColorDepthImage,
                                 FileData.fromString(v2CDMatch.getSourceImageName()));
 
+                        emNeuronMetadata.setNeuronFileData(FileType.ColorDepthMipInput,
+                                FileData.fromString(v2CDMatch.getSourceSearchablePNG()));
+
                         cdMatch.setMaskImage(emNeuronMetadata);
 
                         LMNeuronMetadata lmNeuronMetadata = new LMNeuronMetadata();
@@ -108,6 +112,9 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
                                 FileData.fromString(v2CDMatch.getCdmPath()));
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.InputColorDepthImage,
                                 FileData.fromString(v2CDMatch.getImageName()));
+
+                        lmNeuronMetadata.setNeuronFileData(FileType.ColorDepthMipInput,
+                                FileData.fromString(v2CDMatch.getSearchablePNG()));
 
                         cdMatch.setMatchedImage(lmNeuronMetadata);
 
