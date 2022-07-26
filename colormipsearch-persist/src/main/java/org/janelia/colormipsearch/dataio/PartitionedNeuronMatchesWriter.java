@@ -3,11 +3,11 @@ package org.janelia.colormipsearch.dataio;
 import java.util.List;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 
-public class PartitionedNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronMetadata,
-                                                                    ? extends AbstractNeuronMetadata>>
+public class PartitionedNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronEntity,
+                                                                    ? extends AbstractNeuronEntity>>
         implements NeuronMatchesWriter<R> {
     private final NeuronMatchesWriter<R> writer;
     private final int partitionSize;

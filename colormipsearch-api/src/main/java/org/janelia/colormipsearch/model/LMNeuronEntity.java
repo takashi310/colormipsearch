@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class LMNeuronMetadata extends AbstractNeuronMetadata {
+public class LMNeuronEntity extends AbstractNeuronEntity {
 
     private String sampleRef;
     private String sampleName;
@@ -94,8 +94,8 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
-    public LMNeuronMetadata duplicate() {
-        LMNeuronMetadata n = new LMNeuronMetadata();
+    public LMNeuronEntity duplicate() {
+        LMNeuronEntity n = new LMNeuronEntity();
         n.copyFrom(this);
         n.sampleRef = this.sampleRef;
         n.sampleName = this.sampleName;

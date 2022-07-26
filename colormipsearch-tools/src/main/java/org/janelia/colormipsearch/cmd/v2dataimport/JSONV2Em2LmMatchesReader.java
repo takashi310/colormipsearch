@@ -22,12 +22,12 @@ import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 
-public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> {
+public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMNeuronEntity, LMNeuronEntity>> {
 
     private final ObjectMapper mapper;
 
@@ -67,7 +67,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
     }
 
     @Override
-    public List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> readMatchesForMasks(String maskLibrary, List<String> maskMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
+    public List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readMatchesForMasks(String maskLibrary, List<String> maskMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
                 .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
                 .map(this::readEMMatches)
@@ -76,19 +76,19 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
     }
 
     @Override
-    public List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> readMatchesForTargets(String targetLibrary, List<String> targetMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
+    public List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readMatchesForTargets(String targetLibrary, List<String> targetMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
         throw new UnsupportedOperationException("This class has very limitted support and it is only intended for import EM to LM matches based on the EM MIP ID(s)");
     }
 
-    private List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> readEMMatches(File f) {
+    private List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readEMMatches(File f) {
         CDSMatches matchesFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
         if (matchesFileContent == null || matchesFileContent.isEmpty()) {
             return Collections.emptyList();
         } else {
             return matchesFileContent.getResults().stream()
                     .map(v2CDMatch -> {
-                        CDMatch<EMNeuronMetadata, LMNeuronMetadata> cdMatch = new CDMatch<>();
-                        EMNeuronMetadata emNeuronMetadata = new EMNeuronMetadata();
+                        CDMatch<EMNeuronEntity, LMNeuronEntity> cdMatch = new CDMatch<>();
+                        EMNeuronEntity emNeuronMetadata = new EMNeuronEntity();
                         emNeuronMetadata.setMipId(v2CDMatch.getSourceId());
                         emNeuronMetadata.setPublishedName(v2CDMatch.getSourcePublishedName());
                         emNeuronMetadata.setLibraryName(v2CDMatch.getSourceLibraryName());
@@ -103,7 +103,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
 
                         cdMatch.setMaskImage(emNeuronMetadata);
 
-                        LMNeuronMetadata lmNeuronMetadata = new LMNeuronMetadata();
+                        LMNeuronEntity lmNeuronMetadata = new LMNeuronEntity();
                         lmNeuronMetadata.setMipId(v2CDMatch.getId());
                         lmNeuronMetadata.setPublishedName(v2CDMatch.getPublishedName());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());

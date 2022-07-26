@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,22 +10,16 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
-import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
-import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
-import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
-import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatch;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +68,8 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     public void execute() {
         long startTime = System.currentTimeMillis();
 
-        NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesReader = getCDMatchesReader();
-        NeuronMatchesWriter<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesWriter = getCDSMatchesWriter();
+        NeuronMatchesReader<CDMatch<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
+        NeuronMatchesWriter<CDMatch<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
@@ -86,7 +79,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     // process each item from the current partition sequentially
                     partititionItems.forEach(maskIdToProcess -> {
                         // read all matches for the current mask
-                        List<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
+                        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         cdMatchesWriter.write(cdMatchesForMask);
                     });
                     LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
@@ -102,11 +95,11 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 (Runtime.getRuntime().totalMemory() / _1M));
     }
 
-    private NeuronMatchesReader<CDMatch<EMNeuronMetadata, LMNeuronMetadata>> getCDMatchesReader() {
+    private NeuronMatchesReader<CDMatch<EMNeuronEntity, LMNeuronEntity>> getCDMatchesReader() {
         return new JSONV2Em2LmMatchesReader(mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<CDMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             // always create new matches
@@ -116,7 +109,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
     List<CDMatch<M, T>> getCDMatchesForMask(NeuronMatchesReader<CDMatch<M, T>> cdsMatchesReader, String maskCDMipId) {
         LOG.info("Read all color depth matches for {}", maskCDMipId);
         return cdsMatchesReader.readMatchesForMasks(

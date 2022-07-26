@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,9 +21,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
-public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
+public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
-    public static class Builder<N extends AbstractNeuronMetadata> {
+    public static class Builder<N extends AbstractNeuronEntity> {
 
         private N n;
 
@@ -192,7 +191,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
     public abstract String buildNeuronSourceName();
 
-    public abstract AbstractNeuronMetadata duplicate();
+    public abstract AbstractNeuronEntity duplicate();
 
     public void cleanupForRelease() {
         resetComputeFileData(EnumSet.allOf(ComputeFileType.class));
@@ -214,7 +213,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        AbstractNeuronMetadata that = (AbstractNeuronMetadata) o;
+        AbstractNeuronEntity that = (AbstractNeuronEntity) o;
 
         return new EqualsBuilder()
                 .appendSuper(super.equals(o))
@@ -241,7 +240,7 @@ public abstract class AbstractNeuronMetadata extends AbstractBaseEntity {
                 .toString();
     }
 
-    protected <N extends AbstractNeuronMetadata> void copyFrom(N that) {
+    protected <N extends AbstractNeuronEntity> void copyFrom(N that) {
         this.mipId = that.getMipId();
         this.libraryName = that.getLibraryName();
         this.publishedName = that.getPublishedName();

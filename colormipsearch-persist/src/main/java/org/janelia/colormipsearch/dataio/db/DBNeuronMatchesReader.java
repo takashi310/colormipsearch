@@ -18,13 +18,13 @@ import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> implements NeuronMatchesReader<R> {
+public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesReader<R> {
 
     private final static int PAGE_SIZE = 10000;
 
-    private final NeuronMetadataDao<AbstractNeuronMetadata> neuronMetadataDao;
+    private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final NeuronMatchesDao<R> neuronMatchesDao;
 
     public DBNeuronMatchesReader(Config config) {
@@ -40,7 +40,7 @@ public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeu
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
-                        ).getResultList().stream().map(AbstractNeuronMetadata::getMipId))
+                        ).getResultList().stream().map(AbstractNeuronEntity::getMipId))
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -79,7 +79,7 @@ public class DBNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeu
         } else {
             return neuronMetadataDao.findNeurons(neuronSelector, new PagedRequest())
                     .getResultList().stream()
-                    .map(AbstractNeuronMetadata::getEntityId)
+                    .map(AbstractNeuronEntity::getEntityId)
                     .collect(Collectors.toList());
         }
     }

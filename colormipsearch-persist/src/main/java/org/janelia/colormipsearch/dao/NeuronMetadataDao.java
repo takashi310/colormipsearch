@@ -1,14 +1,10 @@
 package org.janelia.colormipsearch.dao;
 
-import java.util.List;
-import java.util.function.Function;
-
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public interface NeuronMetadataDao<N extends AbstractNeuronMetadata> extends Dao<N> {
+public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N> {
     /**
      * Create or update neuron. If a neuron exists, update it otherwise create it.
      * @param neuron to create or update.

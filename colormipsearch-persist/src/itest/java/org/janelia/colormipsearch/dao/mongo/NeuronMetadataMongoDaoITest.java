@@ -8,12 +8,12 @@ import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,9 +23,9 @@ import static org.junit.Assert.assertNotSame;
 
 public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
-    private final List<AbstractNeuronMetadata> testData = new ArrayList<>();
+    private final List<AbstractNeuronEntity> testData = new ArrayList<>();
 
-    private NeuronMetadataDao<AbstractNeuronMetadata> testDao;
+    private NeuronMetadataDao<AbstractNeuronEntity> testDao;
 
     @Before
     public void setUp() {
@@ -39,24 +39,24 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
     @Test
     public void persistEmNeuron() {
-        EMNeuronMetadata testEmNeuron = createTestNeuron(
-                EMNeuronMetadata::new,
+        EMNeuronEntity testEmNeuron = createTestNeuron(
+                EMNeuronEntity::new,
                 "flyem",
                 "123445");
         testDao.save(testEmNeuron);
-        AbstractNeuronMetadata persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
+        AbstractNeuronEntity persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
     }
 
     @Test
     public void persistLmNeuron() {
-        LMNeuronMetadata testLmNeuron = createTestNeuron(
-                LMNeuronMetadata::new,
+        LMNeuronEntity testLmNeuron = createTestNeuron(
+                LMNeuronEntity::new,
                 "flylight_mcfo",
                 "123445");
         testDao.save(testLmNeuron);
-        AbstractNeuronMetadata persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
+        AbstractNeuronEntity persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
         assertEquals(testLmNeuron, persistedLmNeuron);
         assertNotSame(testLmNeuron, persistedLmNeuron);
     }
@@ -64,16 +64,16 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     @Test
     public void findByLibrary() {
         String testLibrary = "flyem";
-        EMNeuronMetadata testEmNeuron = createTestNeuron(
-                EMNeuronMetadata::new,
+        EMNeuronEntity testEmNeuron = createTestNeuron(
+                EMNeuronEntity::new,
                 testLibrary,
                 "123445");
         testDao.save(testEmNeuron);
-        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeurons(
+        PagedResult<? extends AbstractNeuronEntity> persistedEmNeurons = testDao.findNeurons(
                 new NeuronSelector().setLibraryName(testLibrary),
                 new PagedRequest());
         assertEquals(1, persistedEmNeurons.getResultList().size());
-        AbstractNeuronMetadata persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
+        AbstractNeuronEntity persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
     }
@@ -81,24 +81,24 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     @Test
     public void findByLibraryAndType() {
         String testLibrary = "flyem";
-        EMNeuronMetadata testEmNeuron = createTestNeuron(
-                EMNeuronMetadata::new,
+        EMNeuronEntity testEmNeuron = createTestNeuron(
+                EMNeuronEntity::new,
                 testLibrary,
                 "123445");
         testDao.save(testEmNeuron);
-        PagedResult<? extends AbstractNeuronMetadata> persistedEmNeurons = testDao.findNeurons(
-                new NeuronSelector().setLibraryName(testLibrary).setNeuronClassname(EMNeuronMetadata.class.getName()),
+        PagedResult<? extends AbstractNeuronEntity> persistedEmNeurons = testDao.findNeurons(
+                new NeuronSelector().setLibraryName(testLibrary).setNeuronClassname(EMNeuronEntity.class.getName()),
                 new PagedRequest());
         assertEquals(1, persistedEmNeurons.getResultList().size());
-        AbstractNeuronMetadata persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
+        AbstractNeuronEntity persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
     }
 
-    private <N extends AbstractNeuronMetadata> N createTestNeuron(Supplier<N> neuronGenerator,
-                                                                  String libraryName,
-                                                                  String name) {
-        N testNeuron = new AbstractNeuronMetadata.Builder<>(neuronGenerator)
+    private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,
+                                                                String libraryName,
+                                                                String name) {
+        N testNeuron = new AbstractNeuronEntity.Builder<>(neuronGenerator)
                 .library(libraryName)
                 .publishedName(name)
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mipSegmentation"))

@@ -8,7 +8,7 @@ import org.janelia.colormipsearch.dao.mongo.NeuronMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 public class DaosProvider {
 
@@ -44,12 +44,12 @@ public class DaosProvider {
         this.idGenerator = new TimebasedIdGenerator(config.getIntegerPropertyValue("TimebasedId.Context", 0));
     }
 
-    public <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> NeuronMatchesDao<R>
+    public <R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getNeuronMatchesDao() {
         return new NeuronMatchesMongoDao<>(mongoDatabase, idGenerator);
     }
 
-    public <N extends AbstractNeuronMetadata> NeuronMetadataDao<N>
+    public <N extends AbstractNeuronEntity> NeuronMetadataDao<N>
     getNeuronMetadataDao() {
         return new NeuronMetadataMongoDao<>(mongoDatabase, idGenerator);
     }

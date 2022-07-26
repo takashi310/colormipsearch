@@ -8,7 +8,7 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +22,9 @@ class JSONResultMatchesWriter {
         this.jsonWriter = jsonWriter;
     }
 
-    <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     void writeResultMatchesList(List<ResultMatches<M, T, R>> resultMatchesList,
-                                Function<AbstractNeuronMetadata, String> filenameSelector,
+                                Function<AbstractNeuronEntity, String> filenameSelector,
                                 Path outputDir) {
         long startTime = System.currentTimeMillis();
         FSUtils.createDirs(outputDir);
@@ -34,9 +34,9 @@ class JSONResultMatchesWriter {
         LOG.info("Finished writing {} file results in {}s", resultMatchesList.size(), (System.currentTimeMillis() - startTime) / 1000.);
     }
 
-    <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     void writeResultMatches(ResultMatches<M, T, R> resultMatches,
-                            Function<AbstractNeuronMetadata, String> filenameSelector,
+                            Function<AbstractNeuronEntity, String> filenameSelector,
                             Path outputDir) {
         String filename = filenameSelector.apply(resultMatches.getKey());
         JsonOutputHelper.writeToJSONFile(

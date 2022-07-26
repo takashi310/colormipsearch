@@ -13,9 +13,9 @@ import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dataio.NeuronMatchesUpdater;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class DBNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+public class DBNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>>
         implements NeuronMatchesUpdater<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;

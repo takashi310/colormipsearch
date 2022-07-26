@@ -5,9 +5,9 @@ import java.util.List;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public interface NeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
+public interface NeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> {
     /**
      * This method will list the location for all color depth matches.
      *

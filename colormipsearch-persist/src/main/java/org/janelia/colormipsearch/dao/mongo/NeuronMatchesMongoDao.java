@@ -30,14 +30,15 @@ import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeuronMetadata,
-                                                           ? extends AbstractNeuronMetadata>> extends AbstractMongoDao<R>
+public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeuronEntity,
+                                                           ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
                                                                                               implements NeuronMatchesDao<R> {
 
     public NeuronMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);
+        createDocumentIndexes();
     }
 
     @Override
@@ -151,13 +152,13 @@ public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeu
 
         pipeline.add(Aggregates.match(matchFilter));
         pipeline.add(Aggregates.lookup(
-                EntityUtils.getPersistenceInfo(AbstractNeuronMetadata.class).storeName(),
+                EntityUtils.getPersistenceInfo(AbstractNeuronEntity.class).storeName(),
                 "maskImageRefId",
                 "_id",
                 "maskImage"
         ));
         pipeline.add(Aggregates.lookup(
-                EntityUtils.getPersistenceInfo(AbstractNeuronMetadata.class).storeName(),
+                EntityUtils.getPersistenceInfo(AbstractNeuronEntity.class).storeName(),
                 "matchedImageRefId",
                 "_id",
                 "image" // matchedImage field name is 'image'

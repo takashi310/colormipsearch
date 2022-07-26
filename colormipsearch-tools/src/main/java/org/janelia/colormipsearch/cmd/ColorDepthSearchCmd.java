@@ -31,7 +31,7 @@ import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +113,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
         runColorDepthSearch();
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void runColorDepthSearch() {
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void runColorDepthSearch() {
         CDMIPsReader cdmiPsReader = getCDMipsReader();
         ColorMIPSearchProcessor<M, T> colorMIPSearchProcessor;
         ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider;
@@ -181,7 +181,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 mapper);
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<CDMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatch<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             if (args.alwaysNewMatches) {
@@ -199,7 +199,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
         } else {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    AbstractNeuronMetadata::getMipId, // group results by neuron MIP ID
+                    AbstractNeuronEntity::getMipId, // group results by neuron MIP ID
                     Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                     args.getPerMaskDir(),
                     args.getPerTargetDir()
@@ -207,11 +207,11 @@ class ColorDepthSearchCmd extends AbstractCmd {
         }
     }
 
-    private List<? extends AbstractNeuronMetadata> readMIPs(CDMIPsReader mipsReader,
-                                                            List<ListArg> mipsArg, long startIndexArg, int length,
-                                                            Set<String> filter) {
+    private List<? extends AbstractNeuronEntity> readMIPs(CDMIPsReader mipsReader,
+                                                          List<ListArg> mipsArg, long startIndexArg, int length,
+                                                          Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
-        List<? extends AbstractNeuronMetadata> allMips = mipsArg.stream()
+        List<? extends AbstractNeuronEntity> allMips = mipsArg.stream()
                 .flatMap(libraryInput -> mipsReader.readMIPs(ListArg.asDataSourceParam(libraryInput)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
                         filter.contains(neuronMetadata.getPublishedName().toLowerCase()) ||

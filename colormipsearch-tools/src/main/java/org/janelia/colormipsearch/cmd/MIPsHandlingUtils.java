@@ -23,10 +23,10 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,11 +71,11 @@ class MIPsHandlingUtils {
                 (StringUtils.containsIgnoreCase(lname, "hemibrain") || StringUtils.containsIgnoreCase(lname, "vnc"));
     }
 
-    static <N extends AbstractNeuronMetadata> List<N> findNeuronMIPs(N neuronMetadata,
-                                                                     String neuronImagesBasePath,
-                                                                     Pair<FileData.FileDataType, Map<String, List<String>>> neuronImages,
-                                                                     boolean includeOriginal,
-                                                                     int neuronImageChannelBase) {
+    static <N extends AbstractNeuronEntity> List<N> findNeuronMIPs(N neuronMetadata,
+                                                                   String neuronImagesBasePath,
+                                                                   Pair<FileData.FileDataType, Map<String, List<String>>> neuronImages,
+                                                                   boolean includeOriginal,
+                                                                   int neuronImageChannelBase) {
         if (StringUtils.isBlank(neuronImagesBasePath)) {
             return Collections.singletonList(originalAsInput(neuronMetadata));
         } else {
@@ -93,11 +93,11 @@ class MIPsHandlingUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static <N extends AbstractNeuronMetadata> List<N> lookupSegmentedImages(N neuronMetadata,
-                                                                                    String inputDataBasePath,
-                                                                                    FileData.FileDataType fileDataType,
-                                                                                    Map<String, List<String>> computeInputImages,
-                                                                                    int inputImageChannelBase) {
+    private static <N extends AbstractNeuronEntity> List<N> lookupSegmentedImages(N neuronMetadata,
+                                                                                  String inputDataBasePath,
+                                                                                  FileData.FileDataType fileDataType,
+                                                                                  Map<String, List<String>> computeInputImages,
+                                                                                  int inputImageChannelBase) {
         String indexingField = neuronMetadata.getNeuronId();
         Predicate<String> segmentedImageMatcher;
         if (isEmLibrary(neuronMetadata.getLibraryName())) {
@@ -115,7 +115,7 @@ class MIPsHandlingUtils {
             segmentedImageMatcher = p -> {
                 String fn = Paths.get(p).getFileName().toString();
                 Preconditions.checkArgument(fn.contains(indexingField));
-                LMNeuronMetadata lmNeuronMetadata = (LMNeuronMetadata) neuronMetadata;
+                LMNeuronEntity lmNeuronMetadata = (LMNeuronEntity) neuronMetadata;
                 int channelFromMip = getColorChannel(lmNeuronMetadata);
                 int channelFromFN = extractColorChannelFromMIPName(fn.replace(indexingField, ""), inputImageChannelBase);
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})",
@@ -162,7 +162,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static int getColorChannel(LMNeuronMetadata neuronMetadata) {
+    private static int getColorChannel(LMNeuronEntity neuronMetadata) {
         Integer channel = neuronMetadata.getChannel();
         if (channel != null && channel > 0) {
             return channel - 1; // mip channels are 1 based so make it 0 based
@@ -200,7 +200,7 @@ class MIPsHandlingUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static <N extends AbstractNeuronMetadata> N originalAsInput(N neuronMetadata) {
+    private static <N extends AbstractNeuronEntity> N originalAsInput(N neuronMetadata) {
         N segmentedNeuron = (N) neuronMetadata.duplicate();
         segmentedNeuron.setComputeFileData(
                 ComputeFileType.InputColorDepthImage,

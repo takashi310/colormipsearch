@@ -20,9 +20,9 @@ import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
 import org.janelia.colormipsearch.dataio.fs.JsonOutputHelper;
 import org.janelia.colormipsearch.model.CDMatch;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
@@ -116,16 +116,16 @@ class GenerateJSONSchemasCmd extends AbstractCmd {
 
             JsonNode cdsMatchesSchema =
                     generator.generateSchema(new TypeReference<ResultMatches<
-                            EMNeuronMetadata,
-                            LMNeuronMetadata,
-                            CDMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
+                            EMNeuronEntity,
+                            LMNeuronEntity,
+                            CDMatch<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
             JsonOutputHelper.writeJSONNode(cdsMatchesSchema, args.getOutputDir(args.schemasOutput, CDS_RESULTS_SCHEMA), writer);
 
             JsonNode pppMatchesSchema =
                     generator.generateSchema(new TypeReference<ResultMatches<
-                            EMNeuronMetadata,
-                            LMNeuronMetadata,
-                            PPPMatch<EMNeuronMetadata, LMNeuronMetadata>>>(){}.getType());
+                            EMNeuronEntity,
+                            LMNeuronEntity,
+                            PPPMatch<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
 
             JsonOutputHelper.writeJSONNode(pppMatchesSchema, args.getOutputDir(args.schemasOutput, PPP_RESULTS_SCHEMA), writer);
         } catch (Exception e) {

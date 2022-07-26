@@ -5,11 +5,11 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 
-public class PartitionedNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronMetadata,
-                                                                     ? extends AbstractNeuronMetadata>>
+public class PartitionedNeuronMatchesUpdater<R extends AbstractMatch<? extends AbstractNeuronEntity,
+                                                                     ? extends AbstractNeuronEntity>>
         implements NeuronMatchesUpdater<R> {
     private final NeuronMatchesUpdater<R> updater;
     private final int partitionSize;

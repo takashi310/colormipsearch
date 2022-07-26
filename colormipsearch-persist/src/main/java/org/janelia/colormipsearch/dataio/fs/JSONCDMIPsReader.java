@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,14 +23,14 @@ public class JSONCDMIPsReader implements CDMIPsReader {
         this.mapper = mapper;
     }
 
-    public List<? extends AbstractNeuronMetadata> readMIPs(DataSourceParam inputMipsParam) {
+    public List<? extends AbstractNeuronEntity> readMIPs(DataSourceParam inputMipsParam) {
         try {
             LOG.info("Reading {} items from {} starting at {}",
                     (inputMipsParam.hasSize() ? String.valueOf(inputMipsParam.getSize()) : "all"), inputMipsParam.getLocation(),
                     inputMipsParam.getOffset());
-            List<? extends AbstractNeuronMetadata> content = mapper.readValue(
+            List<? extends AbstractNeuronEntity> content = mapper.readValue(
                     new File(inputMipsParam.getLocation()),
-                    new TypeReference<List<? extends AbstractNeuronMetadata>>() {});
+                    new TypeReference<List<? extends AbstractNeuronEntity>>() {});
             int from = (int) inputMipsParam.getOffset();
             int size = inputMipsParam.hasSize() ? inputMipsParam.getSize() : content.size();
             int to = Math.min(from + size, content.size());

@@ -13,7 +13,7 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 import org.janelia.colormipsearch.model.annotations.UseRefId;
 
 @PersistenceInfo(storeName ="neuronMatches")
-public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractBaseEntity {
+public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractBaseEntity {
 
     private Number maskImageRefId;
     private M maskImage;
@@ -151,8 +151,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
      * @param <T1> destination target type
      * @param <R1> destination result type
      */
-    protected <M1 extends AbstractNeuronMetadata,
-               T1 extends AbstractNeuronMetadata,
+    protected <M1 extends AbstractNeuronEntity,
+               T1 extends AbstractNeuronEntity,
                R1 extends AbstractMatch<M1, T1>> void safeFieldsCopyFrom(R1 that) {
         this.mirrored = that.isMirrored();
         this.matchFiles.clear();
@@ -161,8 +161,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronMetadata, T extends 
         this.matchComputeFiles.putAll(that.getMatchComputeFiles());
     }
 
-    public abstract AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
-            MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier);
+    public abstract AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
+            MatchCopier<AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>> copier);
 
     /**
      * Remove all internal fields that should not be released.

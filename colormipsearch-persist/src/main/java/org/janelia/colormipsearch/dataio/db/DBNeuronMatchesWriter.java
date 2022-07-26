@@ -7,9 +7,9 @@ import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class DBNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+public class DBNeuronMatchesWriter<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>>
         implements NeuronMatchesWriter<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;

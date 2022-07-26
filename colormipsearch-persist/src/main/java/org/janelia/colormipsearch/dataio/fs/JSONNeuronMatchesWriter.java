@@ -10,22 +10,22 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONNeuronMatchesWriter<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
         implements NeuronMatchesWriter<R> {
 
     private final JSONResultMatchesWriter resultMatchesWriter;
     // results grouping is used both for grouping the matches and for getting the filename
-    private final Function<AbstractNeuronMetadata, String> resultsGrouping;
+    private final Function<AbstractNeuronEntity, String> resultsGrouping;
     private final Comparator<AbstractMatch<?, ?>> matchOrdering;
     private final Path perMasksOutputDir;
     private final Path perMatchesOutputDir;
 
     public JSONNeuronMatchesWriter(ObjectWriter jsonWriter,
-                                   Function<AbstractNeuronMetadata, String> resultsGrouping,
+                                   Function<AbstractNeuronEntity, String> resultsGrouping,
                                    Comparator<AbstractMatch<?, ?>> matchOrdering,
                                    Path perMasksOutputDir,
                                    Path perMatchesOutputDir) {

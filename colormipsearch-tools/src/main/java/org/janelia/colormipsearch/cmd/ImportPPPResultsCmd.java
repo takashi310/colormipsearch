@@ -36,10 +36,10 @@ import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.EMNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.Gender;
-import org.janelia.colormipsearch.model.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatch;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -160,7 +160,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
-        NeuronMatchesWriter<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> pppMatchesWriter = getPPPMatchesWriter();
+        NeuronMatchesWriter<PPPMatch<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
@@ -236,8 +236,8 @@ class ImportPPPResultsCmd extends AbstractCmd {
      * @param pppResultsFile
      * @return
      */
-    private List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> importPPPRResultsFromFile(Path pppResultsFile) {
-        List<PPPMatch<EMNeuronMetadata, LMNeuronMetadata>> neuronMatches = rawPPPMatchesReader.readPPPMatches(
+    private List<PPPMatch<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
+        List<PPPMatch<EMNeuronEntity, LMNeuronEntity>> neuronMatches = rawPPPMatchesReader.readPPPMatches(
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches)
                 .peek(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
@@ -272,7 +272,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
                 lookupScreenshots(screenshotsPath, pppMatch);
             }
-            LMNeuronMetadata lmNeuron = pppMatch.getMatchedImage();
+            LMNeuronEntity lmNeuron = pppMatch.getMatchedImage();
             CDMIPSample lmSample = lmSamples.get(lmNeuron.getSampleName());
             if (lmSample != null) {
                 lmNeuron.setSampleRef("Sample#" + lmSample.id);
@@ -289,7 +289,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                     }
                 }
             }
-            EMNeuronMetadata emNeuron = pppMatch.getMaskImage();
+            EMNeuronEntity emNeuron = pppMatch.getMaskImage();
             CDMIPBody emBody = emNeurons.get(emNeuron.getPublishedName());
             if (emBody != null) {
                 emNeuron.setBodyRef("EMBody#" + emBody.id);
@@ -301,14 +301,14 @@ class ImportPPPResultsCmd extends AbstractCmd {
         return neuronMatches;
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> NeuronMatchesWriter<PPPMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<PPPMatch<M, T>>
     getPPPMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesWriter<>(getConfig());
         } else {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    AbstractNeuronMetadata::getPublishedName, // PPP results are grouped by published name
+                    AbstractNeuronEntity::getPublishedName, // PPP results are grouped by published name
                     Comparator.comparingDouble(m -> (((PPPMatch<?,?>) m).getRank())), // ascending order by rank
                     args.getOutputDir(),
                     null // only write results per mask
@@ -316,13 +316,13 @@ class ImportPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private void fillInNeuronMetadata(PPPMatch<EMNeuronMetadata, LMNeuronMetadata> pppMatch) {
+    private void fillInNeuronMetadata(PPPMatch<EMNeuronEntity, LMNeuronEntity> pppMatch) {
         pppMatch.setMaskImage(getEMMetadata(pppMatch.getSourceEmName()));
         pppMatch.setMatchedImage(getLMMetadata(pppMatch.getSourceLmName()));
     }
 
-    private EMNeuronMetadata getEMMetadata(String emFullName) {
-        EMNeuronMetadata emNeuron = new EMNeuronMetadata();
+    private EMNeuronEntity getEMMetadata(String emFullName) {
+        EMNeuronEntity emNeuron = new EMNeuronEntity();
         emNeuron.setAlignmentSpace(args.alignmentSpace);
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = emRegExPattern.matcher(emFullName);
@@ -333,8 +333,8 @@ class ImportPPPResultsCmd extends AbstractCmd {
         return emNeuron;
     }
 
-    private LMNeuronMetadata getLMMetadata(String lmFullName) {
-        LMNeuronMetadata lmNeuron = new LMNeuronMetadata();
+    private LMNeuronEntity getLMMetadata(String lmFullName) {
+        LMNeuronEntity lmNeuron = new LMNeuronEntity();
         lmNeuron.setAlignmentSpace(args.alignmentSpace);
         lmNeuron.setAnatomicalArea(args.anatomicalArea);
         Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);

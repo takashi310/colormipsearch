@@ -5,9 +5,9 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class NeuronsMatchFilter<R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> {
+public class NeuronsMatchFilter<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> {
 
     private ScoresFilter scoresFilter; // score filter
     private List<Number> maskEntityIds; // mask entity IDs

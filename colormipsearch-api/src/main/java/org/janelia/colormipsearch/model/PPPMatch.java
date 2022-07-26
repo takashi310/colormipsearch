@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 
-public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractMatch<M, T> {
+public class PPPMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatch<M, T> {
     private String sourceEmName;
     private String sourceLmName;
     private Double coverageScore;
@@ -107,9 +107,9 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
 
     @SuppressWarnings("unchecked")
     @Override
-    public PPPMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata> duplicate(
-            MatchCopier<AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>> copier) {
-        PPPMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> clone = new PPPMatch<>();
+    public PPPMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
+            MatchCopier<AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>> copier) {
+        PPPMatch<AbstractNeuronEntity, AbstractNeuronEntity> clone = new PPPMatch<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
@@ -121,7 +121,7 @@ public class PPPMatch<M extends AbstractNeuronMetadata, T extends AbstractNeuron
         clone.sourceImageFiles = this.sourceImageFiles;
         clone.skeletonMatches = this.skeletonMatches;
         // apply the copier
-        copier.copy((AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata>) this, clone);
+        copier.copy((AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
         return clone;
     }
 

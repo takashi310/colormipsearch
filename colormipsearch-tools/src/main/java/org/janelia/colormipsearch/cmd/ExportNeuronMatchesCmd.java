@@ -23,7 +23,7 @@ import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +120,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         exportNeuronMatches();
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     void exportNeuronMatches() {
         NeuronMatchesReader<R> neuronMatchesReader = getMatchesReader();
         NeuronMatchesWriter<R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
@@ -149,7 +149,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         return neuronsMatchScoresFilter;
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
                                     NeuronMatchesReader<R> neuronMatchesReader,
                                     NeuronMatchesWriter<R> perMaskNeuronMatchesWriter) {
@@ -175,7 +175,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 });
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
                                       NeuronMatchesReader<R> neuronMatchesReader,
                                       NeuronMatchesWriter<R> perTargetNeuronMatchesWriter) {
@@ -200,7 +200,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 });
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     NeuronMatchesReader<R> getMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
@@ -209,7 +209,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     NeuronMatchesWriter<R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
         if (perMaskDir != null || perTargetDir != null) {
             return new JSONNeuronMatchesWriter<>(

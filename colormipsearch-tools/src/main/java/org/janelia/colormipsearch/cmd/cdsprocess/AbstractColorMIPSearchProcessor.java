@@ -13,15 +13,13 @@ import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.MatchComputeFileType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> implements ColorMIPSearchProcessor<M, T> {
+abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> implements ColorMIPSearchProcessor<M, T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractColorMIPSearchProcessor.class);
 
@@ -33,8 +31,8 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronMetadata,
         this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
     }
 
-    <N extends AbstractNeuronMetadata> Map<ComputeFileType, Supplier<ImageArray<?>>> getVariantImagesSuppliers(Set<ComputeFileType> variantTypes,
-                                                                                                               N neuronMIP) {
+    <N extends AbstractNeuronEntity> Map<ComputeFileType, Supplier<ImageArray<?>>> getVariantImagesSuppliers(Set<ComputeFileType> variantTypes,
+                                                                                                             N neuronMIP) {
         return NeuronMIPUtils.getImageLoaders(
                 neuronMIP,
                 variantTypes,

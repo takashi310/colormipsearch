@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
@@ -25,7 +25,7 @@ public class MatchResultsGrouping {
      * @param <R> match result type
      * @return
      */
-    public static <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata, R extends AbstractMatch<M, T>>
+    public static <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
     List<ResultMatches<M, T, R>> simpleGroupByMaskFields(List<R> matches, List<Function<M, ?>> maskKeyFieldSelectors) {
         return ItemsHandling.groupItems(
                 matches,
@@ -51,15 +51,15 @@ public class MatchResultsGrouping {
      * @return a list of grouped matches by the mask neuron
      */
     @SuppressWarnings("unchecked")
-    public static <M extends AbstractNeuronMetadata,
-                   T extends AbstractNeuronMetadata,
+    public static <M extends AbstractNeuronEntity,
+                   T extends AbstractNeuronEntity,
                    R extends AbstractMatch<M, T>> List<ResultMatches<M, T, R>> groupByMaskFields(List<R> matches,
                                                                                                  List<Function<M, ?>> maskFieldSelectors,
                                                                                                  Comparator<R> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R, M>(
-                        (R) aMatch.duplicate((AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> src, AbstractMatch<AbstractNeuronMetadata, AbstractNeuronMetadata> dest) -> {
+                        (R) aMatch.duplicate((AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity> src, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity> dest) -> {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
                             // set match files
@@ -111,8 +111,8 @@ public class MatchResultsGrouping {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <M extends AbstractNeuronMetadata,
-                   T extends AbstractNeuronMetadata,
+    public static <M extends AbstractNeuronEntity,
+                   T extends AbstractNeuronEntity,
                    R extends AbstractMatch<M, T>,
                    R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByTargetFields(List<R> matches,
                                                                                                      List<Function<T, ?>> matchedFieldSelectors,
@@ -161,8 +161,8 @@ public class MatchResultsGrouping {
     }
 
     @SuppressWarnings("unchecked")
-    public static <M extends AbstractNeuronMetadata,
-                   T extends AbstractNeuronMetadata,
+    public static <M extends AbstractNeuronEntity,
+                   T extends AbstractNeuronEntity,
                    R extends AbstractMatch<M, T>> List<R> expandResultsByMask(ResultMatches<M, T, R> matchesResults) {
         return matchesResults.getItems().stream()
                 .map(persistedMatch -> {
@@ -188,8 +188,8 @@ public class MatchResultsGrouping {
     }
 
     @SuppressWarnings("unchecked")
-    public static <M extends AbstractNeuronMetadata,
-                   T extends AbstractNeuronMetadata,
+    public static <M extends AbstractNeuronEntity,
+                   T extends AbstractNeuronEntity,
                    R1 extends AbstractMatch<T, M>,
                    R extends AbstractMatch<M, T>> List<R> expandResultsByTarget(ResultMatches<T, M, R1> matchesResults) {
         return matchesResults.getItems().stream()

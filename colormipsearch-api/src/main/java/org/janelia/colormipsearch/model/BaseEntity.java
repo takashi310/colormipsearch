@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+/**
+ * This is the base entity persisted in the database.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class")
 public interface BaseEntity {
     Number getEntityId();

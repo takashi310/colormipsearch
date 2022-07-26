@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatch;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 class NeuronSelectionHelper {
 
@@ -48,7 +48,7 @@ class NeuronSelectionHelper {
         }
     }
 
-    static <R extends AbstractMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>>
+    static <R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>>
     Bson getNeuronsMatchFilter(NeuronsMatchFilter<R> neuronsMatchFilter) {
         List<Bson> filter = new ArrayList<>();
         if (neuronsMatchFilter != null) {

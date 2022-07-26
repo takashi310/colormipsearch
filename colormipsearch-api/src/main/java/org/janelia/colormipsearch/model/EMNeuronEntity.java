@@ -1,9 +1,6 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -11,7 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class EMNeuronMetadata extends AbstractNeuronMetadata {
+public class EMNeuronEntity extends AbstractNeuronEntity {
 
     private String bodyRef;
     private String neuronType;
@@ -61,8 +58,8 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @Override
-    public EMNeuronMetadata duplicate() {
-        EMNeuronMetadata n = new EMNeuronMetadata();
+    public EMNeuronEntity duplicate() {
+        EMNeuronEntity n = new EMNeuronEntity();
         n.copyFrom(this);
         n.bodyRef = this.bodyRef;
         n.neuronType = this.neuronType;

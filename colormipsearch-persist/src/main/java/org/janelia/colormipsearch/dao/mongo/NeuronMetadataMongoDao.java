@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,7 +13,6 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
@@ -24,10 +22,10 @@ import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.dao.IdGenerator;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 
-public class NeuronMetadataMongoDao<N extends AbstractNeuronMetadata> extends AbstractMongoDao<N>
+public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
                                                                       implements NeuronMetadataDao<N> {
     public NeuronMetadataMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);

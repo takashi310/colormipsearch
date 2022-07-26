@@ -1,6 +1,6 @@
 package org.janelia.colormipsearch.dataio;
 
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 /**
  * Writer for Color Depth MIPs metadata.
@@ -16,7 +16,7 @@ public interface CDMIPsWriter {
      *
      * @param neuronMetadata item to write
      */
-    void write(AbstractNeuronMetadata neuronMetadata);
+    void write(AbstractNeuronEntity neuronMetadata);
 
     /**
      * Finish all writes and close the writer.

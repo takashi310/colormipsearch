@@ -3,10 +3,10 @@ package org.janelia.colormipsearch.mips;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 
-public class NeuronMIP<N extends AbstractNeuronMetadata> {
+public class NeuronMIP<N extends AbstractNeuronEntity> {
     private final N neuronInfo;
     private final FileData imageFileData;
     private final ImageArray<?> imageArray;

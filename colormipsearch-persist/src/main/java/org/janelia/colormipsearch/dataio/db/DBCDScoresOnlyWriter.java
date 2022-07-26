@@ -10,7 +10,7 @@ import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatch;
 
 /**
@@ -20,7 +20,7 @@ import org.janelia.colormipsearch.model.CDMatch;
  *
  * @param <R> match type
  */
-public class DBCDScoresOnlyWriter<R extends CDMatch<? extends AbstractNeuronMetadata, ? extends AbstractNeuronMetadata>> implements NeuronMatchesWriter<R> {
+public class DBCDScoresOnlyWriter<R extends CDMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesWriter<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
     private final List<Function<R, Pair<String, ?>>> fieldsToUpdate =

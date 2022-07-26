@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -15,7 +14,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +50,7 @@ public class JSONCDMIPsWriter implements CDMIPsWriter {
     }
 
     @Override
-    public void write(AbstractNeuronMetadata neuronMetadata) {
+    public void write(AbstractNeuronEntity neuronMetadata) {
         try {
             gen.writeObject(neuronMetadata);
         } catch (Exception e) {

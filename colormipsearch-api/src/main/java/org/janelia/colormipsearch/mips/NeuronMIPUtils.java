@@ -25,7 +25,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageArrayUtils;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
 import org.slf4j.Logger;
@@ -36,11 +36,11 @@ public class NeuronMIPUtils {
     private static final Logger LOG = LoggerFactory.getLogger(NeuronMIPUtils.class);
 
     @FunctionalInterface
-    public interface NeuronImageFileLoader<N extends AbstractNeuronMetadata> {
+    public interface NeuronImageFileLoader<N extends AbstractNeuronEntity> {
         ImageArray<?> loadImage(N neuron, ComputeFileType computeFileType);
     }
 
-    public static <N extends AbstractNeuronMetadata> List<N> loadNeuronMetadataFromJSON(String jsonFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
+    public static <N extends AbstractNeuronEntity> List<N> loadNeuronMetadataFromJSON(String jsonFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
         try {
             LOG.info("Reading {}", jsonFilename);
             List<N> content = mapper.readValue(new File(jsonFilename), new TypeReference<List<N>>() {});
@@ -60,9 +60,9 @@ public class NeuronMIPUtils {
         }
     }
 
-    public static <N extends AbstractNeuronMetadata> Map<ComputeFileType, Supplier<ImageArray<?>>> getImageLoaders(N neuron,
-                                                                                                                   Set<ComputeFileType> fileTypes,
-                                                                                                                   NeuronImageFileLoader<N> singleNeuronImageLoader) {
+    public static <N extends AbstractNeuronEntity> Map<ComputeFileType, Supplier<ImageArray<?>>> getImageLoaders(N neuron,
+                                                                                                                 Set<ComputeFileType> fileTypes,
+                                                                                                                 NeuronImageFileLoader<N> singleNeuronImageLoader) {
         return fileTypes.stream()
                 .map(cft -> {
                     Pair<ComputeFileType, Supplier<ImageArray<?>>> e =
@@ -83,7 +83,7 @@ public class NeuronMIPUtils {
      * @return
      */
     @Nullable
-    public static <N extends AbstractNeuronMetadata> NeuronMIP<N> loadComputeFile(@Nullable N neuronMetadata, ComputeFileType computeFileType) {
+    public static <N extends AbstractNeuronEntity> NeuronMIP<N> loadComputeFile(@Nullable N neuronMetadata, ComputeFileType computeFileType) {
         if (neuronMetadata == null) {
             return null;
         } else {
@@ -133,7 +133,7 @@ public class NeuronMIPUtils {
         return neuronMIP != null ? neuronMIP.getImageArray() : null;
     }
 
-    public static <N extends AbstractNeuronMetadata> N getMetadata(@Nullable NeuronMIP<N> neuronMIP) {
+    public static <N extends AbstractNeuronEntity> N getMetadata(@Nullable NeuronMIP<N> neuronMIP) {
         return neuronMIP != null ? neuronMIP.getNeuronInfo() : null;
     }
 

@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.dataio;
 
 import java.util.List;
 
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 /**
  * Color Depth MIP metadata reader.
@@ -14,5 +14,5 @@ public interface CDMIPsReader {
      *                       The datasource may be a directory containing JSON files or a single file.
      * @return a list of MIPs metadata.
      */
-    List<? extends AbstractNeuronMetadata> readMIPs(DataSourceParam inputMipsParam);
+    List<? extends AbstractNeuronEntity> readMIPs(DataSourceParam inputMipsParam);
 }

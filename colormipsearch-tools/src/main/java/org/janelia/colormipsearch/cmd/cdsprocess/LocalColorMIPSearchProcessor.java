@@ -17,7 +17,7 @@ import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
-import org.janelia.colormipsearch.model.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatch;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class LocalColorMIPSearchProcessor<M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> extends AbstractColorMIPSearchProcessor<M, T> {
+public class LocalColorMIPSearchProcessor<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractColorMIPSearchProcessor<M, T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearchProcessor.class);
     private static final long _1M = 1024 * 1024;

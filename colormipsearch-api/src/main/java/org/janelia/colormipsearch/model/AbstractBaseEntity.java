@@ -8,6 +8,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.model.annotations.EntityId;
 
+/**
+ * Common attributes for the database persisted data.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AbstractBaseEntity implements BaseEntity {
 
