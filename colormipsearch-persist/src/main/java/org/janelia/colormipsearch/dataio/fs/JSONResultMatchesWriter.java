@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
@@ -22,7 +22,7 @@ class JSONResultMatchesWriter {
         this.jsonWriter = jsonWriter;
     }
 
-    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     void writeResultMatchesList(List<ResultMatches<M, T, R>> resultMatchesList,
                                 Function<AbstractNeuronEntity, String> filenameSelector,
                                 Path outputDir) {
@@ -34,7 +34,7 @@ class JSONResultMatchesWriter {
         LOG.info("Finished writing {} file results in {}s", resultMatchesList.size(), (System.currentTimeMillis() - startTime) / 1000.);
     }
 
-    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     void writeResultMatches(ResultMatches<M, T, R> resultMatches,
                             Function<AbstractNeuronEntity, String> filenameSelector,
                             Path outputDir) {

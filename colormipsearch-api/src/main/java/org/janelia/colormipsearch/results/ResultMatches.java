@@ -4,11 +4,11 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
 
-public class ResultMatches<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>> extends AbstractGroupedItems<R, M> {
+public class ResultMatches<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>> extends AbstractGroupedItems<R, M> {
 
     @JsonRequired
     @JsonProperty("inputImage")

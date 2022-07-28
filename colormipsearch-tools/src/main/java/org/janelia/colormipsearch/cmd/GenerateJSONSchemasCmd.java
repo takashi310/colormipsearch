@@ -19,11 +19,11 @@ import com.github.victools.jsonschema.generator.TypeScope;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 
 import org.janelia.colormipsearch.dataio.fs.JsonOutputHelper;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
-import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,14 +118,14 @@ class GenerateJSONSchemasCmd extends AbstractCmd {
                     generator.generateSchema(new TypeReference<ResultMatches<
                             EMNeuronEntity,
                             LMNeuronEntity,
-                            CDMatch<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
+                            CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
             JsonOutputHelper.writeJSONNode(cdsMatchesSchema, args.getOutputDir(args.schemasOutput, CDS_RESULTS_SCHEMA), writer);
 
             JsonNode pppMatchesSchema =
                     generator.generateSchema(new TypeReference<ResultMatches<
                             EMNeuronEntity,
                             LMNeuronEntity,
-                            PPPMatch<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
+                            PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
 
             JsonOutputHelper.writeJSONNode(pppMatchesSchema, args.getOutputDir(args.schemasOutput, PPP_RESULTS_SCHEMA), writer);
         } catch (Exception e) {
@@ -136,10 +136,10 @@ class GenerateJSONSchemasCmd extends AbstractCmd {
     private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String cdsResultsMessage, String pppResultsMessage) {
         return scope -> {
             if (scope.getType().getErasedType() == ResultMatches.class || scope.getType().isInstanceOf(ResultMatches.class)) {
-                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDMatch.class) {
+                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDMatchEntity.class) {
                     // ResultMatches<EM, LM, Match<EM, LM>>
                     return cdsResultsMessage;
-                } else if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == PPPMatch.class) {
+                } else if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == PPPMatchEntity.class) {
                     // Results<List<PPPMatch>>
                     return pppResultsMessage;
                 }

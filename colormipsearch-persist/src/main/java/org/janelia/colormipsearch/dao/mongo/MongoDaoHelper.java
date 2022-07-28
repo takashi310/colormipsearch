@@ -25,7 +25,6 @@ import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
-import org.janelia.colormipsearch.dao.IncFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,8 +192,6 @@ class MongoDaoHelper {
             } else {
                 return Updates.push(fieldName, value);
             }
-        } else if (valueHandler instanceof IncFieldValueHandler) {
-            return Updates.inc(fieldName, (Number) valueHandler.getFieldValue());
         } else if (valueHandler instanceof SetOnCreateValueHandler) {
             return Updates.setOnInsert(fieldName, valueHandler.getFieldValue());
         } else {

@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.dao.mongo.support;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 /**
@@ -13,5 +13,5 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
  * @param <T> target image type
  */
 @JsonFilter("useRefIdFilter")
-public abstract class AbstractMatchMixIn<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatch<M, T> {
+public abstract class AbstractMatchEntityMixIn<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
 }

@@ -17,12 +17,12 @@ import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -54,11 +54,6 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 description = "Select matches with rank (automatically should pick only PPP matches)",
                 arity = 0)
         boolean withRank = false;
-
-        @Parameter(names = {"--skip-release-cleanup"},
-                description = "If set do not perform any fields cleanup that is typically performed for released data",
-                arity = 0)
-        boolean skipReleaseCleanup = false;
 
         @Parameter(names = {"--masks"}, description = "Masks library")
         String masksLibrary;
@@ -92,10 +87,6 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                     .map(dir -> StringUtils.isNotBlank(perTargetSubdir) ? dir.resolve(perTargetSubdir) : dir)
                     .orElse(null);
         }
-
-        boolean withCleanup() {
-            return !skipReleaseCleanup;
-        }
     }
 
     private final ExportMatchesCmdArgs args;
@@ -120,7 +111,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         exportNeuronMatches();
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     void exportNeuronMatches() {
         NeuronMatchesReader<R> neuronMatchesReader = getMatchesReader();
         NeuronMatchesWriter<R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
@@ -149,7 +140,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         return neuronsMatchScoresFilter;
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
                                     NeuronMatchesReader<R> neuronMatchesReader,
                                     NeuronMatchesWriter<R> perMaskNeuronMatchesWriter) {
@@ -167,15 +158,12 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
-                        if (args.withCleanup()) {
-                            matchesForMask.forEach(AbstractMatch::cleanupForRelease);
-                        }
                         perMaskNeuronMatchesWriter.write(matchesForMask);
                     });
                 });
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
                                       NeuronMatchesReader<R> neuronMatchesReader,
                                       NeuronMatchesWriter<R> perTargetNeuronMatchesWriter) {
@@ -192,15 +180,12 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
-                        if (args.withCleanup()) {
-                            matchesForTarget.forEach(AbstractMatch::cleanupForRelease);
-                        }
                         perTargetNeuronMatchesWriter.write(matchesForTarget);
                     });
                 });
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     NeuronMatchesReader<R> getMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesReader<>(getConfig());
@@ -209,7 +194,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     NeuronMatchesWriter<R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
         if (perMaskDir != null || perTargetDir != null) {
             return new JSONNeuronMatchesWriter<>(

@@ -8,25 +8,26 @@ import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
         implements NeuronMatchesWriter<R> {
 
     private final JSONResultMatchesWriter resultMatchesWriter;
     // results grouping is used both for grouping the matches and for getting the filename
     private final Function<AbstractNeuronEntity, String> resultsGrouping;
-    private final Comparator<AbstractMatch<?, ?>> matchOrdering;
+    private final Comparator<AbstractMatchEntity<?, ?>> matchOrdering;
     private final Path perMasksOutputDir;
     private final Path perMatchesOutputDir;
 
     public JSONNeuronMatchesWriter(ObjectWriter jsonWriter,
                                    Function<AbstractNeuronEntity, String> resultsGrouping,
-                                   Comparator<AbstractMatch<?, ?>> matchOrdering,
+                                   Comparator<AbstractMatchEntity<?, ?>> matchOrdering,
                                    Path perMasksOutputDir,
                                    Path perMatchesOutputDir) {
         this.resultMatchesWriter = new JSONResultMatchesWriter(jsonWriter);
@@ -44,6 +45,11 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
         if (perMatchesOutputDir != null) {
             writeMatchesByTarget(matches);
         }
+    }
+
+    @Override
+    public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
+        writeMatchesByMask(matches);
     }
 
     private void writeMatchesByMask(List<R> matches) {
@@ -65,8 +71,8 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
         List<Function<T, ?>> grouping = Collections.singletonList(
                 resultsGrouping::apply
         );
-        Comparator<AbstractMatch<T, M>> ordering = matchOrdering::compare;
-        List<ResultMatches<T, M, AbstractMatch<T, M>>> resultMatches = MatchResultsGrouping.groupByTargetFields(
+        Comparator<AbstractMatchEntity<T, M>> ordering = matchOrdering::compare;
+        List<ResultMatches<T, M, AbstractMatchEntity<T, M>>> resultMatches = MatchResultsGrouping.groupByTargetFields(
                 matches,
                 grouping,
                 ordering

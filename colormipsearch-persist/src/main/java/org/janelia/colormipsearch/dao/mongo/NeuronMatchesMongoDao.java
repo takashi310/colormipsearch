@@ -29,10 +29,10 @@ import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class NeuronMatchesMongoDao<R extends AbstractMatch<? extends AbstractNeuronEntity,
+public class NeuronMatchesMongoDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity,
                                                            ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
                                                                                               implements NeuronMatchesDao<R> {
 

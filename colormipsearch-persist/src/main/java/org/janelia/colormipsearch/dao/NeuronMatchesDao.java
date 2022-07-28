@@ -6,10 +6,10 @@ import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public interface NeuronMatchesDao<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> extends Dao<R> {
+public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> extends Dao<R> {
     /**
      * Create or update matches. If a matcb, for the given mask entity ID and target entity ID, exists then update the fields
      * otherwise create it.

@@ -6,7 +6,6 @@ import java.io.UncheckedIOException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.cfg.DeserializerFactoryConfig;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import org.bson.BsonReader;
@@ -17,7 +16,7 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 
 public class JacksonCodecProvider implements CodecProvider {
 
@@ -25,10 +24,10 @@ public class JacksonCodecProvider implements CodecProvider {
 
     JacksonCodecProvider() {
         SimpleFilterProvider filterProvider = new SimpleFilterProvider();
-        filterProvider.addFilter("useRefIdFilter", new UseRefIdFieldFilter());
+        filterProvider.addFilter("useRefIdFilter", new MongoIgnoredFieldFilter());
         this.objectMapper = new ObjectMapper()
                 .registerModule(new MongoModule())
-                .addMixIn(AbstractMatch.class, AbstractMatchMixIn.class)
+                .addMixIn(AbstractMatchEntity.class, AbstractMatchEntityMixIn.class)
                 .setFilterProvider(filterProvider)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)

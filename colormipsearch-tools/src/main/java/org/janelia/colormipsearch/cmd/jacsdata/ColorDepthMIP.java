@@ -62,6 +62,41 @@ public class ColorDepthMIP implements Serializable {
         }
     }
 
+    public int channelNumber() {
+        return StringUtils.isNotBlank(channelNumber) ? Integer.parseInt(channelNumber) : -1;
+    }
+
+    public String lmLineName() {
+        return sample != null ? sample.publishingName : null;
+    }
+
+    public String lmSlideCode() {
+        return sample != null ? sample.slideCode : null;
+    }
+
+    public String lmDriver() {
+        return sample != null ? sample.driver : null;
+    }
+
+    public String lmObjective() {
+        return objective;
+    }
+
+    public String emBodyId() {
+        return bodyId != null ? bodyId.toString() : null;
+    }
+
+    public String emBodyName() {
+        return emBody != null ? emBody.name : null;
+    }
+
+    public String gender() {
+        if (sample != null) {
+            return sample.gender;
+        } else {
+            return null;
+        }
+    }
     @Override
     public String toString() {
         return new ToStringBuilder(this)

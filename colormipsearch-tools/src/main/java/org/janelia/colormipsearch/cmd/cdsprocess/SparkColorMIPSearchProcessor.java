@@ -17,7 +17,7 @@ import org.janelia.colormipsearch.cds.ColorMIPSearch;
 import org.janelia.colormipsearch.cmd.CachedMIPsUtils;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -29,15 +29,16 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
 
     private transient final JavaSparkContext sparkContext;
 
-    public SparkColorMIPSearchProcessor(String appName,
+    public SparkColorMIPSearchProcessor(Number cdsRunId,
+                                        String appName,
                                         ColorMIPSearch colorMIPSearch,
                                         int localProcessingPartitionSize) {
-        super(colorMIPSearch, localProcessingPartitionSize);
+        super(cdsRunId, colorMIPSearch, localProcessingPartitionSize);
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 
     @Override
-    public List<CDMatch<M, T>> findAllColorDepthMatches(List<M> queryMIPs, List<T> targetMIPs) {
+    public List<CDMatchEntity<M, T>> findAllColorDepthMatches(List<M> queryMIPs, List<T> targetMIPs) {
         long startTime = System.currentTimeMillis();
         int nQueries = queryMIPs.size();
         int nTargets = targetMIPs.size();
@@ -47,7 +48,7 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
         JavaRDD<T> targetMIPsRDD = sparkContext.parallelize(targetMIPs);
         LOG.info("Created {} partitions for {} targets", targetMIPsRDD.getNumPartitions(), nTargets);
 
-        List<CDMatch<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).stream().parallel()
+        List<CDMatchEntity<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).stream().parallel()
                 .map(queryMIPsPartition -> targetMIPsRDD.mapPartitions(targetMIPsItr -> {
                     List<T> localTargetMIPs = Lists.newArrayList(targetMIPsItr);
                     return queryMIPsPartition.stream()

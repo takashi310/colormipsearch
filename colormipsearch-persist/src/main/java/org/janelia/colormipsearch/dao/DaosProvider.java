@@ -4,11 +4,13 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.dao.mongo.MatchSessionMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.AbstractSessionEntity;
 
 public class DaosProvider {
 
@@ -44,7 +46,12 @@ public class DaosProvider {
         this.idGenerator = new TimebasedIdGenerator(config.getIntegerPropertyValue("TimebasedId.Context", 0));
     }
 
-    public <R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
+    public <T extends AbstractSessionEntity> MatchSessionDao<T>
+    getMatchParametersDao() {
+        return new MatchSessionMongoDao<>(mongoDatabase, idGenerator);
+    }
+
+    public <R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getNeuronMatchesDao() {
         return new NeuronMatchesMongoDao<>(mongoDatabase, idGenerator);
     }

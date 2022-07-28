@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 
-public class CDMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatch<M, T> {
+public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private Float normalizedScore;
     private Integer matchingPixels;
     private Float matchingPixelsRatio;
@@ -95,9 +95,9 @@ public class CDMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEnt
 
     @SuppressWarnings("unchecked")
     @Override
-    public CDMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
-            MatchCopier<AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>> copier) {
-        CDMatch<AbstractNeuronEntity, AbstractNeuronEntity> clone = new CDMatch<>();
+    public CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
+            MatchCopier<AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>> copier) {
+        CDMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity> clone = new CDMatchEntity<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
@@ -109,14 +109,7 @@ public class CDMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEnt
         clone.matchFound = this.matchFound;
         clone.errors = this.errors;
         // apply the copier
-        copier.copy((AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
+        copier.copy((AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
         return clone;
-    }
-
-    @Override
-    public void cleanupForRelease() {
-        super.cleanupForRelease();
-        gradientAreaGap = null;
-        highExpressionArea = null;
     }
 }

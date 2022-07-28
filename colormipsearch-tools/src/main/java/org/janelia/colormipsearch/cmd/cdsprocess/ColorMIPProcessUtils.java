@@ -4,19 +4,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.ScoredEntry;
 
 public class ColorMIPProcessUtils {
-    public static <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> List<CDMatch<M, T>> selectBestMatches(List<CDMatch<M, T>> CDMatches,
-                                                                                                                         int topLineMatches,
-                                                                                                                         int topSamplesPerLine,
-                                                                                                                         int topMatchesPerSample) {
-        List<ScoredEntry<List<CDMatch<M, T>>>> topRankedLineMatches = ItemsHandling.selectTopRankedElements(
+    public static <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> List<CDMatchEntity<M, T>> selectBestMatches(List<CDMatchEntity<M, T>> CDMatches,
+                                                                                                                               int topLineMatches,
+                                                                                                                               int topSamplesPerLine,
+                                                                                                                               int topMatchesPerSample) {
+        List<ScoredEntry<List<CDMatchEntity<M, T>>>> topRankedLineMatches = ItemsHandling.selectTopRankedElements(
                 CDMatches,
                 match -> match.getMatchedImage().getPublishedName(),
-                CDMatch::getMatchingPixels,
+                CDMatchEntity::getMatchingPixels,
                 topLineMatches,
                 -1);
 
@@ -24,7 +24,7 @@ public class ColorMIPProcessUtils {
                 .flatMap(se -> ItemsHandling.selectTopRankedElements( // topRankedSamplesPerLine
                         se.getEntry(),
                         match -> match.getMatchedImage().getNeuronId(),
-                        CDMatch::getMatchingPixels,
+                        CDMatchEntity::getMatchingPixels,
                         topSamplesPerLine,
                         topMatchesPerSample
                 ).stream())

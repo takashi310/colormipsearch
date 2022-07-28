@@ -20,14 +20,14 @@ import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 
-public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMNeuronEntity, LMNeuronEntity>> {
+public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> {
 
     private final ObjectMapper mapper;
 
@@ -67,7 +67,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
     }
 
     @Override
-    public List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readMatchesForMasks(String maskLibrary, List<String> maskMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
+    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForMasks(String maskLibrary, List<String> maskMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
                 .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
                 .map(this::readEMMatches)
@@ -76,21 +76,20 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
     }
 
     @Override
-    public List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readMatchesForTargets(String targetLibrary, List<String> targetMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
+    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForTargets(String targetLibrary, List<String> targetMipIds, ScoresFilter matchScoresFilter, List<SortCriteria> sortCriteriaList) {
         throw new UnsupportedOperationException("This class has very limitted support and it is only intended for import EM to LM matches based on the EM MIP ID(s)");
     }
 
-    private List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readEMMatches(File f) {
+    private List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readEMMatches(File f) {
         CDSMatches matchesFileContent = ColorMIPSearchResultUtils.readCDSMatchesFromJSONFile(f, mapper);
         if (matchesFileContent == null || matchesFileContent.isEmpty()) {
             return Collections.emptyList();
         } else {
             return matchesFileContent.getResults().stream()
                     .map(v2CDMatch -> {
-                        CDMatch<EMNeuronEntity, LMNeuronEntity> cdMatch = new CDMatch<>();
+                        CDMatchEntity<EMNeuronEntity, LMNeuronEntity> cdMatch = new CDMatchEntity<>();
                         EMNeuronEntity emNeuronMetadata = new EMNeuronEntity();
                         emNeuronMetadata.setMipId(v2CDMatch.getSourceId());
-                        emNeuronMetadata.setPublishedName(v2CDMatch.getSourcePublishedName());
                         emNeuronMetadata.setLibraryName(v2CDMatch.getSourceLibraryName());
 
                         emNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
@@ -105,11 +104,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatch<EMN
 
                         LMNeuronEntity lmNeuronMetadata = new LMNeuronEntity();
                         lmNeuronMetadata.setMipId(v2CDMatch.getId());
-                        lmNeuronMetadata.setPublishedName(v2CDMatch.getPublishedName());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
-                        lmNeuronMetadata.setChannel(v2CDMatch.getChannelValue());
-                        lmNeuronMetadata.setObjective(v2CDMatch.getObjective());
-                        lmNeuronMetadata.setMountingProtocol(v2CDMatch.getMountingProtocol());
 
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getCdmPath()));

@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +23,12 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractColorMIPSearchProcessor.class);
 
+    final Number cdsRunId;
     final ColorMIPSearch colorMIPSearch;
     final int localProcessingPartitionSize;
 
-    AbstractColorMIPSearchProcessor(ColorMIPSearch colorMIPSearch, int localProcessingPartitionSize) {
+    AbstractColorMIPSearchProcessor(Number cdsRunId, ColorMIPSearch colorMIPSearch, int localProcessingPartitionSize) {
+        this.cdsRunId = cdsRunId;
         this.colorMIPSearch = colorMIPSearch;
         this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
     }
@@ -48,10 +50,10 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
      * @return null if no match was found otherwise it returns a @CDSMatch@
      */
     @Nonnull
-    CDMatch<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
-                                 NeuronMIP<M> maskImage,
-                                 NeuronMIP<T> targetImage) {
-        CDMatch<M, T> result = new CDMatch<>();
+    CDMatchEntity<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
+                                       NeuronMIP<M> maskImage,
+                                       NeuronMIP<T> targetImage) {
+        CDMatchEntity<M, T> result = new CDMatchEntity<>();
         result.setMaskImage(maskImage.getNeuronInfo());
         result.setMatchedImage(targetImage.getNeuronInfo());
         try {
@@ -60,6 +62,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
             PixelMatchScore pixelMatchScore = cdsAlgorithm.calculateMatchingScore(
                     NeuronMIPUtils.getImageArray(targetImage),
                     variantImageSuppliers);
+            result.setSessionRefId(cdsRunId);
             result.setMatchFound(colorMIPSearch.isMatch(pixelMatchScore));
             result.setMatchingPixels(pixelMatchScore.getScore());
             result.setMatchingPixelsRatio(pixelMatchScore.getNormalizedScore());

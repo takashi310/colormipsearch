@@ -9,9 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.janelia.colormipsearch.model.CDMatch;
-import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.LMNeuronEntity;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -21,14 +19,14 @@ import static org.junit.Assert.assertTrue;
 public class ItemsHandlingTest {
     @Test
     public void partitionStream() {
-        int[][] testData = new int[][] {
-                { 100, 100},
-                { 100, 25},
-                { 101, 26},
-                { 200, 2 },
-                { 100, 1 },
-                { 150, 200},
-                { 200, 36 },
+        int[][] testData = new int[][]{
+                {100, 100},
+                {100, 25},
+                {101, 26},
+                {200, 2},
+                {100, 1},
+                {150, 200},
+                {200, 36},
         };
         for (int[] td : testData) {
             int maxValue = td[0];
@@ -44,13 +42,13 @@ public class ItemsHandlingTest {
             int exactPartitionAdjustment = maxValue % partitionSize == 0 ? 0 : 1;
             int nPartitions = maxValue / partitionSize + exactPartitionAdjustment;
             assertEquals("Test: " + Arrays.toString(td), nPartitions, listOfList.size());
-            for (int i = 0; i < nPartitions-1; i++) {
-                assertEquals("Test: " + Arrays.toString(td) + ": partition: " + (i+1), partitionSize, listOfList.get(i).size());
+            for (int i = 0; i < nPartitions - 1; i++) {
+                assertEquals("Test: " + Arrays.toString(td) + ": partition: " + (i + 1), partitionSize, listOfList.get(i).size());
             }
             assertEquals(
                     "Test: " + Arrays.toString(td),
                     exactPartitionAdjustment == 0 ? partitionSize : maxValue % partitionSize,
-                    listOfList.get(nPartitions-1).size()
+                    listOfList.get(nPartitions - 1).size()
             );
             List<Integer> concatenatedList = listOfList.stream().flatMap(l -> l.stream()).collect(Collectors.toList());
             assertNotEquals(
@@ -67,17 +65,17 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectAllElementsWithAllSubResults() {
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> testData = createTestData();
+        List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testData = createTestData();
 
-        Map<String, List<CDMatch<EMNeuronEntity, LMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
-        List<ScoredEntry<List<CDMatch<EMNeuronEntity, LMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+        List<ScoredEntry<List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                 testData,
                 match -> match.getMatchedImage().getPublishedName(),
-                CDMatch::getMatchingPixels,
+                CDMatchEntity::getMatchingPixels,
                 -1,
                 -1);
 
@@ -90,19 +88,19 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectAllElementsWithLimitedSubResults() {
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> testData = createTestData();
+        List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testData = createTestData();
 
-        Map<String, List<CDMatch<EMNeuronEntity, LMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
         for (int si = 1; si <= 3; si++) {
             int topSubResults = si;
-            List<ScoredEntry<List<CDMatch<EMNeuronEntity, LMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+            List<ScoredEntry<List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                     testData,
                     match -> match.getMatchedImage().getPublishedName(),
-                    CDMatch::getMatchingPixels,
+                    CDMatchEntity::getMatchingPixels,
                     -1,
                     topSubResults);
             assertEquals(testDataByLine.size(), rankedLines.size());
@@ -114,18 +112,18 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectTopRankedElementsWithAllSubResults() {
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> testData = createTestData();
+        List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testData = createTestData();
 
-        Map<String, List<CDMatch<EMNeuronEntity, LMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
 
         for (int i = 1; i <= 3; i++) {
-            List<ScoredEntry<List<CDMatch<EMNeuronEntity, LMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+            List<ScoredEntry<List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                     testData,
                     match -> match.getMatchedImage().getPublishedName(),
-                    CDMatch::getMatchingPixels,
+                    CDMatchEntity::getMatchingPixels,
                     i,
                     -1);
             assertEquals(i, rankedLines.size());
@@ -145,9 +143,9 @@ public class ItemsHandlingTest {
 
     @Test
     public void selectTopRankedElementsWithLimitedSubResults() {
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> testData = createTestData();
+        List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testData = createTestData();
 
-        Map<String, List<CDMatch<EMNeuronEntity, LMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
+        Map<String, List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> testDataByLine = testData.stream().collect(Collectors.groupingBy(
                 m -> m.getMatchedImage().getPublishedName(),
                 Collectors.toList()
         ));
@@ -155,10 +153,10 @@ public class ItemsHandlingTest {
         for (int i = 1; i <= 3; i++) {
             for (int si = 1; si <= 3; si++) {
                 int topSubResults = si;
-                List<ScoredEntry<List<CDMatch<EMNeuronEntity, LMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
+                List<ScoredEntry<List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>>> rankedLines = ItemsHandling.selectTopRankedElements(
                         testData,
                         match -> match.getMatchedImage().getPublishedName(),
-                        CDMatch::getMatchingPixels,
+                        CDMatchEntity::getMatchingPixels,
                         i,
                         topSubResults);
                 assertEquals(i, rankedLines.size());
@@ -170,7 +168,7 @@ public class ItemsHandlingTest {
         }
     }
 
-    private List<CDMatch<EMNeuronEntity, LMNeuronEntity>> createTestData() {
+    private List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> createTestData() {
         return Arrays.asList(
                 // matches with line l1
                 createCDSMatch("l1", "s1.1", 45),
@@ -214,11 +212,11 @@ public class ItemsHandlingTest {
         );
     }
 
-    private CDMatch<EMNeuronEntity, LMNeuronEntity> createCDSMatch(String line,
-                                                                   String slideCode,
-                                                                   int matchingPixels) {
-        CDMatch<EMNeuronEntity, LMNeuronEntity> match = new CDMatch<>();
-        LMNeuronEntity lmNeuronMetadata = new LMNeuronEntity();
+    private CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity> createCDSMatch(String line,
+                                                                                 String slideCode,
+                                                                                 int matchingPixels) {
+        CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity> match = new CDMatchEntity<>();
+        TestLMNeuronEntity lmNeuronMetadata = new TestLMNeuronEntity();
         lmNeuronMetadata.setPublishedName(line);
         lmNeuronMetadata.setSlideCode(slideCode);
         match.setMatchedImage(lmNeuronMetadata);

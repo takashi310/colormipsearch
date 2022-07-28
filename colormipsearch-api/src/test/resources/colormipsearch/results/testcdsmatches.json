@@ -1,6 +1,6 @@
 [ {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
@@ -31,7 +31,7 @@
   "matchingPixels" : 241,
   "matchingPixelsRatio" : 0.03888351,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -61,10 +61,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
@@ -95,7 +95,7 @@
   "matchingPixels" : 149,
   "matchingPixelsRatio" : 0.024040014,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -125,10 +125,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
@@ -159,7 +159,7 @@
   "matchingPixels" : 113,
   "matchingPixelsRatio" : 0.033235293,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -189,10 +189,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
@@ -223,7 +223,7 @@
   "matchingPixels" : 105,
   "matchingPixelsRatio" : 0.030882353,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -253,10 +253,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507170-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
@@ -287,7 +287,7 @@
   "matchingPixels" : 101,
   "matchingPixelsRatio" : 0.04030327,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -317,10 +317,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
@@ -351,7 +351,7 @@
   "matchingPixels" : 78,
   "matchingPixelsRatio" : 0.0311253,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -381,10 +381,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
@@ -415,7 +415,7 @@
   "matchingPixels" : 51,
   "matchingPixelsRatio" : 0.039170507,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -445,10 +445,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721623051",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1001453586",
@@ -479,7 +479,7 @@
   "matchingPixels" : 48,
   "matchingPixelsRatio" : 0.026740948,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -509,10 +509,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
@@ -543,7 +543,7 @@
   "matchingPixels" : 48,
   "matchingPixelsRatio" : 0.008540926,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -573,10 +573,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
@@ -607,7 +607,7 @@
   "matchingPixels" : 42,
   "matchingPixelsRatio" : 0.006542056,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -637,10 +637,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
@@ -671,7 +671,7 @@
   "matchingPixels" : 32,
   "matchingPixelsRatio" : 0.024577573,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -701,10 +701,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002658094-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
@@ -735,7 +735,7 @@
   "matchingPixels" : 28,
   "matchingPixelsRatio" : 0.009691935,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -765,10 +765,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
@@ -799,7 +799,7 @@
   "matchingPixels" : 28,
   "matchingPixelsRatio" : 0.0043613706,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -829,10 +829,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
@@ -863,7 +863,7 @@
   "matchingPixels" : 27,
   "matchingPixelsRatio" : 0.007985803,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -893,10 +893,10 @@
     "ColorDepthMipMatch" : "SS01491-20141014_31_B2-Split_GAL4-f-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20141014_31_B2-f_20x_CH1_01.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
@@ -927,7 +927,7 @@
   "matchingPixels" : 24,
   "matchingPixelsRatio" : 0.004270463,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -957,10 +957,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM-FL.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
@@ -991,7 +991,7 @@
   "matchingPixels" : 20,
   "matchingPixelsRatio" : 0.0059154094,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -1021,10 +1021,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507159-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
@@ -1055,7 +1055,7 @@
   "matchingPixels" : 9,
   "matchingPixelsRatio" : 0.0031152647,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
@@ -1085,10 +1085,10 @@
     "ColorDepthMipMatch" : "SS01491-20140729_31_B4-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-SS01491-20140729_31_B4-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1002507131-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 }, {
   "maskImage" : {
-    "class" : "org.janelia.colormipsearch.model.EMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
     "id" : "2943465148721623051",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1001453586",
@@ -1119,7 +1119,7 @@
   "matchingPixels" : 6,
   "matchingPixelsRatio" : 0.0033426185,
   "image" : {
-    "class" : "org.janelia.colormipsearch.model.LMNeuronEntity",
+    "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
     "id" : "2711776327756677131",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS33510",
@@ -1149,5 +1149,5 @@
     "ColorDepthMipMatch" : "SS33510-20180608_43_D3-Split_GAL4-m-20x-brain-JRC2018_Unisex_20x_HR-CDM_1-JRC_SS33510-20180608_43_D3-m_20x_CH1_03.png",
     "ColorDepthMipInput" : "1001453586-JRC2018_Unisex_20x_HR-CDM.png"
   },
-  "class" : "org.janelia.colormipsearch.model.CDMatch"
+  "class" : "org.janelia.colormipsearch.model.CDMatchEntity"
 } ]

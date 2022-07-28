@@ -18,59 +18,27 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
 public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
-    public static class Builder<N extends AbstractNeuronEntity> {
-
-        private N n;
-
-        public Builder(Supplier<N> source) {
-            this.n = source.get();
-        }
-
-        public N get() {
-            return n;
-        }
-
-        public Builder<N> entityId(Number entityId) {
-            n.setEntityId(entityId);
-            return this;
-        }
-
-        public Builder<N> id(String id) {
-            n.setMipId(id);
-            return this;
-        }
-
-        public Builder<N> publishedName(String name) {
-            n.setPublishedName(name);
-            return this;
-        }
-
-        public Builder<N> fileData(FileType ft, FileData fd) {
-            n.setNeuronFileData(ft, fd);
-            return this;
-        }
-
-        public Builder<N> computeFileData(ComputeFileType ft, FileData fd) {
-            n.setComputeFileData(ft, fd);
-            return this;
-        }
-
-        public Builder<N> library(String library) {
-            n.setLibraryName(library);
-            return this;
-        }
-    }
-
-    private String mipId; // MIP ID - not to be confused with the entityId which is the primary key of this entity
-    private String libraryName; // MIP library
-    private String publishedName;
+    // MIP ID that comes from the Workstation (JACS).
+    // This does not uniquely identify the metadata because there may be multiple images,
+    // such as segmentation or FL images, that will be actually used for matching this MIP ID.
+    // Do not mix this with the entityId which is the primary key of this entity
+    private String mipId;
+    // MIP alignment space
     private String alignmentSpace;
-    private Gender gender;
+    // MIP library name
+    private String libraryName;
+    // neuron published name - this field is required during the gradient score process for selecting the top ranked matches
+    private String publishedName;
+    // Source Ref ID - either the LM Sample Reference ID or EM Body Reference ID.
+    // This will be used to identify the matched neurons for PPP since the color depth MIPs are not
+    // part of the PPP match process at all.
+    private String sourceRefId;
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
     // neuronFiles holds S3 files used by the NeuronBridge app
@@ -92,25 +60,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     @JsonIgnore
     public abstract String getNeuronId();
 
-    @JsonRequired
-    public String getLibraryName() {
-        return libraryName;
-    }
-
-    public void setLibraryName(String libraryName) {
-        this.libraryName = libraryName;
-    }
-
-    @JsonRequired
-    public String getPublishedName() {
-        return publishedName;
-    }
-
-    public void setPublishedName(String publishedName) {
-        this.publishedName = publishedName;
-    }
-
-    @JsonRequired
     public String getAlignmentSpace() {
         return alignmentSpace;
     }
@@ -119,12 +68,28 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.alignmentSpace = alignmentSpace;
     }
 
-    public Gender getGender() {
-        return gender;
+    public String getLibraryName() {
+        return libraryName;
     }
 
-    public void setGender(Gender gender) {
-        this.gender = gender;
+    public void setLibraryName(String libraryName) {
+        this.libraryName = libraryName;
+    }
+
+    public String getPublishedName() {
+        return publishedName;
+    }
+
+    public void setPublishedName(String publishedName) {
+        this.publishedName = publishedName;
+    }
+
+    public String getSourceRefId() {
+        return sourceRefId;
+    }
+
+    public void setSourceRefId(String sourceRefId) {
+        this.sourceRefId = sourceRefId;
     }
 
     @JsonProperty
@@ -189,20 +154,11 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         }
     }
 
-    public abstract String buildNeuronSourceName();
-
     public abstract AbstractNeuronEntity duplicate();
-
-    public void cleanupForRelease() {
-        resetComputeFileData(EnumSet.allOf(ComputeFileType.class));
-    }
 
     public List<Pair<String, ?>> updatableFields() {
         return Arrays.asList(
                 ImmutablePair.of("libraryName", getLibraryName()),
-                ImmutablePair.of("publishedName", getPublishedName()),
-                ImmutablePair.of("alignmentSpace", getAlignmentSpace()),
-                ImmutablePair.of("gender", getGender()),
                 ImmutablePair.of("computeFiles", getComputeFiles())
         );
     }
@@ -234,18 +190,17 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("id", mipId)
+                .append("mipId", mipId)
                 .append("libraryName", libraryName)
-                .append("publishedName", publishedName)
                 .toString();
     }
 
     protected <N extends AbstractNeuronEntity> void copyFrom(N that) {
         this.mipId = that.getMipId();
+        this.alignmentSpace = that.getAlignmentSpace();
         this.libraryName = that.getLibraryName();
         this.publishedName = that.getPublishedName();
-        this.alignmentSpace = that.getAlignmentSpace();
-        this.gender = that.getGender();
+        this.sourceRefId = that.getSourceRefId();
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
         this.neuronFiles.clear();

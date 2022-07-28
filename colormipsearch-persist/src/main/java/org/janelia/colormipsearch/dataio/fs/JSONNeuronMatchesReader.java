@@ -15,12 +15,12 @@ import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
-public class JSONNeuronMatchesReader<R extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesReader<R> {
+public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesReader<R> {
     private final ObjectMapper mapper;
 
     public JSONNeuronMatchesReader(ObjectMapper mapper) {
@@ -58,7 +58,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatch<? extends AbstractN
                 .collect(Collectors.toList());
     }
 
-    private <M1 extends AbstractNeuronEntity, T1 extends AbstractNeuronEntity, R1 extends AbstractMatch<M1, T1>> ResultMatches<M1, T1, R1> readMatchesResults(File f) {
+    private <M1 extends AbstractNeuronEntity, T1 extends AbstractNeuronEntity, R1 extends AbstractMatchEntity<M1, T1>> ResultMatches<M1, T1, R1> readMatchesResults(File f) {
         try {
             return mapper.readValue(f, new TypeReference<ResultMatches<M1, T1, R1>>() {});
         } catch (IOException e) {

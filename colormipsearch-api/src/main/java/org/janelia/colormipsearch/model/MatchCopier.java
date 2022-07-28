@@ -8,7 +8,7 @@ package org.janelia.colormipsearch.model;
  * @param <R1>
  * @param <R2>
  */
-public interface MatchCopier<R1 extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>,
-                             R2 extends AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> {
+public interface MatchCopier<R1 extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>,
+                             R2 extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> {
     void copy(R1 src, R2 dest);
 }

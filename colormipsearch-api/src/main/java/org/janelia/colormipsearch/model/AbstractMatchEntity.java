@@ -10,12 +10,18 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
-import org.janelia.colormipsearch.model.annotations.UseRefId;
+import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
+/**
+ * This is the representation of a database persisted neurons match.
+ * @param <M> mask neuron type
+ * @param <T> target neuron type
+ */
 @PersistenceInfo(storeName ="neuronMatches")
-public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractBaseEntity {
+public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractBaseEntity {
 
-    private Number maskImageRefId;
+    private Number sessionRefId; // session reference - identifies the a CDS or a PPP run
+    private Number maskImageRefId; // reference to the mask image
     private M maskImage;
     private Number matchedImageRefId;
     private T matchedImage;
@@ -23,7 +29,15 @@ public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends Ab
     private Map<MatchComputeFileType, FileData> matchComputeFiles = new HashMap<>();
     private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
 
-    @UseRefId
+    public Number getSessionRefId() {
+        return sessionRefId;
+    }
+
+    public void setSessionRefId(Number sessionRefId) {
+        this.sessionRefId = sessionRefId;
+    }
+
+    @DoNotPersist
     public M getMaskImage() {
         return maskImage;
     }
@@ -52,7 +66,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends Ab
         return maskImage != null && maskImage.hasEntityId() || maskImageRefId != null;
     }
 
-    @UseRefId
+    @DoNotPersist
     @JsonProperty("image")
     public T getMatchedImage() {
         return matchedImage;
@@ -153,7 +167,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends Ab
      */
     protected <M1 extends AbstractNeuronEntity,
                T1 extends AbstractNeuronEntity,
-               R1 extends AbstractMatch<M1, T1>> void safeFieldsCopyFrom(R1 that) {
+               R1 extends AbstractMatchEntity<M1, T1>> void safeFieldsCopyFrom(R1 that) {
         this.mirrored = that.isMirrored();
         this.matchFiles.clear();
         this.matchFiles.putAll(that.getMatchFiles());
@@ -161,19 +175,8 @@ public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends Ab
         this.matchComputeFiles.putAll(that.getMatchComputeFiles());
     }
 
-    public abstract AbstractMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
-            MatchCopier<AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>> copier);
-
-    /**
-     * Remove all internal fields that should not be released.
-     */
-    public void cleanupForRelease() {
-        maskImageRefId = null;
-        matchedImageRefId = null;
-        if (maskImage != null) maskImage.cleanupForRelease();
-        if (matchedImage != null) matchedImage.cleanupForRelease();
-        resetMatchComputeFiles();
-    }
+    public abstract AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
+            MatchCopier<AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>> copier);
 
     @Override
     public boolean equals(Object o) {
@@ -181,7 +184,7 @@ public abstract class AbstractMatch<M extends AbstractNeuronEntity, T extends Ab
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        AbstractMatch<?, ?> that = (AbstractMatch<?, ?>) o;
+        AbstractMatchEntity<?, ?> that = (AbstractMatchEntity<?, ?>) o;
 
         return new EqualsBuilder().append(mirrored, that.mirrored).append(maskImage, that.maskImage).append(matchedImage, that.matchedImage).append(matchComputeFiles, that.matchComputeFiles).append(matchFiles, that.matchFiles).isEquals();
     }

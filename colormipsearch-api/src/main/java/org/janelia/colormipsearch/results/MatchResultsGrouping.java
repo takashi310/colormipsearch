@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.janelia.colormipsearch.model.AbstractMatch;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
@@ -25,13 +25,13 @@ public class MatchResultsGrouping {
      * @param <R> match result type
      * @return
      */
-    public static <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatch<M, T>>
+    public static <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     List<ResultMatches<M, T, R>> simpleGroupByMaskFields(List<R> matches, List<Function<M, ?>> maskKeyFieldSelectors) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R, M>(
                         aMatch,
-                        AbstractMatch::getMaskImage,
+                        AbstractMatchEntity::getMaskImage,
                         maskKeyFieldSelectors
                 ),
                 GroupingCriteria::getItem,
@@ -53,13 +53,13 @@ public class MatchResultsGrouping {
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronEntity,
                    T extends AbstractNeuronEntity,
-                   R extends AbstractMatch<M, T>> List<ResultMatches<M, T, R>> groupByMaskFields(List<R> matches,
-                                                                                                 List<Function<M, ?>> maskFieldSelectors,
-                                                                                                 Comparator<R> ranking) {
+                   R extends AbstractMatchEntity<M, T>> List<ResultMatches<M, T, R>> groupByMaskFields(List<R> matches,
+                                                                                                       List<Function<M, ?>> maskFieldSelectors,
+                                                                                                       Comparator<R> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R, M>(
-                        (R) aMatch.duplicate((AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity> src, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity> dest) -> {
+                        (R) aMatch.duplicate((AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity> src, AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity> dest) -> {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
                             // set match files
@@ -113,10 +113,10 @@ public class MatchResultsGrouping {
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronEntity,
                    T extends AbstractNeuronEntity,
-                   R extends AbstractMatch<M, T>,
-                   R1 extends AbstractMatch<T, M>> List<ResultMatches<T, M, R1>> groupByTargetFields(List<R> matches,
-                                                                                                     List<Function<T, ?>> matchedFieldSelectors,
-                                                                                                     Comparator<R1> ranking) {
+                   R extends AbstractMatchEntity<M, T>,
+                   R1 extends AbstractMatchEntity<T, M>> List<ResultMatches<T, M, R1>> groupByTargetFields(List<R> matches,
+                                                                                                           List<Function<T, ?>> matchedFieldSelectors,
+                                                                                                           Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> new GroupingCriteria<R1, T>(
@@ -163,7 +163,7 @@ public class MatchResultsGrouping {
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronEntity,
                    T extends AbstractNeuronEntity,
-                   R extends AbstractMatch<M, T>> List<R> expandResultsByMask(ResultMatches<M, T, R> matchesResults) {
+                   R extends AbstractMatchEntity<M, T>> List<R> expandResultsByMask(ResultMatches<M, T, R> matchesResults) {
         return matchesResults.getItems().stream()
                 .map(persistedMatch -> {
                     return (R) persistedMatch.duplicate((src, dest) -> {
@@ -190,8 +190,8 @@ public class MatchResultsGrouping {
     @SuppressWarnings("unchecked")
     public static <M extends AbstractNeuronEntity,
                    T extends AbstractNeuronEntity,
-                   R1 extends AbstractMatch<T, M>,
-                   R extends AbstractMatch<M, T>> List<R> expandResultsByTarget(ResultMatches<T, M, R1> matchesResults) {
+                   R1 extends AbstractMatchEntity<T, M>,
+                   R extends AbstractMatchEntity<M, T>> List<R> expandResultsByTarget(ResultMatches<T, M, R1> matchesResults) {
         return matchesResults.getItems().stream()
                 .map(persistedMatch -> {
                     return (R) persistedMatch.duplicate((src, dest) -> {

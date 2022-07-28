@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 
-public class PPPMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatch<M, T> {
+public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private String sourceEmName;
     private String sourceLmName;
     private Double coverageScore;
@@ -77,26 +77,6 @@ public class PPPMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEn
         return MapUtils.isNotEmpty(sourceImageFiles);
     }
 
-    public void updateMatchFiles() {
-        if (sourceImageFiles != null) {
-            sourceImageFiles.keySet()
-                    .forEach(k -> setMatchFileData(k.getFileType(), getTargetImageRelativePath(k.getFileType())));
-        }
-    }
-
-    private FileData getTargetImageRelativePath(FileType ft) {
-        // e.g. "12/1200351200/1200351200-VT064583-20170630_64_C2-40x-JRC2018_Unisex_20x_HR-masked_inst.png"
-        String maskPublishedName = getMaskImage().getPublishedName();
-        return FileData.fromString(
-                maskPublishedName.substring(0, 2) + '/' +
-                maskPublishedName + '/' +
-                maskPublishedName + '-' +
-                getMatchedImage().buildNeuronSourceName() + "-" +
-                getMaskImage().getAlignmentSpace() + '-' +
-                ft.getDisplayPPPSuffix()
-        );
-    }
-
     public List<PPPSkeletonMatch> getSkeletonMatches() {
         return skeletonMatches;
     }
@@ -107,9 +87,9 @@ public class PPPMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEn
 
     @SuppressWarnings("unchecked")
     @Override
-    public PPPMatch<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
-            MatchCopier<AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>> copier) {
-        PPPMatch<AbstractNeuronEntity, AbstractNeuronEntity> clone = new PPPMatch<>();
+    public PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
+            MatchCopier<AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>> copier) {
+        PPPMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity> clone = new PPPMatchEntity<>();
         // copy fields that are safe to copy
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
@@ -121,16 +101,11 @@ public class PPPMatch<M extends AbstractNeuronEntity, T extends AbstractNeuronEn
         clone.sourceImageFiles = this.sourceImageFiles;
         clone.skeletonMatches = this.skeletonMatches;
         // apply the copier
-        copier.copy((AbstractMatch<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
+        copier.copy((AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
         return clone;
     }
 
-    @Override
-    public void cleanupForRelease() {
-        super.cleanupForRelease();
-        sourceEmName = null;
-        sourceLmName = null;
-        sourceImageFiles = null;
-        skeletonMatches = null;
+    public void updateMatchDataFile(FileType screenshotType, String fn) {
     }
+
 }

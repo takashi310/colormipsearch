@@ -22,7 +22,7 @@ public enum PPPScreenshotType {
         return null;
     }
 
-    FileType getFileType() {
+    public FileType getFileType() {
         return fileType;
     }
 }

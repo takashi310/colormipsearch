@@ -98,9 +98,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,
                                                                 String libraryName,
                                                                 String name) {
-        N testNeuron = new AbstractNeuronEntity.Builder<>(neuronGenerator)
+        N testNeuron = new TestNeuronEntityBuilder<>(neuronGenerator)
                 .library(libraryName)
-                .publishedName(name)
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mipSegmentation"))
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("sourceMip"))
                 .fileData(FileType.ColorDepthMip, FileData.fromString("cdmip"))

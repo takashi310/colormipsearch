@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,13 +43,11 @@ import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsWriter;
 import org.janelia.colormipsearch.mips.FileDataUtils;
-import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +61,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CreateCDSDataInputCmd.class);
 
-    // since right now there'sonly one EM library just use its name to figure out how to handle the color depth mips metadata
-    private static final String NO_CONSENSUS = "No Consensus";
     private static final int DEFAULT_PAGE_LENGTH = 10000;
 
     public static class ChannelBaseValidator implements IValueValidator<Integer> {
@@ -80,8 +77,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"}, description = "JACS data service base URL")
         String dataServiceURL;
 
-        @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
-        String libraryMappingURL = "http://config.int.janelia.org/config/cdm_library";
 
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;
@@ -138,15 +133,9 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
         int segmentedImageChannelBase = 1;
 
-        @Parameter(names = {"--excluded-mips"}, variableArity = true, converter = ListArg.ListArgConverter.class,
-                description = "Comma-delimited list of JSON configs containing mips to be excluded from the requested list")
-        List<ListArg> excludedMIPs;
-
-        @Parameter(names = {"--excluded-names"}, description = "Published names excluded from JSON", variableArity = true)
-        List<String> excludedNames;
-
-        @Parameter(names = {"--default-gender"}, description = "Default gender")
-        String defaultGender = "f";
+        @Parameter(names = {"--excluded-neurons"}, variableArity = true,
+                description = "Comma-delimited list of LM slide codes or EM body ids to be excluded from the requested list")
+        List<String> excludedNeurons;
 
         @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
         boolean keepDuplicates;
@@ -204,7 +193,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     @Override
     void execute() {
         Map<String, List<LibraryVariantArg>> libraryVariants = getLibraryVariants();
-        Set<? extends AbstractNeuronEntity> excludedNeurons = getExcludedNeurons();
+        Set<String> excludedNeurons = getExcludedNeurons();
 
         LibraryPathsArgs lpaths = new LibraryPathsArgs();
         lpaths.library = args.library;
@@ -212,14 +201,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
         if (StringUtils.isNotBlank(args.dataServiceURL)) {
             Client httpClient = HttpHelper.createClient();
-            Map<String, String> libraryNameMapping = retrieveLibraryNameMapping(httpClient, args.libraryMappingURL);
             WebTarget serverEndpoint = httpClient.target(args.dataServiceURL);
             createColorDepthSearchInputData(
                     serverEndpoint,
                     lpaths,
                     getAllVariantsForColorDepthInput(),
                     excludedNeurons,
-                    libraryNameMapping::get,
                     getNeuronFileURLMapper()
             );
         } else {
@@ -238,21 +225,11 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         return libraryVariants;
     }
 
-    private <N extends AbstractNeuronEntity> Set<N> getExcludedNeurons() {
-        if (CollectionUtils.isEmpty(args.excludedMIPs)) {
+    private Set<String> getExcludedNeurons() {
+        if (CollectionUtils.isEmpty(args.excludedNeurons)) {
             return Collections.emptySet();
         } else {
-            return args.excludedMIPs.stream()
-                    .flatMap(mipsInput -> {
-                        List<N> neurons = NeuronMIPUtils.loadNeuronMetadataFromJSON(
-                                mipsInput.input,
-                                mipsInput.offset,
-                                mipsInput.length,
-                                Collections.emptySet(),
-                                mapper);
-                        return neurons.stream();
-                    })
-                    .collect(Collectors.toSet());
+            return new HashSet<>(args.excludedNeurons);
         }
     }
 
@@ -278,8 +255,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     private void createColorDepthSearchInputData(WebTarget serverEndpoint,
                                                  LibraryPathsArgs libraryPaths,
                                                  Set<String> computationInputVariantTypes,
-                                                 Set<? extends AbstractNeuronEntity> excludedNeurons,
-                                                 Function<String, String> libraryNamesMapping,
+                                                 Set<String> excludedNeurons,
                                                  Function<String, String> neuronFileURLMapping) {
 
         int cdmsCount = countColorDepthMips(
@@ -293,19 +269,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 cdmsCount, libraryPaths.getLibraryName(), args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
         int to = libraryPaths.library.length > 0 ? Math.min(libraryPaths.library.offset + libraryPaths.library.length, cdmsCount) : cdmsCount;
 
-        Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> {
-            String internalLibraryName = cmip.findLibrary(libraryPaths.getLibraryName());
-            if (StringUtils.isBlank(internalLibraryName)) {
-                return null;
-            } else {
-                String displayLibraryName = libraryNamesMapping.apply(internalLibraryName);
-                if (StringUtils.isBlank(displayLibraryName)) {
-                    return internalLibraryName;
-                } else {
-                    return displayLibraryName;
-                }
-            }
-        };
+        Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> cmip.findLibrary(libraryPaths.getLibraryName());
 
         CDMIPsWriter gen = getCDSInputWriter();
 
@@ -338,26 +302,31 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             cdmipsPage.stream()
                     .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
-                            ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping, Gender.fromVal(args.defaultGender))
+                            ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping)
                             : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
-                    .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(cdmip,
+                    .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(
+                            cdmip.getSourceMIP(),
+                            cdmip.getNeuronMetadata(),
                             inputLibraryVariantChoice.map(lv -> lv.variantPath).orElse(null),
                             inputImages,
                             args.includeOriginalWithSegmentation,
-                            args.segmentedImageChannelBase).stream())
-                    .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip))
+                            args.segmentedImageChannelBase)
+                            .stream()
+                            .map(n -> new InputCDMipNeuron<>(cdmip.getSourceMIP(), n))
+                    )
+                    .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip.getNeuronMetadata().getNeuronId()))
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip,
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
                             libraryPaths.listLibraryVariants(),
                             inputLibraryVariantChoice.orElse(null)))
                     .peek(this::updateNeuronFiles)
-                    .forEach(gen::write);
+                    .forEach(cdmip -> gen.write(cdmip.getNeuronMetadata()));
         }
         gen.close();
     }
 
-    private void populateOtherComputeFilesFromInput(AbstractNeuronEntity cdmip,
+    private void populateOtherComputeFilesFromInput(InputCDMipNeuron<? extends AbstractNeuronEntity> cdmip,
                                                     Set<ComputeFileType> computeFileTypes,
                                                     List<LibraryVariantArg> libraryVariants,
                                                     LibraryVariantArg computeInputVariant) {
@@ -367,8 +336,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .forEach(variant -> {
                     ComputeFileType variantFileType = ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType));
                     FileData variantFileData = FileDataUtils.lookupVariantFileData(
-                            cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage),
-                            cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage),
+                            cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage),
+                            cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage),
                             Collections.singletonList(variant.variantPath),
                             variant.variantNameSuffix,
                             nc -> {
@@ -380,7 +349,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                 }
                             }
                     );
-                    cdmip.setComputeFileData(variantFileType, variantFileData);
+                    cdmip.getNeuronMetadata().setComputeFileData(variantFileType, variantFileData);
                 });
     }
 
@@ -411,59 +380,47 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         return true;
     }
 
-    private EMNeuronEntity asEMNeuron(ColorDepthMIP cdmip,
-                                      Function<ColorDepthMIP, String> libraryNameExtractor,
-                                      Function<String, String> urlMapping,
-                                      Gender defaultGenderForEMNeuron) {
+    private InputCDMipNeuron<EMNeuronEntity> asEMNeuron(ColorDepthMIP cdmip,
+                                                        Function<ColorDepthMIP, String> libraryNameExtractor,
+                                                        Function<String, String> urlMapping) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         EMNeuronEntity neuronMetadata = new EMNeuronEntity();
         neuronMetadata.setMipId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
-        neuronMetadata.setBodyRef(cdmip.emBodyRef);
-        neuronMetadata.setNeuronType(cdmip.neuronType);
-        neuronMetadata.setNeuronInstance(cdmip.neuronInstance);
+        neuronMetadata.setSourceRefId(cdmip.emBodyRef);
+        // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
+        // set the MIP and corresponding thumbnail URL in case they are set in the workstation.
         neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(urlMapping.apply(cdmip.publicImageUrl)));
         neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
-        neuronMetadata.setPublishedName(cdmip.bodyId != null ? String.valueOf(cdmip.bodyId) : null);
-        neuronMetadata.setGender(defaultGenderForEMNeuron);
         if (cdmip.emBody != null && cdmip.emBody.files != null) {
             FileData swcData = FileData.fromString(cdmip.emBody.files.get("SkeletonSWC"));
             neuronMetadata.setComputeFileData(ComputeFileType.SWCBody, swcData);
             neuronMetadata.setNeuronFileData(FileType.AlignedBodySWC, swcData);
         }
-        return neuronMetadata;
+        neuronMetadata.setPublishedName(cdmip.emBodyName());
+        return new InputCDMipNeuron<>(cdmip, neuronMetadata);
     }
 
-    private LMNeuronEntity asLMNeuron(ColorDepthMIP cdmip,
-                                      Function<ColorDepthMIP, String> libraryNameExtractor,
-                                      Function<String, String> urlMapping) {
+    private InputCDMipNeuron<LMNeuronEntity> asLMNeuron(ColorDepthMIP cdmip,
+                                                        Function<ColorDepthMIP, String> libraryNameExtractor,
+                                                        Function<String, String> urlMapping) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         LMNeuronEntity neuronMetadata = new LMNeuronEntity();
         neuronMetadata.setMipId(cdmip.id);
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
-        neuronMetadata.setSampleRef(cdmip.sampleRef);
-        neuronMetadata.setAnatomicalArea(cdmip.anatomicalArea);
-        neuronMetadata.setObjective(cdmip.objective);
-        neuronMetadata.setChannel(Integer.valueOf(cdmip.channelNumber));
+        neuronMetadata.setSourceRefId(cdmip.sampleRef);
+        // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(urlMapping.apply(cdmip.publicImageUrl)));
         neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
         neuronMetadata.setNeuronFileData(FileType.VisuallyLosslessStack, FileData.fromString(cdmip.sample3DImageStack));
         neuronMetadata.setNeuronFileData(FileType.SignalMipExpression, FileData.fromString(cdmip.sampleGen1Gal4ExpressionImage));
-        if (cdmip.sample != null) {
-            neuronMetadata.setPublishedName(cdmip.sample.publishingName);
-            neuronMetadata.setSampleName(cdmip.sample.name);
-            neuronMetadata.setSlideCode(cdmip.sample.slideCode);
-            neuronMetadata.setGender(Gender.fromVal(cdmip.sample.gender));
-            neuronMetadata.setMountingProtocol(cdmip.sample.mountingProtocol);
-            neuronMetadata.setDriver(cdmip.sample.driver);
-        } else {
-            populateNeuronDataFromCDMIPName(cdmip.name, neuronMetadata);
-        }
-        return neuronMetadata;
+        neuronMetadata.setPublishedName(cdmip.lmLineName());
+        neuronMetadata.setSlideCode(cdmip.lmSlideCode());
+        return new InputCDMipNeuron<>(cdmip, neuronMetadata);
     }
 
     private Set<String> getAllVariantsForColorDepthInput() {
@@ -473,33 +430,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .collect(Collectors.toSet());
     }
 
-    private void populateNeuronDataFromCDMIPName(String mipName, LMNeuronEntity neuronMetadata) {
-        String[] mipNameComponents = StringUtils.split(mipName, '-');
-        String line = mipNameComponents.length > 0 ? mipNameComponents[0] : mipName;
-        // attempt to remove the PI initials
-        int piSeparator = StringUtils.indexOf(line, '_');
-        String lineID;
-        if (piSeparator == -1) {
-            lineID = line;
-        } else {
-            lineID = line.substring(piSeparator + 1);
-        }
-        neuronMetadata.setPublishedName(StringUtils.defaultIfBlank(lineID, "Unknown"));
-        String slideCode = mipNameComponents.length > 1 ? mipNameComponents[1] : null;
-        neuronMetadata.setSlideCode(slideCode);
-        int colorChannel = MIPsHandlingUtils.extractColorChannelFromMIPName(mipName, 0);
-        if (colorChannel != -1) {
-            neuronMetadata.setChannel(colorChannel);
-        }
-        neuronMetadata.setObjective(MIPsHandlingUtils.extractObjectiveFromMIPName(mipName));
-        String gender = MIPsHandlingUtils.extractGenderFromMIPName(mipName);
-        if (gender != null) {
-            neuronMetadata.setGender(Gender.fromVal(gender));
-        }
-    }
-
-    private <N extends AbstractNeuronEntity> void updateNeuronFiles(N cdmip) {
-        if (cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage) && cdmip.hasNeuronFile(FileType.ColorDepthMip)) {
+    @SuppressWarnings("unchecked")
+    private void updateNeuronFiles(InputCDMipNeuron<? extends AbstractNeuronEntity> cdmip) {
+        if (cdmip.getNeuronMetadata().hasComputeFile(ComputeFileType.InputColorDepthImage) &&
+                cdmip.getNeuronMetadata().hasNeuronFile(FileType.ColorDepthMip)) {
             // ColorDepthInput filename must be expressed in terms of publishedName (not internal name),
             //  and must include the integer suffix that identifies exactly which image it is (for LM),
             //  when there are multiple images for a given combination of parameters
@@ -508,23 +442,23 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             //  has the internal name; we have to similarly grab _FL from EM names
 
             // remove directories and extension (which we know is ".png") from imageURL:
-            Path imagePath = Paths.get(cdmip.getNeuronFileName(FileType.ColorDepthMip));
+            Path imagePath = Paths.get(cdmip.getNeuronMetadata().getNeuronFileName(FileType.ColorDepthMip));
             String colorDepthInputName = createColorDepthInputName(
-                    Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(),
-                    Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString(),
+                    Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(),
+                    Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString(),
                     imagePath.getFileName().toString());
-            cdmip.setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromString(colorDepthInputName));
+            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromString(colorDepthInputName));
         }
-        if (!cdmip.hasNeuronFile(FileType.ColorDepthMip)) {
+        if (!cdmip.getNeuronMetadata().hasNeuronFile(FileType.ColorDepthMip)) {
             // set relative image URLs
             String imageRelativeURL;
-            if (MIPsHandlingUtils.isEmLibrary(cdmip.getLibraryName())) {
-                imageRelativeURL = createEMImageRelativeURL((EMNeuronEntity) cdmip);
+            if (MIPsHandlingUtils.isEmLibrary(cdmip.getNeuronMetadata().getLibraryName())) {
+                imageRelativeURL = createEMImageRelativeURL((InputCDMipNeuron<EMNeuronEntity>) cdmip);
             } else {
-                imageRelativeURL = createLMImageRelativeURL((LMNeuronEntity) cdmip);
+                imageRelativeURL = createLMImageRelativeURL((InputCDMipNeuron<LMNeuronEntity>) cdmip);
             }
-            cdmip.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(imageRelativeURL));
-            cdmip.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(imageRelativeURL));
+            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(imageRelativeURL));
+            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(imageRelativeURL));
         }
     }
 
@@ -550,10 +484,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 : displayName + "-" + imageSuffix + ".png";
     }
 
-    private String createEMImageRelativeURL(EMNeuronEntity cdmip) {
-        String imageName = cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage)
-                ? Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
-                : Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
+    private String createEMImageRelativeURL(InputCDMipNeuron<EMNeuronEntity> cdmip) {
+        String imageName = cdmip.getNeuronMetadata().hasComputeFile(ComputeFileType.InputColorDepthImage)
+                ? Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
+                : Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
         Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)_CDM)?(?<ext>\\..*$)");
         Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
         String seg;
@@ -565,19 +499,19 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             seg = "";
             ext = ".png";
         }
-        return cdmip.getAlignmentSpace() + '/' +
-                cdmip.getLibraryName() + '/' +
-                cdmip.getPublishedName() + '-' +
-                cdmip.getAlignmentSpace() + '-' +
+        return cdmip.getNeuronMetadata().getAlignmentSpace() + '/' +
+                cdmip.getNeuronMetadata().getLibraryName() + '/' +
+                cdmip.getSourceMIP().lmLineName() + '-' +
+                cdmip.getNeuronMetadata().getAlignmentSpace() + '-' +
                 "CDM" +
                 (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
                 ext;
     }
 
-    private String createLMImageRelativeURL(LMNeuronEntity cdmip) {
-        String imageName = cdmip.hasComputeFile(ComputeFileType.InputColorDepthImage)
-                ? Paths.get(cdmip.getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
-                : Paths.get(cdmip.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
+    private String createLMImageRelativeURL(InputCDMipNeuron<LMNeuronEntity> cdmip) {
+        String imageName = cdmip.getNeuronMetadata().hasComputeFile(ComputeFileType.InputColorDepthImage)
+                ? Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString()
+                : Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString();
         Pattern imageNamePattern = Pattern.compile("((?<segmentation>\\d\\d)(_CDM)?)?(?<ext>\\..*$)");
         Matcher imageNameMatcher = imageNamePattern.matcher(imageName);
         String seg;
@@ -591,26 +525,26 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         }
         // I think we should get rid of this as well
         String driverName;
-        if (StringUtils.isBlank(cdmip.getDriver())) {
+        if (StringUtils.isBlank(cdmip.getSourceMIP().lmDriver())) {
             driverName = "";
         } else {
-            int driverSeparator = cdmip.getDriver().indexOf('_');
+            int driverSeparator = cdmip.getSourceMIP().lmDriver().indexOf('_');
             if (driverSeparator == -1) {
-                driverName = cdmip.getDriver();
+                driverName = cdmip.getSourceMIP().lmDriver();
             } else {
-                driverName = cdmip.getDriver().substring(0, driverSeparator);
+                driverName = cdmip.getSourceMIP().lmDriver().substring(0, driverSeparator);
             }
         }
 
-        return cdmip.getAlignmentSpace() + '/' +
-                StringUtils.replace(cdmip.getLibraryName(), " ", "_") + '/' +
-                cdmip.getPublishedName() + '-' +
-                cdmip.getSlideCode() + '-' +
+        return cdmip.getNeuronMetadata().getAlignmentSpace() + '/' +
+                StringUtils.replace(cdmip.getNeuronMetadata().getLibraryName(), " ", "_") + '/' +
+                cdmip.getSourceMIP().lmLineName() + '-' +
+                cdmip.getSourceMIP().lmSlideCode() + '-' +
                 (StringUtils.isBlank(driverName) ? "" : driverName + '-') +
-                cdmip.getGender() + '-' +
-                cdmip.getObjective() + '-' +
-                StringUtils.lowerCase(cdmip.getAnatomicalArea()) + '-' +
-                cdmip.getAlignmentSpace() + '-' +
+                cdmip.getSourceMIP().gender() + '-' +
+                cdmip.getSourceMIP().lmObjective() + '-' +
+                StringUtils.lowerCase(cdmip.getSourceMIP().anatomicalArea) + '-' +
+                cdmip.getNeuronMetadata().getAlignmentSpace() + '-' +
                 "CDM" +
                 (StringUtils.isNotBlank(seg) ? "_" + seg : "") +
                 ext;

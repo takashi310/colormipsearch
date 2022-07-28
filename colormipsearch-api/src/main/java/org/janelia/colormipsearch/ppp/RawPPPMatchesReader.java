@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
-import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.model.PPPSkeletonMatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class RawPPPMatchesReader {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    public Stream<PPPMatch<EMNeuronEntity, LMNeuronEntity>> readPPPMatches(String fn, boolean onlyBestMatches) {
+    public Stream<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> readPPPMatches(String fn, boolean onlyBestMatches) {
         Function<RawSkeletonMatches, List<PPPSkeletonMatch>> skeletonsReader = onlyBestMatches
                 ? this::getBestSkeletonMatchesOnly
                 : this::getAllSkeletonMatches;
@@ -40,11 +40,11 @@ public class RawPPPMatchesReader {
                 ;
     }
 
-    private Stream<PPPMatch<EMNeuronEntity, LMNeuronEntity>> getLMMatches(String emFullName, JsonNode lmMatchesNode,
-                                                                          Function<RawSkeletonMatches, List<PPPSkeletonMatch>> matchedSkeletonsReader) {
+    private Stream<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> getLMMatches(String emFullName, JsonNode lmMatchesNode,
+                                                                                Function<RawSkeletonMatches, List<PPPSkeletonMatch>> matchedSkeletonsReader) {
         return StreamSupport.stream(Spliterators.spliterator(lmMatchesNode.fields(), Long.MAX_VALUE, 0), false)
                 .map(lmMatchEntry -> {
-                    PPPMatch<EMNeuronEntity, LMNeuronEntity> pppMatch = new PPPMatch<>();
+                    PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = new PPPMatchEntity<>();
                     pppMatch.setSourceEmName(emFullName);
                     pppMatch.setSourceLmName(lmMatchEntry.getKey());
                     try {

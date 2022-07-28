@@ -21,18 +21,19 @@ import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
-import org.janelia.colormipsearch.dataio.CDSParamsWriter;
+import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
+import org.janelia.colormipsearch.dataio.db.DBCDSSessionWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
-import org.janelia.colormipsearch.dataio.fs.JSONCDSParamsWriter;
+import org.janelia.colormipsearch.dataio.fs.JSONCDSSessionWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,26 +142,28 @@ class ColorDepthSearchCmd extends AbstractCmd {
             return;
         }
         // save CDS parameters
-        getCDSParamsWriter().writeParams(
+        Number cdsRunId = getCDSSessionWriter().createSession(
                 args.masksInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
                 args.targetsInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters());
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
+                    cdsRunId,
                     args.appName,
                     colorMIPSearch,
                     args.processingPartitionSize
             );
         } else {
             colorMIPSearchProcessor = new LocalColorMIPSearchProcessor<>(
+                    cdsRunId,
                     colorMIPSearch,
                     args.processingPartitionSize,
                     CmdUtils.createCmdExecutor(args.commonArgs)
             );
         }
         try {
-            List<CDMatch<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            NeuronMatchesWriter<CDMatch<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+            List<CDMatchEntity<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
+            NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
             cdsResultsWriter.write(cdsResults);
         } finally {
             colorMIPSearchProcessor.terminate();
@@ -175,13 +178,17 @@ class ColorDepthSearchCmd extends AbstractCmd {
         }
     }
 
-    private CDSParamsWriter getCDSParamsWriter() {
-        return new JSONCDSParamsWriter(
-                args.getOutputDir(),
-                mapper);
+    private CDSSessionWriter getCDSSessionWriter() {
+        if (args.mipsStorage == StorageType.DB) {
+            return new DBCDSSessionWriter(getConfig());
+        } else {
+            return new JSONCDSSessionWriter(
+                    args.getOutputDir(),
+                    mapper);
+        }
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatchEntity<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             if (args.alwaysNewMatches) {
@@ -200,7 +207,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
                     AbstractNeuronEntity::getMipId, // group results by neuron MIP ID
-                    Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
+                    Comparator.comparingDouble(m -> -(((CDMatchEntity<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                     args.getPerMaskDir(),
                     args.getPerTargetDir()
             );

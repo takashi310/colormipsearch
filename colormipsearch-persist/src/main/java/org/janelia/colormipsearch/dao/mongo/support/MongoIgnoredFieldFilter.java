@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 
-import org.janelia.colormipsearch.model.annotations.UseRefId;
+import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
-public class UseRefIdFieldFilter extends SimpleBeanPropertyFilter {
+public class MongoIgnoredFieldFilter extends SimpleBeanPropertyFilter {
     @Override
     protected boolean include(BeanPropertyWriter writer) {
         return super.include(writer);
@@ -14,7 +14,7 @@ public class UseRefIdFieldFilter extends SimpleBeanPropertyFilter {
 
     @Override
     protected boolean include(PropertyWriter writer) {
-        if (writer.getAnnotation(UseRefId.class) != null) {
+        if (writer.getAnnotation(DoNotPersist.class) != null) {
             return false;
         } else {
             return true;

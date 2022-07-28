@@ -9,26 +9,26 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.dataio.CDSParamsWriter;
+import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JSONCDSParamsWriter implements CDSParamsWriter {
-    private static final Logger LOG = LoggerFactory.getLogger(JSONCDSParamsWriter.class);
+public class JSONCDSSessionWriter implements CDSSessionWriter {
+    private static final Logger LOG = LoggerFactory.getLogger(JSONCDSSessionWriter.class);
 
     private final Path outputDir;
     private final ObjectMapper mapper;
 
-    public JSONCDSParamsWriter(Path outputDir, ObjectMapper mapper) {
+    public JSONCDSSessionWriter(Path outputDir, ObjectMapper mapper) {
         this.outputDir = outputDir;
         this.mapper = mapper;
     }
 
     @Override
-    public void writeParams(List<DataSourceParam> masksInputs,
-                            List<DataSourceParam> targetsInputs,
-                            Map<String, Object> params) {
+    public Number createSession(List<DataSourceParam> masksInputs,
+                                List<DataSourceParam> targetsInputs,
+                                Map<String, Object> params) {
         String masksInputValues = inputValues(masksInputs);
         String targetsInputValues = inputValues(targetsInputs);
         File outputFile;
@@ -50,7 +50,7 @@ public class JSONCDSParamsWriter implements CDSParamsWriter {
             LOG.error("Error persisting color depth search parameters to {}", outputFile, e);
             throw new IllegalStateException(e);
         }
-
+        return System.currentTimeMillis(); // use the current timestamp
     }
 
     private String inputValues(List<DataSourceParam> inputs) {

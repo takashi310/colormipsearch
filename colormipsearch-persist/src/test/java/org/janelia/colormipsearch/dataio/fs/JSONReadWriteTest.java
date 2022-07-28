@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatch;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.junit.AfterClass;
@@ -37,8 +37,8 @@ public class JSONReadWriteTest {
     private static Path lm2emDir;
 
     private ObjectMapper mapper;
-    private JSONNeuronMatchesWriter<EMNeuronEntity, LMNeuronEntity, CDMatch<EMNeuronEntity, LMNeuronEntity>> em2lmJsonWriter;
-    private JSONNeuronMatchesReader<CDMatch<EMNeuronEntity, LMNeuronEntity>> em2lmMatchesReader;
+    private JSONNeuronMatchesWriter<EMNeuronEntity, LMNeuronEntity, CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> em2lmJsonWriter;
+    private JSONNeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> em2lmMatchesReader;
 
     @BeforeClass
     public static void createTestDataDir() throws IOException {
@@ -57,7 +57,7 @@ public class JSONReadWriteTest {
         mapper = new ObjectMapper();
         em2lmJsonWriter = new JSONNeuronMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 AbstractNeuronEntity::getMipId, // group results by neuron MIP ID
-                Comparator.comparingDouble(m -> -(((CDMatch<?,?>) m).getMatchingPixels())), // descending order by matching pixels
+                Comparator.comparingDouble(m -> -(((CDMatchEntity<?,?>) m).getMatchingPixels())), // descending order by matching pixels
                 em2lmDir,
                 lm2emDir
         );
@@ -69,9 +69,9 @@ public class JSONReadWriteTest {
     @Test
     public void jsonCDSMatchSerialization() {
         Path testJsonOutput = testDataDir.resolve("testcdsout.json");
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> CDMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
+        List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> CDMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
         JsonOutputHelper.writeToJSONFile(CDMatches, testJsonOutput, mapper.writerWithDefaultPrettyPrinter());
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readCDMatches = readTestMatches(testJsonOutput.toFile());
+        List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readCDMatches = readTestMatches(testJsonOutput.toFile());
         assertNotNull(readCDMatches);
         assertEquals(CDMatches, readCDMatches);
     }
@@ -79,14 +79,14 @@ public class JSONReadWriteTest {
     @SuppressWarnings("unchecked")
     @Test
     public void readWriteCDSResults() {
-        List<CDMatch<EMNeuronEntity, LMNeuronEntity>> cdMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
+        List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatches = readTestMatches(new File(TESTCDSMATCHES_FILE));
         em2lmJsonWriter.write(cdMatches);
         checkResultFiles(cdMatches, em2lmDir, m -> m.getMaskImage().getMipId());
         checkResultFiles(cdMatches, lm2emDir, m -> m.getMatchedImage().getMipId());
 
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
-                    List<CDMatch<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
+                    List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
                             em2lmMatchesReader.readMatchesForMasks(
                                     null,
                                     Collections.singletonList(f),
@@ -94,7 +94,7 @@ public class JSONReadWriteTest {
                                     null);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
-                    List<CDMatch<EMNeuronEntity, LMNeuronEntity>> testMatchesWithSameMask = cdMatches.stream()
+                    List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testMatchesWithSameMask = cdMatches.stream()
                             .filter(cdsMatch -> cdsMatch.getMaskImage().getMipId().equals(mId))
                             .peek(cdsMatch -> {
                                 cdsMatch.resetMatchComputeFiles();
@@ -107,9 +107,9 @@ public class JSONReadWriteTest {
                 });
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void checkResultFiles(List<CDMatch<M, T>> matches,
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void checkResultFiles(List<CDMatchEntity<M, T>> matches,
                                                                                                    Path resultsDir,
-                                                                                                   Function<CDMatch<?, ?>, String> fnSelector) {
+                                                                                                   Function<CDMatchEntity<?, ?>, String> fnSelector) {
         matches.stream()
                 .map(fnSelector)
                 .forEach(fname -> {
@@ -117,11 +117,11 @@ public class JSONReadWriteTest {
                 });
     }
 
-    private List<CDMatch<EMNeuronEntity, LMNeuronEntity>> readTestMatches(File f) {
+    private List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readTestMatches(File f) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            List<CDMatch<EMNeuronEntity, LMNeuronEntity>> CDMatches =
-                    mapper.readValue(f, new TypeReference<List<CDMatch<EMNeuronEntity, LMNeuronEntity>>>() {});
+            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> CDMatches =
+                    mapper.readValue(f, new TypeReference<List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>>() {});
             CDMatches.sort(Comparator.comparingDouble(m -> -m.getMatchingPixels()));
             return CDMatches;
         } catch (IOException e) {

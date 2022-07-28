@@ -40,26 +40,6 @@ public class NeuronMIPUtils {
         ImageArray<?> loadImage(N neuron, ComputeFileType computeFileType);
     }
 
-    public static <N extends AbstractNeuronEntity> List<N> loadNeuronMetadataFromJSON(String jsonFilename, int offset, int length, Set<String> filter, ObjectMapper mapper) {
-        try {
-            LOG.info("Reading {}", jsonFilename);
-            List<N> content = mapper.readValue(new File(jsonFilename), new TypeReference<List<N>>() {});
-            if (CollectionUtils.isEmpty(filter)) {
-                int from = Math.max(offset, 0);
-                int to = length > 0 ? Math.min(from + length, content.size()) : content.size();
-                LOG.info("Read {} mips from {} starting at {} to {}", content.size(), jsonFilename, from, to);
-                return content.subList(from, to);
-            } else {
-                LOG.info("Read {} from {} mips", filter, content.size());
-                return content.stream()
-                        .filter(mip -> filter.contains(mip.getPublishedName().toLowerCase()) || filter.contains(StringUtils.lowerCase(mip.getMipId())))
-                        .collect(Collectors.toList());
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
     public static <N extends AbstractNeuronEntity> Map<ComputeFileType, Supplier<ImageArray<?>>> getImageLoaders(N neuron,
                                                                                                                  Set<ComputeFileType> fileTypes,
                                                                                                                  NeuronImageFileLoader<N> singleNeuronImageLoader) {

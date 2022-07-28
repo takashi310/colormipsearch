@@ -1,43 +1,12 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
 public class LMNeuronEntity extends AbstractNeuronEntity {
-
-    private String sampleRef;
-    private String sampleName;
+    // LM slide code is required for selecting the top ranked matches during gradient scoring
     private String slideCode;
-    private String objective;
-    private String anatomicalArea;
-    private String mountingProtocol;
-    private String driver;
-    private Integer channel; // 1-based channel number
 
     @Override
     public String getNeuronId() {
         return getSlideCode();
-    }
-
-    public String getSampleRef() {
-        return sampleRef;
-    }
-
-    public void setSampleRef(String sampleRef) {
-        this.sampleRef = sampleRef;
-    }
-
-    public String getSampleName() {
-        return sampleName;
-    }
-
-    public void setSampleName(String sampleName) {
-        this.sampleName = sampleName;
     }
 
     public String getSlideCode() {
@@ -48,97 +17,12 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         this.slideCode = slideCode;
     }
 
-    public String getObjective() {
-        return objective;
-    }
-
-    public void setObjective(String objective) {
-        this.objective = objective;
-    }
-
-    public String getAnatomicalArea() {
-        return anatomicalArea;
-    }
-
-    public void setAnatomicalArea(String anatomicalArea) {
-        this.anatomicalArea = anatomicalArea;
-    }
-
-    public String getDriver() {
-        return driver;
-    }
-
-    public void setDriver(String driver) {
-        this.driver = driver;
-    }
-
-    public String getMountingProtocol() {
-        return mountingProtocol;
-    }
-
-    public void setMountingProtocol(String mountingProtocol) {
-        this.mountingProtocol = mountingProtocol;
-    }
-
-    public Integer getChannel() {
-        return channel;
-    }
-
-    public void setChannel(Integer channel) {
-        this.channel = channel;
-    }
-
-    @Override
-    public String buildNeuronSourceName() {
-        return getPublishedName() + "-" + slideCode + "-" + objective;
-    }
-
     @Override
     public LMNeuronEntity duplicate() {
         LMNeuronEntity n = new LMNeuronEntity();
         n.copyFrom(this);
-        n.sampleRef = this.sampleRef;
-        n.sampleName = this.sampleName;
-        n.slideCode = this.slideCode;
-        n.objective = this.objective;
-        n.anatomicalArea = this.anatomicalArea;
-        n.mountingProtocol = this.mountingProtocol;
-        n.driver = this.driver;
-        n.channel = this.channel;
+        n.slideCode = this.getSlideCode();
         return n;
     }
 
-    @Override
-    public void cleanupForRelease() {
-        super.cleanupForRelease();
-        sampleName = null;
-        sampleRef = null;
-    }
-
-    @Override
-    public List<Pair<String, ?>> updatableFields() {
-        return Stream.concat(
-                super.updatableFields().stream(),
-                Stream.of(
-                        ImmutablePair.of("sampleRef", getSampleRef()),
-                        ImmutablePair.of("sampleName", getSampleName()),
-                        ImmutablePair.of("slideCode", getSlideCode()),
-                        ImmutablePair.of("objective", getObjective()),
-                        ImmutablePair.of("anatomicalArea", getAnatomicalArea()),
-                        ImmutablePair.of("mountingProtocol", getMountingProtocol()),
-                        ImmutablePair.of("driver", getDriver()),
-                        ImmutablePair.of("channel", getChannel())
-                )
-        ).collect(Collectors.toList());
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .append("slideCode", slideCode)
-                .append("objective", objective)
-                .append("channel", channel)
-                .toString();
-    }
 }

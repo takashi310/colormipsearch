@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.model;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -17,6 +19,8 @@ public class AbstractBaseEntity implements BaseEntity {
     @EntityId
     private Number entityId;
     private Date createdDate = new Date();
+    // tags associated with the current entity. These are mainly used for versioning the data.
+    private Set<String> tags = new HashSet<>();
 
     @Override
     public Number getEntityId() {
@@ -33,14 +37,20 @@ public class AbstractBaseEntity implements BaseEntity {
         return entityId != null;
     }
 
-    @Override
     public Date getCreatedDate() {
         return createdDate;
     }
 
-    @Override
     public void setCreatedDate(Date createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public Set<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<String> tags) {
+        this.tags = tags;
     }
 
     @Override

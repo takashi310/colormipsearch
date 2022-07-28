@@ -38,9 +38,9 @@ import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.Gender;
+import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
-import org.janelia.colormipsearch.model.PPPMatch;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -160,12 +160,12 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
-        NeuronMatchesWriter<PPPMatch<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
+        NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
                 .map(this::importPPPRResultsFromFile)
-                .forEach(pppMatches -> {
-                    pppMatchesWriter.write(pppMatches);
+                .forEach(inputPPPMatches -> {
+                    writePPPMatches(inputPPPMatches, pppMatchesWriter);
                     MDC.remove("PPPFile");
                 });
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
@@ -236,16 +236,16 @@ class ImportPPPResultsCmd extends AbstractCmd {
      * @param pppResultsFile
      * @return
      */
-    private List<PPPMatch<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
-        List<PPPMatch<EMNeuronEntity, LMNeuronEntity>> neuronMatches = rawPPPMatchesReader.readPPPMatches(
+    private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
+        List<InputPPPMatch> inputPPPMatches = rawPPPMatchesReader.readPPPMatches(
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches)
-                .peek(this::fillInNeuronMetadata)
+                .map(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
-        Set<String> matchedLMSampleNames = neuronMatches.stream()
-                .map(pppMatch -> pppMatch.getMatchedImage().getSampleName())
+        Set<String> matchedLMSampleNames = inputPPPMatches.stream()
+                .map(InputPPPMatch::getLmSampleName)
                 .collect(Collectors.toSet());
-        Set<String> neuronNames = neuronMatches.stream()
-                .map(pppMatch -> pppMatch.getMaskImage().getPublishedName())
+        Set<String> neuronNames = inputPPPMatches.stream()
+                .map(InputPPPMatch::getEmNeuronName)
                 .collect(Collectors.toSet());
 
         Map<String, CDMIPSample> lmSamples;
@@ -267,86 +267,63 @@ class ImportPPPResultsCmd extends AbstractCmd {
             emNeurons = Collections.emptyMap();
         }
 
-        neuronMatches.forEach(pppMatch -> {
-            if (pppMatch.getRank() < 500) {
-                Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
-                lookupScreenshots(screenshotsPath, pppMatch);
-            }
-            LMNeuronEntity lmNeuron = pppMatch.getMatchedImage();
-            CDMIPSample lmSample = lmSamples.get(lmNeuron.getSampleName());
-            if (lmSample != null) {
-                lmNeuron.setSampleRef("Sample#" + lmSample.id);
-                lmNeuron.setPublishedName(lmSample.publishingName);
-                lmNeuron.setSlideCode(lmSample.slideCode);
-                lmNeuron.setGender(Gender.fromVal(lmSample.gender));
-                lmNeuron.setMountingProtocol(lmSample.mountingProtocol);
-                if (StringUtils.isBlank(lmNeuron.getObjective())) {
-                    if (CollectionUtils.size(lmSample.publishedObjectives) == 1) {
-                        lmNeuron.setObjective(lmSample.publishedObjectives.get(0));
-                    } else {
-                        throw new IllegalArgumentException("Too many published objectives for sample " + lmSample +
-                                ". Cannot decide which objective to select for " + pppMatch);
+        return inputPPPMatches.stream()
+                .map(inputPPPMatch -> {
+                    PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
+                    if (pppMatch.getRank() < 500) {
+                        Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
+                        lookupScreenshots(screenshotsPath, inputPPPMatch);
                     }
-                }
-            }
-            EMNeuronEntity emNeuron = pppMatch.getMaskImage();
-            CDMIPBody emBody = emNeurons.get(emNeuron.getPublishedName());
-            if (emBody != null) {
-                emNeuron.setBodyRef("EMBody#" + emBody.id);
-                emNeuron.setNeuronType(emBody.neuronType);
-                emNeuron.setNeuronInstance(emBody.neuronInstance);
-                emNeuron.setState(emBody.status);
-            }
-        });
-        return neuronMatches;
+                    CDMIPSample lmSample = lmSamples.get(inputPPPMatch.getLmSampleName());
+                    inputPPPMatch.setLmSample(lmSample);
+                    CDMIPBody emBody = emNeurons.get(inputPPPMatch.getEmNeuronName());
+                    inputPPPMatch.setEmBody(emBody);
+                    return updatePPPMatchData(inputPPPMatch);
+                })
+                .collect(Collectors.toList());
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<PPPMatch<M, T>>
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<PPPMatchEntity<M, T>>
     getPPPMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new DBNeuronMatchesWriter<>(getConfig());
         } else {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    AbstractNeuronEntity::getPublishedName, // PPP results are grouped by published name
-                    Comparator.comparingDouble(m -> (((PPPMatch<?,?>) m).getRank())), // ascending order by rank
+                    AbstractNeuronEntity::getSourceRefId, // PPP results are grouped by published name
+                    Comparator.comparingDouble(m -> (((PPPMatchEntity<?, ?>) m).getRank())), // ascending order by rank
                     args.getOutputDir(),
                     null // only write results per mask
             );
         }
     }
 
-    private void fillInNeuronMetadata(PPPMatch<EMNeuronEntity, LMNeuronEntity> pppMatch) {
-        pppMatch.setMaskImage(getEMMetadata(pppMatch.getSourceEmName()));
-        pppMatch.setMatchedImage(getLMMetadata(pppMatch.getSourceLmName()));
+    private InputPPPMatch fillInNeuronMetadata(PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch) {
+        InputPPPMatch inputPPPMatch = new InputPPPMatch(pppMatch);
+        updateEMMetadata(pppMatch.getSourceEmName(), inputPPPMatch);
+        updateLMMetadata(pppMatch.getSourceLmName(), inputPPPMatch);
+        return inputPPPMatch;
     }
 
-    private EMNeuronEntity getEMMetadata(String emFullName) {
-        EMNeuronEntity emNeuron = new EMNeuronEntity();
-        emNeuron.setAlignmentSpace(args.alignmentSpace);
+    private void updateEMMetadata(String emFullName, InputPPPMatch inputPPPMatch) {
         Pattern emRegExPattern = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
-            emNeuron.setPublishedName(matcher.group(1)); // neuron name
-            emNeuron.setNeuronType(matcher.group(2));
+            inputPPPMatch.setEmNeuronName(matcher.group(1));
+            inputPPPMatch.setEmNeuronType(matcher.group(2));
         }
-        return emNeuron;
     }
 
-    private LMNeuronEntity getLMMetadata(String lmFullName) {
-        LMNeuronEntity lmNeuron = new LMNeuronEntity();
-        lmNeuron.setAlignmentSpace(args.alignmentSpace);
-        lmNeuron.setAnatomicalArea(args.anatomicalArea);
+    private void updateLMMetadata(String lmFullName, InputPPPMatch inputPPPMatch) {
         Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = lmRegExPattern.matcher(lmFullName);
         if (matcher.find()) {
-            lmNeuron.setSampleName(matcher.group(1));
+            inputPPPMatch.setLmSampleName(matcher.group(1));
             String objectiveCandidate = matcher.group(2);
             if (!StringUtils.equalsIgnoreCase(args.anatomicalArea, objectiveCandidate)) {
-                lmNeuron.setObjective(objectiveCandidate);
+                inputPPPMatch.setLmObjective(objectiveCandidate);
             }
         }
-        return lmNeuron;
     }
 
     private String selectADataServiceURL() {
@@ -383,17 +360,58 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         n -> n));
     }
 
-    private void lookupScreenshots(Path pppScreenshotsDir, PPPMatch<?, ?> pppMatch) {
+    private void lookupScreenshots(Path pppScreenshotsDir, InputPPPMatch inputPPPMatch) {
         if (Files.exists(pppScreenshotsDir)) {
-            try (DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(pppScreenshotsDir, pppMatch.getSourceEmName() + "*" + pppMatch.getSourceLmName() + "*.png")) {
+            try (DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(
+                    pppScreenshotsDir,
+                    inputPPPMatch.getPPPMatch().getSourceEmName() + "*" + inputPPPMatch.getPPPMatch().getSourceLmName() + "*.png")) {
                 screenshotsDirStream.forEach(f -> {
-                    pppMatch.addSourceImageFile(f.toString());
+                    inputPPPMatch.getPPPMatch().addSourceImageFile(f.toString());
                 });
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            pppMatch.updateMatchFiles();
         }
     }
 
+    private PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> updatePPPMatchData(InputPPPMatch inputPPPMatch) {
+        EMNeuronEntity emNeuronEntity = new EMNeuronEntity();
+        emNeuronEntity.setPublishedName(inputPPPMatch.getEmNeuronName());
+        emNeuronEntity.setSourceRefId(inputPPPMatch.getEmId());
+
+        LMNeuronEntity lmNeuronEntity = new LMNeuronEntity();
+        lmNeuronEntity.setPublishedName(inputPPPMatch.getLmLineName());
+        lmNeuronEntity.setSourceRefId(inputPPPMatch.getLmId());
+
+        PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
+        pppMatch.setMaskImage(emNeuronEntity);
+        pppMatch.setMatchedImage(lmNeuronEntity);
+
+        if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
+            inputPPPMatch.getPPPMatch().getSourceImageFiles()
+                    .forEach((k, fn) -> {
+                        inputPPPMatch.getPPPMatch().setMatchFileData(
+                                k.getFileType(),
+                                FileData.fromString(buildImageRelativePath(inputPPPMatch, k.getFileType().getFileSuffix())));
+                    });
+        }
+        return pppMatch;
+    }
+
+    private String buildImageRelativePath(InputPPPMatch inputPPPMatch, String suffix) {
+        String emNeuronName = inputPPPMatch.getEmNeuronName();
+        String lmNeuronName = inputPPPMatch.getLmNeuronName();
+        String lmObjective = inputPPPMatch.getLmObjective();
+        return emNeuronName.substring(0, 2) + '/' +
+                emNeuronName + '/' +
+                emNeuronName + '-' +
+                lmNeuronName + "-" +
+                lmObjective + "-" +
+                args.alignmentSpace + '-' +
+                suffix;
+    }
+
+    private void writePPPMatches(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches, NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
+        pppMatchesWriter.write(pppMatches);
+    }
 }
