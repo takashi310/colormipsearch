@@ -8,7 +8,9 @@ public class RegistryHelper {
     public static CodecRegistry createCodecRegistry() {
         return CodecRegistries.fromRegistries(
                 CodecRegistries.fromCodecs(new BigIntegerCodec()),
-                CodecRegistries.fromProviders(new JacksonCodecProvider())
+                CodecRegistries.fromProviders(
+                        new EnumCodecProvider(),
+                        new JacksonCodecProvider())
         );
     }
 

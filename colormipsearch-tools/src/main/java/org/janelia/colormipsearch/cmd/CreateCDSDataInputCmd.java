@@ -137,9 +137,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 description = "Comma-delimited list of LM slide codes or EM body ids to be excluded from the requested list")
         List<String> excludedNeurons;
 
-        @Parameter(names = {"--keep-dups"}, description = "Keep duplicates", arity = 0)
-        boolean keepDuplicates;
-
         @Parameter(names = {"--urls-relative-to"}, description = "URLs are relative to the specified component")
         int urlsRelativeTo = -1;
 
