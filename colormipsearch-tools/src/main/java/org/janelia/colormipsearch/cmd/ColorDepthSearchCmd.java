@@ -51,10 +51,10 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 description = "Specifies MIPs storage")
         StorageType mipsStorage = StorageType.DB;
 
-        @Parameter(names = {"--always-new-matches"},
+        @Parameter(names = {"--update-matches"},
                 description = "If set a new color depth search run will always create new results; " +
                         "the default behavior is to update entries that match same images", arity = 0)
-        boolean alwaysNewMatches = false;
+        boolean updateExistingMatches = false;
 
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
@@ -191,17 +191,17 @@ class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatchEntity<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            if (args.alwaysNewMatches) {
-                // always create new matches
-                return new DBNeuronMatchesWriter<>(getConfig());
-            } else {
-                // only update the scores if a match exists
+            if (args.updateExistingMatches) {
+                // if a match exists update the scoress
                 // since this writes items one at a time - partition and process partitions in parallel
                 return new PartitionedNeuronMatchesWriter<>(
                         new DBCDScoresOnlyWriter<>(getConfig()),
                         args.processingPartitionSize,
                         true
                 );
+            } else {
+                // always create new matches
+                return new DBNeuronMatchesWriter<>(getConfig());
             }
         } else {
             return new JSONNeuronMatchesWriter<>(
