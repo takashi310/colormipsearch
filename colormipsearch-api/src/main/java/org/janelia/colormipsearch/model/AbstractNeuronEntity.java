@@ -37,7 +37,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, FileData> neuronFiles = new HashMap<>();
 
-    @JsonProperty("id")
     public String getMipId() {
         return mipId;
     }

@@ -1,7 +1,7 @@
 [ {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721647627",
+    "mipId" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -32,7 +32,7 @@
   "matchingPixelsRatio" : 0.03888351,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -65,7 +65,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721647627",
+    "mipId" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -96,7 +96,7 @@
   "matchingPixelsRatio" : 0.024040014,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -129,7 +129,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721647627",
+    "mipId" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -160,7 +160,7 @@
   "matchingPixelsRatio" : 0.033235293,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -193,7 +193,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721647627",
+    "mipId" : "2943465148721647627",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507170",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -224,7 +224,7 @@
   "matchingPixelsRatio" : 0.030882353,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -257,7 +257,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721655819",
+    "mipId" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -288,7 +288,7 @@
   "matchingPixelsRatio" : 0.04030327,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -321,7 +321,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721655819",
+    "mipId" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -352,7 +352,7 @@
   "matchingPixelsRatio" : 0.0311253,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -385,7 +385,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721655819",
+    "mipId" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -416,7 +416,7 @@
   "matchingPixelsRatio" : 0.039170507,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -449,7 +449,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721623051",
+    "mipId" : "2943465148721623051",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1001453586",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -480,7 +480,7 @@
   "matchingPixelsRatio" : 0.026740948,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -513,7 +513,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721631243",
+    "mipId" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -544,7 +544,7 @@
   "matchingPixelsRatio" : 0.008540926,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -577,7 +577,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721639435",
+    "mipId" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -608,7 +608,7 @@
   "matchingPixelsRatio" : 0.006542056,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -641,7 +641,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721655819",
+    "mipId" : "2943465148721655819",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002658094",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -672,7 +672,7 @@
   "matchingPixelsRatio" : 0.024577573,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -705,7 +705,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721631243",
+    "mipId" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -736,7 +736,7 @@
   "matchingPixelsRatio" : 0.009691935,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -769,7 +769,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721639435",
+    "mipId" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -800,7 +800,7 @@
   "matchingPixelsRatio" : 0.0043613706,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -833,7 +833,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721639435",
+    "mipId" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -864,7 +864,7 @@
   "matchingPixelsRatio" : 0.007985803,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777484424085515",
+    "mipId" : "2711777484424085515",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -897,7 +897,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721631243",
+    "mipId" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -928,7 +928,7 @@
   "matchingPixelsRatio" : 0.004270463,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -961,7 +961,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721639435",
+    "mipId" : "2943465148721639435",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507159",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -992,7 +992,7 @@
   "matchingPixelsRatio" : 0.0059154094,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -1025,7 +1025,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721631243",
+    "mipId" : "2943465148721631243",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1002507131",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -1056,7 +1056,7 @@
   "matchingPixelsRatio" : 0.0031152647,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711777490170281995",
+    "mipId" : "2711777490170281995",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS01491",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -1089,7 +1089,7 @@
 }, {
   "maskImage" : {
     "class" : "org.janelia.colormipsearch.results.TestEMNeuronEntity",
-    "id" : "2943465148721623051",
+    "mipId" : "2943465148721623051",
     "libraryName" : "FlyEM_Hemibrain_v1.2.1",
     "publishedName" : "1001453586",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",
@@ -1120,7 +1120,7 @@
   "matchingPixelsRatio" : 0.0033426185,
   "image" : {
     "class" : "org.janelia.colormipsearch.results.TestLMNeuronEntity",
-    "id" : "2711776327756677131",
+    "mipId" : "2711776327756677131",
     "libraryName" : "FlyLight Split-GAL4 Drivers",
     "publishedName" : "SS33510",
     "alignmentSpace" : "JRC2018_Unisex_20x_HR",

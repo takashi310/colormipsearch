@@ -37,7 +37,7 @@ class NeuronSelectionHelper {
             filter.add(Filters.in(qualifier + "publishedName", neuronSelector.getNames()));
         }
         if (neuronSelector.hasMipIDs()) {
-            filter.add(Filters.in(qualifier + "id", neuronSelector.getMipIDs()));
+            filter.add(Filters.in(qualifier + "mipId", neuronSelector.getMipIDs()));
         }
         if (filter.isEmpty()) {
             return NO_FILTER;

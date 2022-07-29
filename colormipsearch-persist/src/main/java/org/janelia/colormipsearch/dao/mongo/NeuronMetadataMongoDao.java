@@ -37,7 +37,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         mongoCollection.createIndex(Indexes.hashed("class"));
         mongoCollection.createIndex(Indexes.hashed("libraryName"));
         mongoCollection.createIndex(Indexes.hashed("publishedName"));
-        mongoCollection.createIndex(Indexes.hashed("id"));
+        mongoCollection.createIndex(Indexes.hashed("mipId"));
     }
 
     @Override
@@ -77,8 +77,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
             selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
         }
         if (neuron.hasMipID()) {
-            selectFilters.add(MongoDaoHelper.createEqFilter("id", neuron.getMipId()));
-            updates.add(MongoDaoHelper.getFieldUpdate("id", new SetOnCreateValueHandler<>(neuron.getMipId())));
+            selectFilters.add(MongoDaoHelper.createEqFilter("mipId", neuron.getMipId()));
+            updates.add(MongoDaoHelper.getFieldUpdate("mipId", new SetOnCreateValueHandler<>(neuron.getMipId())));
         }
         selectFilters.add(MongoDaoHelper.createEqFilter(
                 "computeFiles.InputColorDepthImage",
