@@ -6,9 +6,12 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.dto.AbstractMatchedTarget;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
@@ -27,7 +30,7 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
     private T matchedImage;
     private boolean mirrored; // if true the matchedImage was mirrored
     private Map<MatchComputeFileType, FileData> matchComputeFiles = new HashMap<>();
-    private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
+    private Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
 
     public Number getSessionRefId() {
         return sessionRefId;
@@ -131,21 +134,21 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<FileType, FileData> getMatchFiles() {
+    public Map<FileType, String> getMatchFiles() {
         return matchFiles;
     }
 
-    public void setMatchFiles(Map<FileType, FileData> matchFiles) {
+    public void setMatchFiles(Map<FileType, String> matchFiles) {
         this.matchFiles = matchFiles;
     }
 
-    public FileData getMatchFileData(FileType t) {
+    public String getMatchFile(FileType t) {
         return matchFiles.get(t);
     }
 
-    public void setMatchFileData(FileType t, FileData fd) {
-        if (fd != null) {
-            matchFiles.put(t, fd);
+    public void setMatchFile(FileType t, String fn) {
+        if (StringUtils.isNotBlank(fn)) {
+            matchFiles.put(t, fn);
         } else {
             matchFiles.remove(t);
         }
@@ -177,6 +180,8 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
 
     public abstract AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> duplicate(
             MatchCopier<AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>, AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>> copier);
+
+    public abstract AbstractMatchedTarget<? extends AbstractNeuronMetadata> metadata();
 
     @Override
     public boolean equals(Object o) {

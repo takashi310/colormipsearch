@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.dto;
 
-import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
 
 /**
@@ -8,7 +7,7 @@ import org.janelia.colormipsearch.model.JsonRequired;
  *
  * @param <T>
  */
-public class CDMatchedTarget<T extends AbstractNeuronEntity> extends AbstractMatchedTarget<T> {
+public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractMatchedTarget<T> {
     private Float normalizedScore;
     private Integer matchingPixels;
     private Float matchingPixelsRatio;

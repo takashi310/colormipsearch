@@ -266,8 +266,8 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 .library("FlyEM Hemibrain")
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mask-mipSegmentation"))
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("mask-sourceMip"))
-                .fileData(FileType.ColorDepthMip, FileData.fromString("mask-cdmip"))
-                .fileData(FileType.ColorDepthMipInput, FileData.fromString("mask-cdmipInput"))
+                .fileData(FileType.ColorDepthMip, "mask-cdmip")
+                .fileData(FileType.ColorDepthMipInput, "mask-cdmipInput")
                 .get();
         LMNeuronEntity lmNeuronMetadata = new TestNeuronEntityBuilder<>(LMNeuronEntity::new)
                 .mipId("5565655454545432")
@@ -275,8 +275,8 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 .library("Split GAL4")
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("match-mipSegmentation"))
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("match-sourceMip"))
-                .fileData(FileType.ColorDepthMip, FileData.fromString("match-cdmip"))
-                .fileData(FileType.ColorDepthMipInput, FileData.fromString("match-cdmipInput"))
+                .fileData(FileType.ColorDepthMip, "match-cdmip")
+                .fileData(FileType.ColorDepthMipInput, "match-cdmipInput")
                 .get();
 
         neuronMetadataDao.save(lmNeuronMetadata);

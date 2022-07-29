@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.dto.CDMatchedTarget;
 
 public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private Float normalizedScore;
@@ -111,5 +113,19 @@ public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeu
         // apply the copier
         copier.copy((AbstractMatchEntity<AbstractNeuronEntity, AbstractNeuronEntity>) this, clone);
         return clone;
+    }
+
+    @Override
+    public CDMatchedTarget<? extends AbstractNeuronMetadata> metadata() {
+        CDMatchedTarget<AbstractNeuronMetadata> m = new CDMatchedTarget<>();
+        AbstractNeuronMetadata n = getMatchedImage().metadata();
+        m.setTargetImage(n);
+        m.setMirrored(isMirrored());
+        m.setNormalizedScore(getNormalizedScore());
+        m.setMatchingPixels(getMatchingPixels());
+        m.setMatchingPixelsRatio(getMatchingPixelsRatio());
+        m.setGradientAreaGap(getGradientAreaGap());
+        m.setMatchFiles(getMatchFiles());
+        return m;
     }
 }

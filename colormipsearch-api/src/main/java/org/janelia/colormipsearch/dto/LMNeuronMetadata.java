@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.dto;
 public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String slideCode;
     private String objective;
-    private String anatomicalArea;
     private String mountingProtocol;
     private String driver;
     private Integer channel; // 1-based channel number
@@ -22,16 +21,6 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setObjective(String objective) {
         this.objective = objective;
-    }
-
-    @Override
-    public String getAnatomicalArea() {
-        return anatomicalArea;
-    }
-
-    @Override
-    public void setAnatomicalArea(String anatomicalArea) {
-        this.anatomicalArea = anatomicalArea;
     }
 
     public String getMountingProtocol() {

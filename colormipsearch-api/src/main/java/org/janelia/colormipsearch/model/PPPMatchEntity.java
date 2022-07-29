@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
+import org.janelia.colormipsearch.dto.CDMatchedTarget;
+import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 
 public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private String sourceEmName;
@@ -105,7 +108,17 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         return clone;
     }
 
-    public void updateMatchDataFile(FileType screenshotType, String fn) {
+    @Override
+    public PPPMatchedTarget<? extends AbstractNeuronMetadata> metadata() {
+        PPPMatchedTarget<AbstractNeuronMetadata> m = new PPPMatchedTarget<>();
+        AbstractNeuronMetadata n = getMatchedImage().metadata();
+        m.setTargetImage(n);
+        m.setMirrored(isMirrored());
+        m.setRank(getRank());
+        m.setCoverageScore(getCoverageScore());
+        m.setAggregateCoverage(getAggregateCoverage());
+        m.setMatchFiles(getMatchFiles());
+        return m;
     }
 
 }

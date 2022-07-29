@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.model;
 
+import org.janelia.colormipsearch.dto.EMNeuronMetadata;
+
 public class EMNeuronEntity extends AbstractNeuronEntity {
 
     @Override
@@ -11,6 +13,16 @@ public class EMNeuronEntity extends AbstractNeuronEntity {
     public EMNeuronEntity duplicate() {
         EMNeuronEntity n = new EMNeuronEntity();
         n.copyFrom(this);
+        return n;
+    }
+
+    @Override
+    public EMNeuronMetadata metadata() {
+        EMNeuronMetadata n = new EMNeuronMetadata();
+        n.setAlignmentSpace(getAlignmentSpace());
+        n.setMipId(getMipId());
+        n.setLibraryName(getLibraryName());
+        getNeuronFiles().forEach(n::setNeuronFile);
         return n;
     }
 }

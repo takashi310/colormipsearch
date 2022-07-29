@@ -1,5 +1,8 @@
 package org.janelia.colormipsearch.model;
 
+import org.janelia.colormipsearch.dto.EMNeuronMetadata;
+import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+
 public class LMNeuronEntity extends AbstractNeuronEntity {
     // LM slide code is required for selecting the top ranked matches during gradient scoring
     private String slideCode;
@@ -25,4 +28,13 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         return n;
     }
 
+    @Override
+    public LMNeuronMetadata metadata() {
+        LMNeuronMetadata n = new LMNeuronMetadata();
+        n.setAlignmentSpace(getAlignmentSpace());
+        n.setMipId(getMipId());
+        n.setLibraryName(getLibraryName());
+        getNeuronFiles().forEach(n::setNeuronFile);
+        return n;
+    }
 }

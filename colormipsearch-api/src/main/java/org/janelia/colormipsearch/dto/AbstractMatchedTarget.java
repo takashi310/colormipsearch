@@ -6,6 +6,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -18,11 +19,11 @@ import org.janelia.colormipsearch.model.FileType;
  *
  * @param <T> target neuron type
  */
-public abstract class AbstractMatchedTarget<T extends AbstractNeuronEntity> {
+public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
 
     private T targetImage;
     private boolean mirrored;
-    private Map<FileType, FileData> matchFiles = new HashMap<>(); // match specific files
+    private final Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
 
     @JsonProperty("image")
     public T getTargetImage() {
@@ -43,26 +44,27 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronEntity> {
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<FileType, FileData> getMatchFiles() {
+    public Map<FileType, String> getMatchFiles() {
         return matchFiles;
     }
 
-    public void setMatchFiles(Map<FileType, FileData> matchFiles) {
-        this.matchFiles = matchFiles;
+    public void setMatchFiles(Map<FileType, String> matchFiles) {
+        if (matchFiles != null) {
+            this.matchFiles.putAll(matchFiles);
+        }
     }
 
-    public FileData getMatchFileData(FileType t) {
+    public String getMatchFileData(FileType t) {
         return matchFiles.get(t);
     }
 
-    public void setMatchFileData(FileType t, FileData fd) {
-        if (fd != null) {
-            matchFiles.put(t, fd);
+    public void setMatchFileData(FileType t, String fn) {
+        if (StringUtils.isNotBlank(fn)) {
+            matchFiles.put(t, fn);
         } else {
             matchFiles.remove(t);
         }
     }
-
 
     @Override
     public boolean equals(Object o) {

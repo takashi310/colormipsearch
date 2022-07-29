@@ -389,12 +389,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         // set the MIP and corresponding thumbnail URL in case they are set in the workstation.
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(urlMapping.apply(cdmip.publicImageUrl)));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
+        neuronMetadata.setNeuronFile(FileType.ColorDepthMip, urlMapping.apply(cdmip.publicImageUrl));
+        neuronMetadata.setNeuronFile(FileType.ColorDepthMipThumbnail, urlMapping.apply(cdmip.publicThumbnailUrl));
         if (cdmip.emBody != null && cdmip.emBody.files != null) {
             FileData swcData = FileData.fromString(cdmip.emBody.files.get("SkeletonSWC"));
             neuronMetadata.setComputeFileData(ComputeFileType.SWCBody, swcData);
-            neuronMetadata.setNeuronFileData(FileType.AlignedBodySWC, swcData);
+            neuronMetadata.setNeuronFile(FileType.AlignedBodySWC, swcData.getName());
         }
         neuronMetadata.setPublishedName(cdmip.emBodyName());
         return new InputCDMipNeuron<>(cdmip, neuronMetadata);
@@ -411,10 +411,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronMetadata.setSourceRefId(cdmip.sampleRef);
         // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(urlMapping.apply(cdmip.publicImageUrl)));
-        neuronMetadata.setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(urlMapping.apply(cdmip.publicThumbnailUrl)));
-        neuronMetadata.setNeuronFileData(FileType.VisuallyLosslessStack, FileData.fromString(cdmip.sample3DImageStack));
-        neuronMetadata.setNeuronFileData(FileType.SignalMipExpression, FileData.fromString(cdmip.sampleGen1Gal4ExpressionImage));
+        neuronMetadata.setNeuronFile(FileType.ColorDepthMip, urlMapping.apply(cdmip.publicImageUrl));
+        neuronMetadata.setNeuronFile(FileType.ColorDepthMipThumbnail, urlMapping.apply(cdmip.publicThumbnailUrl));
+        neuronMetadata.setNeuronFile(FileType.VisuallyLosslessStack, urlMapping.apply(cdmip.sample3DImageStack));
+        neuronMetadata.setNeuronFile(FileType.SignalMipExpression, urlMapping.apply(cdmip.sampleGen1Gal4ExpressionImage));
         neuronMetadata.setPublishedName(cdmip.lmLineName());
         neuronMetadata.setSlideCode(cdmip.lmSlideCode());
         return new InputCDMipNeuron<>(cdmip, neuronMetadata);
@@ -439,12 +439,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             //  has the internal name; we have to similarly grab _FL from EM names
 
             // remove directories and extension (which we know is ".png") from imageURL:
-            Path imagePath = Paths.get(cdmip.getNeuronMetadata().getNeuronFileName(FileType.ColorDepthMip));
+            Path imagePath = Paths.get(cdmip.getNeuronMetadata().getNeuronFile(FileType.ColorDepthMip));
             String colorDepthInputName = createColorDepthInputName(
                     Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(),
                     Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString(),
                     imagePath.getFileName().toString());
-            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMipInput, FileData.fromString(colorDepthInputName));
+            cdmip.getNeuronMetadata().setNeuronFile(FileType.ColorDepthMipInput, colorDepthInputName);
         }
         if (!cdmip.getNeuronMetadata().hasNeuronFile(FileType.ColorDepthMip)) {
             // set relative image URLs
@@ -454,8 +454,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             } else {
                 imageRelativeURL = createLMImageRelativeURL((InputCDMipNeuron<LMNeuronEntity>) cdmip);
             }
-            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMip, FileData.fromString(imageRelativeURL));
-            cdmip.getNeuronMetadata().setNeuronFileData(FileType.ColorDepthMipThumbnail, FileData.fromString(imageRelativeURL));
+            cdmip.getNeuronMetadata().setNeuronFile(FileType.ColorDepthMip, imageRelativeURL);
+            cdmip.getNeuronMetadata().setNeuronFile(FileType.ColorDepthMipThumbnail, imageRelativeURL);
         }
     }
 

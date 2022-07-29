@@ -63,10 +63,10 @@ public class MatchResultsGrouping {
                             dest.setMaskImage(src.getMaskImage());
                             dest.setMatchedImage(src.getMatchedImage());
                             // set match files
-                            dest.setMatchFileData(FileType.ColorDepthMipInput,
-                                    src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
-                            dest.setMatchFileData(FileType.ColorDepthMipMatch,
-                                    src.getMatchedImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            dest.setMatchFile(FileType.ColorDepthMipInput,
+                                    src.getMaskImage().getNeuronFile(FileType.ColorDepthMipInput));
+                            dest.setMatchFile(FileType.ColorDepthMipMatch,
+                                    src.getMatchedImage().getNeuronFile(FileType.ColorDepthMipInput));
                             // set compute match files
                             dest.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
                                     src.getMaskImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
@@ -124,10 +124,10 @@ public class MatchResultsGrouping {
                             dest.setMaskImage(src.getMatchedImage());
                             dest.setMatchedImage(src.getMaskImage());
                             // set match files
-                            dest.setMatchFileData(FileType.ColorDepthMipInput,
-                                    src.getMatchedImage().getNeuronFileData(FileType.ColorDepthMipInput));
-                            dest.setMatchFileData(FileType.ColorDepthMipMatch,
-                                    src.getMaskImage().getNeuronFileData(FileType.ColorDepthMipInput));
+                            dest.setMatchFile(FileType.ColorDepthMipInput,
+                                    src.getMatchedImage().getNeuronFile(FileType.ColorDepthMipInput));
+                            dest.setMatchFile(FileType.ColorDepthMipMatch,
+                                    src.getMaskImage().getNeuronFile(FileType.ColorDepthMipInput));
                             // set compute match files
                             dest.setMatchComputeFileData(MatchComputeFileType.MaskColorDepthImage,
                                     src.getMatchedImage().getComputeFileData(ComputeFileType.InputColorDepthImage));
@@ -175,8 +175,8 @@ public class MatchResultsGrouping {
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskGradientImage));
                         maskImage.setComputeFileData(ComputeFileType.ZGapImage,
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskZGapImage));
-                        maskImage.setNeuronFileData(FileType.ColorDepthMipInput,
-                                persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
+                        maskImage.setNeuronFile(FileType.ColorDepthMipInput,
+                                persistedMatch.getMatchFile(FileType.ColorDepthMipInput));
                         dest.setMaskImage(maskImage);
                         dest.setMatchedImage(targetImage);
                         // no reason to keep these around
@@ -203,8 +203,8 @@ public class MatchResultsGrouping {
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskGradientImage));
                         maskImage.setComputeFileData(ComputeFileType.ZGapImage,
                                 persistedMatch.getMatchComputeFileData(MatchComputeFileType.MaskZGapImage));
-                        maskImage.setNeuronFileData(FileType.ColorDepthMipInput,
-                                persistedMatch.getMatchFileData(FileType.ColorDepthMipInput));
+                        maskImage.setNeuronFile(FileType.ColorDepthMipInput,
+                                persistedMatch.getMatchFile(FileType.ColorDepthMipInput));
                         dest.setMaskImage(targetImage);
                         dest.setMatchedImage(maskImage);
                         // no reason to keep these around

@@ -390,9 +390,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
         if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
             inputPPPMatch.getPPPMatch().getSourceImageFiles()
                     .forEach((k, fn) -> {
-                        inputPPPMatch.getPPPMatch().setMatchFileData(
+                        inputPPPMatch.getPPPMatch().setMatchFile(
                                 k.getFileType(),
-                                FileData.fromString(buildImageRelativePath(inputPPPMatch, k.getFileType().getFileSuffix())));
+                                buildImageRelativePath(inputPPPMatch, k.getFileType().getFileSuffix()));
                     });
         }
         return pppMatch;

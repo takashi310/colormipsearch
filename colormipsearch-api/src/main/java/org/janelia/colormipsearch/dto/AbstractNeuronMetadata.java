@@ -1,14 +1,8 @@
 package org.janelia.colormipsearch.dto;
 
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -16,15 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.model.AbstractBaseEntity;
-import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 /**
  * This is the representation of the neuron metadata that will get uploaded to AWS
@@ -39,7 +27,7 @@ public abstract class AbstractNeuronMetadata {
     private String anatomicalArea;
     private Gender gender;
     // neuronFiles holds S3 files used by the NeuronBridge app
-    private final Map<FileType, FileData> neuronFiles = new HashMap<>();
+    private final Map<FileType, String> neuronFiles = new HashMap<>();
 
     @JsonProperty("id")
     public String getMipId() {
@@ -99,26 +87,27 @@ public abstract class AbstractNeuronMetadata {
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    Map<FileType, FileData> getNeuronFiles() {
+    Map<FileType, String> getNeuronFiles() {
         return neuronFiles;
     }
 
-    public String getNeuronFileName(FileType t) {
-        FileData f = neuronFiles.get(t);
-        return f != null ? f.getName() : null;
+    void setNeuronFiles(Map<FileType, String> neuronFiles) {
+        if (neuronFiles != null) {
+            this.neuronFiles.putAll(neuronFiles);
+        }
     }
 
     public boolean hasNeuronFile(FileType t) {
         return neuronFiles.containsKey(t);
     }
 
-    public FileData getNeuronFileData(FileType t) {
+    public String getNeuronFile(FileType t) {
         return neuronFiles.get(t);
     }
 
-    public void setNeuronFileData(FileType t, FileData fd) {
-        if (fd != null) {
-            neuronFiles.put(t, fd);
+    public void setNeuronFile(FileType t, String fn) {
+        if (StringUtils.isNotBlank(fn)) {
+            neuronFiles.put(t, fn);
         } else {
             neuronFiles.remove(t);
         }
@@ -135,7 +124,7 @@ public abstract class AbstractNeuronMetadata {
         return new EqualsBuilder()
                 .appendSuper(super.equals(o))
                 .append(mipId, that.mipId)
-                .append(getNeuronFileData(FileType.ColorDepthMipInput), that.getNeuronFileData(FileType.ColorDepthMipInput))
+                .append(getNeuronFile(FileType.ColorDepthMipInput), that.getNeuronFile(FileType.ColorDepthMipInput))
                 .isEquals();
     }
 
@@ -144,7 +133,7 @@ public abstract class AbstractNeuronMetadata {
         return new HashCodeBuilder(17, 37)
                 .appendSuper(super.hashCode())
                 .append(mipId)
-                .append(getNeuronFileData(FileType.ColorDepthMipInput))
+                .append(getNeuronFile(FileType.ColorDepthMipInput))
                 .toHashCode();
     }
 

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
@@ -35,7 +36,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
     // neuronFiles holds S3 files used by the NeuronBridge app
-    private final Map<FileType, FileData> neuronFiles = new HashMap<>();
+    private final Map<FileType, String> neuronFiles = new HashMap<>();
 
     public String getMipId() {
         return mipId;
@@ -85,9 +86,14 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     }
 
     @JsonProperty
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<ComputeFileType, FileData> getComputeFiles() {
         return computeFiles;
+    }
+
+    void setComputeFiles(Map<ComputeFileType, FileData> computeFiles) {
+        if (computeFiles != null) {
+            this.computeFiles.putAll(computeFiles);
+        }
     }
 
     public FileData getComputeFileData(ComputeFileType t) {
@@ -117,36 +123,39 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<FileType, FileData> getNeuronFiles() {
+    Map<FileType, String> getNeuronFiles() {
         return neuronFiles;
+    }
+
+    void setNeuronFiles(Map<FileType, String> neuronFiles) {
+        if (neuronFiles != null) {
+            this.neuronFiles.putAll(neuronFiles);
+        }
     }
 
     public void resetNeuronFiles(Set<FileType> ts) {
         ts.forEach(neuronFiles::remove);
     }
 
-    public String getNeuronFileName(FileType t) {
-        FileData f = neuronFiles.get(t);
-        return f != null ? f.getName() : null;
-    }
-
     public boolean hasNeuronFile(FileType t) {
         return neuronFiles.containsKey(t);
     }
 
-    public FileData getNeuronFileData(FileType t) {
+    public String getNeuronFile(FileType t) {
         return neuronFiles.get(t);
     }
 
-    public void setNeuronFileData(FileType t, FileData fd) {
-        if (fd != null) {
-            neuronFiles.put(t, fd);
+    public void setNeuronFile(FileType t, String fn) {
+        if (StringUtils.isNotBlank(fn)) {
+            neuronFiles.put(t, fn);
         } else {
             neuronFiles.remove(t);
         }
     }
 
     public abstract AbstractNeuronEntity duplicate();
+
+    public abstract AbstractNeuronMetadata metadata();
 
     @Override
     public boolean equals(Object o) {
