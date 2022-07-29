@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,7 +29,8 @@ public class JSONCDSSessionWriter implements CDSSessionWriter {
     @Override
     public Number createSession(List<DataSourceParam> masksInputs,
                                 List<DataSourceParam> targetsInputs,
-                                Map<String, Object> params) {
+                                Map<String, Object> params,
+                                Set<String> tags) {
         String masksInputValues = inputValues(masksInputs);
         String targetsInputValues = inputValues(targetsInputs);
         File outputFile;

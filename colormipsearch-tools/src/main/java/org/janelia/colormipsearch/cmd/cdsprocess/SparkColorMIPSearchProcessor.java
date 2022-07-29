@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,8 +33,9 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
     public SparkColorMIPSearchProcessor(Number cdsRunId,
                                         String appName,
                                         ColorMIPSearch colorMIPSearch,
-                                        int localProcessingPartitionSize) {
-        super(cdsRunId, colorMIPSearch, localProcessingPartitionSize);
+                                        int localProcessingPartitionSize,
+                                        Set<String> tags) {
+        super(cdsRunId, colorMIPSearch, localProcessingPartitionSize, tags);
         this.sparkContext = new JavaSparkContext(new SparkConf().setAppName(appName));
     }
 

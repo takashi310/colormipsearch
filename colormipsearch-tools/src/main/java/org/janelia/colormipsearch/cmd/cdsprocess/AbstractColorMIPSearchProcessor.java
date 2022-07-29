@@ -26,11 +26,16 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
     final Number cdsRunId;
     final ColorMIPSearch colorMIPSearch;
     final int localProcessingPartitionSize;
+    final Set<String> tags;
 
-    AbstractColorMIPSearchProcessor(Number cdsRunId, ColorMIPSearch colorMIPSearch, int localProcessingPartitionSize) {
+    AbstractColorMIPSearchProcessor(Number cdsRunId,
+                                    ColorMIPSearch colorMIPSearch,
+                                    int localProcessingPartitionSize,
+                                    Set<String> tags) {
         this.cdsRunId = cdsRunId;
         this.colorMIPSearch = colorMIPSearch;
         this.localProcessingPartitionSize = localProcessingPartitionSize > 0 ? localProcessingPartitionSize : 1;
+        this.tags = tags;
     }
 
     <N extends AbstractNeuronEntity> Map<ComputeFileType, Supplier<ImageArray<?>>> getVariantImagesSuppliers(Set<ComputeFileType> variantTypes,
@@ -68,6 +73,7 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
             result.setMatchingPixelsRatio(pixelMatchScore.getNormalizedScore());
             result.setMirrored(pixelMatchScore.isMirrored());
             result.setNormalizedScore(pixelMatchScore.getNormalizedScore());
+            result.addAllTags(tags);
         } catch (Throwable e) {
             LOG.warn("Error comparing mask {} with {}", maskImage, targetImage, e);
             result.setErrors(e.getMessage());

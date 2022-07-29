@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd.cdsprocess;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -39,8 +40,9 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
     public LocalColorMIPSearchProcessor(Number cdsRunId,
                                         ColorMIPSearch colorMIPSearch,
                                         int localProcessingPartitionSize,
-                                        Executor cdsExecutor) {
-        super(cdsRunId,colorMIPSearch, localProcessingPartitionSize);
+                                        Executor cdsExecutor,
+                                        Set<String> tags) {
+        super(cdsRunId,colorMIPSearch, localProcessingPartitionSize, tags);
         this.cdsExecutor = cdsExecutor;
     }
 

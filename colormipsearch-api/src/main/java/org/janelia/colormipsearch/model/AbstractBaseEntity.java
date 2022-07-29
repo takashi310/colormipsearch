@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.model.annotations.EntityId;
@@ -51,6 +52,12 @@ public class AbstractBaseEntity implements BaseEntity {
 
     public void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+
+    public void addAllTags(Set<String> tags) {
+        if (tags != null) {
+            tags.stream().filter(StringUtils::isNotBlank).map(String::trim).forEach(this.tags::add);
+        }
     }
 
     @Override

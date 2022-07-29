@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
@@ -76,10 +78,20 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--targets-length"}, description = "Input image file(s) length")
         int targetsLength;
 
+        @Parameter(names = {"--run-tag"}, description = "Associate this tag with the run")
+        String runTag;
+
         ColorDepthSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 
+        boolean hasTag() {
+            return StringUtils.isNotBlank(runTag);
+        }
+
+        String getTag() {
+            return runTag.trim();
+        }
     }
 
     private final ColorDepthSearchArgs args;
@@ -141,24 +153,28 @@ class ColorDepthSearchCmd extends AbstractCmd {
             LOG.info("Nothing to do for {} masks and {} targets", maskMips.size(), targetMips.size());
             return;
         }
+        Set<String> runTags = args.hasTag() ? Collections.singleton(args.getTag()) : Collections.emptySet();
         // save CDS parameters
         Number cdsRunId = getCDSSessionWriter().createSession(
                 args.masksInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
                 args.targetsInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
-                colorMIPSearch.getCDSParameters());
+                colorMIPSearch.getCDSParameters(),
+                runTags);
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
                     cdsRunId,
                     args.appName,
                     colorMIPSearch,
-                    args.processingPartitionSize
+                    args.processingPartitionSize,
+                    runTags
             );
         } else {
             colorMIPSearchProcessor = new LocalColorMIPSearchProcessor<>(
                     cdsRunId,
                     colorMIPSearch,
                     args.processingPartitionSize,
-                    CmdUtils.createCmdExecutor(args.commonArgs)
+                    CmdUtils.createCmdExecutor(args.commonArgs),
+                    runTags
             );
         }
         try {
