@@ -39,6 +39,9 @@ class NeuronSelectionHelper {
         if (neuronSelector.hasMipIDs()) {
             filter.add(Filters.in(qualifier + "mipId", neuronSelector.getMipIDs()));
         }
+        if (neuronSelector.hasTags()) {
+            filter.add(Filters.in(qualifier + "tags", neuronSelector.getTags()));
+        }
         if (filter.isEmpty()) {
             return NO_FILTER;
         } else if (filter.size() == 1) {
@@ -53,8 +56,9 @@ class NeuronSelectionHelper {
         List<Bson> filter = new ArrayList<>();
         if (neuronsMatchFilter != null) {
             addNeuronsMatchScoresFilters(neuronsMatchFilter.getScoresFilter(), filter);
-            addNeuronRefIdsFilter("maskImageRefId", neuronsMatchFilter.getMaskEntityIds(), filter);
-            addNeuronRefIdsFilter("matchedImageRefId", neuronsMatchFilter.getTargetEntityIds(), filter);
+            addInFilter("maskImageRefId", neuronsMatchFilter.getMaskEntityIds(), filter);
+            addInFilter("matchedImageRefId", neuronsMatchFilter.getTargetEntityIds(), filter);
+            addInFilter("tags", neuronsMatchFilter.getTags(), filter);
         }
         return MongoDaoHelper.createBsonFilterCriteria(filter);
     }
@@ -69,9 +73,9 @@ class NeuronSelectionHelper {
         neuronsMatchScoresFilter.getScoreSelectors().forEach(s -> filter.add(Filters.gte(s.getFieldName(), s.getMinScore())));
     }
 
-    private static void addNeuronRefIdsFilter(String refName, Collection<Number> refIdsCollection, List<Bson> filter) {
-        if (CollectionUtils.isNotEmpty(refIdsCollection)) {
-            filter.add(MongoDaoHelper.createInFilter(refName, refIdsCollection));
+    private static <E> void addInFilter(String attrName, Collection<E> values, List<Bson> filter) {
+        if (CollectionUtils.isNotEmpty(values)) {
+            filter.add(MongoDaoHelper.createInFilter(attrName, values));
         }
     }
 }
