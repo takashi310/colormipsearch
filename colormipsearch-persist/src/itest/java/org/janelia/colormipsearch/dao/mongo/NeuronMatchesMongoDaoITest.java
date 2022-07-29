@@ -261,7 +261,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
 
     private Pair<EMNeuronEntity, LMNeuronEntity> createMatchingImages(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao) {
         EMNeuronEntity emNeuronMetadata = new TestNeuronEntityBuilder<>(EMNeuronEntity::new)
-                .id("123232232423232")
+                .mipId("123232232423232")
                 .publishedName("23232345")
                 .library("FlyEM Hemibrain")
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mask-mipSegmentation"))
@@ -270,7 +270,7 @@ public class NeuronMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 .fileData(FileType.ColorDepthMipInput, FileData.fromString("mask-cdmipInput"))
                 .get();
         LMNeuronEntity lmNeuronMetadata = new TestNeuronEntityBuilder<>(LMNeuronEntity::new)
-                .id("5565655454545432")
+                .mipId("5565655454545432")
                 .publishedName("S1234")
                 .library("Split GAL4")
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("match-mipSegmentation"))

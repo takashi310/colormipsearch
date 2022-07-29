@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +14,15 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.ReturnDocument;
-import com.mongodb.client.model.Updates;
 
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.AbstractDao;
 import org.janelia.colormipsearch.dao.Dao;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
-import org.janelia.colormipsearch.datarequests.PagedRequest;
-import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.BaseEntity;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
@@ -141,7 +139,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
         List<Bson> fieldUpdates = fieldsToUpdate.entrySet().stream()
                 .map(e -> MongoDaoHelper.getFieldUpdate(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
-        return Updates.combine(fieldUpdates);
+        return MongoDaoHelper.combineUpdates(fieldUpdates);
     }
 
     private Bson getIdMatchFilter(Number id) {
@@ -152,5 +150,4 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     public void delete(T entity) {
         mongoCollection.deleteOne(getIdMatchFilter(entity.getEntityId()));
     }
-
 }

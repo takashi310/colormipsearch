@@ -21,11 +21,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
+import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
-import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
-import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,4 +199,7 @@ class MongoDaoHelper {
         }
     }
 
+    static Bson combineUpdates(List<Bson> updateList) {
+        return Updates.combine(updateList);
+    }
 }

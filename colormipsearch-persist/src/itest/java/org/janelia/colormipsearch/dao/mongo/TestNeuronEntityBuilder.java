@@ -24,7 +24,7 @@ class TestNeuronEntityBuilder<N extends AbstractNeuronEntity> {
         return this;
     }
 
-    public TestNeuronEntityBuilder<N> id(String id) {
+    public TestNeuronEntityBuilder<N> mipId(String id) {
         n.setMipId(id);
         return this;
     }

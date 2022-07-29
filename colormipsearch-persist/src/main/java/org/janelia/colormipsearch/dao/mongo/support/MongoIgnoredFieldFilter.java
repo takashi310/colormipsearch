@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
 public class MongoIgnoredFieldFilter extends SimpleBeanPropertyFilter {
+
+    static final String FILTER_NAME = "MongoIgnored";
+
     @Override
     protected boolean include(BeanPropertyWriter writer) {
         return super.include(writer);

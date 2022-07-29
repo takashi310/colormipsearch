@@ -9,7 +9,7 @@ public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N
      * Create or update neuron. If a neuron exists, update it otherwise create it.
      * @param neuron to create or update.
      */
-    void createOrUpdate(N neuron);
+    N createOrUpdate(N neuron);
 
     /**
      * Search neurons that match the provided selection criteria.

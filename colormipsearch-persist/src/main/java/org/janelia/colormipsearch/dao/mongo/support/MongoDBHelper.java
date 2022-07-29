@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
@@ -18,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,6 +104,19 @@ public class MongoDBHelper {
 
     public static MongoDatabase createMongoDatabase(MongoClient mongoClient, String mongoDatabaseName) {
         return mongoClient.getDatabase(mongoDatabaseName);
+    }
+
+    static ObjectMapper createMongoObjectMapper() {
+        SimpleFilterProvider filterProvider = new SimpleFilterProvider();
+        filterProvider.addFilter(MongoIgnoredFieldFilter.FILTER_NAME, new MongoIgnoredFieldFilter());
+        return new ObjectMapper()
+                .registerModule(new MongoModule())
+                .addMixIn(AbstractMatchEntity.class, AbstractMatchEntityMixIn.class)
+                .setFilterProvider(filterProvider)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                ;
     }
 
 }

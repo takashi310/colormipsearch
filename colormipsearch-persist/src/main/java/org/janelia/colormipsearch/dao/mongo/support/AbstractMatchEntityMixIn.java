@@ -12,6 +12,6 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
  * @param <M> mask image type
  * @param <T> target image type
  */
-@JsonFilter("useRefIdFilter")
+@JsonFilter(MongoIgnoredFieldFilter.FILTER_NAME)
 public abstract class AbstractMatchEntityMixIn<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
 }

@@ -4,24 +4,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReturnDocument;
 
 import org.bson.conversions.Bson;
-import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
+import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
+import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
-import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 
@@ -41,56 +41,71 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
     }
 
     @Override
-    public void createOrUpdate(N neuron) {
+    public N createOrUpdate(N neuron) {
+        FindOneAndReplaceOptions updateOptions = new FindOneAndReplaceOptions();
+        updateOptions.upsert(true);
+        updateOptions.returnDocument(ReturnDocument.AFTER);
+        N toUpdate;
+        if (neuron.hasEntityId()) {
+            toUpdate = neuron;
+        } else if (isIdentifiable(neuron)) {
+            toUpdate = minimalCreateOrUpdate(neuron);
+        } else {
+            save(neuron);
+            return neuron;
+        }
+        return mongoCollection.findOneAndReplace(
+                MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
+                neuron,
+                updateOptions
+        );
+    }
+
+    private N minimalCreateOrUpdate(N neuron) {
         FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
+
         List<Bson> selectFilters = new ArrayList<>();
-        Stream<EntityFieldNameValueHandler<?>> createSetters;
+        List<Bson> updates = new ArrayList<>();
+
         if (!neuron.hasEntityId()) {
-            // set entity ID just in case we need to insert it
-            neuron.setEntityId(idGenerator.generateId());
-            neuron.setCreatedDate(new Date());
-            createSetters = Stream.of(
-                    new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(neuron.getEntityId())),
-                    new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(neuron.getCreatedDate()))
-            );
             selectFilters.add(MongoDaoHelper.createFilterByClass(neuron.getClass()));
+            updates.add(MongoDaoHelper.getFieldUpdate("_id", new SetOnCreateValueHandler<>(idGenerator.generateId())));
+            updates.add(MongoDaoHelper.getFieldUpdate("createdDate", new SetOnCreateValueHandler<>(new Date())));
         } else {
-            createSetters = Stream.of();
             selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
         }
         if (neuron.hasMipID()) {
             selectFilters.add(MongoDaoHelper.createEqFilter("id", neuron.getMipId()));
+            updates.add(MongoDaoHelper.getFieldUpdate("id", new SetOnCreateValueHandler<>(neuron.getMipId())));
         }
-        if (neuron.hasComputeFile(ComputeFileType.InputColorDepthImage)) {
-            selectFilters.add(MongoDaoHelper.createEqFilter(
-                    "computeFiles.InputColorDepthImage",
-                    neuron.getComputeFileName(ComputeFileType.InputColorDepthImage))
-            );
-        }
-        if (neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage)) {
-            selectFilters.add(MongoDaoHelper.createEqFilter(
-                    "computeFiles.SourceColorDepthImage",
-                    neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
-            );
-        }
+        selectFilters.add(MongoDaoHelper.createEqFilter(
+                "computeFiles.InputColorDepthImage",
+                neuron.getComputeFileName(ComputeFileType.InputColorDepthImage))
+        );
+        selectFilters.add(MongoDaoHelper.createEqFilter(
+                "computeFiles.SourceColorDepthImage",
+                neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
+        );
+        updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.InputColorDepthImage",
+                new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
+        updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
+                new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
-        mongoCollection.findOneAndUpdate(
+        N updatedNeuron = mongoCollection.findOneAndUpdate(
                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
-                getUpdates(
-                        Stream.concat(
-                                        createSetters,
-                                        neuron.updatableFields().stream()
-                                                .map(p -> new EntityFieldNameValueHandler<>(p.getLeft(), new SetFieldValueHandler<>(p.getRight())))
-                                )
-                                .collect(Collectors.toMap(
-                                        EntityFieldNameValueHandler::getFieldName,
-                                        EntityFieldNameValueHandler::getValueHandler))
-                ),
+                MongoDaoHelper.combineUpdates(updates),
                 updateOptions
         );
+        neuron.setEntityId(updatedNeuron.getEntityId());
+        neuron.setCreatedDate(updatedNeuron.getCreatedDate());
+        return neuron;
+    }
 
+    private boolean isIdentifiable(N neuron) {
+        return neuron.hasComputeFile(ComputeFileType.InputColorDepthImage)
+            && neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage);
     }
 
     @Override

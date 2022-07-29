@@ -22,17 +22,8 @@ public class JacksonCodecProvider implements CodecProvider {
 
     private final ObjectMapper objectMapper;
 
-    JacksonCodecProvider() {
-        SimpleFilterProvider filterProvider = new SimpleFilterProvider();
-        filterProvider.addFilter("useRefIdFilter", new MongoIgnoredFieldFilter());
-        this.objectMapper = new ObjectMapper()
-                .registerModule(new MongoModule())
-                .addMixIn(AbstractMatchEntity.class, AbstractMatchEntityMixIn.class)
-                .setFilterProvider(filterProvider)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        ;
+    JacksonCodecProvider(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
     @Override

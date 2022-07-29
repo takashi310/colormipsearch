@@ -1,12 +1,8 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -16,9 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
@@ -94,7 +87,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    Map<ComputeFileType, FileData> getComputeFiles() {
+    public Map<ComputeFileType, FileData> getComputeFiles() {
         return computeFiles;
     }
 
@@ -125,7 +118,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     @JsonProperty("files")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    Map<FileType, FileData> getNeuronFiles() {
+    public Map<FileType, FileData> getNeuronFiles() {
         return neuronFiles;
     }
 
@@ -155,13 +148,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     }
 
     public abstract AbstractNeuronEntity duplicate();
-
-    public List<Pair<String, ?>> updatableFields() {
-        return Arrays.asList(
-                ImmutablePair.of("libraryName", getLibraryName()),
-                ImmutablePair.of("computeFiles", getComputeFiles())
-        );
-    }
 
     @Override
     public boolean equals(Object o) {
