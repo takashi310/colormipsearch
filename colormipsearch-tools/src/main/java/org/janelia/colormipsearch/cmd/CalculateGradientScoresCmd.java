@@ -26,6 +26,7 @@ import org.janelia.colormipsearch.cds.CombinedMatchScore;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
+import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
@@ -173,7 +174,10 @@ class CalculateGradientScoresCmd extends AbstractCmd {
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesReader<CDMatchEntity<M, T>> getCDMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBNeuronMatchesReader<>(getConfig());
+            DaosProvider daosProvider = getDaosProvider();
+            return new DBNeuronMatchesReader<>(
+                    daosProvider.getNeuronMetadataDao(),
+                    daosProvider.getCDMatchesDao());
         } else {
             return new JSONNeuronMatchesReader<>(mapper);
         }
@@ -182,7 +186,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatchEntity<M, T>> getCDMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             return new PartitionedNeuronMatchesWriter<>(
-                    new DBNeuronMatchesWriter<>(getConfig()),
+                    new DBNeuronMatchesWriter<>(getDaosProvider().getCDMatchesDao()),
                     args.processingPartitionSize,
                     true
             );

@@ -8,7 +8,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
+import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
+@PersistenceInfo(storeName ="pppMatches")
 public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private String sourceEmName;
     private String sourceLmName;

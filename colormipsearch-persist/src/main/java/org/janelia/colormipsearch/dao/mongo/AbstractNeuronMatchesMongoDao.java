@@ -32,11 +32,11 @@ import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class NeuronMatchesMongoDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity,
-                                                           ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
-                                                                                              implements NeuronMatchesDao<R> {
+abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity,
+                                                                          ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
+                                                                                                           implements NeuronMatchesDao<R> {
 
-    public NeuronMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+    protected AbstractNeuronMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);
         createDocumentIndexes();
     }

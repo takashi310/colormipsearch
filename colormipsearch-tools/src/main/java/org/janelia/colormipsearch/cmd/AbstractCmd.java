@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.config.Config;
 import org.janelia.colormipsearch.config.ConfigProvider;
+import org.janelia.colormipsearch.dao.DaosProvider;
 
 abstract class AbstractCmd {
     static final long _1M = 1024 * 1024;
@@ -30,5 +31,9 @@ abstract class AbstractCmd {
                 .fromDefaultResources()
                 .fromFile(getArgs().getConfigFileName())
                 .get();
+    }
+
+    DaosProvider getDaosProvider() {
+        return DaosProvider.getInstance(getConfig());
     }
 }

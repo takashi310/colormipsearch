@@ -14,8 +14,8 @@ import org.janelia.colormipsearch.model.CDSSessionEntity;
 public class DBCDSSessionWriter implements CDSSessionWriter {
     private final MatchSessionDao<CDSSessionEntity> matchSessionDao;
 
-    public DBCDSSessionWriter(Config config) {
-        this.matchSessionDao = DaosProvider.getInstance(config).getMatchParametersDao();
+    public DBCDSSessionWriter(MatchSessionDao<CDSSessionEntity> matchSessionDao) {
+        this.matchSessionDao = matchSessionDao;
     }
 
     @Override

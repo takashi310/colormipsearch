@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 public class ConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigProvider.class);
-    private static final String DEFAULT_CONFIG_RESOURCES = "/nbdb.properties";
+    private static final ConfigProvider INSTANCE = new ConfigProvider(new ConfigImpl());
 
     public static ConfigProvider getInstance() {
-        return new ConfigProvider(new ConfigImpl());
+        return INSTANCE;
     }
 
     private final ConfigImpl config;

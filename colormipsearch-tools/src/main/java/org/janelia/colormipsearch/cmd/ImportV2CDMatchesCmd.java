@@ -103,7 +103,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             // always create new matches
-            return new DBNeuronMatchesWriter<>(getConfig());
+            return new DBNeuronMatchesWriter<>(getDaosProvider().getCDMatchesDao());
         } else {
             throw new IllegalArgumentException("This class should only be used for importing intermediated results into the database");
         }

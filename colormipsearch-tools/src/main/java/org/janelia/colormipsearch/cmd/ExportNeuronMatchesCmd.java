@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.dao.DaosProvider;
+import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
@@ -185,10 +187,14 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 });
     }
 
+    @SuppressWarnings("unchecked")
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
     NeuronMatchesReader<R> getMatchesReader() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBNeuronMatchesReader<>(getConfig());
+            DaosProvider daosProvider = getDaosProvider();
+            return new DBNeuronMatchesReader<>(
+                    daosProvider.getNeuronMetadataDao(),
+                    (NeuronMatchesDao<R>) args.matchResultTypes.getNeuronMatchesDao().apply(daosProvider));
         } else {
             return new JSONNeuronMatchesReader<>(mapper);
         }

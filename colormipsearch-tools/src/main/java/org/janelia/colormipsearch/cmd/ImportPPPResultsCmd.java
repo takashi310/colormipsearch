@@ -286,7 +286,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<PPPMatchEntity<M, T>>
     getPPPMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBNeuronMatchesWriter<>(getConfig());
+            return new DBNeuronMatchesWriter<>(getDaosProvider().getPPPMatchesDao());
         } else {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),

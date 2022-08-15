@@ -22,6 +22,7 @@ import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
+import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
@@ -188,7 +189,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
     private CDMIPsReader getCDMipsReader() {
         if (args.mipsStorage == StorageType.DB) {
-            return new DBCDMIPsReader(getConfig());
+            return new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
         } else {
             return new JSONCDMIPsReader(mapper);
         }
@@ -196,7 +197,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
     private CDSSessionWriter getCDSSessionWriter() {
         if (args.mipsStorage == StorageType.DB) {
-            return new DBCDSSessionWriter(getConfig());
+            return new DBCDSSessionWriter(getDaosProvider().getMatchParametersDao());
         } else {
             return new JSONCDSSessionWriter(
                     args.getOutputDir(),
@@ -207,17 +208,18 @@ class ColorDepthSearchCmd extends AbstractCmd {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatchEntity<M, T>>
     getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
+            DaosProvider daosProvider = getDaosProvider();
             if (args.updateExistingMatches) {
                 // if a match exists update the scoress
                 // since this writes items one at a time - partition and process partitions in parallel
                 return new PartitionedNeuronMatchesWriter<>(
-                        new DBCDScoresOnlyWriter<>(getConfig()),
+                        new DBCDScoresOnlyWriter<>(daosProvider.getCDMatchesDao()),
                         args.processingPartitionSize,
                         true
                 );
             } else {
                 // always create new matches
-                return new DBNeuronMatchesWriter<>(getConfig());
+                return new DBNeuronMatchesWriter<>(daosProvider.getCDMatchesDao());
             }
         } else {
             return new JSONNeuronMatchesWriter<>(

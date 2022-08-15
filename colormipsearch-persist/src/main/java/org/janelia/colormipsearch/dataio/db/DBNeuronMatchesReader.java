@@ -27,9 +27,10 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final NeuronMatchesDao<R> neuronMatchesDao;
 
-    public DBNeuronMatchesReader(Config config) {
-        this.neuronMetadataDao = DaosProvider.getInstance(config).getNeuronMetadataDao();
-        this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
+    public DBNeuronMatchesReader(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
+                                 NeuronMatchesDao<R> neuronMatchesDao) {
+        this.neuronMetadataDao = neuronMetadataDao;
+        this.neuronMatchesDao = neuronMatchesDao;
     }
 
     @Override

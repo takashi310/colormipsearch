@@ -4,13 +4,15 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.dao.mongo.CDMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.MatchSessionMongoDao;
-import org.janelia.colormipsearch.dao.mongo.NeuronMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
+import org.janelia.colormipsearch.dao.mongo.PPPMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
-import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.AbstractSessionEntity;
+import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 
 public class DaosProvider {
 
@@ -51,9 +53,14 @@ public class DaosProvider {
         return new MatchSessionMongoDao<>(mongoDatabase, idGenerator);
     }
 
-    public <R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
-    getNeuronMatchesDao() {
-        return new NeuronMatchesMongoDao<>(mongoDatabase, idGenerator);
+    public <R extends CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
+    getCDMatchesDao() {
+        return new CDMatchesMongoDao<>(mongoDatabase, idGenerator);
+    }
+
+    public <R extends PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
+    getPPPMatchesDao() {
+        return new PPPMatchesMongoDao<>(mongoDatabase, idGenerator);
     }
 
     public <N extends AbstractNeuronEntity> NeuronMetadataDao<N>

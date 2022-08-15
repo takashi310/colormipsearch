@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.dataio.db;
 
-import org.janelia.colormipsearch.config.Config;
-import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -10,8 +8,8 @@ public class DBCDMIPsWriter implements CDMIPsWriter {
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
 
-    public DBCDMIPsWriter(Config config) {
-        this.neuronMetadataDao = DaosProvider.getInstance(config).getNeuronMetadataDao();
+    public DBCDMIPsWriter(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao) {
+        this.neuronMetadataDao = neuronMetadataDao;
     }
 
     @Override

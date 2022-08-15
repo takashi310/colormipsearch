@@ -352,7 +352,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
     private CDMIPsWriter getCDSInputWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBCDMIPsWriter(getConfig());
+            return new DBCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
         } else {
             return new JSONCDMIPsWriter(args.getOutputDir(),
                     args.outputFileName,

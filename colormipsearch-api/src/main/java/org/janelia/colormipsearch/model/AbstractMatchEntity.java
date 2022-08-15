@@ -20,7 +20,6 @@ import org.janelia.colormipsearch.model.annotations.DoNotPersist;
  * @param <M> mask neuron type
  * @param <T> target neuron type
  */
-@PersistenceInfo(storeName ="neuronMatches")
 public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractBaseEntity {
 
     private Number sessionRefId; // session reference - identifies the a CDS or a PPP run

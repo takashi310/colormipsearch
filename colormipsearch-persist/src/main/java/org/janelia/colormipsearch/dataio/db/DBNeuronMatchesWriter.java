@@ -20,8 +20,8 @@ public class DBNeuronMatchesWriter<R extends AbstractMatchEntity<? extends Abstr
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
 
-    public DBNeuronMatchesWriter(Config config) {
-        this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
+    public DBNeuronMatchesWriter(NeuronMatchesDao<R> neuronMatchesDao) {
+        this.neuronMatchesDao = neuronMatchesDao;
     }
 
     @Override

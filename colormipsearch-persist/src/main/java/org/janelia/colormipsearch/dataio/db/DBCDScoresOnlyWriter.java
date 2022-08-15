@@ -36,8 +36,8 @@ public class DBCDScoresOnlyWriter<R extends CDMatchEntity<? extends AbstractNeur
                     m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
             );
 
-    public DBCDScoresOnlyWriter(Config config) {
-        this.neuronMatchesDao = DaosProvider.getInstance(config).getNeuronMatchesDao();
+    public DBCDScoresOnlyWriter(NeuronMatchesDao<R> neuronMatchesDao) {
+        this.neuronMatchesDao = neuronMatchesDao;
     }
 
     public void write(List<R> matches) {
