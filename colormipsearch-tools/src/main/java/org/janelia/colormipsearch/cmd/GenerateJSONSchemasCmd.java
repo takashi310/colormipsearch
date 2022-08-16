@@ -24,7 +24,7 @@ import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
-import org.janelia.colormipsearch.results.ResultMatches;
+import org.janelia.colormipsearch.results.GroupedMatchedEntities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,17 +115,17 @@ class GenerateJSONSchemasCmd extends AbstractCmd {
             SchemaGenerator generator = new SchemaGenerator(config);
 
             JsonNode cdsMatchesSchema =
-                    generator.generateSchema(new TypeReference<ResultMatches<
-                            EMNeuronEntity,
-                            LMNeuronEntity,
-                            CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
+                    generator.generateSchema(new TypeReference<GroupedMatchedEntities<
+                                                EMNeuronEntity,
+                                                LMNeuronEntity,
+                                                CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
             JsonOutputHelper.writeJSONNode(cdsMatchesSchema, args.getOutputDir(args.schemasOutput, CDS_RESULTS_SCHEMA), writer);
 
             JsonNode pppMatchesSchema =
-                    generator.generateSchema(new TypeReference<ResultMatches<
-                            EMNeuronEntity,
-                            LMNeuronEntity,
-                            PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
+                    generator.generateSchema(new TypeReference<GroupedMatchedEntities<
+                                                EMNeuronEntity,
+                                                LMNeuronEntity,
+                                                PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>>>(){}.getType());
 
             JsonOutputHelper.writeJSONNode(pppMatchesSchema, args.getOutputDir(args.schemasOutput, PPP_RESULTS_SCHEMA), writer);
         } catch (Exception e) {
@@ -135,11 +135,11 @@ class GenerateJSONSchemasCmd extends AbstractCmd {
 
     private ConfigFunction<TypeScope, String> getListTypeResultsHandler(String cdsResultsMessage, String pppResultsMessage) {
         return scope -> {
-            if (scope.getType().getErasedType() == ResultMatches.class || scope.getType().isInstanceOf(ResultMatches.class)) {
-                if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == CDMatchEntity.class) {
+            if (scope.getType().getErasedType() == GroupedMatchedEntities.class || scope.getType().isInstanceOf(GroupedMatchedEntities.class)) {
+                if (scope.getTypeParameterFor(GroupedMatchedEntities.class, 2).getErasedType() == CDMatchEntity.class) {
                     // ResultMatches<EM, LM, Match<EM, LM>>
                     return cdsResultsMessage;
-                } else if (scope.getTypeParameterFor(ResultMatches.class, 2).getErasedType() == PPPMatchEntity.class) {
+                } else if (scope.getTypeParameterFor(GroupedMatchedEntities.class, 2).getErasedType() == PPPMatchEntity.class) {
                     // Results<List<PPPMatch>>
                     return pppResultsMessage;
                 }

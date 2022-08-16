@@ -13,7 +13,7 @@ import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.MatchEntitiesGrouping;
-import org.janelia.colormipsearch.results.ResultMatches;
+import org.janelia.colormipsearch.results.GroupedMatchedEntities;
 
 public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
         implements NeuronMatchesWriter<R> {
@@ -58,7 +58,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
                 resultsGrouping::apply
         );
         Comparator<R> ordering = matchOrdering::compare;
-        List<ResultMatches<M, T, R>> resultMatches = MatchEntitiesGrouping.groupByMaskFields(
+        List<GroupedMatchedEntities<M, T, R>> resultMatches = MatchEntitiesGrouping.groupByMaskFields(
                 matches,
                 grouping,
                 ordering
@@ -72,7 +72,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
                 resultsGrouping::apply
         );
         Comparator<AbstractMatchEntity<T, M>> ordering = matchOrdering::compare;
-        List<ResultMatches<T, M, AbstractMatchEntity<T, M>>> resultMatches = MatchEntitiesGrouping.groupByTargetFields(
+        List<GroupedMatchedEntities<T, M, AbstractMatchEntity<T, M>>> resultMatches = MatchEntitiesGrouping.groupByTargetFields(
                 matches,
                 grouping,
                 ordering

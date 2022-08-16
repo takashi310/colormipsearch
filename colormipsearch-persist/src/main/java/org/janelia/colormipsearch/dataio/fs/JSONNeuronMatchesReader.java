@@ -18,7 +18,7 @@ import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.MatchEntitiesGrouping;
-import org.janelia.colormipsearch.results.ResultMatches;
+import org.janelia.colormipsearch.results.GroupedMatchedEntities;
 
 public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesReader<R> {
     private final ObjectMapper mapper;
@@ -58,9 +58,9 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                 .collect(Collectors.toList());
     }
 
-    private <M1 extends AbstractNeuronEntity, T1 extends AbstractNeuronEntity, R1 extends AbstractMatchEntity<M1, T1>> ResultMatches<M1, T1, R1> readMatchesResults(File f) {
+    private <M1 extends AbstractNeuronEntity, T1 extends AbstractNeuronEntity, R1 extends AbstractMatchEntity<M1, T1>> GroupedMatchedEntities<M1, T1, R1> readMatchesResults(File f) {
         try {
-            return mapper.readValue(f, new TypeReference<ResultMatches<M1, T1, R1>>() {});
+            return mapper.readValue(f, new TypeReference<GroupedMatchedEntities<M1, T1, R1>>() {});
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading CDSMatches from JSON file:" + f, e);
         }

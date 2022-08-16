@@ -5,10 +5,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * @param <T> element types to be grouped
- * @param <K> key type derived from the element type
+ * @param <K> key type
+ * @param <T> type of grouped elements
  */
-public abstract class AbstractGroupedItems<T, K> {
+public abstract class AbstractGroupedItems<K, T> {
 
     private K key;
     private List<T> items;

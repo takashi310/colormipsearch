@@ -57,11 +57,11 @@ public class MatchEntitiesGroupingTest {
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void checkGroupedResults(
-            List<ResultMatches<M, T, CDMatchEntity<M, T>>> cdsResultsList,
+            List<GroupedMatchedEntities<M, T, CDMatchEntity<M, T>>> cdsResultsList,
             Class<M> expectedMaskClass,
             Class<T> expectedTargetClass) {
         assertTrue(cdsResultsList.size() > 0);
-        for (ResultMatches<M, T, CDMatchEntity<M, T>> cdsResults : cdsResultsList) {
+        for (GroupedMatchedEntities<M, T, CDMatchEntity<M, T>> cdsResults : cdsResultsList) {
             assertEquals(expectedMaskClass, cdsResults.getKey().getClass());
             for (CDMatchEntity<M, T> CDMatch : cdsResults.getItems()) {
                 assertNull(CDMatch.getMaskImage());
@@ -76,7 +76,7 @@ public class MatchEntitiesGroupingTest {
     @Test
     public void expandResultsGroupedByMask() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
-        List<ResultMatches<TestEMNeuronEntity, TestLMNeuronEntity, CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByMaskFields(
+        List<GroupedMatchedEntities<TestEMNeuronEntity, TestLMNeuronEntity, CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByMaskFields(
                 testMatches,
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId
@@ -101,7 +101,7 @@ public class MatchEntitiesGroupingTest {
     @Test
     public void expandResultsGroupedByTarget() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
-        List<ResultMatches<TestLMNeuronEntity, TestEMNeuronEntity, CDMatchEntity<TestLMNeuronEntity, TestEMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByTargetFields(
+        List<GroupedMatchedEntities<TestLMNeuronEntity, TestEMNeuronEntity, CDMatchEntity<TestLMNeuronEntity, TestEMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByTargetFields(
                 testMatches,
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId

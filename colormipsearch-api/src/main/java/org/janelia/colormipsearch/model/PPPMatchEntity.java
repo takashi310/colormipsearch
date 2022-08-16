@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
