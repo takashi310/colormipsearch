@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fileutils.JSONFileGroupedItemsWriter;
+import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
@@ -29,14 +29,14 @@ public class PerTargetCDMatchesExporter implements DataExporter {
     private final ScoresFilter scoresFilter;
     private final Path outputDir;
     private final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
-    private final JSONFileGroupedItemsWriter resultMatchesWriter;
+    private final ItemsWriterToJSONFile resultMatchesWriter;
     private final int processingPartitionSize;
 
     public PerTargetCDMatchesExporter(DataSourceParam dataSourceParam,
                                       ScoresFilter scoresFilter,
                                       Path outputDir,
                                       NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
-                                      JSONFileGroupedItemsWriter resultMatchesWriter,
+                                      ItemsWriterToJSONFile resultMatchesWriter,
                                       int processingPartitionSize) {
         this.dataSourceParam = dataSourceParam;
         this.scoresFilter = scoresFilter;

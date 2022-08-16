@@ -12,13 +12,21 @@ import org.janelia.colormipsearch.results.AbstractGroupedItems;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JSONFileGroupedItemsWriter {
-    private static final Logger LOG = LoggerFactory.getLogger(JSONFileGroupedItemsWriter.class);
+public class ItemsWriterToJSONFile {
+    private static final Logger LOG = LoggerFactory.getLogger(ItemsWriterToJSONFile.class);
 
     private final ObjectWriter jsonWriter;
 
-    public JSONFileGroupedItemsWriter(ObjectWriter jsonWriter) {
+    public ItemsWriterToJSONFile(ObjectWriter jsonWriter) {
         this.jsonWriter = jsonWriter;
+    }
+
+    public <M> void writeItems(List<M> itemsList, Path outputDir, String filename) {
+        FSUtils.createDirs(outputDir);
+        JsonOutputHelper.writeToJSONFile(
+                itemsList,
+                FSUtils.getOutputPath(outputDir, new File(filename + ".json")),
+                jsonWriter);
     }
 
     public <M, R> void writeGroupedItemsList(List<? extends AbstractGroupedItems<M, R>> groupedItemsList,
@@ -38,7 +46,7 @@ public class JSONFileGroupedItemsWriter {
         String filename = filenameSelector.apply(groupedItems.getKey());
         JsonOutputHelper.writeToJSONFile(
                 groupedItems,
-                FSUtils.getOutputPath(outputDir, new File(filename) + ".json"),
+                FSUtils.getOutputPath(outputDir, new File(filename + ".json")),
                 jsonWriter);
     }
 }

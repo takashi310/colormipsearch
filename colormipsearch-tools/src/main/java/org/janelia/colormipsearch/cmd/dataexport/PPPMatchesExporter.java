@@ -8,16 +8,14 @@ import java.util.function.Function;
 
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fileutils.JSONFileGroupedItemsWriter;
+import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
@@ -31,14 +29,14 @@ public class PPPMatchesExporter implements DataExporter {
     private final ScoresFilter scoresFilter;
     private final Path outputDir;
     private final NeuronMatchesReader<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
-    private final JSONFileGroupedItemsWriter resultMatchesWriter;
+    private final ItemsWriterToJSONFile resultMatchesWriter;
     private final int processingPartitionSize;
 
     public PPPMatchesExporter(DataSourceParam dataSourceParam,
                               ScoresFilter scoresFilter,
                               Path outputDir,
                               NeuronMatchesReader<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
-                              JSONFileGroupedItemsWriter resultMatchesWriter,
+                              ItemsWriterToJSONFile resultMatchesWriter,
                               int processingPartitionSize) {
         this.dataSourceParam = dataSourceParam;
         this.scoresFilter = scoresFilter;

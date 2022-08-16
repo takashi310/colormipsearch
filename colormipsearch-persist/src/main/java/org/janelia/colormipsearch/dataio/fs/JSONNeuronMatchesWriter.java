@@ -9,7 +9,7 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.dataio.fileutils.JSONFileGroupedItemsWriter;
+import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -19,7 +19,7 @@ import org.janelia.colormipsearch.results.GroupedMatchedEntities;
 public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
         implements NeuronMatchesWriter<R> {
 
-    private final JSONFileGroupedItemsWriter resultMatchesWriter;
+    private final ItemsWriterToJSONFile resultMatchesWriter;
     // results grouping is used both for grouping the matches and for getting the filename
     private final Function<AbstractNeuronEntity, String> resultsGrouping;
     private final Comparator<AbstractMatchEntity<?, ?>> matchOrdering;
@@ -31,7 +31,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
                                    Comparator<AbstractMatchEntity<?, ?>> matchOrdering,
                                    Path perMasksOutputDir,
                                    Path perMatchesOutputDir) {
-        this.resultMatchesWriter = new JSONFileGroupedItemsWriter(jsonWriter);
+        this.resultMatchesWriter = new ItemsWriterToJSONFile(jsonWriter);
         this.resultsGrouping = resultsGrouping;
         this.matchOrdering = matchOrdering;
         this.perMatchesOutputDir = perMatchesOutputDir;

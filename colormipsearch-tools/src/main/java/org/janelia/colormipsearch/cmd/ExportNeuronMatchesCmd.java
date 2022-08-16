@@ -12,13 +12,16 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
+import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fileutils.JSONFileGroupedItemsWriter;
+import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
+import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +110,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private ScoresFilter getCDScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
-        neuronsMatchScoresFilter.setEntityType(args.exportedResultType.getTypeName());
+        neuronsMatchScoresFilter.setEntityType(CDMatchEntity.class.getName());
         if (args.pctPositivePixels > 0) {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
@@ -119,13 +122,17 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private ScoresFilter getPPPScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
-        neuronsMatchScoresFilter.setEntityType(args.exportedResultType.getTypeName());
+        neuronsMatchScoresFilter.setEntityType(PPPMatchEntity.class.getName());
         neuronsMatchScoresFilter.addSScore("rank", 0);
         return neuronsMatchScoresFilter;
     }
 
     private DataExporter getDataExporter() {
         DaosProvider daosProvider = getDaosProvider();
+        ItemsWriterToJSONFile itemsWriter = new ItemsWriterToJSONFile(
+                args.commonArgs.noPrettyPrint
+                        ? mapper.writer()
+                        : mapper.writerWithDefaultPrettyPrinter());
         switch (args.exportedResultType) {
             case PER_MASK_CDS_MATCHES:
                 return new PerMaskCDMatchesExporter(
@@ -136,7 +143,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao()
                         ),
-                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        itemsWriter,
                         args.processingPartitionSize
                 );
             case PER_TARGET_CDS_MATCHES:
@@ -148,7 +155,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao()
                         ),
-                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        itemsWriter,
                         args.processingPartitionSize
                 );
             case PPP_MATCHES:
@@ -160,7 +167,25 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getPPPMatchesDao()
                         ),
-                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        itemsWriter,
+                        args.processingPartitionSize
+                );
+            case EM_MIPS:
+                return new MIPsExporter(
+                        null,
+                        ListArg.asDataSourceParam(args.masksLibrary),
+                        args.getPerMaskDir(),
+                        daosProvider.getNeuronMetadataDao(),
+                        itemsWriter,
+                        args.processingPartitionSize
+                );
+            case LM_MIPS:
+                return new MIPsExporter(
+                        null,
+                        ListArg.asDataSourceParam(args.targetsLibrary),
+                        args.getPerTargetDir(),
+                        daosProvider.getNeuronMetadataDao(),
+                        itemsWriter,
                         args.processingPartitionSize
                 );
             default:

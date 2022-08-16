@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class NeuronSelector {
     private String neuronClassname; // full class name
+    private String alignmentSpace; // alignment space
     private String libraryName; // library name
     private final List<String> names = new ArrayList<>(); // matching published names
     private final List<String> mipIDs = new ArrayList<>(); // matching MIP IDs
@@ -27,6 +28,19 @@ public class NeuronSelector {
 
     public boolean hasNeuronClassname() {
         return StringUtils.isNotBlank(neuronClassname);
+    }
+
+    public String getAlignmentSpace() {
+        return alignmentSpace;
+    }
+
+    public NeuronSelector setAlignmentSpace(String alignmentSpace) {
+        this.alignmentSpace = alignmentSpace;
+        return this;
+    }
+
+    public boolean hasAlignmentSpace() {
+        return StringUtils.isNotBlank(alignmentSpace);
     }
 
     public String getLibraryName() {
