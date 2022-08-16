@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
+import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

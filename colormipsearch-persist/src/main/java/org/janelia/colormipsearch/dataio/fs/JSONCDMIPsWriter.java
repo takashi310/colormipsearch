@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
+import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

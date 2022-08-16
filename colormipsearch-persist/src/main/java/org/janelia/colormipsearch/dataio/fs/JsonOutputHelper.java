@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

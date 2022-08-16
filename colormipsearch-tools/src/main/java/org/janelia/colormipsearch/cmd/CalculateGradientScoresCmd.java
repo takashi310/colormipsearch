@@ -130,11 +130,11 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         // partition matches and process all partitions concurrently
-        ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(partititionItems -> {
+        ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize).entrySet().stream().parallel()
+                .forEach(indexedPartition -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     // process each item from the current partition sequentially 
-                    partititionItems.forEach(maskIdToProcess -> {
+                    indexedPartition.getValue().forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         // calculate the grad scores
@@ -145,8 +145,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 executor);
                         updateCDMatches(cdMatchesWithGradScores);
                     });
-                    LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                            partititionItems.size(),
+                    LOG.info("Finished partition {} of {} items in {}s - memory usage {}M out of {}M",
+                            indexedPartition.getKey(),
+                            indexedPartition.getValue().size(),
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));

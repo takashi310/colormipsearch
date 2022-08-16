@@ -1,5 +1,16 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
+import org.janelia.colormipsearch.dataio.DataSourceParam;
+
 public interface DataExporter {
-    void export(String source, long offset, int size);
+    /**
+     * Get the data source to be exported.
+     * @return
+     */
+    DataSourceParam getDataSource();
+
+    /**
+     * Invoke data export operation.
+     */
+    void runExport();
 }

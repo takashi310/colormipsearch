@@ -73,17 +73,18 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
-        ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).stream().parallel()
-                .forEach(partititionItems -> {
+        ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).entrySet().stream().parallel()
+                .forEach(indexedPartititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     // process each item from the current partition sequentially
-                    partititionItems.forEach(maskIdToProcess -> {
+                    indexedPartititionItems.getValue().forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         cdMatchesWriter.write(cdMatchesForMask);
                     });
-                    LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                            partititionItems.size(),
+                    LOG.info("Finished batch {} of {} in {}s - memory usage {}M out of {}M",
+                            indexedPartititionItems.getKey(),
+                            indexedPartititionItems.getValue().size(),
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));

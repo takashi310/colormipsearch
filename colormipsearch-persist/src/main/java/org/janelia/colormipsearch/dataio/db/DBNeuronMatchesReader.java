@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dataio.db;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.config.Config;
@@ -26,11 +27,19 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final NeuronMatchesDao<R> neuronMatchesDao;
+    private final Function<AbstractNeuronEntity, String> neuronLocationNameSelector;
 
     public DBNeuronMatchesReader(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                  NeuronMatchesDao<R> neuronMatchesDao) {
+        this(neuronMetadataDao, neuronMatchesDao, AbstractNeuronEntity::getMipId);
+    }
+
+    public DBNeuronMatchesReader(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
+                                 NeuronMatchesDao<R> neuronMatchesDao,
+                                 Function<AbstractNeuronEntity, String> neuronLocationNameSelector) {
         this.neuronMetadataDao = neuronMetadataDao;
         this.neuronMatchesDao = neuronMatchesDao;
+        this.neuronLocationNameSelector = neuronLocationNameSelector;
     }
 
     @Override
@@ -41,7 +50,7 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
-                        ).getResultList().stream().map(AbstractNeuronEntity::getMipId))
+                        ).getResultList().stream().map(neuronLocationNameSelector))
                 .distinct()
                 .collect(Collectors.toList());
     }

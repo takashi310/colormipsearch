@@ -133,10 +133,10 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
         Path outputDir = args.getOutputDir();
         long startTime = System.currentTimeMillis();
         int nFiles = filesToProcess.size();
-        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .forEach(fileList -> {
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).entrySet().stream().parallel()
+                .forEach(indexedPartition -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
-                    fileList.forEach(fn -> {
+                    indexedPartition.getValue().forEach(fn -> {
                         File f = new File(fn);
                         CDSMatches cdsMatches = calculateGradientAreaScoreForResultsFile(
                                 negativeMatchCDSArgorithmProvider,
@@ -160,7 +160,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
                                 args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter());
                     });
                     LOG.info("Finished a batch of {} in {}s - memory usage {}M out of {}M",
-                            fileList.size(),
+                            indexedPartition.getValue().size(),
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));

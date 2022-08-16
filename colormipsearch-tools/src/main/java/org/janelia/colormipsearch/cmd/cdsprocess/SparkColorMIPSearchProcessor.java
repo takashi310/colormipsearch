@@ -50,10 +50,10 @@ public class SparkColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
         JavaRDD<T> targetMIPsRDD = sparkContext.parallelize(targetMIPs);
         LOG.info("Created {} partitions for {} targets", targetMIPsRDD.getNumPartitions(), nTargets);
 
-        List<CDMatchEntity<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).stream().parallel()
-                .map(queryMIPsPartition -> targetMIPsRDD.mapPartitions(targetMIPsItr -> {
+        List<CDMatchEntity<M, T>> cdsResults = ItemsHandling.partitionCollection(queryMIPs, localProcessingPartitionSize).entrySet().stream().parallel()
+                .map(indexedQueryMIPsPartition -> targetMIPsRDD.mapPartitions(targetMIPsItr -> {
                     List<T> localTargetMIPs = Lists.newArrayList(targetMIPsItr);
-                    return queryMIPsPartition.stream()
+                    return indexedQueryMIPsPartition.getValue().stream()
                             .map(queryMIP -> NeuronMIPUtils.loadComputeFile(queryMIP, ComputeFileType.InputColorDepthImage))
                             .filter(queryImage -> queryImage != null && queryImage.hasImageArray())
                             .flatMap(queryImage -> {

@@ -398,11 +398,11 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
      */
     private <T> Stream<T> retrieveDataStream(Supplier<WebTarget> endpointSupplier, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
         if (chunkSize > 0) {
-            return ItemsHandling.partitionCollection(names, chunkSize).stream().parallel()
-                    .flatMap(namesSubset -> {
-                        LOG.info("Retrieve {} items", namesSubset.size());
+            return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream().parallel()
+                    .flatMap(indexedNamesSubset -> {
+                        LOG.info("Retrieve {} items", indexedNamesSubset.getValue().size());
                         return retrieveChunk(
-                                endpointSupplier.get().queryParam("name", namesSubset.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                                endpointSupplier.get().queryParam("name", indexedNamesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 t).stream();
                     });
         } else {

@@ -204,10 +204,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
         }
         int nFiles = filesToProcess.size();
         Path outputDir = args.getOutputDir();
-        List<CompletableFuture<List<String>>> updateGradientComputations = ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .map(fileList -> CompletableFuture.supplyAsync(() -> {
+        List<CompletableFuture<List<String>>> updateGradientComputations = ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).entrySet().stream().parallel()
+                .map(indexedFilesPartition -> CompletableFuture.supplyAsync(() -> {
                     long startProcessingPartition = System.currentTimeMillis();
-                    for (String fn : fileList) {
+                    for (String fn : indexedFilesPartition.getValue()) {
                         updateGradientScoresForFile(
                                 fn,
                                 mipId -> {
@@ -221,10 +221,10 @@ class UpdateGradientScoresFromReverseSearchResultsCmd extends AbstractCmd {
                                 outputDir);
                     }
                     LOG.info("Processed {} files in {}s - memory usage {}M",
-                            fileList.size(),
+                            indexedFilesPartition.getValue().size(),
                             (System.currentTimeMillis() - startProcessingPartition) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1);
-                    return fileList;
+                    return indexedFilesPartition.getValue();
                 }, executor))
                 .collect(Collectors.toList())
         ;

@@ -112,8 +112,8 @@ public class CopyPPPMatchesCmd extends AbstractCmd {
             filesToProcess = Collections.emptyList();
         }
         Path outputDir = args.getOutputDir();
-        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).stream().parallel()
-                .flatMap(fileList -> fileList.stream()
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize).entrySet().stream().parallel()
+                .flatMap(indexedPartition -> indexedPartition.getValue().stream()
                         .map(f -> PPPUtils.readEmPPPMatchesFromJSONFile(new File(f), mapper))
                         .filter(Results::hasResults)
                         .map(res -> {

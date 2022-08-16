@@ -1,8 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -13,20 +11,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
+import org.janelia.colormipsearch.cmd.dataexport.PPPMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
 import org.janelia.colormipsearch.dao.DaosProvider;
-import org.janelia.colormipsearch.dao.NeuronMatchesDao;
-import org.janelia.colormipsearch.dataio.DataSourceParam;
-import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesReader;
-import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.fileutils.JSONFileGroupedItemsWriter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
-import org.janelia.colormipsearch.datarequests.SortCriteria;
-import org.janelia.colormipsearch.datarequests.SortDirection;
-import org.janelia.colormipsearch.model.AbstractMatchEntity;
-import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,15 +39,10 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         Double pctPositivePixels = 0.0;
 
-        @Parameter(names = {"--with-grad-scores"},
-                description = "Select matches with gradient scores (automatically should pick only CDS matches)",
+        @Parameter(names = {"--ignore-grad-scores"},
+                description = "Ignore gradient scores when selecting color depth matches",
                 arity = 0)
-        boolean withGradScores = false;
-
-        @Parameter(names = {"--with-rank"},
-                description = "Select matches with rank (automatically should pick only PPP matches)",
-                arity = 0)
-        boolean withRank = false;
+        boolean ignoreGradScores = false;
 
         @Parameter(names = {"-m", "--masks"}, description = "Masks library", converter = ListArg.ListArgConverter.class)
         ListArg masksLibrary;
@@ -113,105 +100,72 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         exportNeuronMatches();
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
-    void exportNeuronMatches() {
-        NeuronMatchesReader<R> neuronMatchesReader = getMatchesReader();
-        NeuronMatchesWriter<R> perMaskNeuronMatchesWriter = getJSONMatchesWriter(args.getPerMaskDir(), null);
-        NeuronMatchesWriter<R> perTargetNeuronMatchesWriter = getJSONMatchesWriter(null, args.getPerTargetDir());
-
-        ScoresFilter neuronsMatchScoresFilter = getScoresFilter();
-
-        if (perMaskNeuronMatchesWriter != null)
-            exportNeuronMatchesPerMask(neuronsMatchScoresFilter, neuronMatchesReader, perMaskNeuronMatchesWriter);
-        if (perTargetNeuronMatchesWriter != null)
-            exportNeuronMatchesPerTarget(neuronsMatchScoresFilter, neuronMatchesReader, perTargetNeuronMatchesWriter);
+    private void exportNeuronMatches() {
+        DataExporter dataExporter = getDataExporter();
+        dataExporter.runExport();
     }
 
-    private ScoresFilter getScoresFilter() {
+    private ScoresFilter getCDScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
         neuronsMatchScoresFilter.setEntityType(args.exportedResultType.getTypeName());
         if (args.pctPositivePixels > 0) {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
-        if (args.withGradScores) {
+        if (!args.ignoreGradScores) {
             neuronsMatchScoresFilter.addSScore("gradientAreaGap", 0);
-        }
-        if (args.withRank) {
-            neuronsMatchScoresFilter.addSScore("rank", 0);
         }
         return neuronsMatchScoresFilter;
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
-    void exportNeuronMatchesPerMask(ScoresFilter neuronsMatchesScoresFilter,
-                                    NeuronMatchesReader<R> neuronMatchesReader,
-                                    NeuronMatchesWriter<R> perMaskNeuronMatchesWriter) {
-
-        List<String> masks = neuronMatchesReader.listMatchesLocations(
-                Collections.singletonList(new DataSourceParam(args.masksLibrary.input, args.masksLibrary.offset, args.masksLibrary.length)));
-        ItemsHandling.partitionCollection(masks, args.processingPartitionSize).stream().parallel()
-                .forEach(partititionItems -> {
-                    partititionItems.forEach(maskId -> {
-                        LOG.info("Read color depth matches for {}", maskId);
-                        List<R> matchesForMask = neuronMatchesReader.readMatchesForMasks(
-                                null,
-                                Collections.singletonList(maskId),
-                                neuronsMatchesScoresFilter,
-                                Collections.singletonList(
-                                        new SortCriteria("normalizedScore", SortDirection.DESC)
-                                ));
-                        perMaskNeuronMatchesWriter.write(matchesForMask);
-                    });
-                });
+    private ScoresFilter getPPPScoresFilter() {
+        ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
+        neuronsMatchScoresFilter.setEntityType(args.exportedResultType.getTypeName());
+        neuronsMatchScoresFilter.addSScore("rank", 0);
+        return neuronsMatchScoresFilter;
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
-    void exportNeuronMatchesPerTarget(ScoresFilter neuronsMatchesScoresFilter,
-                                      NeuronMatchesReader<R> neuronMatchesReader,
-                                      NeuronMatchesWriter<R> perTargetNeuronMatchesWriter) {
-        List<String> targets = neuronMatchesReader.listMatchesLocations(
-                Collections.singletonList(new DataSourceParam(args.targetsLibrary.input, 0, -1)));
-        ItemsHandling.partitionCollection(targets, args.processingPartitionSize).stream().parallel()
-                .forEach(partititionItems -> {
-                    partititionItems.forEach(targetId -> {
-                        LOG.info("Read color depth matches for {}", targetId);
-                        List<R> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
-                                null,
-                                Collections.singletonList(targetId),
-                                neuronsMatchesScoresFilter,
-                                Collections.singletonList(
-                                        new SortCriteria("normalizedScore", SortDirection.DESC)
-                                ));
-                        perTargetNeuronMatchesWriter.write(matchesForTarget);
-                    });
-                });
-    }
-
-    @SuppressWarnings("unchecked")
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
-    NeuronMatchesReader<R> getMatchesReader() {
-        if (args.commonArgs.resultsStorage == StorageType.DB) {
-            DaosProvider daosProvider = getDaosProvider();
-            return new DBNeuronMatchesReader<>(
-                    daosProvider.getNeuronMetadataDao(),
-                    (NeuronMatchesDao<R>) args.exportedResultType.getNeuronMatchesDao().apply(daosProvider));
-        } else {
-            return new JSONNeuronMatchesReader<>(mapper);
+    private DataExporter getDataExporter() {
+        DaosProvider daosProvider = getDaosProvider();
+        switch (args.exportedResultType) {
+            case PER_MASK_CDS_MATCHES:
+                return new PerMaskCDMatchesExporter(
+                        ListArg.asDataSourceParam(args.masksLibrary),
+                        getCDScoresFilter(),
+                        args.getPerMaskDir(),
+                        new DBNeuronMatchesReader<>(
+                                daosProvider.getNeuronMetadataDao(),
+                                daosProvider.getCDMatchesDao()
+                        ),
+                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        args.processingPartitionSize
+                );
+            case PER_TARGET_CDS_MATCHES:
+                return new PerTargetCDMatchesExporter(
+                        ListArg.asDataSourceParam(args.masksLibrary),
+                        getCDScoresFilter(),
+                        args.getPerMaskDir(),
+                        new DBNeuronMatchesReader<>(
+                                daosProvider.getNeuronMetadataDao(),
+                                daosProvider.getCDMatchesDao()
+                        ),
+                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        args.processingPartitionSize
+                );
+            case PPP_MATCHES:
+                return new PPPMatchesExporter(
+                        ListArg.asDataSourceParam(args.masksLibrary),
+                        getPPPScoresFilter(),
+                        args.getPerMaskDir(),
+                        new DBNeuronMatchesReader<>(
+                                daosProvider.getNeuronMetadataDao(),
+                                daosProvider.getPPPMatchesDao()
+                        ),
+                        new JSONFileGroupedItemsWriter(args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter()),
+                        args.processingPartitionSize
+                );
+            default:
+                throw new IllegalArgumentException("Export result types must be specified");
         }
-    }
-
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>>
-    NeuronMatchesWriter<R> getJSONMatchesWriter(Path perMaskDir, Path perTargetDir) {
-        if (perMaskDir != null || perTargetDir != null) {
-            return new JSONNeuronMatchesWriter<>(
-                    args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.exportedResultType.getMatchGrouping(),
-                    args.exportedResultType.getMatchOrdering(),
-                    perMaskDir,
-                    perTargetDir
-            );
-        } else
-            return null;
     }
 
 }

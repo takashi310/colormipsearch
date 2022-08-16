@@ -1,11 +1,15 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
-public class LMMIPsExporter implements DataExporter {
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 
-    public LMMIPsExporter() {
+public class LMMIPsExporter implements DataExporter {
+    @Override
+    public DataSourceParam getDataSource() {
+        return null; // TODO
     }
 
-    public void export(String source, long offset, int size) {
+    @Override
+    public void runExport() {
         // TODO
     }
 }

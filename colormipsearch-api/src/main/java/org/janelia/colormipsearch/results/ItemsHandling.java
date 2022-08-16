@@ -69,11 +69,11 @@ public class ItemsHandling {
         }
     }
 
-    public static <T> Collection<List<T>> partitionCollection(Collection<T> l, int partitionSizeArg) {
+    public static <T> Map<Integer, List<T>> partitionCollection(Collection<T> l, int partitionSizeArg) {
         final AtomicInteger index = new AtomicInteger();
         int partitionSize = partitionSizeArg > 0 ? partitionSizeArg : 1;
         return l.stream()
-                .collect(Collectors.groupingBy(docId -> index.getAndIncrement() / partitionSize)).values();
+                .collect(Collectors.groupingBy(docId -> index.getAndIncrement() / partitionSize));
     }
 
     public static <T> void processPartitionStream(Stream<T> stream,

@@ -109,12 +109,12 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
             return Collections.emptyList();
         }
         Set<String> requiredVariantTypes = queryColorDepthSearch.getRequiredTargetVariantTypes();
-        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = ItemsHandling.partitionCollection(targetMIPs, localProcessingPartitionSize).stream()
-                .map(targetMIPsPartition -> {
+        List<CompletableFuture<List<ColorMIPSearchResult>>> cdsComputations = ItemsHandling.partitionCollection(targetMIPs, localProcessingPartitionSize).entrySet().stream()
+                .map(indexedTargetMIPsPartition -> {
                     Supplier<List<ColorMIPSearchResult>> searchResultSupplier = () -> {
-                        LOG.debug("Compare query# {} - {} with {} out of {} targets", mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size());
+                        LOG.debug("Compare query# {} - {} with {} out of {} targets", mIndex, queryMIP, indexedTargetMIPsPartition.getValue().size(), targetMIPs.size());
                         long startTime = System.currentTimeMillis();
-                        List<ColorMIPSearchResult> srs = targetMIPsPartition.stream()
+                        List<ColorMIPSearchResult> srs = indexedTargetMIPsPartition.getValue().stream()
                                 .map(CachedMIPsUtils::loadMIP)
                                 .filter(mip -> mip != null)
                                 .map(targetImage -> {
@@ -165,7 +165,7 @@ public class LocalColorMIPSearch implements ColorMIPSearchDriver {
                                 .filter(ColorMIPSearchResult::isMatch)
                                 .collect(Collectors.toList());
                         LOG.info("Found {} matches comparing mask# {} - {} with {} out of {} libraries in {}ms",
-                                srs.size(), mIndex, queryMIP, targetMIPsPartition.size(), targetMIPs.size(), System.currentTimeMillis() - startTime);
+                                srs.size(), mIndex, queryMIP, indexedTargetMIPsPartition.getValue().size(), targetMIPs.size(), System.currentTimeMillis() - startTime);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);

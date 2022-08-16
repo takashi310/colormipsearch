@@ -1,4 +1,4 @@
-package org.janelia.colormipsearch.dataio.fs;
+package org.janelia.colormipsearch.dataio.fileutils;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
 /**
  * FileSystem utils for creating directories, listing files, etc.
  */
-class FSUtils {
+public class FSUtils {
     private static final Logger LOG = LoggerFactory.getLogger(FSUtils.class);
 
-    static void createDirs(@Nullable Path... dirs) {
+    public static void createDirs(@Nullable Path... dirs) {
         for (Path dir : dirs) {
             if (dir != null) {
                 try {
@@ -36,7 +36,7 @@ class FSUtils {
     }
 
     @Nullable
-    static Path getOutputPath(Path outputDir, File inputFile) {
+    public static Path getOutputPath(Path outputDir, File inputFile) {
         if (outputDir == null) {
             return null;
         } else {
@@ -45,7 +45,7 @@ class FSUtils {
     }
 
     @Nullable
-    static Path getOutputPath(Path outputDir, String fname) {
+    public static Path getOutputPath(Path outputDir, String fname) {
         if (outputDir == null) {
             return null;
         } else {
@@ -53,7 +53,7 @@ class FSUtils {
         }
     }
 
-    static List<String> getFiles(String location, int offsetParam, int lengthParam) {
+    public static List<String> getFiles(String location, int offsetParam, int lengthParam) {
         try {
             Path pathLocation = Paths.get(location);
             if (Files.isRegularFile(pathLocation)) {
