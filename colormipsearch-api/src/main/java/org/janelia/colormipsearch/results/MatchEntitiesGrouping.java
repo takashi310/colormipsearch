@@ -12,7 +12,7 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.MatchComputeFileType;
 
-public class MatchResultsGrouping {
+public class MatchEntitiesGrouping {
 
     /**
      * The method performs a simple non-optimized (in the sense that it does not remove redundant data) grouping

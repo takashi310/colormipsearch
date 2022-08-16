@@ -43,7 +43,6 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
     }
 
     @JsonProperty("files")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, String> getMatchFiles() {
         return matchFiles;
     }

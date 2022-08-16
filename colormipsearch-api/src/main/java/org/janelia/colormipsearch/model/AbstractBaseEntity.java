@@ -14,9 +14,8 @@ import org.janelia.colormipsearch.model.annotations.EntityId;
 /**
  * Common attributes for the database persisted data.
  */
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class AbstractBaseEntity implements BaseEntity {
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public abstract class AbstractBaseEntity implements BaseEntity {
 
     @EntityId
     private Number entityId;
@@ -47,7 +46,6 @@ public class AbstractBaseEntity implements BaseEntity {
         this.createdDate = createdDate;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Set<String> getTags() {
         return tags;
     }
@@ -56,9 +54,14 @@ public class AbstractBaseEntity implements BaseEntity {
         this.tags = tags;
     }
 
+    public void addTag(String tag) {
+        if (StringUtils.isNotBlank(tag))
+            this.tags.add(tag.trim());
+    }
+
     public void addAllTags(Set<String> tags) {
         if (tags != null) {
-            tags.stream().filter(StringUtils::isNotBlank).map(String::trim).forEach(this.tags::add);
+            tags.forEach(this::addTag);
         }
     }
 

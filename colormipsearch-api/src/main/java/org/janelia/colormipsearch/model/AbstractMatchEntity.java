@@ -106,7 +106,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
         this.mirrored = mirrored;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<MatchComputeFileType, FileData> getMatchComputeFiles() {
         return matchComputeFiles;
     }
@@ -132,7 +131,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
     }
 
     @JsonProperty("files")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<FileType, String> getMatchFiles() {
         return matchFiles;
     }

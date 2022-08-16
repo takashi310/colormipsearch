@@ -28,6 +28,42 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         this.sourceEmName = sourceEmName;
     }
 
+    /*
+     * Since PPP matches will not store any references to the corresponding neuron images,
+     * we persist the mask and the matched image as embedded documents using "sourceImage" and "targetImage" attributes
+     * respectively.
+     */
+
+    /**
+     * @return embedded document for mask image
+     */
+    public M getSourceImage() {
+        return getMaskImage();
+    }
+
+    /**
+     * Set mask image from the persisted embedded document.
+     * @param sourceImage
+     */
+    public void setSourceImage(M sourceImage) {
+        setMaskImage(sourceImage);
+    }
+
+    /**
+     * @return embedded docuent for matched image
+     */
+    public T getTargetImage() {
+        return getMatchedImage();
+    }
+
+    /**
+     * Set matched image from the corresponding embedded document
+     * @param targetImage
+     */
+    public void setTargetImage(T targetImage) {
+        setMatchedImage(targetImage);
+    }
+
     public String getSourceLmName() {
         return sourceLmName;
     }

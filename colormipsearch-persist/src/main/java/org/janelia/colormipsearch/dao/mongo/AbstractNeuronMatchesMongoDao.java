@@ -147,7 +147,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 getEntityType());
     }
 
-    private List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
+    protected List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
         List<Bson> pipeline = new ArrayList<>();
 
         pipeline.add(Aggregates.match(matchFilter));

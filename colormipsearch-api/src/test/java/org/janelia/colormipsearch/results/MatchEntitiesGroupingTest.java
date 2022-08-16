@@ -23,14 +23,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class MatchResultsGroupingTest {
+public class MatchEntitiesGroupingTest {
     private static final String TESTCDSMATCHES_FILE= "src/test/resources/colormipsearch/results/testcdsmatches.json";
 
     @Test
     public void groupByMask() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
         checkGroupedResults(
-                MatchResultsGrouping.groupByMaskFields(
+                MatchEntitiesGrouping.groupByMaskFields(
                         testMatches,
                         Collections.singletonList(
                                 AbstractNeuronEntity::getMipId
@@ -45,7 +45,7 @@ public class MatchResultsGroupingTest {
     public void groupByMatched() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
         checkGroupedResults(
-                MatchResultsGrouping.groupByTargetFields(
+                MatchEntitiesGrouping.groupByTargetFields(
                         testMatches,
                         Collections.singletonList(
                                 AbstractNeuronEntity::getMipId
@@ -76,7 +76,7 @@ public class MatchResultsGroupingTest {
     @Test
     public void expandResultsGroupedByMask() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
-        List<ResultMatches<TestEMNeuronEntity, TestLMNeuronEntity, CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> groupedResults = MatchResultsGrouping.groupByMaskFields(
+        List<ResultMatches<TestEMNeuronEntity, TestLMNeuronEntity, CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByMaskFields(
                 testMatches,
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId
@@ -91,7 +91,7 @@ public class MatchResultsGroupingTest {
                         .collect(Collectors.toList());
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expandedResults =
                 groupedResults.stream()
-                        .map(MatchResultsGrouping::expandResultsByMask)
+                        .map(MatchEntitiesGrouping::expandResultsByMask)
                         .flatMap(Collection::stream)
                         .sorted(ordering)
                         .collect(Collectors.toList());
@@ -101,7 +101,7 @@ public class MatchResultsGroupingTest {
     @Test
     public void expandResultsGroupedByTarget() {
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> testMatches = readTestMatches();
-        List<ResultMatches<TestLMNeuronEntity, TestEMNeuronEntity, CDMatchEntity<TestLMNeuronEntity, TestEMNeuronEntity>>> groupedResults = MatchResultsGrouping.groupByTargetFields(
+        List<ResultMatches<TestLMNeuronEntity, TestEMNeuronEntity, CDMatchEntity<TestLMNeuronEntity, TestEMNeuronEntity>>> groupedResults = MatchEntitiesGrouping.groupByTargetFields(
                 testMatches,
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId
@@ -116,7 +116,7 @@ public class MatchResultsGroupingTest {
                         .collect(Collectors.toList());
         List<AbstractMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expandedResults =
                 groupedResults.stream()
-                        .map(MatchResultsGrouping::expandResultsByTarget)
+                        .map(MatchEntitiesGrouping::expandResultsByTarget)
                         .flatMap(Collection::stream)
                         .sorted(ordering)
                         .collect(Collectors.toList());

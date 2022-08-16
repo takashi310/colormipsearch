@@ -12,7 +12,11 @@ public class MongoIgnoredFieldFilter extends SimpleBeanPropertyFilter {
 
     @Override
     protected boolean include(BeanPropertyWriter writer) {
-        return super.include(writer);
+        if (writer.getAnnotation(DoNotPersist.class) != null) {
+            return false;
+        } else {
+            return super.include(writer);
+        }
     }
 
     @Override
@@ -20,7 +24,7 @@ public class MongoIgnoredFieldFilter extends SimpleBeanPropertyFilter {
         if (writer.getAnnotation(DoNotPersist.class) != null) {
             return false;
         } else {
-            return true;
+            return super.include(writer);
         }
     }
 }

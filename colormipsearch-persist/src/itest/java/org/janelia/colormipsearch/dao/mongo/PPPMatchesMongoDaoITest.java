@@ -15,6 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 public class PPPMatchesMongoDaoITest extends AbstractMongoDaoITest {
 
@@ -50,8 +51,10 @@ public class PPPMatchesMongoDaoITest extends AbstractMongoDaoITest {
         assertNotNull(persistedPPPMatch);
         assertNotSame(testPPPMatch, persistedPPPMatch);
         assertEquals(testPPPMatch.getEntityId(), persistedPPPMatch.getEntityId());
-        assertNull(persistedPPPMatch.getMaskImage());
-        assertNull(persistedPPPMatch.getMatchedImage());
+        assertNotNull(persistedPPPMatch.getMaskImage());
+        assertSame(persistedPPPMatch.getMaskImage(), persistedPPPMatch.getSourceImage());
+        assertNotNull(persistedPPPMatch.getMatchedImage());
+        assertSame(persistedPPPMatch.getMatchedImage(), persistedPPPMatch.getTargetImage());
         assertEquals(testPPPMatch.getMaskImageRefId().toString(), persistedPPPMatch.getMaskImageRefId().toString());
         assertEquals(testPPPMatch.getMatchedImageRefId().toString(), persistedPPPMatch.getMatchedImageRefId().toString());
     }
@@ -59,7 +62,9 @@ public class PPPMatchesMongoDaoITest extends AbstractMongoDaoITest {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
     PPPMatchEntity<M, T> createTestPPPMatch(M maskNeuron, T targetNeuron, double rank) {
         PPPMatchEntity<M, T> testMatch = new PPPMatchEntity<>();
+        testMatch.setSourceEmName("sourceEm");
         testMatch.setMaskImage(maskNeuron);
+        testMatch.setSourceLmName("sourceLm");
         testMatch.setMatchedImage(targetNeuron);
         testMatch.setRank(rank);
         addTestData(testMatch);

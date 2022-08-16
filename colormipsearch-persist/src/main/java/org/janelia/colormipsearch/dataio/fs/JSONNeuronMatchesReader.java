@@ -17,7 +17,7 @@ import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.results.MatchResultsGrouping;
+import org.janelia.colormipsearch.results.MatchEntitiesGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 
 public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesReader<R> {
@@ -42,7 +42,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
         return (List<R>) maskMipIds.stream()
                 .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
                 .map(this::readMatchesResults)
-                .flatMap(resultMatches -> MatchResultsGrouping.expandResultsByMask(resultMatches).stream())
+                .flatMap(resultMatches -> MatchEntitiesGrouping.expandResultsByMask(resultMatches).stream())
                 .collect(Collectors.toList());
     }
 
@@ -54,7 +54,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
         return (List<R>) targetMipIds.stream()
                 .map(targetMipId -> StringUtils.isNotBlank(targetLibrary) ? Paths.get(targetLibrary, targetMipId).toFile() : new File(targetMipId))
                 .map(this::readMatchesResults)
-                .flatMap(resultMatches -> MatchResultsGrouping.expandResultsByTarget(resultMatches).stream())
+                .flatMap(resultMatches -> MatchEntitiesGrouping.expandResultsByTarget(resultMatches).stream())
                 .collect(Collectors.toList());
     }
 

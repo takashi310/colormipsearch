@@ -122,7 +122,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     }
 
     @JsonProperty("files")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Map<FileType, String> getNeuronFiles() {
         return neuronFiles;
     }

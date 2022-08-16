@@ -21,7 +21,7 @@ import com.mongodb.client.MongoDatabase;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.janelia.colormipsearch.config.Config;
+import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,7 @@ public class MongoDBHelper {
         filterProvider.addFilter(MongoIgnoredFieldFilter.FILTER_NAME, new MongoIgnoredFieldFilter());
         return new ObjectMapper()
                 .registerModule(new MongoModule())
-                .addMixIn(AbstractMatchEntity.class, AbstractMatchEntityMixIn.class)
+                .addMixIn(AbstractBaseEntity.class, ApplyMongoIgnoreFilterMixIn.class)
                 .setFilterProvider(filterProvider)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)

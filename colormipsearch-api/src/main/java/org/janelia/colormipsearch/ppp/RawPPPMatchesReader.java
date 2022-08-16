@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,7 +14,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -27,17 +27,30 @@ import org.slf4j.LoggerFactory;
 public class RawPPPMatchesReader {
     private static final Logger LOG = LoggerFactory.getLogger(RawPPPMatchesReader.class);
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper objectMapper;
 
-    public Stream<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> readPPPMatches(String fn, boolean onlyBestMatches) {
-        Function<RawSkeletonMatches, List<PPPSkeletonMatch>> skeletonsReader = onlyBestMatches
-                ? this::getBestSkeletonMatchesOnly
-                : this::getAllSkeletonMatches;
+    public RawPPPMatchesReader(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    public Stream<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> readPPPMatches(String fn, boolean onlyBestMatches, boolean includeSkeletons) {
+        Function<RawSkeletonMatches, List<PPPSkeletonMatch>> skeletonsReader = getSkeletonsReader(onlyBestMatches, includeSkeletons);
         JsonNode jsonContent = readJSONFile(new File(fn));
         return StreamSupport.stream(Spliterators.spliterator(jsonContent.fields(), Long.MAX_VALUE, 0), false)
                 .flatMap(emMatchEntry -> getLMMatches(emMatchEntry.getKey(), emMatchEntry.getValue(), skeletonsReader))
                 ;
+    }
+
+    private Function<RawSkeletonMatches, List<PPPSkeletonMatch>> getSkeletonsReader(boolean onlyBestMatches, boolean includeSkeletons) {
+        Function<RawSkeletonMatches, List<PPPSkeletonMatch>> skeletonsReader;
+        if (!includeSkeletons) {
+            skeletonsReader = (rawSkeletonMatches -> Collections.emptyList());
+        } else if (onlyBestMatches) {
+            skeletonsReader = this::getBestSkeletonMatchesOnly;
+        } else {
+            skeletonsReader = this::getAllSkeletonMatches;
+        }
+        return skeletonsReader;
     }
 
     private Stream<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> getLMMatches(String emFullName, JsonNode lmMatchesNode,
