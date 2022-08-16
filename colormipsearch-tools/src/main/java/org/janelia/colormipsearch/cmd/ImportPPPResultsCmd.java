@@ -94,6 +94,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
         @Parameter(names = "--screenshots-dir", description = "The prefix of the JSON results file containing the images for the top 500 PPP matches for each neuron.")
         private String screenshotsDir = "screenshots";
 
+        @Parameter(names = {"--include-raw-skeleton-matches"}, description = "Include raw skeleton matches", arity = 0)
+        boolean includeRawSkeletonMatches = false;
+
         @Parameter(names = {"--only-best-skeleton-matches"}, description = "Include only best skeleton matches", arity = 0)
         boolean onlyBestSkeletonMatches = false;
 
@@ -121,7 +124,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         this.args = new CreatePPPResultsArgs(commonArgs);
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.rawPPPMatchesReader = new RawPPPMatchesReader();
+        this.rawPPPMatchesReader = new RawPPPMatchesReader(mapper);
     }
 
     @Override
@@ -238,7 +241,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
      */
     private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
         List<InputPPPMatch> inputPPPMatches = rawPPPMatchesReader.readPPPMatches(
-                        pppResultsFile.toString(), args.onlyBestSkeletonMatches)
+                        pppResultsFile.toString(), args.onlyBestSkeletonMatches, args.includeRawSkeletonMatches)
                 .map(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
         Set<String> matchedLMSampleNames = inputPPPMatches.stream()
@@ -392,7 +395,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                     .forEach((k, fn) -> {
                         inputPPPMatch.getPPPMatch().setMatchFile(
                                 k.getFileType(),
-                                buildImageRelativePath(inputPPPMatch, k.getFileType().getFileSuffix()));
+                                buildImageRelativePath(inputPPPMatch, k.getFileType().getDisplayPPPSuffix()));
                     });
         }
         return pppMatch;

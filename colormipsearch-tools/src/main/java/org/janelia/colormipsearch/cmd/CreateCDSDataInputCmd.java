@@ -77,7 +77,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--jacs-url", "--data-url", "--jacsURL"}, description = "JACS data service base URL")
         String dataServiceURL;
 
-
         @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
         String authorization;
 
@@ -124,6 +123,9 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
         @Parameter(names = {"--datasets"}, description = "Which datasets to extract", variableArity = true)
         List<String> datasets;
+
+        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported mips")
+        String tag;
 
         @Parameter(names = "--include-original-mip-in-segmentation",
                 description = "If set include original mip in the segmentation",
@@ -317,7 +319,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
                             libraryPaths.listLibraryVariants(),
                             inputLibraryVariantChoice.orElse(null)))
-                    .peek(this::updateNeuronFiles)
+                    .peek(this::updateTagAndNeuronFiles)
                     .forEach(cdmip -> gen.write(cdmip.getNeuronMetadata()));
         }
         gen.close();
@@ -428,7 +430,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     }
 
     @SuppressWarnings("unchecked")
-    private void updateNeuronFiles(InputCDMipNeuron<? extends AbstractNeuronEntity> cdmip) {
+    private void updateTagAndNeuronFiles(InputCDMipNeuron<? extends AbstractNeuronEntity> cdmip) {
+        cdmip.getNeuronMetadata().addTag(args.tag);
         if (cdmip.getNeuronMetadata().hasComputeFile(ComputeFileType.InputColorDepthImage) &&
                 cdmip.getNeuronMetadata().hasNeuronFile(FileType.ColorDepthMip)) {
             // ColorDepthInput filename must be expressed in terms of publishedName (not internal name),

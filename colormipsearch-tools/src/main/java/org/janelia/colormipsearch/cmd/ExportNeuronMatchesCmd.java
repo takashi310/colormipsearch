@@ -40,9 +40,9 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     @Parameters(commandDescription = "Export neuron matches")
     static class ExportMatchesCmdArgs extends AbstractCmdArgs {
 
-        @Parameter(names = {"--match-type"}, required = true, // this is required because PPPs are handled a bit differently
+        @Parameter(names = {"--exported-result-type"}, required = true, // this is required because PPPs are handled a bit differently
                 description = "Specifies neuron match type whether it's color depth search, PPP, etc.")
-        MatchResultTypes matchResultTypes = MatchResultTypes.CDS;
+        ExportedResultType exportedResultType = ExportedResultType.PER_MASK_CDS_MATCHES;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         Double pctPositivePixels = 0.0;
@@ -57,14 +57,14 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 arity = 0)
         boolean withRank = false;
 
-        @Parameter(names = {"--masks"}, description = "Masks library")
-        String masksLibrary;
+        @Parameter(names = {"-m", "--masks"}, description = "Masks library", converter = ListArg.ListArgConverter.class)
+        ListArg masksLibrary;
 
         @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
         String perMaskSubdir;
 
-        @Parameter(names = {"--targets"}, description = "Targets library")
-        String targetsLibrary;
+        @Parameter(names = {"-i", "--targets"}, description = "Targets library", converter = ListArg.ListArgConverter.class)
+        ListArg targetsLibrary;
 
         @Parameter(names = {"--perTargetSubdir"}, description = "Results subdirectory for results grouped by target MIP ID")
         String perTargetSubdir;
@@ -129,7 +129,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
 
     private ScoresFilter getScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
-        neuronsMatchScoresFilter.setEntityType(args.matchResultTypes.getMatchType());
+        neuronsMatchScoresFilter.setEntityType(args.exportedResultType.getTypeName());
         if (args.pctPositivePixels > 0) {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
@@ -148,7 +148,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                     NeuronMatchesWriter<R> perMaskNeuronMatchesWriter) {
 
         List<String> masks = neuronMatchesReader.listMatchesLocations(
-                Collections.singletonList(new DataSourceParam(args.masksLibrary, 0, -1)));
+                Collections.singletonList(new DataSourceParam(args.masksLibrary.input, args.masksLibrary.offset, args.masksLibrary.length)));
         ItemsHandling.partitionCollection(masks, args.processingPartitionSize).stream().parallel()
                 .forEach(partititionItems -> {
                     partititionItems.forEach(maskId -> {
@@ -170,7 +170,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                                       NeuronMatchesReader<R> neuronMatchesReader,
                                       NeuronMatchesWriter<R> perTargetNeuronMatchesWriter) {
         List<String> targets = neuronMatchesReader.listMatchesLocations(
-                Collections.singletonList(new DataSourceParam(args.targetsLibrary, 0, -1)));
+                Collections.singletonList(new DataSourceParam(args.targetsLibrary.input, 0, -1)));
         ItemsHandling.partitionCollection(targets, args.processingPartitionSize).stream().parallel()
                 .forEach(partititionItems -> {
                     partititionItems.forEach(targetId -> {
@@ -194,7 +194,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
             DaosProvider daosProvider = getDaosProvider();
             return new DBNeuronMatchesReader<>(
                     daosProvider.getNeuronMetadataDao(),
-                    (NeuronMatchesDao<R>) args.matchResultTypes.getNeuronMatchesDao().apply(daosProvider));
+                    (NeuronMatchesDao<R>) args.exportedResultType.getNeuronMatchesDao().apply(daosProvider));
         } else {
             return new JSONNeuronMatchesReader<>(mapper);
         }
@@ -205,8 +205,8 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         if (perMaskDir != null || perTargetDir != null) {
             return new JSONNeuronMatchesWriter<>(
                     args.commonArgs.noPrettyPrint ? mapper.writer() : mapper.writerWithDefaultPrettyPrinter(),
-                    args.matchResultTypes.getMatchGrouping(),
-                    args.matchResultTypes.getMatchOrdering(),
+                    args.exportedResultType.getMatchGrouping(),
+                    args.exportedResultType.getMatchOrdering(),
                     perMaskDir,
                     perTargetDir
             );

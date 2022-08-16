@@ -48,7 +48,7 @@ import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.results.MatchResultsGrouping;
+import org.janelia.colormipsearch.results.MatchEntitiesGrouping;
 import org.janelia.colormipsearch.results.ResultMatches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,7 +218,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
             Executor executor) {
         // group the matches by the mask input file - this is because we do not want to mix FL and non-FL neuron images for example
         List<ResultMatches<M, T, CDMatchEntity<M, T>>> selectedMatchesGroupedByInput =
-                MatchResultsGrouping.simpleGroupByMaskFields(
+                MatchEntitiesGrouping.simpleGroupByMaskFields(
                         cdMatches,
                         Arrays.asList(
                                 AbstractNeuronEntity::getMipId,
