@@ -20,14 +20,16 @@ public class MatchResultsGrouping {
      * @param maskFieldSelectors mask fields used for grouping
      * @param ranking comparator used for ranking results
      * @param <R> persisted matches type
-     * @param <M> grouping type
+     * @param <M> metadata type corresponding to the original mask type which will be used for grouping
+     * @param <T> metadata type corresponding to the original target type
      * @param <R1> grouped result types
      * @return
      */
     @SuppressWarnings("unchecked")
     public static <R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>,
                    M extends AbstractNeuronMetadata,
-                   R1 extends AbstractMatchedTarget<? extends AbstractNeuronMetadata>>
+                   T extends AbstractNeuronMetadata,
+                   R1 extends AbstractMatchedTarget<T>>
     List<ResultMatches<M, R1>> groupByMask(List<R> matches,
                                            List<Function<M, ?>> maskFieldSelectors,
                                            Comparator<R1> ranking) {
@@ -37,6 +39,8 @@ public class MatchResultsGrouping {
                     R1 matchResult = (R1) aMatch.metadata();
                     AbstractNeuronEntity maskImage = aMatch.getMaskImage();
                     AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
+                    // the target is set based on the original target
+                    matchResult.setTargetImage((T) targetImage.metadata());
                     // in the match result input file comes from the mask and matched file comes from the target
                     matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getNeuronFile(FileType.ColorDepthMipInput));
                     matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
@@ -59,14 +63,14 @@ public class MatchResultsGrouping {
      * @param targetFieldSelectors mask fields used for grouping
      * @param ranking comparator used for ranking results
      * @param <R> persisted matches type
-     * @param <T> metadata type corresponding to the original mask type which now will be used as target type
+     * @param <M> metadata type corresponding to the original mask type which now will be used as target type
      * @param <T> metadata type corresponding to the original target type - used for grouping
      * @param <R1> grouped result types
      * @return
      */
     @SuppressWarnings("unchecked")
     public static <R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>,
-                M extends AbstractNeuronMetadata,
+                   M extends AbstractNeuronMetadata,
                    T extends AbstractNeuronMetadata,
                    R1 extends AbstractMatchedTarget<M>>
     List<ResultMatches<T, R1>> groupByTarget(List<R> matches,
@@ -80,7 +84,6 @@ public class MatchResultsGrouping {
                     AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
                     // in this case actual mask image will be set as target
                     matchResult.setTargetImage((M) maskImage.metadata());
-                    // !!!! FIXME
                     // in the match result input file comes from the target and matched file comes from the mask
                     matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
                     matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getNeuronFile(FileType.ColorDepthMipInput));

@@ -72,15 +72,15 @@ public class PPPMatchesExporter implements DataExporter {
                 });
     }
 
-    private <M extends AbstractNeuronMetadata> void
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     writeResults(List<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
         // group results by mask
         List<Function<M, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getPublishedName
         );
         // order ascending by rank
-        Comparator<PPPMatchedTarget<? extends AbstractNeuronMetadata>> ordering = Comparator.comparingDouble(PPPMatchedTarget::getRank);
-        List<ResultMatches<M, PPPMatchedTarget<?>>> matchesByMask = MatchResultsGrouping.groupByMask(
+        Comparator<PPPMatchedTarget<T>> ordering = Comparator.comparingDouble(PPPMatchedTarget::getRank);
+        List<ResultMatches<M, PPPMatchedTarget<T>>> matchesByMask = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);

@@ -72,15 +72,15 @@ public class PerMaskCDMatchesExporter implements DataExporter {
                 });
     }
 
-    private <M extends AbstractNeuronMetadata> void
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     writeResults(List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
         // group results by mask MIP ID
         List<Function<M, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getMipId
         );
         // order descending by normalized score
-        Comparator<CDMatchedTarget<? extends AbstractNeuronMetadata>> ordering = Comparator.comparingDouble(m -> -m.getNormalizedScore());
-        List<ResultMatches<M, CDMatchedTarget<?>>> groupedMatches = MatchResultsGrouping.groupByMask(
+        Comparator<CDMatchedTarget<T>> ordering = Comparator.comparingDouble(m -> -m.getNormalizedScore());
+        List<ResultMatches<M, CDMatchedTarget<T>>> groupedMatches = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);
