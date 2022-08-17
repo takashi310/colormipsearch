@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.results;
 
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
 
@@ -10,9 +9,7 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.MatchComputeFileType;
 
 public class MatchResultsGrouping {
 
@@ -36,14 +33,19 @@ public class MatchResultsGrouping {
                                            Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
-                aMatch -> new GroupingCriteria<R1, M>(
-                        (R1) aMatch.metadata(),
-                        m -> {
-                            AbstractNeuronEntity maskImage = aMatch.getMaskImage();
-                            return (M) maskImage.metadata();
-                        },
-                        maskFieldSelectors
-                ),
+                aMatch -> {
+                    R1 matchResult = (R1) aMatch.metadata();
+                    AbstractNeuronEntity maskImage = aMatch.getMaskImage();
+                    AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
+                    // in the match result input file comes from the mask and matched file comes from the target
+                    matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getNeuronFile(FileType.ColorDepthMipInput));
+                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
+                    return new GroupingCriteria<R1, M>(
+                            matchResult,
+                            m -> (M) maskImage.metadata(),
+                            maskFieldSelectors
+                    );
+                },
                 GroupingCriteria::getItem,
                 ranking,
                 ResultMatches::new
@@ -70,14 +72,19 @@ public class MatchResultsGrouping {
                                              Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
-                aMatch -> new GroupingCriteria<R1, M>(
-                        (R1) aMatch.metadata(),
-                        m -> {
-                            AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
-                            return (M) targetImage.metadata();
-                        },
-                        targetFieldSelectors
-                ),
+                aMatch -> {
+                    R1 matchResult = (R1) aMatch.metadata();
+                    AbstractNeuronEntity maskImage = aMatch.getMaskImage();
+                    AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
+                    // in the match result input file comes from the target and matched file comes from the mask
+                    matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
+                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getNeuronFile(FileType.ColorDepthMipInput));
+                    return new GroupingCriteria<R1, M>(
+                            matchResult,
+                            m -> (M) targetImage.metadata(), // group by target image
+                            targetFieldSelectors
+                    );
+                },
                 GroupingCriteria::getItem,
                 ranking,
                 ResultMatches::new

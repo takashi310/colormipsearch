@@ -53,11 +53,11 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
         }
     }
 
-    public String getMatchFileData(FileType t) {
+    public String getMatchFile(FileType t) {
         return matchFiles.get(t);
     }
 
-    public void setMatchFileData(FileType t, String fn) {
+    public void setMatchFile(FileType t, String fn) {
         if (StringUtils.isNotBlank(fn)) {
             matchFiles.put(t, fn);
         } else {
