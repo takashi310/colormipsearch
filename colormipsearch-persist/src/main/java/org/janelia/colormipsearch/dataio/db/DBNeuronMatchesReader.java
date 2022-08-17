@@ -46,7 +46,9 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
         return matchesSource.stream()
                         .flatMap(cdMatchInput -> neuronMetadataDao.findNeurons(
-                                new NeuronSelector().setLibraryName(cdMatchInput.getLocation()),
+                                new NeuronSelector()
+                                        .setAlignmentSpace(cdMatchInput.getAlignmentSpace())
+                                        .setLibraryName(cdMatchInput.getLibraryName()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
@@ -56,12 +58,13 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     }
 
     @Override
-    public List<R> readMatchesForMasks(String maskLibrary,
+    public List<R> readMatchesForMasks(String alignmentSpace,
+                                       String maskLibrary,
                                        List<String> maskMipIds,
                                        ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
-        NeuronSelector maskSelector = new NeuronSelector().setLibraryName(maskLibrary).addMipIDs(maskMipIds);
-        NeuronSelector targetSelector = new NeuronSelector();
+        NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).setLibraryName(maskLibrary).addMipIDs(maskMipIds);
+        NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setMaskEntityIds(getNeuronEntityIds(maskSelector));
@@ -70,12 +73,13 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     }
 
     @Override
-    public List<R> readMatchesForTargets(String targetLibrary,
+    public List<R> readMatchesForTargets(String alignmentSpace,
+                                         String targetLibrary,
                                          List<String> targetMipIds,
                                          ScoresFilter matchScoresFilter,
                                          List<SortCriteria> sortCriteriaList) {
-        NeuronSelector maskSelector = new NeuronSelector();
-        NeuronSelector targetSelector = new NeuronSelector().setLibraryName(targetLibrary).addMipIDs(targetMipIds);
+        NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
+        NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).setLibraryName(targetLibrary).addMipIDs(targetMipIds);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setTargetEntityIds(getNeuronEntityIds(targetSelector));

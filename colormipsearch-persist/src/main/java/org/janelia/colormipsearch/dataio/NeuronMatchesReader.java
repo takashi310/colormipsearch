@@ -22,24 +22,30 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
     /**
      * Read matches for the specified masks library and mips. A null or empty list will ignore that filter.
      *
+     * @param alignmentSpace masks alignmentSpace
      * @param maskLibrary masks library
      * @param maskMipIds mask MIPs
      * @param matchScoresFilter additional matches scores filter
      * @return
      */
-    List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds,
+    List<R> readMatchesForMasks(String alignmentSpace,
+                                String maskLibrary,
+                                List<String> maskMipIds,
                                 ScoresFilter matchScoresFilter,
                                 List<SortCriteria> sortCriteriaList);
 
     /**
      * Read matches for the specified targets library and mips. A null or empty list will ignore that filter.
      *
+     * @param alignmentSpace targets alignmentSpace
      * @param targetLibrary masks library
      * @param targetMipIds mask MIPs
      * @param matchScoresFilter additional match scores filter
      * @return
      */
-    List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds,
+    List<R> readMatchesForTargets(String alignmentSpace,
+                                  String targetLibrary,
+                                  List<String> targetMipIds,
                                   ScoresFilter matchScoresFilter,
                                   List<SortCriteria> sortCriteriaList);
 }

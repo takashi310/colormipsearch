@@ -23,16 +23,20 @@ public class JSONCDMIPsReader implements CDMIPsReader {
         this.mapper = mapper;
     }
 
-    public List<? extends AbstractNeuronEntity> readMIPs(DataSourceParam inputMipsParam) {
+    /**
+     * @param mipsDataSource the libraryName attribute contains the path to the JSON MIPs metadata file.
+     * @return
+     */
+    public List<? extends AbstractNeuronEntity> readMIPs(DataSourceParam mipsDataSource) {
         try {
             LOG.info("Reading {} items from {} starting at {}",
-                    (inputMipsParam.hasSize() ? String.valueOf(inputMipsParam.getSize()) : "all"), inputMipsParam.getLocation(),
-                    inputMipsParam.getOffset());
+                    (mipsDataSource.hasSize() ? String.valueOf(mipsDataSource.getSize()) : "all"), mipsDataSource.getLibraryName(),
+                    mipsDataSource.getOffset());
             List<? extends AbstractNeuronEntity> content = mapper.readValue(
-                    new File(inputMipsParam.getLocation()),
+                    new File(mipsDataSource.getLibraryName()),
                     new TypeReference<List<? extends AbstractNeuronEntity>>() {});
-            int from = (int) inputMipsParam.getOffset();
-            int size = inputMipsParam.hasSize() ? inputMipsParam.getSize() : content.size();
+            int from = (int) mipsDataSource.getOffset();
+            int size = mipsDataSource.hasSize() ? mipsDataSource.getSize() : content.size();
             int to = Math.min(from + size, content.size());
             if (from > 0 || to < content.size()) {
                 return content.subList(from, to);

@@ -90,6 +90,7 @@ public class JSONReadWriteTest {
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
                             em2lmMatchesReader.readMatchesForMasks(
                                     null,
+                                    null,
                                     Collections.singletonList(f),
                                     null,
                                     null);

@@ -35,10 +35,6 @@ class ListArg {
         }
     }
 
-    static DataSourceParam asDataSourceParam(ListArg listArg) {
-        return new DataSourceParam(listArg.input, listArg.offset, listArg.length);
-    }
-
     String input;
     int offset = 0;
     int length = -1;

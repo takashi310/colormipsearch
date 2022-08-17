@@ -59,7 +59,8 @@ public class PPPMatchesExporter implements DataExporter {
                     indexedPartition.getValue().forEach(maskId -> {
                         LOG.info("Read PPP matches for {}", maskId);
                         List<PPPMatchEntity<?, ?>> matchesForMask = neuronMatchesReader.readMatchesForMasks(
-                                null,
+                                dataSourceParam.getAlignmentSpace(),
+                                dataSourceParam.getLibraryName(),
                                 Collections.singletonList(maskId),
                                 scoresFilter,
                                 Collections.singletonList(

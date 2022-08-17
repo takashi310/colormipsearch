@@ -22,6 +22,7 @@ public class EMNeuronEntity extends AbstractNeuronEntity {
         n.setAlignmentSpace(getAlignmentSpace());
         n.setMipId(getMipId());
         n.setLibraryName(getLibraryName());
+        n.setPublishedName(getPublishedName());
         getNeuronFiles().forEach(n::setNeuronFile);
         return n;
     }

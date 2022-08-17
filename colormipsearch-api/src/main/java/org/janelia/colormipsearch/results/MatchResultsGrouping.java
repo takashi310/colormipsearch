@@ -59,16 +59,18 @@ public class MatchResultsGrouping {
      * @param targetFieldSelectors mask fields used for grouping
      * @param ranking comparator used for ranking results
      * @param <R> persisted matches type
-     * @param <M> grouping type
+     * @param <T> metadata type corresponding to the original mask type which now will be used as target type
+     * @param <T> metadata type corresponding to the original target type - used for grouping
      * @param <R1> grouped result types
      * @return
      */
     @SuppressWarnings("unchecked")
     public static <R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>,
-                   M extends AbstractNeuronMetadata,
-                   R1 extends AbstractMatchedTarget<? extends AbstractNeuronMetadata>>
-    List<ResultMatches<M, R1>> groupByTarget(List<R> matches,
-                                             List<Function<M, ?>> targetFieldSelectors,
+                M extends AbstractNeuronMetadata,
+                   T extends AbstractNeuronMetadata,
+                   R1 extends AbstractMatchedTarget<M>>
+    List<ResultMatches<T, R1>> groupByTarget(List<R> matches,
+                                             List<Function<T, ?>> targetFieldSelectors,
                                              Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
@@ -76,12 +78,15 @@ public class MatchResultsGrouping {
                     R1 matchResult = (R1) aMatch.metadata();
                     AbstractNeuronEntity maskImage = aMatch.getMaskImage();
                     AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
+                    // in this case actual mask image will be set as target
+                    matchResult.setTargetImage((M) maskImage.metadata());
+                    // !!!! FIXME
                     // in the match result input file comes from the target and matched file comes from the mask
                     matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
                     matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getNeuronFile(FileType.ColorDepthMipInput));
-                    return new GroupingCriteria<R1, M>(
+                    return new GroupingCriteria<R1, T>(
                             matchResult,
-                            m -> (M) targetImage.metadata(), // group by target image
+                            m -> (T) targetImage.metadata(), // group by target image
                             targetFieldSelectors
                     );
                 },

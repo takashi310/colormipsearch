@@ -27,6 +27,7 @@ import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
 import org.janelia.colormipsearch.cds.ShapeMatchScore;
 import org.janelia.colormipsearch.cmd.cdsprocess.ColorMIPProcessUtils;
 import org.janelia.colormipsearch.dao.DaosProvider;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
@@ -62,6 +63,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Color depth search for a batch of MIPs")
     static class GradientScoresArgs extends AbstractColorDepthMatchArgs {
+
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
+        String alignmentSpace;
 
         @Parameter(names = {"--matchesDir", "-md"}, required = true, variableArity = true,
                 converter = ListArg.ListArgConverter.class,
@@ -126,7 +130,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 excludedRegions
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
-        List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
+        List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream()
+                .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, larg.offset, larg.length))
+                .collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
         // partition matches and process all partitions concurrently
@@ -265,6 +271,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
         List<CDMatchEntity<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
+                args.alignmentSpace,
                 null,
                 Collections.singletonList(maskCDMipId),
                 neuronsMatchScoresFilter,

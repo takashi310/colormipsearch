@@ -17,6 +17,7 @@ import org.janelia.colormipsearch.cmd.dataexport.PPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
 import org.janelia.colormipsearch.dao.DaosProvider;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
@@ -47,17 +48,15 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 arity = 0)
         boolean ignoreGradScores = false;
 
-        @Parameter(names = {"-m", "--masks"}, description = "Masks library", converter = ListArg.ListArgConverter.class)
-        ListArg masksLibrary;
+        @Parameter(names = {"-as", "--alignment-space"}, description = "Alignment space")
+        String alignmentSpace;
 
-        @Parameter(names = {"--perMaskSubdir"}, description = "Results subdirectory for results grouped by mask MIP ID")
-        String perMaskSubdir;
+        @Parameter(names = {"-l", "--library"}, description = "Selected library for the mask or target based on the export type",
+                converter = ListArg.ListArgConverter.class)
+        ListArg library;
 
-        @Parameter(names = {"-i", "--targets"}, description = "Targets library", converter = ListArg.ListArgConverter.class)
-        ListArg targetsLibrary;
-
-        @Parameter(names = {"--perTargetSubdir"}, description = "Results subdirectory for results grouped by target MIP ID")
-        String perTargetSubdir;
+        @Parameter(names = {"--subdir"}, description = "Results subdirectory for results")
+        String subDir;
 
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
@@ -67,16 +66,9 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         }
 
         @Nullable
-        Path getPerMaskDir() {
+        Path getOutputResultsDir() {
             return getOutputDirArg()
-                    .map(dir -> StringUtils.isNotBlank(perMaskSubdir) ? dir.resolve(perMaskSubdir) : dir)
-                    .orElse(null);
-        }
-
-        @Nullable
-        Path getPerTargetDir() {
-            return getOutputDirArg()
-                    .map(dir -> StringUtils.isNotBlank(perTargetSubdir) ? dir.resolve(perTargetSubdir) : dir)
+                    .map(dir -> StringUtils.isNotBlank(subDir) ? dir.resolve(subDir) : dir)
                     .orElse(null);
         }
     }
@@ -136,9 +128,9 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         switch (args.exportedResultType) {
             case PER_MASK_CDS_MATCHES:
                 return new PerMaskCDMatchesExporter(
-                        ListArg.asDataSourceParam(args.masksLibrary),
+                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         getCDScoresFilter(),
-                        args.getPerMaskDir(),
+                        args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao()
@@ -148,9 +140,9 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 );
             case PER_TARGET_CDS_MATCHES:
                 return new PerTargetCDMatchesExporter(
-                        ListArg.asDataSourceParam(args.masksLibrary),
+                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         getCDScoresFilter(),
-                        args.getPerMaskDir(),
+                        args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao()
@@ -160,9 +152,9 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 );
             case PPP_MATCHES:
                 return new PPPMatchesExporter(
-                        ListArg.asDataSourceParam(args.masksLibrary),
+                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         getPPPScoresFilter(),
-                        args.getPerMaskDir(),
+                        args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getPPPMatchesDao()
@@ -172,18 +164,16 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 );
             case EM_MIPS:
                 return new MIPsExporter(
-                        null,
-                        ListArg.asDataSourceParam(args.masksLibrary),
-                        args.getPerMaskDir(),
+                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize
                 );
             case LM_MIPS:
                 return new MIPsExporter(
-                        null,
-                        ListArg.asDataSourceParam(args.targetsLibrary),
-                        args.getPerTargetDir(),
+                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize

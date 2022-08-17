@@ -59,7 +59,8 @@ public class PerMaskCDMatchesExporter implements DataExporter {
                     indexedPartition.getValue().forEach(maskId -> {
                         LOG.info("Read color depth matches for {}", maskId);
                         List<CDMatchEntity<?, ?>> matchesForMask = neuronMatchesReader.readMatchesForMasks(
-                                null,
+                                dataSourceParam.getAlignmentSpace(),
+                                dataSourceParam.getLibraryName(),
                                 Collections.singletonList(maskId),
                                 scoresFilter,
                                 Collections.singletonList(
@@ -79,11 +80,11 @@ public class PerMaskCDMatchesExporter implements DataExporter {
         );
         // order descending by normalized score
         Comparator<CDMatchedTarget<? extends AbstractNeuronMetadata>> ordering = Comparator.comparingDouble(m -> -m.getNormalizedScore());
-        List<ResultMatches<M, CDMatchedTarget<?>>> matchesByMask = MatchResultsGrouping.groupByMask(
+        List<ResultMatches<M, CDMatchedTarget<?>>> groupedMatches = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);
         // write results by mask MIP ID
-        resultMatchesWriter.writeGroupedItemsList(matchesByMask, AbstractNeuronMetadata::getMipId, outputDir);
+        resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getMipId, outputDir);
     }
 }

@@ -1,15 +1,18 @@
 package org.janelia.colormipsearch.dataio;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class DataSourceParam {
-    private String location;
+    private String alignmentSpace;
+    private String libraryName;
     private long offset;
     private int size;
 
-    public DataSourceParam(String location, long offset, int size) {
-        this.location = location;
+    public DataSourceParam(String alignmentSpace, String libraryName, long offset, int size) {
+        this.alignmentSpace = alignmentSpace;
+        this.libraryName = libraryName;
         this.offset = offset;
         this.size = size;
     }
@@ -17,12 +20,20 @@ public class DataSourceParam {
     public DataSourceParam() {
     }
 
-    public String getLocation() {
-        return location;
+    public String getAlignmentSpace() {
+        return alignmentSpace;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setAlignmentSpace(String alignmentSpace) {
+        this.alignmentSpace = alignmentSpace;
+    }
+
+    public String getLibraryName() {
+        return libraryName;
+    }
+
+    public void setLibraryName(String libraryName) {
+        this.libraryName = libraryName;
     }
 
     public long getOffset() {
@@ -57,23 +68,37 @@ public class DataSourceParam {
 
         DataSourceParam that = (DataSourceParam) o;
 
-        return new EqualsBuilder().append(offset, that.offset).append(size, that.size).append(location, that.location).isEquals();
+        return new EqualsBuilder()
+                .append(alignmentSpace, that.alignmentSpace)
+                .append(libraryName, that.libraryName)
+                .append(offset, that.offset)
+                .append(size, that.size)
+                .isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(location).append(offset).append(size).toHashCode();
+        return new HashCodeBuilder(17, 37)
+                .append(alignmentSpace)
+                .append(libraryName)
+                .append(offset)
+                .append(size)
+                .toHashCode();
     }
 
     @Override
     public String toString() {
         StringBuilder sbuilder = new StringBuilder();
+        if (StringUtils.isNotBlank(alignmentSpace)) {
+            sbuilder.append(alignmentSpace).append('/');
+        }
+        sbuilder.append(libraryName);
         if (hasOffset() || hasSize()) {
             sbuilder.append(':').append(getOffset());
         }
         if (hasSize()) {
             sbuilder.append(':').append(getSize());
         }
-        return location;
+        return sbuilder.toString();
     }
 }

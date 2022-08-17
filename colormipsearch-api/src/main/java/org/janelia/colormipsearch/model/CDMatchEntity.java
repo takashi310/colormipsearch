@@ -120,8 +120,6 @@ public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeu
     @Override
     public CDMatchedTarget<? extends AbstractNeuronMetadata> metadata() {
         CDMatchedTarget<AbstractNeuronMetadata> m = new CDMatchedTarget<>();
-        AbstractNeuronMetadata n = getMatchedImage().metadata();
-        m.setTargetImage(n);
         m.setMirrored(isMirrored());
         m.setNormalizedScore(getNormalizedScore());
         m.setMatchingPixels(getMatchingPixels());

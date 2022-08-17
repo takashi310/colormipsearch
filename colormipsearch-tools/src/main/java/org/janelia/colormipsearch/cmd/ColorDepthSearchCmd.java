@@ -25,6 +25,7 @@ import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDSSessionWriter;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
@@ -58,6 +59,9 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 description = "If set a new color depth search run will always create new results; " +
                         "the default behavior is to update entries that match same images", arity = 0)
         boolean updateExistingMatches = false;
+
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
+        String alignmentSpace;
 
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
@@ -157,8 +161,12 @@ class ColorDepthSearchCmd extends AbstractCmd {
         Set<String> runTags = args.hasTag() ? Collections.singleton(args.getTag()) : Collections.emptySet();
         // save CDS parameters
         Number cdsRunId = getCDSSessionWriter().createSession(
-                args.masksInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
-                args.targetsInputs.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()),
+                args.masksInputs.stream()
+                        .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, larg.offset, larg.length))
+                        .collect(Collectors.toList()),
+                args.targetsInputs.stream()
+                        .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, larg.offset, larg.length))
+                        .collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters(),
                 runTags);
         if (useSpark) {
@@ -237,7 +245,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                                           Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
         List<? extends AbstractNeuronEntity> allMips = mipsArg.stream()
-                .flatMap(libraryInput -> mipsReader.readMIPs(ListArg.asDataSourceParam(libraryInput)).stream())
+                .flatMap(libraryInput -> mipsReader.readMIPs(
+                        new DataSourceParam(args.alignmentSpace, libraryInput.input, libraryInput.offset, libraryInput.length)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
                         filter.contains(neuronMetadata.getPublishedName().toLowerCase()) ||
                         filter.contains(neuronMetadata.getMipId()))

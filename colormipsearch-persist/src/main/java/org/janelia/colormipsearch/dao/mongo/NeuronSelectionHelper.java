@@ -30,6 +30,9 @@ class NeuronSelectionHelper {
         if (neuronSelector.hasNeuronClassname()) {
             filter.add(Filters.eq(qualifier + "class", neuronSelector.getNeuronClassname()));
         }
+        if (neuronSelector.hasAlignmentSpace()) {
+            filter.add(Filters.eq(qualifier + "alignmentSpace", neuronSelector.getAlignmentSpace()));
+        }
         if (neuronSelector.hasLibraryName()) {
             filter.add(Filters.eq(qualifier + "libraryName", neuronSelector.getLibraryName()));
         }

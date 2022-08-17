@@ -30,14 +30,17 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
 
     @Override
     public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
+        /*
+         * For JSON file reader the libraryName attribute contains the directory location.
+         */
         return matchesSource.stream()
-                .flatMap(arg -> FSUtils.getFiles(arg.getLocation(), (int) arg.getOffset(), arg.getSize()).stream())
+                .flatMap(arg -> FSUtils.getFiles(arg.getLibraryName(), (int) arg.getOffset(), arg.getSize()).stream())
                 .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<R> readMatchesForMasks(String maskLibrary, List<String> maskMipIds,
+    public List<R> readMatchesForMasks(String alignmentSpace, String maskLibrary, List<String> maskMipIds,
                                        ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
@@ -49,7 +52,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<R> readMatchesForTargets(String targetLibrary, List<String> targetMipIds,
+    public List<R> readMatchesForTargets(String alignmentSpace, String targetLibrary, List<String> targetMipIds,
                                          ScoresFilter matchScoresFilter,
                                          List<SortCriteria> sortCriteriaList) {
         return (List<R>) targetMipIds.stream()

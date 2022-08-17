@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
@@ -71,7 +72,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
-        List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream().map(ListArg::asDataSourceParam).collect(Collectors.toList()));
+        List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
+                .map(larg -> new DataSourceParam(null, larg.input, larg.offset, larg.length))
+                .collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
         ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).entrySet().stream().parallel()
                 .forEach(indexedPartititionItems -> {
@@ -114,6 +117,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     List<CDMatchEntity<M, T>> getCDMatchesForMask(NeuronMatchesReader<CDMatchEntity<M, T>> cdsMatchesReader, String maskCDMipId) {
         LOG.info("Read all color depth matches for {}", maskCDMipId);
         return cdsMatchesReader.readMatchesForMasks(
+                null,
                 null,
                 Collections.singletonList(maskCDMipId),
                 null,

@@ -34,6 +34,8 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         n.setAlignmentSpace(getAlignmentSpace());
         n.setMipId(getMipId());
         n.setLibraryName(getLibraryName());
+        n.setPublishedName(getPublishedName());
+        n.setSlideCode(slideCode);
         getNeuronFiles().forEach(n::setNeuronFile);
         return n;
     }

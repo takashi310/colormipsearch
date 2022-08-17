@@ -59,7 +59,8 @@ public class PerTargetCDMatchesExporter implements DataExporter {
                     indexedPartition.getValue().forEach(targetId -> {
                         LOG.info("Read color depth matches for {}", targetId);
                         List<CDMatchEntity<?, ?>> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
-                                null,
+                                dataSourceParam.getAlignmentSpace(),
+                                dataSourceParam.getLibraryName(),
                                 Collections.singletonList(targetId),
                                 scoresFilter,
                                 Collections.singletonList(
@@ -71,19 +72,19 @@ public class PerTargetCDMatchesExporter implements DataExporter {
                 });
     }
 
-    private <T extends AbstractNeuronMetadata> void
+    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     writeResults(List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
         // group results by target MIP ID
         List<Function<T, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getMipId
         );
         // order descending by normalized score
-        Comparator<CDMatchedTarget<? extends AbstractNeuronMetadata>> ordering = Comparator.comparingDouble(m -> -m.getNormalizedScore());
-        List<ResultMatches<T, CDMatchedTarget<?>>> matchesByMask = MatchResultsGrouping.groupByTarget(
+        Comparator<CDMatchedTarget<M>> ordering = Comparator.comparingDouble(m -> -m.getNormalizedScore());
+        List<ResultMatches<T, CDMatchedTarget<M>>> groupedMatches = MatchResultsGrouping.groupByTarget(
                 matches,
                 grouping,
                 ordering);
         // write results by target MIP ID
-        resultMatchesWriter.writeGroupedItemsList(matchesByMask, AbstractNeuronMetadata::getMipId, outputDir);
+        resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getMipId, outputDir);
     }
 }

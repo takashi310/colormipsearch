@@ -19,20 +19,17 @@ import org.slf4j.LoggerFactory;
 public class MIPsExporter implements DataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsExporter.class);
 
-    private final String alignmentSpace;
     private final DataSourceParam dataSourceParam;
     private final Path outputDir;
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final ItemsWriterToJSONFile mipsWriter;
     private final int processingPartitionSize;
 
-    public MIPsExporter(String alignmentSpace,
-                        DataSourceParam dataSourceParam,
+    public MIPsExporter(DataSourceParam dataSourceParam,
                         Path outputDir,
                         NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                         ItemsWriterToJSONFile mipsWriter,
                         int processingPartitionSize) {
-        this.alignmentSpace = alignmentSpace;
         this.dataSourceParam = dataSourceParam;
         this.outputDir = outputDir;
         this.neuronMetadataDao = neuronMetadataDao;
@@ -49,8 +46,8 @@ public class MIPsExporter implements DataExporter {
     public void runExport() {
         List<String> allPublishedNames = neuronMetadataDao.findNeurons(
                         new NeuronSelector()
-                                .setAlignmentSpace(alignmentSpace)
-                                .setLibraryName(dataSourceParam.getLocation()),
+                                .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
+                                .setLibraryName(dataSourceParam.getLibraryName()),
                         new PagedRequest().setSortCriteria(
                                 Collections.singletonList(new SortCriteria("publishedName"))
                         )
@@ -65,9 +62,9 @@ public class MIPsExporter implements DataExporter {
                         LOG.info("Read mips for {}", publishedName);
                         List<AbstractNeuronEntity> neuronMips = neuronMetadataDao.findNeurons(
                                 new NeuronSelector()
-                                        .setAlignmentSpace(alignmentSpace)
-                                        .addName(publishedName)
-                                        .setLibraryName(dataSourceParam.getLocation()),
+                                        .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
+                                        .setLibraryName(dataSourceParam.getLibraryName())
+                                        .addName(publishedName),
                                 new PagedRequest()).getResultList();
                         LOG.info("Write mips for {}", publishedName);
                         mipsWriter.writeItems(neuronMips, outputDir, publishedName);
