@@ -11,6 +11,7 @@ import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class MIPsExporter implements DataExporter {
                                 Collections.singletonList(new SortCriteria("publishedName"))
                         )
                 ).getResultList().stream().map(AbstractNeuronEntity::getPublishedName)
+                .distinct()
                 .collect(Collectors.toList());
         int from = dataSourceParam.hasOffset() ? Math.min((int) dataSourceParam.getOffset(), allPublishedNames.size()) : 0;
         int to = dataSourceParam.hasSize() ? from + dataSourceParam.getSize() : allPublishedNames.size();
@@ -60,12 +62,14 @@ public class MIPsExporter implements DataExporter {
                 .forEach(indexedPartition -> {
                     indexedPartition.getValue().forEach(publishedName -> {
                         LOG.info("Read mips for {}", publishedName);
-                        List<AbstractNeuronEntity> neuronMips = neuronMetadataDao.findNeurons(
+                        List<AbstractNeuronMetadata> neuronMips = neuronMetadataDao.findNeurons(
                                 new NeuronSelector()
                                         .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
                                         .setLibraryName(dataSourceParam.getLibraryName())
                                         .addName(publishedName),
-                                new PagedRequest()).getResultList();
+                                new PagedRequest()).getResultList().stream()
+                                .map(AbstractNeuronEntity::metadata)
+                                .collect(Collectors.toList());
                         LOG.info("Write mips for {}", publishedName);
                         mipsWriter.writeItems(neuronMips, outputDir, publishedName);
                     });
