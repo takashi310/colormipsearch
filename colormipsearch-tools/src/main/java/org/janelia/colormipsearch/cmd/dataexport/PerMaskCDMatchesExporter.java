@@ -6,14 +6,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
+import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
-import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
+import org.janelia.colormipsearch.dto.EMNeuronMetadata;
+import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
@@ -22,33 +25,17 @@ import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PerMaskCDMatchesExporter implements DataExporter {
+public class PerMaskCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(PerMaskCDMatchesExporter.class);
 
-    private final DataSourceParam dataSourceParam;
-    private final ScoresFilter scoresFilter;
-    private final Path outputDir;
-    private final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
-    private final ItemsWriterToJSONFile resultMatchesWriter;
-    private final int processingPartitionSize;
-
-    public PerMaskCDMatchesExporter(DataSourceParam dataSourceParam,
+    public PerMaskCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+                                    DataSourceParam dataSourceParam,
                                     ScoresFilter scoresFilter,
                                     Path outputDir,
                                     NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                     ItemsWriterToJSONFile resultMatchesWriter,
                                     int processingPartitionSize) {
-        this.dataSourceParam = dataSourceParam;
-        this.scoresFilter = scoresFilter;
-        this.outputDir = outputDir;
-        this.neuronMatchesReader = neuronMatchesReader;
-        this.resultMatchesWriter = resultMatchesWriter;
-        this.processingPartitionSize = processingPartitionSize;
-    }
-
-    @Override
-    public DataSourceParam getDataSource() {
-        return dataSourceParam;
+        super(jacsDataHelper, dataSourceParam, scoresFilter, outputDir, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override
@@ -72,7 +59,7 @@ public class PerMaskCDMatchesExporter implements DataExporter {
                 });
     }
 
-    private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
+    private <M extends EMNeuronMetadata, T extends LMNeuronMetadata> void
     writeResults(List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
         // group results by mask MIP ID
         List<Function<M, ?>> grouping = Collections.singletonList(
@@ -84,7 +71,15 @@ public class PerMaskCDMatchesExporter implements DataExporter {
                 matches,
                 grouping,
                 ordering);
+        // retrieve source ColorDepth MIPs
+        retrieveAllCDMIPs(matches);
+        // update all neuron from all grouped matches
+        groupedMatches.forEach(m -> updateMatchedResultsMetadata(m,
+                this::updateEMNeuron,
+                this::updateLMNeuron
+        ));
         // write results by mask MIP ID
         resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getMipId, outputDir);
     }
+
 }

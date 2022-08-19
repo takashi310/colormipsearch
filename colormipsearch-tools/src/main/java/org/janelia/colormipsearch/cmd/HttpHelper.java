@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 public class HttpHelper {
     private static final Logger LOG = LoggerFactory.getLogger(HttpHelper.class);
 
-    static Client createClient() {
+    public static Client createClient() {
         try {
             SSLContext sslContext = createSSLContext();
 
@@ -96,25 +96,29 @@ public class HttpHelper {
      * @param <T> data type
      * @return
      */
-    static <T> Stream<T> retrieveDataStream(Supplier<WebTarget> endpointSupplier, String authorization, int chunkSize, Set<String> names, TypeReference<List<T>> t) {
+    public static <T> Stream<T> retrieveDataStreamForNames(Supplier<WebTarget> endpointSupplier,
+                                                           String authorization,
+                                                           int chunkSize,
+                                                           Set<String> names,
+                                                           TypeReference<List<T>> t) {
         if (chunkSize > 0) {
             return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream().parallel()
                     .flatMap(indexedNamesSubset -> {
                         LOG.info("Retrieve {} items", indexedNamesSubset.getValue().size());
-                        return retrieveChunk(
+                        return retrieveData(
                                 endpointSupplier.get().queryParam("name", indexedNamesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 authorization,
                                 t).stream();
                     });
         } else {
-            return retrieveChunk(
+            return retrieveData(
                     endpointSupplier.get().queryParam("name", CollectionUtils.isNotEmpty(names) ? names.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
                     authorization,
                     t).stream();
         }
     }
 
-    static <T> List<T> retrieveChunk(WebTarget endpoint, String authorization, TypeReference<List<T>> t) {
+    public static <T> T retrieveData(WebTarget endpoint, String authorization, TypeReference<T> t) {
         try (Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), authorization).get()) {
             if (response.getStatus() != Response.Status.OK.getStatusCode()) {
                 throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);

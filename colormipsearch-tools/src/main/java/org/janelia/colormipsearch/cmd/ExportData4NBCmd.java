@@ -11,17 +11,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cmd.dataexport.AbstractDataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
+import org.janelia.colormipsearch.dto.EMNeuronMetadata;
+import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.EMNeuronEntity;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +36,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This command is used to export data from the database to the file system in order to upload it to S3.
  */
-class ExportNeuronMatchesCmd extends AbstractCmd {
+class ExportData4NBCmd extends AbstractCmd {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ExportNeuronMatchesCmd.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExportData4NBCmd.class);
 
     @Parameters(commandDescription = "Export neuron matches")
     static class ExportMatchesCmdArgs extends AbstractCmdArgs {
@@ -39,6 +46,15 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--exported-result-type"}, required = true, // this is required because PPPs are handled a bit differently
                 description = "Specifies neuron match type whether it's color depth search, PPP, etc.")
         ExportedResultType exportedResultType = ExportedResultType.PER_MASK_CDS_MATCHES;
+
+        @Parameter(names = {"--jacs-url", "--data-url"}, description = "JACS data service base URL")
+        String dataServiceURL;
+
+        @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
+        String configURL = "http://config.int.janelia.org/config";
+
+        @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
+        String authorization;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
         Double pctPositivePixels = 0.0;
@@ -76,7 +92,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
     private final ExportMatchesCmdArgs args;
     private final ObjectMapper mapper;
 
-    ExportNeuronMatchesCmd(String commandName, CommonArgs commonArgs) {
+    ExportData4NBCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new ExportMatchesCmdArgs(commonArgs);
         this.mapper = new ObjectMapper()
@@ -125,9 +141,13 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 args.commonArgs.noPrettyPrint
                         ? mapper.writer()
                         : mapper.writerWithDefaultPrettyPrinter());
+        CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
+                new JacsDataGetter(args.dataServiceURL, args.configURL, args.authorization, args.processingPartitionSize)
+        );
         switch (args.exportedResultType) {
             case PER_MASK_CDS_MATCHES:
                 return new PerMaskCDMatchesExporter(
+                        jacsDataHelper,
                         new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         getCDScoresFilter(),
                         args.getOutputResultsDir(),
@@ -140,6 +160,7 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 );
             case PER_TARGET_CDS_MATCHES:
                 return new PerTargetCDMatchesExporter(
+                        jacsDataHelper,
                         new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         getCDScoresFilter(),
                         args.getOutputResultsDir(),
@@ -164,19 +185,23 @@ class ExportNeuronMatchesCmd extends AbstractCmd {
                 );
             case EM_MIPS:
                 return new MIPsExporter(
+                        jacsDataHelper,
                         new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
-                        args.processingPartitionSize
+                        args.processingPartitionSize,
+                        EMNeuronMetadata.class
                 );
             case LM_MIPS:
                 return new MIPsExporter(
+                        jacsDataHelper,
                         new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
-                        args.processingPartitionSize
+                        args.processingPartitionSize,
+                        LMNeuronMetadata.class
                 );
             default:
                 throw new IllegalArgumentException("Export result types must be specified");

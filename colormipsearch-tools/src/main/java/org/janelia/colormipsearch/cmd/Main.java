@@ -27,7 +27,7 @@ public class Main {
                 new ColorDepthSearchCmd("colorDepthSearch", commonArgs, () -> mainArgs.cacheSize, false),
                 new CalculateGradientScoresCmd("gradientScores", commonArgs, () -> mainArgs.cacheSize),
                 new ImportPPPResultsCmd("importPPPResults", commonArgs),
-                new ExportNeuronMatchesCmd("exportData", commonArgs),
+                new ExportData4NBCmd("exportData", commonArgs),
                 new GenerateJSONSchemasCmd("schemas", commonArgs),
                 new ImportV2CDMatchesCmd("legacyImport", commonArgs)
         };

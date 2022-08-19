@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.dto.EMNeuronMetadata;
+import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.Gender;
 
 /**
  * This is the representation of a JACS ColorDepthMIP image.
@@ -74,6 +77,10 @@ public class ColorDepthMIP implements Serializable {
         return sample != null ? sample.slideCode : null;
     }
 
+    public String lmMountingProtocol() {
+        return sample != null ? sample.mountingProtocol : null;
+    }
+
     public String lmDriver() {
         return sample != null ? sample.driver : null;
     }
@@ -97,6 +104,25 @@ public class ColorDepthMIP implements Serializable {
             return null;
         }
     }
+
+    public void updateLMNeuron(LMNeuronMetadata lmNeuron) {
+        lmNeuron.setPublishedName(lmLineName());
+        lmNeuron.setGender(Gender.fromVal(gender()));
+        lmNeuron.setSlideCode(lmSlideCode());
+        lmNeuron.setAnatomicalArea(anatomicalArea);
+        lmNeuron.setMountingProtocol(lmMountingProtocol());
+        lmNeuron.setDriver(lmDriver());
+        lmNeuron.setObjective(lmObjective());
+        lmNeuron.setChannel(channelNumber());
+    }
+
+    public void updateEMNeuron(EMNeuronMetadata emNeuron) {
+        emNeuron.setPublishedName(emBodyId());
+        emNeuron.setAnatomicalArea(anatomicalArea);
+        emNeuron.setNeuronInstance(neuronInstance);
+        emNeuron.setNeuronType(neuronType);
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)

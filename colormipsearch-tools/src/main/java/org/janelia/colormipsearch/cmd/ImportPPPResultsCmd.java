@@ -21,11 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.ws.rs.client.Client;
-
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,12 +30,12 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
+import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
@@ -69,11 +66,14 @@ class ImportPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--anatomical-area", "-area"}, description = "Anatomical area")
         String anatomicalArea = "Brain";
 
-        @Parameter(names = {"--em-dataset"}, description = "EM Dataset; this is typically hemibrain or vnc")
-        String emDataset = "hemibrain";
+        @Parameter(names = {"--em-dataset"}, description = "EM Dataset; this is typically hemibrain or vnc. " +
+                "This field is required at import time because there is no way to find it from the imported PPP results",
+                required = true)
+        String emDataset;
 
-        @Parameter(names = {"--em-dataset-version"}, description = "EM Dataset version")
-        String emDatasetVersion = "1.2.1";
+        @Parameter(names = {"--em-dataset-version"}, description = "EM Dataset version and it is correlated with the EM dataset",
+                required = true)
+        String emDatasetVersion;
 
         @Parameter(names = {"--results-dir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Location of the original PPP results")
@@ -105,6 +105,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 1000;
+
+        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported PPP matches")
+        String tag;
 
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -244,31 +247,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches, args.includeRawSkeletonMatches)
                 .map(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
-        Set<String> matchedLMSampleNames = inputPPPMatches.stream()
-                .map(InputPPPMatch::getLmSampleName)
-                .collect(Collectors.toSet());
-        Set<String> neuronNames = inputPPPMatches.stream()
-                .map(InputPPPMatch::getEmNeuronName)
-                .collect(Collectors.toSet());
-
-        Map<String, CDMIPSample> lmSamples;
-        Map<String, CDMIPBody> emNeurons;
-        if (args.hasDataServiceURL()) {
-            Client httpClient = HttpHelper.createClient();
-            if (CollectionUtils.isNotEmpty(matchedLMSampleNames)) {
-                lmSamples = retrieveLMSamples(httpClient, matchedLMSampleNames);
-            } else {
-                lmSamples = Collections.emptyMap();
-            }
-            if (CollectionUtils.isNotEmpty(neuronNames)) {
-                emNeurons = retrieveEMNeurons(httpClient, neuronNames);
-            } else {
-                emNeurons = Collections.emptyMap();
-            }
-        } else {
-            lmSamples = Collections.emptyMap();
-            emNeurons = Collections.emptyMap();
-        }
 
         return inputPPPMatches.stream()
                 .map(inputPPPMatch -> {
@@ -277,10 +255,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
                         lookupScreenshots(screenshotsPath, inputPPPMatch);
                     }
-                    CDMIPSample lmSample = lmSamples.get(inputPPPMatch.getLmSampleName());
-                    inputPPPMatch.setLmSample(lmSample);
-                    CDMIPBody emBody = emNeurons.get(inputPPPMatch.getEmNeuronName());
-                    inputPPPMatch.setEmBody(emBody);
                     return updatePPPMatchData(inputPPPMatch);
                 })
                 .collect(Collectors.toList());
@@ -333,36 +307,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
         return args.dataServiceURLs.get(RAND.nextInt(args.dataServiceURLs.size()));
     }
 
-    private Map<String, CDMIPSample> retrieveLMSamples(Client httpClient, Set<String> sampleNames) {
-        LOG.debug("Read LM metadata for {} samples", sampleNames.size());
-        return HttpHelper.retrieveDataStream(() -> httpClient.target(selectADataServiceURL())
-                                .path("/data/samples")
-                                .queryParam("withReducedFields", true),
-                        args.authorization,
-                        args.jacsReadBatchSize,
-                        sampleNames,
-                        new TypeReference<List<CDMIPSample>>() {
-                        })
-                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
-                .collect(Collectors.toMap(n -> n.name, n -> n));
-    }
-
-    private Map<String, CDMIPBody> retrieveEMNeurons(Client httpClient, Set<String> neuronIds) {
-        LOG.debug("Read EM metadata for {} neurons", neuronIds.size());
-        return HttpHelper.retrieveDataStream(() -> httpClient.target(selectADataServiceURL())
-                                .path("/emdata/dataset")
-                                .path(args.emDataset)
-                                .path(args.emDatasetVersion),
-                        args.authorization,
-                        args.jacsReadBatchSize,
-                        neuronIds,
-                        new TypeReference<List<CDMIPBody>>() {
-                        })
-                .collect(Collectors.toMap(
-                        n -> n.name,
-                        n -> n));
-    }
-
     private void lookupScreenshots(Path pppScreenshotsDir, InputPPPMatch inputPPPMatch) {
         if (Files.exists(pppScreenshotsDir)) {
             try (DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(
@@ -387,8 +331,11 @@ class ImportPPPResultsCmd extends AbstractCmd {
         lmNeuronEntity.setSourceRefId(inputPPPMatch.getLmId());
 
         PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
+        pppMatch.setEmDataset(args.emDataset);
+        pppMatch.setEmDatasetVersion(args.emDatasetVersion);
         pppMatch.setMaskImage(emNeuronEntity);
         pppMatch.setMatchedImage(lmNeuronEntity);
+        pppMatch.addTag(args.tag);
 
         if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
             inputPPPMatch.getPPPMatch().getSourceImageFiles()
