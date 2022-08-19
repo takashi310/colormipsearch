@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
+import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -22,25 +23,23 @@ import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PPPMatchesExporter implements DataExporter {
+public class PPPMatchesExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(PerMaskCDMatchesExporter.class);
 
-    private final DataSourceParam dataSourceParam;
     private final ScoresFilter scoresFilter;
-    private final Path outputDir;
     private final NeuronMatchesReader<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
     private final ItemsWriterToJSONFile resultMatchesWriter;
     private final int processingPartitionSize;
 
-    public PPPMatchesExporter(DataSourceParam dataSourceParam,
+    public PPPMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+                              DataSourceParam dataSourceParam,
                               ScoresFilter scoresFilter,
                               Path outputDir,
                               NeuronMatchesReader<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                               ItemsWriterToJSONFile resultMatchesWriter,
                               int processingPartitionSize) {
-        this.dataSourceParam = dataSourceParam;
+        super(jacsDataHelper, dataSourceParam, outputDir);
         this.scoresFilter = scoresFilter;
-        this.outputDir = outputDir;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;
         this.processingPartitionSize = processingPartitionSize;
@@ -63,6 +62,7 @@ public class PPPMatchesExporter implements DataExporter {
                                 dataSourceParam.getLibraryName(),
                                 Collections.singletonList(maskId),
                                 scoresFilter,
+                                null, // use the tags for selecting the masks but not for selecting the matches
                                 Collections.singletonList(
                                         new SortCriteria("rank", SortDirection.ASC)
                                 ));

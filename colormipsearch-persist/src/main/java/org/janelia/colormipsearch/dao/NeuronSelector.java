@@ -120,7 +120,7 @@ public class NeuronSelector {
     }
 
     public NeuronSelector addTags(List<String> tags) {
-        tags.forEach(this::addTag);
+        if (tags != null) tags.forEach(this::addTag);
         return this;
     }
 

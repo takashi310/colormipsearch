@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -73,6 +74,12 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                         "This can be a directory of JSON files, a list of specific JSON files or some `DB selector`")
         List<ListArg> matches;
 
+        @Parameter(names = {"--tags"}, description = "Tags associated with the mask of the match to be scored", variableArity = true)
+        List<String> tags = new ArrayList<>();
+
+        @Parameter(names = {"--match-tags"}, description = "Match tags to be scored", variableArity = true)
+        List<String> matchTags = new ArrayList<>();
+
         @Parameter(names = {"--nBestLines"},
                 description = "Specifies the number of the top distinct lines to be used for gradient score")
         int numberOfBestLines;
@@ -131,7 +138,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream()
-                .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, larg.offset, larg.length))
+                .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, args.tags, larg.offset, larg.length))
                 .collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
@@ -275,6 +282,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 null,
                 Collections.singletonList(maskCDMipId),
                 neuronsMatchScoresFilter,
+                args.matchTags,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));

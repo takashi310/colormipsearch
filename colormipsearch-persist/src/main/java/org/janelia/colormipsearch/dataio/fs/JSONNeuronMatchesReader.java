@@ -42,6 +42,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
     @Override
     public List<R> readMatchesForMasks(String alignmentSpace, String maskLibrary, List<String> maskMipIds,
                                        ScoresFilter matchScoresFilter,
+                                       List<String> matchTags,
                                        List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
                 .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
@@ -54,6 +55,7 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
     @Override
     public List<R> readMatchesForTargets(String alignmentSpace, String targetLibrary, List<String> targetMipIds,
                                          ScoresFilter matchScoresFilter,
+                                         List<String> matchTags,
                                          List<SortCriteria> sortCriteriaList) {
         return (List<R>) targetMipIds.stream()
                 .map(targetMipId -> StringUtils.isNotBlank(targetLibrary) ? Paths.get(targetLibrary, targetMipId).toFile() : new File(targetMipId))

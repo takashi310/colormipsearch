@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
@@ -12,7 +11,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.dto.AbstractMatchedTarget;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
-import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
 /**

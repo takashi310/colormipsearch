@@ -26,12 +26,15 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param maskLibrary masks library
      * @param maskMipIds mask MIPs
      * @param matchScoresFilter additional matches scores filter
+     * @param matchTags
+     * @param sortCriteriaList
      * @return
      */
     List<R> readMatchesForMasks(String alignmentSpace,
                                 String maskLibrary,
                                 List<String> maskMipIds,
                                 ScoresFilter matchScoresFilter,
+                                List<String> matchTags,
                                 List<SortCriteria> sortCriteriaList);
 
     /**
@@ -41,11 +44,14 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param targetLibrary masks library
      * @param targetMipIds mask MIPs
      * @param matchScoresFilter additional match scores filter
+     * @param matchTags
+     * @param sortCriteriaList
      * @return
      */
     List<R> readMatchesForTargets(String alignmentSpace,
                                   String targetLibrary,
                                   List<String> targetMipIds,
                                   ScoresFilter matchScoresFilter,
+                                  List<String> matchTags,
                                   List<SortCriteria> sortCriteriaList);
 }

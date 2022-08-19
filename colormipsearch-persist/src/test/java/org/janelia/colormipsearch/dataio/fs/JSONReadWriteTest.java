@@ -93,6 +93,7 @@ public class JSONReadWriteTest {
                                     null,
                                     Collections.singletonList(f),
                                     null,
+                                    null,
                                     null);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);

@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.dataio;
 
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -7,12 +9,14 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class DataSourceParam {
     private String alignmentSpace;
     private String libraryName;
+    private List<String> tags;
     private long offset;
     private int size;
 
-    public DataSourceParam(String alignmentSpace, String libraryName, long offset, int size) {
+    public DataSourceParam(String alignmentSpace, String libraryName, List<String> tags, long offset, int size) {
         this.alignmentSpace = alignmentSpace;
         this.libraryName = libraryName;
+        this.tags = tags;
         this.offset = offset;
         this.size = size;
     }
@@ -34,6 +38,14 @@ public class DataSourceParam {
 
     public void setLibraryName(String libraryName) {
         this.libraryName = libraryName;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
 
     public long getOffset() {

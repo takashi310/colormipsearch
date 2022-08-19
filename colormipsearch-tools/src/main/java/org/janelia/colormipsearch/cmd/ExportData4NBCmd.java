@@ -1,6 +1,8 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -77,6 +79,9 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
 
+        @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
+        List<String> tags = new ArrayList<>();
+
         ExportMatchesCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
@@ -144,11 +149,16 @@ class ExportData4NBCmd extends AbstractCmd {
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(args.dataServiceURL, args.configURL, args.authorization, args.processingPartitionSize)
         );
+        DataSourceParam dataSource = new DataSourceParam(args.alignmentSpace,
+                args.library.input,
+                args.tags,
+                args.library.offset,
+                args.library.length);
         switch (args.exportedResultType) {
             case PER_MASK_CDS_MATCHES:
                 return new PerMaskCDMatchesExporter(
                         jacsDataHelper,
-                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        dataSource,
                         getCDScoresFilter(),
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
@@ -161,7 +171,7 @@ class ExportData4NBCmd extends AbstractCmd {
             case PER_TARGET_CDS_MATCHES:
                 return new PerTargetCDMatchesExporter(
                         jacsDataHelper,
-                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        dataSource,
                         getCDScoresFilter(),
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
@@ -173,7 +183,8 @@ class ExportData4NBCmd extends AbstractCmd {
                 );
             case PPP_MATCHES:
                 return new PPPMatchesExporter(
-                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        jacsDataHelper,
+                        dataSource,
                         getPPPScoresFilter(),
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
@@ -186,7 +197,7 @@ class ExportData4NBCmd extends AbstractCmd {
             case EM_MIPS:
                 return new MIPsExporter(
                         jacsDataHelper,
-                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        dataSource,
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
@@ -196,7 +207,7 @@ class ExportData4NBCmd extends AbstractCmd {
             case LM_MIPS:
                 return new MIPsExporter(
                         jacsDataHelper,
-                        new DataSourceParam(args.alignmentSpace, args.library.input, args.library.offset, args.library.length),
+                        dataSource,
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,

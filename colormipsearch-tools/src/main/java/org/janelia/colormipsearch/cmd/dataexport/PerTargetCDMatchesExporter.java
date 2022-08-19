@@ -50,6 +50,7 @@ public class PerTargetCDMatchesExporter extends AbstractCDMatchesExporter {
                                 dataSourceParam.getLibraryName(),
                                 Collections.singletonList(targetId),
                                 scoresFilter,
+                                null, // use the tags for selecting the masks but not for selecting the matches
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));

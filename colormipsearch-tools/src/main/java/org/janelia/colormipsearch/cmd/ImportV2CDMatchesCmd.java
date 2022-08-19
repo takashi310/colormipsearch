@@ -73,7 +73,12 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
-                .map(larg -> new DataSourceParam(null, larg.input, larg.offset, larg.length))
+                .map(larg -> new DataSourceParam(
+                        null,
+                        larg.input,
+                        null, // it's not clear from the API but the reader is file based so tags are not important here
+                        larg.offset,
+                        larg.length))
                 .collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
         ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).entrySet().stream().parallel()
@@ -121,6 +126,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 null,
                 Collections.singletonList(maskCDMipId),
                 null,
+                null, // it's not clear from the API but the reader is file based so tags are not important here
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));
