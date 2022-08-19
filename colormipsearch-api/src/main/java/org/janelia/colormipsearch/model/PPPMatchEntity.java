@@ -12,29 +12,21 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 @PersistenceInfo(storeName ="pppMatches")
 public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private String sourceEmName;
-    private String emDataset;
-    private String emDatasetVersion;
+    private String emLibraryName;
     private String sourceLmName;
+    private String lmLibraryName;
     private Double coverageScore;
     private Double aggregateCoverage;
     private Double rank;
     private Map<PPPScreenshotType, String> sourceImageFiles;
     private List<PPPSkeletonMatch> skeletonMatches;
 
-    public String getEmDataset() {
-        return emDataset;
+    public String getEmLibraryName() {
+        return emLibraryName;
     }
 
-    public void setEmDataset(String emDataset) {
-        this.emDataset = emDataset;
-    }
-
-    public String getEmDatasetVersion() {
-        return emDatasetVersion;
-    }
-
-    public void setEmDatasetVersion(String emDatasetVersion) {
-        this.emDatasetVersion = emDatasetVersion;
+    public void setEmLibraryName(String emLibraryName) {
+        this.emLibraryName = emLibraryName;
     }
 
     public String getSourceEmName() {
@@ -45,48 +37,20 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         this.sourceEmName = sourceEmName;
     }
 
-    /*
-     * Since PPP matches will not store any references to the corresponding neuron images,
-     * we persist the mask and the matched image as embedded documents using "sourceImage" and "targetImage" attributes
-     * respectively.
-     */
-
-    /**
-     * @return embedded document for mask image
-     */
-    public M getSourceImage() {
-        return getMaskImage();
-    }
-
-    /**
-     * Set mask image from the persisted embedded document.
-     * @param sourceImage
-     */
-    public void setSourceImage(M sourceImage) {
-        setMaskImage(sourceImage);
-    }
-
-    /**
-     * @return embedded docuent for matched image
-     */
-    public T getTargetImage() {
-        return getMatchedImage();
-    }
-
-    /**
-     * Set matched image from the corresponding embedded document
-     * @param targetImage
-     */
-    public void setTargetImage(T targetImage) {
-        setMatchedImage(targetImage);
-    }
-
     public String getSourceLmName() {
         return sourceLmName;
     }
 
     public void setSourceLmName(String sourceLmName) {
         this.sourceLmName = sourceLmName;
+    }
+
+    public String getLmLibraryName() {
+        return lmLibraryName;
+    }
+
+    public void setLmLibraryName(String lmLibraryName) {
+        this.lmLibraryName = lmLibraryName;
     }
 
     public Double getCoverageScore() {

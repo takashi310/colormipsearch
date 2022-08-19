@@ -54,7 +54,7 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
     }
 
     public NeuronsMatchFilter<R> addTags(List<String> tags) {
-        tags.forEach(this::addTag);
+        if (tags != null) tags.forEach(this::addTag);
         return this;
     }
 

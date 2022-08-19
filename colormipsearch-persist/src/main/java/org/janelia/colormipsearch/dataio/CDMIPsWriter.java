@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.dataio;
 
+import java.util.List;
+
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 /**
@@ -16,7 +18,7 @@ public interface CDMIPsWriter {
      *
      * @param neuronMetadata item to write
      */
-    void write(AbstractNeuronEntity neuronMetadata);
+    void write(List<AbstractNeuronEntity> neuronMetadata);
 
     /**
      * Finish all writes and close the writer.

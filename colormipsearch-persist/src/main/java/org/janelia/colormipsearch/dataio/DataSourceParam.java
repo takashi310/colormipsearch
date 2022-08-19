@@ -21,9 +21,6 @@ public class DataSourceParam {
         this.size = size;
     }
 
-    public DataSourceParam() {
-    }
-
     public String getAlignmentSpace() {
         return alignmentSpace;
     }

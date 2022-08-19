@@ -31,10 +31,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
+import org.janelia.colormipsearch.dao.DaosProvider;
+import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
@@ -46,34 +51,23 @@ import org.slf4j.MDC;
 
 class ImportPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ImportPPPResultsCmd.class);
-    private static final Random RAND = new Random();
 
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class CreatePPPResultsArgs extends AbstractCmdArgs {
-        // This is a multi value argument because if I need to distribute it
-        // I would like to do some kind of load balnacing and have different instances
-        // spread the requests accross multiple servers
-        @Parameter(names = {"--jacs-url", "--data-url"}, variableArity = true,
-                description = "JACS data service base URL")
-        List<String> dataServiceURLs;
-
-        @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
-        String authorization;
-
-        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space")
-        String alignmentSpace = "JRC2018_Unisex_20x_HR";
+        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
+        String alignmentSpace;
 
         @Parameter(names = {"--anatomical-area", "-area"}, description = "Anatomical area")
         String anatomicalArea = "Brain";
 
-        @Parameter(names = {"--em-dataset"}, description = "EM Dataset; this is typically hemibrain or vnc. " +
-                "This field is required at import time because there is no way to find it from the imported PPP results",
-                required = true)
-        String emDataset;
+        @Parameter(names = {"--em-library"}, description = "EM library name", required = true)
+        String emLibrary;
 
-        @Parameter(names = {"--em-dataset-version"}, description = "EM Dataset version and it is correlated with the EM dataset",
-                required = true)
-        String emDatasetVersion;
+        @Parameter(names = {"--lm-library"}, description = "LM library name", required = true)
+        String lmLibrary;
+
+        @Parameter(names = {"--em-tags"}, description = "EM tags", variableArity = true)
+        List<String> emTags;
 
         @Parameter(names = {"--results-dir", "-rd"}, converter = ListArg.ListArgConverter.class,
                 description = "Location of the original PPP results")
@@ -112,15 +106,12 @@ class ImportPPPResultsCmd extends AbstractCmd {
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
-
-        boolean hasDataServiceURL() {
-            return CollectionUtils.isNotEmpty(dataServiceURLs);
-        }
     }
 
     private final CreatePPPResultsArgs args;
     private final ObjectMapper mapper;
     private final RawPPPMatchesReader rawPPPMatchesReader;
+    private final CDMIPsReader cdmipsReader;
 
     ImportPPPResultsCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
@@ -128,6 +119,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.rawPPPMatchesReader = new RawPPPMatchesReader(mapper);
+        this.cdmipsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
     }
 
     @Override
@@ -239,14 +231,21 @@ class ImportPPPResultsCmd extends AbstractCmd {
     /**
      * Import PPP results from a list of file matches that are all for the same neuron.
      *
-     * @param pppResultsFile
-     * @return
+     * @param pppResultsFile path of PPP file to import
+     * @return a list of PPP matches imported from the given file
      */
     private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
         List<InputPPPMatch> inputPPPMatches = rawPPPMatchesReader.readPPPMatches(
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches, args.includeRawSkeletonMatches)
                 .map(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
+
+        // extract neuron names from the imported PPP match
+        Set<String> emNeuronNames = inputPPPMatches.stream()
+                .map(InputPPPMatch::getEmNeuronName)
+                .collect(Collectors.toSet());
+
+        Map<String, EMNeuronEntity> registeredEMNeurons = retrieveEMNeurons(emNeuronNames);
 
         return inputPPPMatches.stream()
                 .map(inputPPPMatch -> {
@@ -255,6 +254,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         Path screenshotsPath = pppResultsFile.getParent().resolve(args.screenshotsDir);
                         lookupScreenshots(screenshotsPath, inputPPPMatch);
                     }
+                    pppMatch.setMaskImage(registeredEMNeurons.get(inputPPPMatch.getEmNeuronName()));
                     return updatePPPMatchData(inputPPPMatch);
                 })
                 .collect(Collectors.toList());
@@ -303,18 +303,12 @@ class ImportPPPResultsCmd extends AbstractCmd {
         }
     }
 
-    private String selectADataServiceURL() {
-        return args.dataServiceURLs.get(RAND.nextInt(args.dataServiceURLs.size()));
-    }
-
     private void lookupScreenshots(Path pppScreenshotsDir, InputPPPMatch inputPPPMatch) {
         if (Files.exists(pppScreenshotsDir)) {
             try (DirectoryStream<Path> screenshotsDirStream = Files.newDirectoryStream(
                     pppScreenshotsDir,
                     inputPPPMatch.getPPPMatch().getSourceEmName() + "*" + inputPPPMatch.getPPPMatch().getSourceLmName() + "*.png")) {
-                screenshotsDirStream.forEach(f -> {
-                    inputPPPMatch.getPPPMatch().addSourceImageFile(f.toString());
-                });
+                screenshotsDirStream.forEach(f -> inputPPPMatch.getPPPMatch().addSourceImageFile(f.toString()));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -322,28 +316,16 @@ class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> updatePPPMatchData(InputPPPMatch inputPPPMatch) {
-        EMNeuronEntity emNeuronEntity = new EMNeuronEntity();
-        emNeuronEntity.setPublishedName(inputPPPMatch.getEmNeuronName());
-        emNeuronEntity.setSourceRefId(inputPPPMatch.getEmId());
-
-        LMNeuronEntity lmNeuronEntity = new LMNeuronEntity();
-        lmNeuronEntity.setPublishedName(inputPPPMatch.getLmLineName());
-        lmNeuronEntity.setSourceRefId(inputPPPMatch.getLmId());
-
         PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
-        pppMatch.setEmDataset(args.emDataset);
-        pppMatch.setEmDatasetVersion(args.emDatasetVersion);
-        pppMatch.setMaskImage(emNeuronEntity);
-        pppMatch.setMatchedImage(lmNeuronEntity);
+        pppMatch.setEmLibraryName(args.emLibrary);
+        pppMatch.setLmLibraryName(args.lmLibrary);
         pppMatch.addTag(args.tag);
 
         if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
             inputPPPMatch.getPPPMatch().getSourceImageFiles()
-                    .forEach((k, fn) -> {
-                        inputPPPMatch.getPPPMatch().setMatchFile(
-                                k.getFileType(),
-                                buildImageRelativePath(inputPPPMatch, k.getFileType().getDisplayPPPSuffix()));
-                    });
+                    .forEach((k, fn) -> inputPPPMatch.getPPPMatch().setMatchFile(
+                            k.getFileType(),
+                            buildImageRelativePath(inputPPPMatch, k.getFileType().getDisplayPPPSuffix())));
         }
         return pppMatch;
     }
@@ -359,6 +341,15 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 lmObjective + "-" +
                 args.alignmentSpace + '-' +
                 suffix;
+    }
+
+    private Map<String, EMNeuronEntity> retrieveEMNeurons(Set<String> emNeuronNames) {
+        return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1))
+                .stream()
+                .filter(n -> emNeuronNames.contains(n.getPublishedName()))
+                .filter(n -> n.getComputeFileName(ComputeFileType.SourceColorDepthImage)
+                        .equals(n.getComputeFileName(ComputeFileType.InputColorDepthImage)))
+                .collect(Collectors.toMap(AbstractNeuronEntity::getPublishedName, n -> (EMNeuronEntity) n));
     }
 
     private void writePPPMatches(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches, NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {

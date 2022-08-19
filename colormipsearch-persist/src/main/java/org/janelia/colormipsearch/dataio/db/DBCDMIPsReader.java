@@ -20,7 +20,10 @@ public class DBCDMIPsReader implements CDMIPsReader {
     @Override
     public List<? extends AbstractNeuronEntity> readMIPs(DataSourceParam mipsDataSource) {
         return  neuronMetadataDao.findNeurons(
-                new NeuronSelector().setAlignmentSpace(mipsDataSource.getAlignmentSpace()).setLibraryName(mipsDataSource.getLibraryName()),
+                new NeuronSelector()
+                        .setAlignmentSpace(mipsDataSource.getAlignmentSpace())
+                        .setLibraryName(mipsDataSource.getLibraryName())
+                        .addTags(mipsDataSource.getTags()),
                 new PagedRequest().setPageSize(mipsDataSource.getSize()).setFirstPageOffset(mipsDataSource.getOffset())
         ).getResultList();
     }

@@ -298,7 +298,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     pageOffset,
                     currentPageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + currentPageSize, cdmsCount);
-            cdmipsPage.stream()
+            List<AbstractNeuronEntity> cdNeurons = cdmipsPage.stream()
                     .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
                             ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping)
@@ -320,7 +320,9 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                             libraryPaths.listLibraryVariants(),
                             inputLibraryVariantChoice.orElse(null)))
                     .peek(this::updateTagAndNeuronFiles)
-                    .forEach(cdmip -> gen.write(cdmip.getNeuronMetadata()));
+                    .map(InputCDMipNeuron::getNeuronMetadata)
+                    .collect(Collectors.toList());
+            gen.write(cdNeurons);
         }
         gen.close();
     }
@@ -388,6 +390,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setSourceRefId(cdmip.emBodyRef);
+        neuronMetadata.setPublishedName(cdmip.emBodyId());
         // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         // set the MIP and corresponding thumbnail URL in case they are set in the workstation.
@@ -398,7 +401,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             neuronMetadata.setComputeFileData(ComputeFileType.SWCBody, swcData);
             neuronMetadata.setNeuronFile(FileType.AlignedBodySWC, swcData.getName());
         }
-        neuronMetadata.setPublishedName(cdmip.emBodyName());
         return new InputCDMipNeuron<>(cdmip, neuronMetadata);
     }
 
@@ -411,14 +413,14 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setSourceRefId(cdmip.sampleRef);
+        neuronMetadata.setPublishedName(cdmip.lmLineName());
+        neuronMetadata.setSlideCode(cdmip.lmSlideCode());
         // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         neuronMetadata.setNeuronFile(FileType.ColorDepthMip, urlMapping.apply(cdmip.publicImageUrl));
         neuronMetadata.setNeuronFile(FileType.ColorDepthMipThumbnail, urlMapping.apply(cdmip.publicThumbnailUrl));
         neuronMetadata.setNeuronFile(FileType.VisuallyLosslessStack, urlMapping.apply(cdmip.sample3DImageStack));
         neuronMetadata.setNeuronFile(FileType.SignalMipExpression, urlMapping.apply(cdmip.sampleGen1Gal4ExpressionImage));
-        neuronMetadata.setPublishedName(cdmip.lmLineName());
-        neuronMetadata.setSlideCode(cdmip.lmSlideCode());
         return new InputCDMipNeuron<>(cdmip, neuronMetadata);
     }
 

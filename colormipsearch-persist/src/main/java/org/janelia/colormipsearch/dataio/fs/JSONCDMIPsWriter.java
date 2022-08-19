@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -51,12 +52,14 @@ public class JSONCDMIPsWriter implements CDMIPsWriter {
     }
 
     @Override
-    public void write(AbstractNeuronEntity neuronMetadata) {
-        try {
-            gen.writeObject(neuronMetadata);
-        } catch (Exception e) {
-            LOG.error("Error writing {}", neuronMetadata, e);
-        }
+    public void write(List<AbstractNeuronEntity> neuronMetadata) {
+        neuronMetadata.forEach(n -> {
+            try {
+                gen.writeObject(n);
+            } catch (Exception e) {
+                LOG.error("Error writing {}", n, e);
+            }
+        });
     }
 
     @Override

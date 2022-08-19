@@ -46,11 +46,6 @@ public class PPPMatchesExporter extends AbstractDataExporter {
     }
 
     @Override
-    public DataSourceParam getDataSource() {
-        return dataSourceParam;
-    }
-
-    @Override
     public void runExport() {
         List<String> masks = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
         ItemsHandling.partitionCollection(masks, processingPartitionSize).entrySet().stream().parallel()
@@ -74,7 +69,7 @@ public class PPPMatchesExporter extends AbstractDataExporter {
 
     private <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     writeResults(List<PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
-        // group results by mask
+        // group results by mask's published name
         List<Function<M, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getPublishedName
         );
