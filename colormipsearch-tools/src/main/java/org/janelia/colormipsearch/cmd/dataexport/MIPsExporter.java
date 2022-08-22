@@ -49,7 +49,8 @@ public class MIPsExporter extends AbstractDataExporter {
         List<String> allPublishedNames = neuronMetadataDao.findNeurons(
                         new NeuronSelector()
                                 .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
-                                .setLibraryName(dataSourceParam.getLibraryName()),
+                                .setLibraryName(dataSourceParam.getLibraryName())
+                                .addNames(dataSourceParam.getNames()),
                         new PagedRequest().setSortCriteria(
                                 Collections.singletonList(new SortCriteria("publishedName"))
                         )

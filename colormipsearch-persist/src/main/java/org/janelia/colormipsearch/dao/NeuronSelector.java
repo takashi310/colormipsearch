@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,9 +13,9 @@ public class NeuronSelector {
     private String neuronClassname; // full class name
     private String alignmentSpace; // alignment space
     private String libraryName; // library name
-    private final List<String> names = new ArrayList<>(); // matching published names
-    private final List<String> mipIDs = new ArrayList<>(); // matching MIP IDs
-    private final List<Number> entityIds = new ArrayList<>(); // matching internal entity IDs
+    private final Set<String> names = new HashSet<>(); // matching published names
+    private final Set<String> mipIDs = new HashSet<>(); // matching MIP IDs
+    private final Set<Number> entityIds = new HashSet<>(); // matching internal entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
 
     public String getNeuronClassname() {
@@ -56,7 +57,7 @@ public class NeuronSelector {
         return StringUtils.isNotBlank(libraryName);
     }
 
-    public List<String> getNames() {
+    public Set<String> getNames() {
         return names;
     }
 
@@ -65,8 +66,8 @@ public class NeuronSelector {
         return this;
     }
 
-    public NeuronSelector addNames(List<String> names) {
-        names.forEach(this::addName);
+    public NeuronSelector addNames(Collection<String> names) {
+        if (names != null) names.forEach(this::addName);
         return this;
     }
 
@@ -74,7 +75,7 @@ public class NeuronSelector {
         return CollectionUtils.isNotEmpty(names);
     }
 
-    public List<String> getMipIDs() {
+    public Set<String> getMipIDs() {
         return mipIDs;
     }
 
@@ -83,7 +84,7 @@ public class NeuronSelector {
         return this;
     }
 
-    public NeuronSelector addMipIDs(List<String> mipIDs) {
+    public NeuronSelector addMipIDs(Collection<String> mipIDs) {
         mipIDs.forEach(this::addMipID);
         return this;
     }
@@ -92,7 +93,7 @@ public class NeuronSelector {
         return CollectionUtils.isNotEmpty(mipIDs);
     }
 
-    public List<Number> getEntityIds() {
+    public Set<Number> getEntityIds() {
         return entityIds;
     }
 
@@ -101,7 +102,7 @@ public class NeuronSelector {
         return this;
     }
 
-    public NeuronSelector addEntityIds(List<Number> entityIds) {
+    public NeuronSelector addEntityIds(Collection<Number> entityIds) {
         entityIds.forEach(this::addEntityId);
         return this;
     }
@@ -119,7 +120,7 @@ public class NeuronSelector {
         return this;
     }
 
-    public NeuronSelector addTags(List<String> tags) {
+    public NeuronSelector addTags(Collection<String> tags) {
         if (tags != null) tags.forEach(this::addTag);
         return this;
     }

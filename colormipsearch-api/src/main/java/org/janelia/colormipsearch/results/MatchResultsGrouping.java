@@ -38,12 +38,15 @@ public class MatchResultsGrouping {
                 aMatch -> {
                     R1 matchResult = (R1) aMatch.metadata();
                     AbstractNeuronEntity maskImage = aMatch.getMaskImage();
-                    AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
-                    // the target is set based on the original target
-                    matchResult.setTargetImage((T) targetImage.metadata());
+                    if (aMatch.getMatchedImage() != null) {
+                        // target image may be null - specifically for PPP matches
+                        AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
+                        // the target is set based on the original target
+                        matchResult.setTargetImage((T) targetImage.metadata());
+                        matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
+                    }
                     // in the match result input file comes from the mask and matched file comes from the target
                     matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getNeuronFile(FileType.ColorDepthMipInput));
-                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getNeuronFile(FileType.ColorDepthMipInput));
                     return new GroupingCriteria<R1, M>(
                             matchResult,
                             m -> (M) maskImage.metadata(),

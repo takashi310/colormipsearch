@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +51,11 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
         this.maskImage = null;
     }
 
+    @JsonIgnore
+    public String getMaskMIPId() {
+        return maskImage != null ? maskImage.getMipId() : null;
+    }
+
     public Number getMaskImageRefId() {
         if (maskImage != null && maskImage.hasEntityId()) {
             return maskImage.getEntityId();
@@ -78,6 +84,11 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
 
     public void resetMatchedImage() {
         this.matchedImage = null;
+    }
+
+    @JsonIgnore
+    public String getMatchedMIPId() {
+        return matchedImage != null ? matchedImage.getMipId() : null;
     }
 
     public Number getMatchedImageRefId() {

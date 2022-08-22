@@ -12,21 +12,21 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 @PersistenceInfo(storeName ="pppMatches")
 public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private String sourceEmName;
-    private String emLibraryName;
+    private String sourceEmLibrary;
     private String sourceLmName;
-    private String lmLibraryName;
+    private String sourceLmLibrary;
     private Double coverageScore;
     private Double aggregateCoverage;
     private Double rank;
     private Map<PPPScreenshotType, String> sourceImageFiles;
     private List<PPPSkeletonMatch> skeletonMatches;
 
-    public String getEmLibraryName() {
-        return emLibraryName;
+    public String getSourceEmLibrary() {
+        return sourceEmLibrary;
     }
 
-    public void setEmLibraryName(String emLibraryName) {
-        this.emLibraryName = emLibraryName;
+    public void setSourceEmLibrary(String sourceEmLibrary) {
+        this.sourceEmLibrary = sourceEmLibrary;
     }
 
     public String getSourceEmName() {
@@ -45,12 +45,12 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         this.sourceLmName = sourceLmName;
     }
 
-    public String getLmLibraryName() {
-        return lmLibraryName;
+    public String getSourceLmLibrary() {
+        return sourceLmLibrary;
     }
 
-    public void setLmLibraryName(String lmLibraryName) {
-        this.lmLibraryName = lmLibraryName;
+    public void setSourceLmLibrary(String sourceLmLibrary) {
+        this.sourceLmLibrary = sourceLmLibrary;
     }
 
     public Double getCoverageScore() {
@@ -116,7 +116,9 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         clone.safeFieldsCopyFrom(this);
         // copy fields specific to this class
         clone.sourceEmName = this.sourceEmName;
+        clone.sourceEmLibrary = this.sourceEmLibrary;
         clone.sourceLmName = this.sourceLmName;
+        clone.sourceLmLibrary = this.sourceLmLibrary;
         clone.coverageScore = this.coverageScore;
         clone.aggregateCoverage = this.aggregateCoverage;
         clone.rank = this.rank;
@@ -130,8 +132,13 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
     @Override
     public PPPMatchedTarget<? extends AbstractNeuronMetadata> metadata() {
         PPPMatchedTarget<AbstractNeuronMetadata> m = new PPPMatchedTarget<>();
-        AbstractNeuronMetadata n = getMatchedImage().metadata();
-        m.setTargetImage(n);
+        T matchedImage = getMatchedImage();
+        if (matchedImage != null) {
+            AbstractNeuronMetadata n = getMatchedImage().metadata();
+            m.setTargetImage(n);
+        }
+        m.setSourceLmName(getSourceLmName());
+        m.setSourceLmLibrary(getSourceLmLibrary());
         m.setMirrored(isMirrored());
         m.setRank(getRank());
         m.setCoverageScore(getCoverageScore());

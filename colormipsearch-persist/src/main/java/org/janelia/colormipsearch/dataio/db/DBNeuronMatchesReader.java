@@ -49,7 +49,8 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                 new NeuronSelector()
                                         .setAlignmentSpace(cdMatchInput.getAlignmentSpace())
                                         .setLibraryName(cdMatchInput.getLibraryName())
-                                        .addTags(cdMatchInput.getTags()),
+                                        .addTags(cdMatchInput.getTags())
+                                        .addNames(cdMatchInput.getNames()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())

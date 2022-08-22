@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.dataio;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +10,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class DataSourceParam {
     private String alignmentSpace;
     private String libraryName;
-    private List<String> tags;
+    private Collection<String> names;
+    private Collection<String> tags;
     private long offset;
     private int size;
 
@@ -25,32 +27,45 @@ public class DataSourceParam {
         return alignmentSpace;
     }
 
-    public void setAlignmentSpace(String alignmentSpace) {
+    public DataSourceParam setAlignmentSpace(String alignmentSpace) {
         this.alignmentSpace = alignmentSpace;
+        return this;
     }
 
     public String getLibraryName() {
         return libraryName;
     }
 
-    public void setLibraryName(String libraryName) {
+    public DataSourceParam setLibraryName(String libraryName) {
         this.libraryName = libraryName;
+        return this;
     }
 
-    public List<String> getTags() {
+    public Collection<String> getNames() {
+        return names;
+    }
+
+    public DataSourceParam setNames(Collection<String> names) {
+        this.names = names;
+        return this;
+    }
+
+    public Collection<String> getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public DataSourceParam setTags(Collection<String> tags) {
         this.tags = tags;
+        return this;
     }
 
     public long getOffset() {
         return offset > 0 ? offset : 0;
     }
 
-    public void setOffset(long offset) {
+    public DataSourceParam setOffset(long offset) {
         this.offset = offset;
+        return this;
     }
 
     public boolean hasOffset() {
@@ -61,8 +76,9 @@ public class DataSourceParam {
         return size;
     }
 
-    public void setSize(int size) {
+    public DataSourceParam setSize(int size) {
         this.size = size;
+        return this;
     }
 
     public boolean hasSize() {

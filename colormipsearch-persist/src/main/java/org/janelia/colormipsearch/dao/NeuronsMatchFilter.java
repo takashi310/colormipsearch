@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.dao;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
         return this;
     }
 
-    public NeuronsMatchFilter<R> addTags(List<String> tags) {
+    public NeuronsMatchFilter<R> addTags(Collection<String> tags) {
         if (tags != null) tags.forEach(this::addTag);
         return this;
     }
@@ -68,5 +69,4 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
                 && CollectionUtils.isEmpty(targetEntityIds)
                 && !hasTags();
     }
-
 }

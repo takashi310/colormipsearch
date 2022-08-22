@@ -19,6 +19,7 @@ import org.janelia.colormipsearch.model.JsonRequired;
  * This is the representation of the neuron metadata that will get uploaded to AWS
  * and then used by the NeuronBridge client application.
  */
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public abstract class AbstractNeuronMetadata {
 
     private String mipId; // MIP ID - not to be confused with the entityId which is the primary key of this entity

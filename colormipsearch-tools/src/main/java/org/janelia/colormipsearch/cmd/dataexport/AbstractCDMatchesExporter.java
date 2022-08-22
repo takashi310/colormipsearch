@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -40,12 +41,13 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
         this.processingPartitionSize = processingPartitionSize;
     }
 
-    Map<String, ColorDepthMIP> retrieveAllCDMIPs(List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
+    void retrieveAllCDMIPs(List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> matches) {
         // retrieve source ColorDepth MIPs
         Set<String> sourceMIPIds = matches.stream()
-                .flatMap(m -> Stream.of(m.getMaskImage().getMipId(), m.getMatchedImage().getMipId()))
+                .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
+                .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet());
-        return jacsDataHelper.retrieveCDMIPs(sourceMIPIds);
+        jacsDataHelper.retrieveCDMIPs(sourceMIPIds);
     }
 
     <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void

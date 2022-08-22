@@ -12,8 +12,9 @@ import org.slf4j.LoggerFactory;
 
 public class CachedJacsDataHelper {
     private static final Logger LOG = LoggerFactory.getLogger(CachedJacsDataHelper.class);
-
     private static final Map<String, ColorDepthMIP> CD_MIPS_CACHE = new LinkedHashMap<>();
+    private static final Map<String, CDMIPSample> LM_SAMPLES_CACHE = new LinkedHashMap<>();
+
     private final JacsDataGetter jacsDataGetter;
     private Map<String, String> libraryNameMapping;
 
@@ -21,14 +22,10 @@ public class CachedJacsDataHelper {
         this.jacsDataGetter = jacsDataGetter;
     }
 
-    public Map<String, ColorDepthMIP> retrieveCDMIPs(Set<String> mipIds) {
-        if (CollectionUtils.isEmpty(mipIds)) {
-            return Collections.emptyMap();
-        } else {
+    public void retrieveCDMIPs(Set<String> mipIds) {
+        if (CollectionUtils.isNotEmpty(mipIds)) {
             Set<String> toRetrieve = mipIds.stream().filter(mipId -> !CD_MIPS_CACHE.containsKey(mipId)).collect(Collectors.toSet());
             CD_MIPS_CACHE.putAll(jacsDataGetter.retrieveCDMIPs(toRetrieve));
-            return mipIds.stream().filter(CD_MIPS_CACHE::containsKey)
-                    .collect(Collectors.toMap(mId -> mId, CD_MIPS_CACHE::get));
         }
     }
 
@@ -42,4 +39,17 @@ public class CachedJacsDataHelper {
         }
         return libraryNameMapping.getOrDefault(libname, libname);
     }
+
+
+    public void retrieveLMSamples(Set<String> lmSampleNames) {
+        if (CollectionUtils.isNotEmpty(lmSampleNames)) {
+            Set<String> toRetrieve = lmSampleNames.stream().filter(n -> !LM_SAMPLES_CACHE.containsKey(n)).collect(Collectors.toSet());
+            LM_SAMPLES_CACHE.putAll(jacsDataGetter.retrieveLMSamplesByName(toRetrieve));
+        }
+    }
+
+    public CDMIPSample getLMSample(String lmName) {
+        return LM_SAMPLES_CACHE.get(lmName);
+    }
+
 }

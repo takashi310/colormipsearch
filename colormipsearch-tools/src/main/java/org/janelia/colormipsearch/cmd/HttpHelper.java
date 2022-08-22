@@ -102,7 +102,7 @@ public class HttpHelper {
                                                            Set<String> names,
                                                            TypeReference<List<T>> t) {
         if (chunkSize > 0) {
-            return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream().parallel()
+            return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream()
                     .flatMap(indexedNamesSubset -> {
                         LOG.info("Retrieve {} items", indexedNamesSubset.getValue().size());
                         return retrieveData(

@@ -19,15 +19,4 @@ public class PPPMatchesMongoDao<R extends PPPMatchEntity<? extends AbstractNeuro
     public PPPMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);
     }
-
-    @Override
-    protected List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
-        List<Bson> pipeline = new ArrayList<>();
-
-        pipeline.add(Aggregates.match(matchFilter));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("sourceImage", maskImageFilter)));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("targetImage", matchedImageFilter)));
-
-        return pipeline;
-    }
 }

@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,10 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cmd.jacsdata.CDMIPBody;
-import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
-import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
-import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
@@ -317,8 +312,8 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> updatePPPMatchData(InputPPPMatch inputPPPMatch) {
         PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
-        pppMatch.setEmLibraryName(args.emLibrary);
-        pppMatch.setLmLibraryName(args.lmLibrary);
+        pppMatch.setSourceEmLibrary(args.emLibrary);
+        pppMatch.setSourceLmLibrary(args.lmLibrary);
         pppMatch.addTag(args.tag);
 
         if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
@@ -344,7 +339,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private Map<String, EMNeuronEntity> retrieveEMNeurons(Set<String> emNeuronNames) {
-        return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1))
+        return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1).setNames(emNeuronNames))
                 .stream()
                 .filter(n -> emNeuronNames.contains(n.getPublishedName()))
                 .filter(n -> n.getComputeFileName(ComputeFileType.SourceColorDepthImage)

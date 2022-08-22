@@ -43,8 +43,7 @@ public class JacsDataGetter {
     private Map<String, CDMIPSample> httpRetrieveLMSamplesByName(Client httpClient, Set<String> sampleNames) {
         LOG.debug("Read LM metadata for {} samples", sampleNames.size());
         return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
-                                .path("/data/samples")
-                                .queryParam("name"),
+                                .path("/data/samples"),
                         authorization,
                         readBatchSize,
                         sampleNames,

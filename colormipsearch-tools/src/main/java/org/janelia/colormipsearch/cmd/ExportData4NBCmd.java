@@ -13,10 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.cmd.dataexport.AbstractDataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
-import org.janelia.colormipsearch.cmd.dataexport.PPPMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
@@ -29,8 +28,6 @@ import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatchEntity;
-import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +44,7 @@ class ExportData4NBCmd extends AbstractCmd {
 
         @Parameter(names = {"--exported-result-type"}, required = true, // this is required because PPPs are handled a bit differently
                 description = "Specifies neuron match type whether it's color depth search, PPP, etc.")
-        ExportedResultType exportedResultType = ExportedResultType.PER_MASK_CDS_MATCHES;
+        ExportedResultType exportedResultType = ExportedResultType.EM_CDS_MATCHES;
 
         @Parameter(names = {"--jacs-url", "--data-url"}, description = "JACS data service base URL")
         String dataServiceURL;
@@ -73,11 +70,14 @@ class ExportData4NBCmd extends AbstractCmd {
                 converter = ListArg.ListArgConverter.class)
         ListArg library;
 
+        @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
+        List<String> exportedNames;
+
         @Parameter(names = {"--subdir"}, description = "Results subdirectory for results")
         String subDir;
 
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
-        int processingPartitionSize = 100;
+        int processingPartitionSize = 5000;
 
         @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
         List<String> tags = new ArrayList<>();
@@ -153,9 +153,10 @@ class ExportData4NBCmd extends AbstractCmd {
                 args.library.input,
                 args.tags,
                 args.library.offset,
-                args.library.length);
+                args.library.length)
+                .setNames(args.exportedNames);
         switch (args.exportedResultType) {
-            case PER_MASK_CDS_MATCHES:
+            case EM_CDS_MATCHES:
                 return new PerMaskCDMatchesExporter(
                         jacsDataHelper,
                         dataSource,
@@ -168,7 +169,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         itemsWriter,
                         args.processingPartitionSize
                 );
-            case PER_TARGET_CDS_MATCHES:
+            case LM_CDS_MATCHES:
                 return new PerTargetCDMatchesExporter(
                         jacsDataHelper,
                         dataSource,
@@ -181,8 +182,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         itemsWriter,
                         args.processingPartitionSize
                 );
-            case PPP_MATCHES:
-                return new PPPMatchesExporter(
+            case EM_PPP_MATCHES:
+                return new EMPPPMatchesExporter(
                         jacsDataHelper,
                         dataSource,
                         getPPPScoresFilter(),
