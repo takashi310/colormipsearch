@@ -89,9 +89,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--only-best-skeleton-matches"}, description = "Include only best skeleton matches", arity = 0)
         boolean onlyBestSkeletonMatches = false;
 
-        @Parameter(names = {"--jacs-read-batch-size"}, description = "Batch size for getting data from JACS")
-        int jacsReadBatchSize = 10000;
-
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 1000;
 
