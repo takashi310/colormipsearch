@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EMPPPMatchesExporter extends AbstractDataExporter {
-    private static final Logger LOG = LoggerFactory.getLogger(PerMaskCDMatchesExporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
 
     private final ScoresFilter scoresFilter;
     private final NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader;

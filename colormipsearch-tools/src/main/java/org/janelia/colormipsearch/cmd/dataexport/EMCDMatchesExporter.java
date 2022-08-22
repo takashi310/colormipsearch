@@ -25,16 +25,16 @@ import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PerMaskCDMatchesExporter extends AbstractCDMatchesExporter {
-    private static final Logger LOG = LoggerFactory.getLogger(PerMaskCDMatchesExporter.class);
+public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
+    private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
 
-    public PerMaskCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
-                                    DataSourceParam dataSourceParam,
-                                    ScoresFilter scoresFilter,
-                                    Path outputDir,
-                                    NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
-                                    ItemsWriterToJSONFile resultMatchesWriter,
-                                    int processingPartitionSize) {
+    public EMCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+                               DataSourceParam dataSourceParam,
+                               ScoresFilter scoresFilter,
+                               Path outputDir,
+                               NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
+                               ItemsWriterToJSONFile resultMatchesWriter,
+                               int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, scoresFilter, outputDir, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
     }
 

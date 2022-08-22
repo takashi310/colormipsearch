@@ -16,8 +16,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
-import org.janelia.colormipsearch.cmd.dataexport.PerMaskCDMatchesExporter;
-import org.janelia.colormipsearch.cmd.dataexport.PerTargetCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.EMCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
@@ -44,7 +44,7 @@ class ExportData4NBCmd extends AbstractCmd {
 
         @Parameter(names = {"--exported-result-type"}, required = true, // this is required because PPPs are handled a bit differently
                 description = "Specifies neuron match type whether it's color depth search, PPP, etc.")
-        ExportedResultType exportedResultType = ExportedResultType.EM_CDS_MATCHES;
+        ExportedResultType exportedResultType = ExportedResultType.EM_CD_MATCHES;
 
         @Parameter(names = {"--jacs-url", "--data-url"}, description = "JACS data service base URL")
         String dataServiceURL;
@@ -156,8 +156,8 @@ class ExportData4NBCmd extends AbstractCmd {
                 args.library.length)
                 .setNames(args.exportedNames);
         switch (args.exportedResultType) {
-            case EM_CDS_MATCHES:
-                return new PerMaskCDMatchesExporter(
+            case EM_CD_MATCHES:
+                return new EMCDMatchesExporter(
                         jacsDataHelper,
                         dataSource,
                         getCDScoresFilter(),
@@ -169,8 +169,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         itemsWriter,
                         args.processingPartitionSize
                 );
-            case LM_CDS_MATCHES:
-                return new PerTargetCDMatchesExporter(
+            case LM_CD_MATCHES:
+                return new LMCDMatchesExporter(
                         jacsDataHelper,
                         dataSource,
                         getCDScoresFilter(),
@@ -216,7 +216,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         LMNeuronMetadata.class
                 );
             default:
-                throw new IllegalArgumentException("Export result types must be specified");
+                throw new IllegalArgumentException("Invalid export result type");
         }
     }
 

@@ -2,8 +2,8 @@ package org.janelia.colormipsearch.cmd;
 
 public enum ExportedResultType {
     // color depth search matches
-    EM_CDS_MATCHES,
-    LM_CDS_MATCHES,
+    EM_CD_MATCHES,
+    LM_CD_MATCHES,
     // PPP matches
     EM_PPP_MATCHES,
     // MIPs
