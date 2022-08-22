@@ -23,6 +23,7 @@ public class DBCDMIPsReader implements CDMIPsReader {
                 new NeuronSelector()
                         .setAlignmentSpace(mipsDataSource.getAlignmentSpace())
                         .setLibraryName(mipsDataSource.getLibraryName())
+                        .addNames(mipsDataSource.getNames())
                         .addTags(mipsDataSource.getTags()),
                 new PagedRequest().setPageSize(mipsDataSource.getSize()).setFirstPageOffset(mipsDataSource.getOffset())
         ).getResultList();
