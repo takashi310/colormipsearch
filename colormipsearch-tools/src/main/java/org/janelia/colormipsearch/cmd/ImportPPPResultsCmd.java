@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
@@ -339,9 +340,14 @@ class ImportPPPResultsCmd extends AbstractCmd {
         return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1).setNames(emNeuronNames))
                 .stream()
                 .filter(n -> emNeuronNames.contains(n.getPublishedName()))
-                .filter(n -> n.getComputeFileName(ComputeFileType.SourceColorDepthImage)
-                        .equals(n.getComputeFileName(ComputeFileType.InputColorDepthImage)))
+                .filter(this::notFlippedNeuron)
                 .collect(Collectors.toMap(AbstractNeuronEntity::getPublishedName, n -> (EMNeuronEntity) n));
+    }
+
+    private boolean notFlippedNeuron(AbstractNeuronEntity n) {
+        return new File(n.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getName().equals(
+                new File(n.getComputeFileName(ComputeFileType.InputColorDepthImage)).getName()
+        );
     }
 
     private void writePPPMatches(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches, NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
