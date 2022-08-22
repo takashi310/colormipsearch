@@ -103,7 +103,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
     private final CreatePPPResultsArgs args;
     private final ObjectMapper mapper;
     private final RawPPPMatchesReader rawPPPMatchesReader;
-    private final CDMIPsReader cdmipsReader;
 
     ImportPPPResultsCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
@@ -111,7 +110,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.rawPPPMatchesReader = new RawPPPMatchesReader(mapper);
-        this.cdmipsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
     }
 
     @Override
@@ -150,10 +148,12 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
+        CDMIPsReader cdmiPsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
+
         NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.stream()
                 .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
-                .map(this::importPPPRResultsFromFile)
+                .map(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader))
                 .forEach(inputPPPMatches -> {
                     writePPPMatches(inputPPPMatches, pppMatchesWriter);
                     MDC.remove("PPPFile");
@@ -226,7 +226,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
      * @param pppResultsFile path of PPP file to import
      * @return a list of PPP matches imported from the given file
      */
-    private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile) {
+    private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile, CDMIPsReader cdmipsReader) {
         List<InputPPPMatch> inputPPPMatches = rawPPPMatchesReader.readPPPMatches(
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches, args.includeRawSkeletonMatches)
                 .map(this::fillInNeuronMetadata)
@@ -237,7 +237,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 .map(InputPPPMatch::getEmNeuronName)
                 .collect(Collectors.toSet());
 
-        Map<String, EMNeuronEntity> registeredEMNeurons = retrieveEMNeurons(emNeuronNames);
+        Map<String, EMNeuronEntity> registeredEMNeurons = retrieveEMNeurons(cdmipsReader, emNeuronNames);
 
         return inputPPPMatches.stream()
                 .map(inputPPPMatch -> {
@@ -335,7 +335,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 suffix;
     }
 
-    private Map<String, EMNeuronEntity> retrieveEMNeurons(Set<String> emNeuronNames) {
+    private Map<String, EMNeuronEntity> retrieveEMNeurons(CDMIPsReader cdmipsReader, Set<String> emNeuronNames) {
         return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1).setNames(emNeuronNames))
                 .stream()
                 .filter(n -> emNeuronNames.contains(n.getPublishedName()))
