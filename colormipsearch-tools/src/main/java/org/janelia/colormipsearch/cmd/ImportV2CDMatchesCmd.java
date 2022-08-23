@@ -198,15 +198,16 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     // just to make sure - reset the entity ID because we don't want the key to match based on entity ID
                     n1.setEntityId(null);
                     return n1;
-                }, n -> n))
-                ;
+                }, n -> n));
         // update the entity IDs
-        matches.stream().map(mipSelector).forEach(m -> {
-            AbstractNeuronEntity persistedMip = indexedPersistedMIPs.get(m);
-            if (persistedMip != null) {
-                m.setEntityId(persistedMip.getEntityId());
+        matches.forEach(cdm -> {
+            AbstractNeuronEntity n = mipSelector.apply(cdm);
+            AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.get(n);
+            if (persistedNeuron != null) {
+                n.setEntityId(persistedNeuron.getEntityId());
             } else {
-                LOG.info("No persisted MIP found for {}({})", m, m.getComputeFileData(ComputeFileType.InputColorDepthImage));
+                LOG.info("No persisted MIP found for {}({}) in color depth match {}",
+                        n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
             }
         });
     }
