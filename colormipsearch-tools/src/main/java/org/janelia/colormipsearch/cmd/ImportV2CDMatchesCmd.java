@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
@@ -38,6 +39,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--results", "-r"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "The location of the v2 results. This can be a list of directories or files ")
         List<ListArg> cdMatches;
+
+        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported mips")
+        String tag;
 
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
@@ -88,6 +92,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     indexedPartititionItems.getValue().forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
+                        // update tag
+                        if (StringUtils.isNotBlank(args.tag)) cdMatchesForMask.forEach(m -> m.addTag(args.tag));
+                        // write matches
                         cdMatchesWriter.write(cdMatchesForMask);
                     });
                     LOG.info("Finished batch {} of {} in {}s - memory usage {}M out of {}M",
