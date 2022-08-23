@@ -607,14 +607,18 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     .path(cdmip.alignmentSpace)
                     .path(cdmip.sample.slideCode)
                     .path(cdmip.objective);
-            Response response = HttpHelper.createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-                Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {
-                }.getType()));
-                SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
-                SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
-                cdmip.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
-                cdmip.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
+            try {
+                Response response = HttpHelper.createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
+                if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                    Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {
+                    }.getType()));
+                    SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
+                    SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
+                    cdmip.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
+                    cdmip.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("Error getting published data from " + refImageEndpoint, e);
             }
         }
         return cdmip;
