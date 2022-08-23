@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
+import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
@@ -112,12 +113,13 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                         CDMatchEntity<EMNeuronEntity, LMNeuronEntity> cdMatch = new CDMatchEntity<>();
                         EMNeuronEntity emNeuronMetadata = new EMNeuronEntity();
                         emNeuronMetadata.setMipId(v2CDMatch.getSourceId());
+                        emNeuronMetadata.setAlignmentSpace(v2CDMatch.getAlignmentSpace());
                         emNeuronMetadata.setLibraryName(v2CDMatch.getSourceLibraryName());
 
                         emNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getSourceCdmPath()));
                         emNeuronMetadata.setComputeFileData(ComputeFileType.InputColorDepthImage,
-                                FileData.fromString(v2CDMatch.getSourceImageName()));
+                                FileData.fromString(getSourceImageFilename(v2CDMatch)));
 
                         emNeuronMetadata.setNeuronFile(FileType.ColorDepthMipInput, v2CDMatch.getSourceSearchablePNG());
 
@@ -125,12 +127,13 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
 
                         LMNeuronEntity lmNeuronMetadata = new LMNeuronEntity();
                         lmNeuronMetadata.setMipId(v2CDMatch.getId());
+                        lmNeuronMetadata.setAlignmentSpace(v2CDMatch.getAlignmentSpace());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
 
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getCdmPath()));
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.InputColorDepthImage,
-                                FileData.fromString(v2CDMatch.getImageName()));
+                                FileData.fromString(getTargetImageFilename(v2CDMatch)));
 
                         lmNeuronMetadata.setNeuronFile(FileType.ColorDepthMipInput, v2CDMatch.getSearchablePNG());
 
@@ -145,6 +148,22 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                         return cdMatch;
                     })
                     .collect(Collectors.toList());
+        }
+    }
+
+    private String getSourceImageFilename(ColorMIPSearchMatchMetadata cdMatch) {
+        if (StringUtils.isNotBlank(cdMatch.getSourceImageArchivePath())) {
+            return Paths.get(cdMatch.getSourceImageArchivePath(), cdMatch.getSourceImageName()).toString();
+        } else {
+            return cdMatch.getSourceImageName();
+        }
+    }
+
+    private String getTargetImageFilename(ColorMIPSearchMatchMetadata cdMatch) {
+        if (StringUtils.isNotBlank(cdMatch.getImageArchivePath())) {
+            return Paths.get(cdMatch.getImageArchivePath(), cdMatch.getImageName()).toString();
+        } else {
+            return cdMatch.getImageName();
         }
     }
 

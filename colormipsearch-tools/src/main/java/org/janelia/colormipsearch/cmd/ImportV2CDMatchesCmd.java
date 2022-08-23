@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -13,15 +16,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
+import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
+import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -81,6 +90,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     public void execute() {
         long startTime = System.currentTimeMillis();
 
+        CDMIPsReader mipsReader = getCDMIPsReader();
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
@@ -101,12 +111,14 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         LOG.info("Read {} items from {}", cdMatchesForMask.size(), maskIdToProcess);
-                        // update tag
-                        if (StringUtils.isNotBlank(args.tag)) {
-                            cdMatchesForMask.forEach(m -> {
-                                m.addTag(args.tag);
-                            });
-                        }
+                        cdMatchesForMask.forEach(m -> {
+                            m.getMaskImage().setLibraryName(getLibraryName(m.getMaskImage().getLibraryName()));
+                            m.getMatchedImage().setLibraryName(getLibraryName(m.getMatchedImage().getLibraryName()));
+                        });
+                        // update MIP IDs for all masks
+                        updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader);
+                        // update MIP IDs for all targets
+                        updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader);
                         // write matches
                         cdMatchesWriter.write(cdMatchesForMask);
                     });
@@ -122,6 +134,10 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                 (Runtime.getRuntime().totalMemory() / _1M));
+    }
+
+    private CDMIPsReader getCDMIPsReader() {
+        return new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
     }
 
     private NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> getCDMatchesReader() {
@@ -155,4 +171,33 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     private String getLibraryName(String lname) {
         return V2_LIBRARY_MAPPING.getOrDefault(lname, lname);
     }
+
+    private void updateMIPRefs(List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches,
+                               Function<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>, AbstractNeuronEntity> mipSelector,
+                               CDMIPsReader cdmiPsReader) {
+        Map<AbstractNeuronEntity, AbstractNeuronEntity> indexedPersistedMIPs = matches.stream()
+                .map(mipSelector)
+                .collect(
+                        Collectors.groupingBy(
+                                m -> ImmutablePair.of(m.getAlignmentSpace(), m.getLibraryName()),
+                                Collectors.toSet()))
+                .entrySet().stream()
+                .flatMap(e -> {
+                    return cdmiPsReader.readMIPs(
+                            new DataSourceParam(e.getKey().getLeft(), e.getKey().getRight(), null, 0, -1)
+                                    .setNames(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream();
+                })
+                .collect(Collectors.toMap(n -> n.duplicate(), n -> n))
+                ;
+        // update the entity IDs
+        matches.stream().map(mipSelector).forEach(m -> {
+            AbstractNeuronEntity persistedMip = indexedPersistedMIPs.get(m);
+            if (persistedMip != null) {
+                m.setEntityId(persistedMip.getEntityId());
+            } else {
+                LOG.info("No persisted MIP found for {}({})", m, m.getComputeFileData(ComputeFileType.InputColorDepthImage));
+            }
+        });
+    }
+
 }
