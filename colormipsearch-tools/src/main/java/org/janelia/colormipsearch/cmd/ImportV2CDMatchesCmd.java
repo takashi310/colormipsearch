@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.beust.jcommander.Parameter;
@@ -32,6 +34,12 @@ import org.slf4j.LoggerFactory;
 public class ImportV2CDMatchesCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImportV2CDMatchesCmd.class);
+    private static final Map<String, String> V2_LIBRARY_MAPPING = new LinkedHashMap<String, String>() {{
+        put("FlyEM_Hemibrain_v1.2.1", "flyem_hemibrain_1_2_1");
+        put("FlyLight Split-GAL4 Drivers", "flylight_split_gal4_published");
+        put("FlyLight Gen1 MCFO", "flylight_gen1_mcfo_published");
+        put("FlyLight Annotator Gen1 MCFO", "flylight_annotator_gen1_mcfo_published");
+    }};
 
     @Parameters(commandDescription = "Import v2 color depth matches")
     static class ImportCDMatchesCmdArgs extends AbstractCmdArgs {
@@ -94,7 +102,11 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
                         LOG.info("Read {} items from {}", cdMatchesForMask.size(), maskIdToProcess);
                         // update tag
-                        if (StringUtils.isNotBlank(args.tag)) cdMatchesForMask.forEach(m -> m.addTag(args.tag));
+                        if (StringUtils.isNotBlank(args.tag)) {
+                            cdMatchesForMask.forEach(m -> {
+                                m.addTag(args.tag);
+                            });
+                        }
                         // write matches
                         cdMatchesWriter.write(cdMatchesForMask);
                     });
@@ -140,4 +152,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 ));
     }
 
+    private String getLibraryName(String lname) {
+        return V2_LIBRARY_MAPPING.getOrDefault(lname, lname);
+    }
 }
