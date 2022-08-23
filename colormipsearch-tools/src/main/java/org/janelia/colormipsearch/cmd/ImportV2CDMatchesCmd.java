@@ -92,6 +92,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     indexedPartititionItems.getValue().forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
+                        LOG.info("Read {} items from {}", cdMatchesForMask.size(), maskIdToProcess);
                         // update tag
                         if (StringUtils.isNotBlank(args.tag)) cdMatchesForMask.forEach(m -> m.addTag(args.tag));
                         // write matches
