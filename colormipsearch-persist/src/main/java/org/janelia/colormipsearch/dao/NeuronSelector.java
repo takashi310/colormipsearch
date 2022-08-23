@@ -85,7 +85,7 @@ public class NeuronSelector {
     }
 
     public NeuronSelector addMipIDs(Collection<String> mipIDs) {
-        mipIDs.forEach(this::addMipID);
+        if (mipIDs != null) mipIDs.forEach(this::addMipID);
         return this;
     }
 

@@ -10,6 +10,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class DataSourceParam {
     private String alignmentSpace;
     private String libraryName;
+    private Collection<String> mipIDs;
     private Collection<String> names;
     private Collection<String> tags;
     private long offset;
@@ -47,6 +48,15 @@ public class DataSourceParam {
 
     public DataSourceParam setNames(Collection<String> names) {
         this.names = names;
+        return this;
+    }
+
+    public Collection<String> getMipIDs() {
+        return mipIDs;
+    }
+
+    public DataSourceParam setMipIDs(Collection<String> mipIDs) {
+        this.mipIDs = mipIDs;
         return this;
     }
 

@@ -24,6 +24,7 @@ public class DBCDMIPsReader implements CDMIPsReader {
                         .setAlignmentSpace(mipsDataSource.getAlignmentSpace())
                         .setLibraryName(mipsDataSource.getLibraryName())
                         .addNames(mipsDataSource.getNames())
+                        .addMipIDs(mipsDataSource.getMipIDs())
                         .addTags(mipsDataSource.getTags()),
                 new PagedRequest().setPageSize(mipsDataSource.getSize()).setFirstPageOffset(mipsDataSource.getOffset())
         ).getResultList();
