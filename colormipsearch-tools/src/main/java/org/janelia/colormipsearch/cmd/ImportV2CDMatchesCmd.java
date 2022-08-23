@@ -4,10 +4,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -15,9 +13,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -94,6 +90,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
+        // GET JSON files
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
                 .map(larg -> new DataSourceParam(
                         null,
@@ -103,25 +100,13 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         larg.length))
                 .collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
+        // process JSON files
         ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).entrySet().stream().parallel()
                 .forEach(indexedPartititionItems -> {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     // process each item from the current partition sequentially
-                    indexedPartititionItems.getValue().forEach(maskIdToProcess -> {
-                        // read all matches for the current mask
-                        List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
-                        LOG.info("Read {} items from {}", cdMatchesForMask.size(), maskIdToProcess);
-                        cdMatchesForMask.forEach(m -> {
-                            m.getMaskImage().setLibraryName(getLibraryName(m.getMaskImage().getLibraryName()));
-                            m.getMatchedImage().setLibraryName(getLibraryName(m.getMatchedImage().getLibraryName()));
-                        });
-                        // update MIP IDs for all masks
-                        updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader);
-                        // update MIP IDs for all targets
-                        updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader);
-                        // write matches
-                        cdMatchesWriter.write(cdMatchesForMask);
-                    });
+                    indexedPartititionItems.getValue().forEach(maskIdToProcess -> processCDMatchesFromFile(
+                            maskIdToProcess, mipsReader, cdMatchesReader, cdMatchesWriter));
                     LOG.info("Finished batch {} of {} in {}s - memory usage {}M out of {}M",
                             indexedPartititionItems.getKey(),
                             indexedPartititionItems.getValue().size(),
@@ -134,6 +119,29 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                 (Runtime.getRuntime().totalMemory() / _1M));
+    }
+
+    private void processCDMatchesFromFile(String cdMatchesFile,
+                                          CDMIPsReader mipsReader,
+                                          NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader,
+                                          NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter) {
+        try {
+            // read all matches for the current mask
+            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, cdMatchesFile);
+            LOG.info("Read {} items from {}", cdMatchesForMask.size(), cdMatchesFile);
+            cdMatchesForMask.forEach(m -> {
+                m.getMaskImage().setLibraryName(getLibraryName(m.getMaskImage().getLibraryName()));
+                m.getMatchedImage().setLibraryName(getLibraryName(m.getMatchedImage().getLibraryName()));
+            });
+            // update MIP IDs for all masks
+            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader);
+            // update MIP IDs for all targets
+            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader);
+            // write matches
+            cdMatchesWriter.write(cdMatchesForMask);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error processing " + cdMatchesFile);
+        }
     }
 
     private CDMIPsReader getCDMIPsReader() {
