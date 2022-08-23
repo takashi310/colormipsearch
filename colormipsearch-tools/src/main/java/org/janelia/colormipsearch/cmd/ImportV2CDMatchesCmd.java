@@ -182,12 +182,15 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                                 m -> ImmutablePair.of(m.getAlignmentSpace(), m.getLibraryName()),
                                 Collectors.toSet()))
                 .entrySet().stream()
-                .flatMap(e -> {
-                    return cdmiPsReader.readMIPs(
-                            new DataSourceParam(e.getKey().getLeft(), e.getKey().getRight(), null, 0, -1)
-                                    .setNames(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream();
-                })
-                .collect(Collectors.toMap(n -> n.duplicate(), n -> n))
+                .flatMap(e -> cdmiPsReader.readMIPs(
+                        new DataSourceParam(e.getKey().getLeft(), e.getKey().getRight(), null, 0, -1)
+                                .setNames(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream())
+                .collect(Collectors.toMap(n -> {
+                    AbstractNeuronEntity n1 = n.duplicate();
+                    // just to make sure - reset the entity ID because we don't want the key to match based on entity ID
+                    n1.setEntityId(null);
+                    return n1;
+                }, n -> n))
                 ;
         // update the entity IDs
         matches.stream().map(mipSelector).forEach(m -> {
