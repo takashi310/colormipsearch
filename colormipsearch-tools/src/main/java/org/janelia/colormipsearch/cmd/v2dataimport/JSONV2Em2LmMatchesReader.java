@@ -45,6 +45,18 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
     private List<String> listFiles(String location, int offsetParam, int lengthParam) {
         try {
             Path pathLocation = Paths.get(location);
+            if (Files.isSymbolicLink(pathLocation)) {
+                return listFilesAtPath(Files.readSymbolicLink(pathLocation), offsetParam, lengthParam);
+            } else {
+                return listFilesAtPath(pathLocation, offsetParam, lengthParam);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private List<String> listFilesAtPath(Path pathLocation, int offsetParam, int lengthParam) {
+        try {
             if (Files.isRegularFile(pathLocation)) {
                 return Collections.singletonList(pathLocation.toString());
             } else if (Files.isDirectory(pathLocation)) {
