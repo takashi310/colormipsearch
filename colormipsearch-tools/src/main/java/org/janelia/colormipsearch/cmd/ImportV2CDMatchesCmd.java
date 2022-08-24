@@ -216,6 +216,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 n.setEntityId(persistedNeuron.getEntityId());
             } else {
                 /*
+                 * I don't know if this is a good idea or not because it leads to importing actually bad matches.
+                 */
+                /*
                  * create the key as a duplicate of the current neuron;
                  * we don't use the same object because the save method will assign an entity ID so
                  * neurons without entity IDs will no longer match
