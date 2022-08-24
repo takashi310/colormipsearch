@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,17 +203,25 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     n1.setEntityId(null);
                     return n1;
                 }, n -> n));
+        Map<AbstractNeuronEntity, AbstractNeuronEntity> newNeurons = new HashMap<>();
         // update the entity IDs
         matches.forEach(cdm -> {
             AbstractNeuronEntity n = mipSelector.apply(cdm);
-            AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.get(n);
+            AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.getOrDefault(n, newNeurons.get(n));
             if (persistedNeuron != null) {
                 n.setEntityId(persistedNeuron.getEntityId());
             } else {
+                /*
+                 * create the key as a duplicate of the current neuron;
+                 * we don't use the same object because the save method will assign an entity ID so
+                 * neurons without entity IDs will no longer match
+                */
+                AbstractNeuronEntity nKey = n.duplicate();
                 LOG.info("No persisted MIP found for {}({}) in color depth match {}",
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
                 n.addTag("Created by import");
                 cdMIPsWriter.writeOne(n);
+                newNeurons.put(nKey, n);
             }
         });
     }

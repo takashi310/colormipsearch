@@ -129,6 +129,8 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                         lmNeuronMetadata.setMipId(v2CDMatch.getId());
                         lmNeuronMetadata.setAlignmentSpace(v2CDMatch.getAlignmentSpace());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
+                        lmNeuronMetadata.setSourceRefId(v2CDMatch.getSampleRef());
+                        lmNeuronMetadata.setSlideCode(v2CDMatch.getSlideCode());
 
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getCdmPath()));
