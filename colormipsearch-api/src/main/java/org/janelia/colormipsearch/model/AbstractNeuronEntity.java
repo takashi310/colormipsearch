@@ -167,6 +167,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         return new EqualsBuilder()
                 .appendSuper(super.equals(o))
                 .append(mipId, that.mipId)
+                .append(getComputeFileData(ComputeFileType.SourceColorDepthImage), that.getComputeFileData(ComputeFileType.SourceColorDepthImage))
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage), that.getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .isEquals();
     }
@@ -176,6 +177,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         return new HashCodeBuilder(17, 37)
                 .appendSuper(super.hashCode())
                 .append(mipId)
+                .append(getComputeFileData(ComputeFileType.SourceColorDepthImage))
                 .append(getComputeFileData(ComputeFileType.InputColorDepthImage))
                 .toHashCode();
     }

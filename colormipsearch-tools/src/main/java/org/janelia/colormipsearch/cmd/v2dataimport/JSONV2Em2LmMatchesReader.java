@@ -115,6 +115,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                         emNeuronMetadata.setMipId(v2CDMatch.getSourceId());
                         emNeuronMetadata.setAlignmentSpace(v2CDMatch.getAlignmentSpace());
                         emNeuronMetadata.setLibraryName(v2CDMatch.getSourceLibraryName());
+                        emNeuronMetadata.setPublishedName(v2CDMatch.getSourcePublishedName());
 
                         emNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
                                 FileData.fromString(v2CDMatch.getSourceCdmPath()));
@@ -130,6 +131,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                         lmNeuronMetadata.setAlignmentSpace(v2CDMatch.getAlignmentSpace());
                         lmNeuronMetadata.setLibraryName(v2CDMatch.getLibraryName());
                         lmNeuronMetadata.setSourceRefId(v2CDMatch.getSampleRef());
+                        lmNeuronMetadata.setPublishedName(v2CDMatch.getPublishedName());
                         lmNeuronMetadata.setSlideCode(v2CDMatch.getSlideCode());
 
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage,
