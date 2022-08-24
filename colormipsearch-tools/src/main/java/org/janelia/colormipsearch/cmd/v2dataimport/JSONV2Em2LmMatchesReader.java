@@ -136,6 +136,10 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                 FileData.fromString(v2CDMatch.getCdmPath()));
                         lmNeuronMetadata.setComputeFileData(ComputeFileType.InputColorDepthImage,
                                 FileData.fromString(getTargetImageFilename(v2CDMatch)));
+                        lmNeuronMetadata.setComputeFileData(ComputeFileType.GradientImage,
+                                FileData.fromString(v2CDMatch.getVariant("gradient")));
+                        lmNeuronMetadata.setComputeFileData(ComputeFileType.ZGapImage,
+                                FileData.fromString(v2CDMatch.getVariant("zgap")));
 
                         lmNeuronMetadata.setNeuronFile(FileType.ColorDepthMipInput, v2CDMatch.getSearchablePNG());
 

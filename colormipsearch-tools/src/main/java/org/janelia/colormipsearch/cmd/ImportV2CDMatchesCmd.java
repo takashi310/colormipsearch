@@ -207,6 +207,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         // update the entity IDs
         matches.forEach(cdm -> {
             AbstractNeuronEntity n = mipSelector.apply(cdm);
+            // check if the neuron has been persisted either when MIPs were imported or as part of the current import process
             AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.getOrDefault(n, newNeurons.get(n));
             if (persistedNeuron != null) {
                 n.setEntityId(persistedNeuron.getEntityId());
@@ -219,6 +220,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 AbstractNeuronEntity nKey = n.duplicate();
                 LOG.info("No persisted MIP found for {}({}) in color depth match {}",
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
+                // persist the neuron now and assign it a specific tag
                 n.addTag("Created by import");
                 cdMIPsWriter.writeOne(n);
                 newNeurons.put(nKey, n);
