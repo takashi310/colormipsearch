@@ -156,6 +156,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         CreateColorDepthSearchDataInputArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
+
+        String getOutputFileName() {
+            return StringUtils.defaultIfBlank(outputFileName, library.input);
+        }
     }
 
     static class LibraryPathsArgs {
@@ -366,7 +370,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             return new DBCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
         } else {
             return new JSONCDMIPsWriter(args.getOutputDir(),
-                    args.outputFileName,
+                    args.getOutputFileName(),
                     args.library.offset,
                     args.library.length,
                     args.appendOutput,
