@@ -59,6 +59,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--tag"}, description = "Tag to assign to the imported mips")
         String tag;
 
+        @Parameter(names = {"--imported-neuron-tag"}, description = "Tag assigned to neurons created by this import process")
+        String impportedNeuronTag = "Created by import";
+
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
 
@@ -221,7 +224,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 LOG.info("No persisted MIP found for {}({}) in color depth match {}",
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
                 // persist the neuron now and assign it a specific tag
-                n.addTag("Created by import");
+                n.addTag(args.impportedNeuronTag);
                 cdMIPsWriter.writeOne(n);
                 newNeurons.put(nKey, n);
             }
