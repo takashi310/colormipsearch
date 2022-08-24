@@ -91,8 +91,13 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
         @Parameter(names = {"--releases", "-r"},
                 description = "Which specific releases to be included.",
-                required = false, variableArity = true)
+                variableArity = true)
         List<String> releases;
+
+        @Parameter(names = {"--mips"},
+                description = "If set only create inputs for these specific mips",
+                variableArity = true)
+        List<String> includedMIPs;
 
         @Parameter(names = {"--librariesVariants", "--libraryVariants"},
                 description = "Libraries variants descriptors. " +
@@ -263,7 +268,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 args.alignmentSpace,
                 libraryPaths.library.input,
                 args.datasets,
-                args.releases);
+                args.releases,
+                args.includedMIPs);
         LOG.info("Found {} entities in library {} with alignment space {}{}",
                 cdmsCount, libraryPaths.getLibraryName(), args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
         int to = libraryPaths.library.length > 0 ? Math.min(libraryPaths.library.offset + libraryPaths.library.length, cdmsCount) : cdmsCount;
@@ -295,6 +301,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     libraryPaths.library,
                     args.datasets,
                     args.releases,
+                    args.includedMIPs,
                     pageOffset,
                     currentPageSize);
             LOG.info("Process {} entries from {} to {} out of {}", cdmipsPage.size(), pageOffset, pageOffset + currentPageSize, cdmsCount);
@@ -552,12 +559,15 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 ext;
     }
 
-    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library, List<String> datasets, List<String> releases) {
+    private int countColorDepthMips(WebTarget serverEndpoint, String credentials, String alignmentSpace, String library,
+                                    List<String> datasets, List<String> releases, List<String> mips) {
         WebTarget target = serverEndpoint.path("/data/colorDepthMIPsCount")
                 .queryParam("libraryName", library)
                 .queryParam("alignmentSpace", alignmentSpace)
                 .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
+                .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                .queryParam("id", mips != null ? mips.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                ;
         LOG.info("Count color depth mips using {}, l={}, as={}, ds={}, rs={}", target, library, alignmentSpace, datasets, releases);
         Response response = HttpHelper.createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
@@ -573,6 +583,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                                                   ListArg libraryArg,
                                                                   List<String> datasets,
                                                                   List<String> releases,
+                                                                  List<String> mips,
                                                                   int offset,
                                                                   int pageLength) {
         return retrieveColorDepthMips(serverEndpoint.path("/data/colorDepthMIPsWithSamples")
@@ -580,6 +591,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                         .queryParam("alignmentSpace", alignmentSpace)
                         .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                         .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
+                        .queryParam("id", mips != null ? mips.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                         .queryParam("offset", offset)
                         .queryParam("length", pageLength),
                 credentials)
