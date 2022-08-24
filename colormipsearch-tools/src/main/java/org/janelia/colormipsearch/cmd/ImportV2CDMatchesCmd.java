@@ -143,7 +143,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             // write matches
             cdMatchesWriter.write(cdMatchesForMask);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error processing " + cdMatchesFile);
+            throw new IllegalArgumentException("Error processing " + cdMatchesFile, e);
         }
     }
 
