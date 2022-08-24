@@ -34,7 +34,6 @@ public class TimebasedIdGenerator implements IdGenerator {
             currentIndex++;
             return nextId;
         }
-
     }
 
     public TimebasedIdGenerator(Integer deploymentContext) {
@@ -51,7 +50,7 @@ public class TimebasedIdGenerator implements IdGenerator {
         return idBlock.next();
     }
 
-    public List<Number> generateIdList(long n) {
+    public synchronized List<Number> generateIdList(long n) {
         List<Number> idList = new ArrayList<>();
         long total = 0L;
         while (total < n) {

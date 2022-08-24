@@ -67,5 +67,4 @@ public class DaosProvider {
     getNeuronMetadataDao() {
         return new NeuronMetadataMongoDao<>(mongoDatabase, idGenerator);
     }
-
 }
