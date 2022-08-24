@@ -16,10 +16,12 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.janelia.colormipsearch.cmd.v2dataimport.JSONV2Em2LmMatchesReader;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
+import org.janelia.colormipsearch.dataio.db.DBCheckedCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
@@ -183,6 +185,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     private void updateMIPRefs(List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches,
                                Function<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>, AbstractNeuronEntity> mipSelector,
                                CDMIPsReader cdmiPsReader) {
+        CDMIPsWriter cdMIPsWriter = new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
         Map<AbstractNeuronEntity, AbstractNeuronEntity> indexedPersistedMIPs = matches.stream()
                 .map(mipSelector)
                 .collect(
@@ -208,6 +211,8 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             } else {
                 LOG.info("No persisted MIP found for {}({}) in color depth match {}",
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
+                n.addTag("Created by import");
+                cdMIPsWriter.writeOne(n);
             }
         });
     }

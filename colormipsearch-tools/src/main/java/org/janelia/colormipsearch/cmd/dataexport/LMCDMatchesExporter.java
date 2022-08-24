@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -75,11 +76,17 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
         // update all neuron from all grouped matches
-        groupedMatches.forEach(m -> updateMatchedResultsMetadata(m,
-                this::updateLMNeuron,
-                this::updateEMNeuron
-        ));
+        List<ResultMatches<T, CDMatchedTarget<M>>> publishedMatches = groupedMatches.stream()
+                .peek(m -> updateMatchedResultsMetadata(m,
+                        this::updateLMNeuron,
+                        this::updateEMNeuron
+                ))
+                .filter(resultMatches -> resultMatches.getKey().isPublished()) // filter out unpublished LMs
+                .peek(resultMatches -> resultMatches.setItems(resultMatches.getItems().stream()
+                        .filter(m -> m.getTargetImage().isPublished()) // filter out unpublished EMs
+                        .collect(Collectors.toList())))
+                .collect(Collectors.toList());
         // write results by target MIP ID
-        resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getMipId, outputDir);
+        resultMatchesWriter.writeGroupedItemsList(publishedMatches, AbstractNeuronMetadata::getMipId, outputDir);
     }
 }

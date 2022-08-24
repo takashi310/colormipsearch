@@ -114,6 +114,9 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setDriver(lmDriver());
         lmNeuron.setObjective(lmObjective());
         lmNeuron.setChannel(channelNumber());
+        if (sample == null || sample.publishingName == null) {
+            lmNeuron.setUnpublished(true);
+        }
     }
 
     public void updateEMNeuron(EMNeuronMetadata emNeuron) {
@@ -121,6 +124,9 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setAnatomicalArea(anatomicalArea);
         emNeuron.setNeuronInstance(neuronInstance);
         emNeuron.setNeuronType(neuronType);
+        if (emBody == null) {
+            emNeuron.setUnpublished(true);
+        }
     }
 
     @Override

@@ -14,11 +14,18 @@ public interface CDMIPsWriter {
     void open();
 
     /**
-     * Write a single item.
+     * Write all items.
+     *
+     * @param neuronMetadata items to write
+     */
+    void write(List<AbstractNeuronEntity> neuronMetadata);
+
+    /**
+     * Write one item.
      *
      * @param neuronMetadata item to write
      */
-    void write(List<AbstractNeuronEntity> neuronMetadata);
+    void writeOne(AbstractNeuronEntity neuronMetadata);
 
     /**
      * Finish all writes and close the writer.

@@ -53,13 +53,16 @@ public class JSONCDMIPsWriter implements CDMIPsWriter {
 
     @Override
     public void write(List<AbstractNeuronEntity> neuronMetadata) {
-        neuronMetadata.forEach(n -> {
-            try {
-                gen.writeObject(n);
-            } catch (Exception e) {
-                LOG.error("Error writing {}", n, e);
-            }
-        });
+        neuronMetadata.forEach(this::writeOne);
+    }
+
+    @Override
+    public void writeOne(AbstractNeuronEntity neuronMetadata) {
+        try {
+            gen.writeObject(neuronMetadata);
+        } catch (Exception e) {
+            LOG.error("Error writing {}", neuronMetadata, e);
+        }
     }
 
     @Override

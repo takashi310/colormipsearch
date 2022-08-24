@@ -28,6 +28,7 @@ public abstract class AbstractNeuronMetadata {
     private String alignmentSpace;
     private String anatomicalArea;
     private Gender gender;
+    private boolean unpublished;
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
 
@@ -85,6 +86,20 @@ public abstract class AbstractNeuronMetadata {
 
     public void setGender(Gender gender) {
         this.gender = gender;
+    }
+
+    @JsonIgnore
+    public boolean isUnpublished() {
+        return unpublished;
+    }
+
+    public void setUnpublished(boolean unpublished) {
+        this.unpublished = unpublished;
+    }
+
+    @JsonIgnore
+    public boolean isPublished() {
+        return !unpublished;
     }
 
     @JsonProperty("files")

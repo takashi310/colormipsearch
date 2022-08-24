@@ -79,9 +79,13 @@ public class MIPsExporter extends AbstractDataExporter {
                         List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
-                        neuronMips.forEach(updateNeuronMethod);
+                        // update neurons and filter out unpublished ones
+                        List<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
+                                .peek(updateNeuronMethod)
+                                .filter(AbstractNeuronMetadata::isPublished)
+                                .collect(Collectors.toList());
                         LOG.info("Write mips for {}", publishedName);
-                        mipsWriter.writeItems(neuronMips, outputDir, publishedName);
+                        mipsWriter.writeItems(publishedNeuronMips, outputDir, publishedName);
                     });
                 });
     }

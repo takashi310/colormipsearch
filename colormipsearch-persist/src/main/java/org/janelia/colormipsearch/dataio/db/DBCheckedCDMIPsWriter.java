@@ -6,11 +6,11 @@ import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
-public class DBCDMIPsWriter implements CDMIPsWriter {
+public class DBCheckedCDMIPsWriter implements CDMIPsWriter {
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
 
-    public DBCDMIPsWriter(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao) {
+    public DBCheckedCDMIPsWriter(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao) {
         this.neuronMetadataDao = neuronMetadataDao;
     }
 
@@ -21,12 +21,12 @@ public class DBCDMIPsWriter implements CDMIPsWriter {
 
     @Override
     public void write(List<AbstractNeuronEntity> neuronMetadata) {
-        neuronMetadataDao.saveAll(neuronMetadata);
+        neuronMetadata.forEach(neuronMetadataDao::createOrUpdate);
     }
 
     @Override
     public void writeOne(AbstractNeuronEntity neuronMetadata) {
-        neuronMetadataDao.save(neuronMetadata);
+        neuronMetadataDao.createOrUpdate(neuronMetadata);
     }
 
     @Override
