@@ -13,11 +13,11 @@ public class NeuronSelector {
     private String neuronClassname; // full class name
     private String alignmentSpace; // alignment space
     private String libraryName; // library name
+    private boolean checkIfNameValid = false;
     private final Set<String> names = new HashSet<>(); // matching published names
     private final Set<String> mipIDs = new HashSet<>(); // matching MIP IDs
     private final Set<Number> entityIds = new HashSet<>(); // matching internal entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
-
     public String getNeuronClassname() {
         return neuronClassname;
     }
@@ -55,6 +55,15 @@ public class NeuronSelector {
 
     public boolean hasLibraryName() {
         return StringUtils.isNotBlank(libraryName);
+    }
+
+    public NeuronSelector withValidPubishingName() {
+        this.checkIfNameValid = true;
+        return this;
+    }
+
+    public boolean isCheckIfNameValid() {
+        return checkIfNameValid;
     }
 
     public Set<String> getNames() {

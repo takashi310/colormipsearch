@@ -17,6 +17,7 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="neuronMetadata")
 public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
+    public static final String NO_CONSENSUS = "No Consensus";
 
     // MIP ID that comes from the Workstation (JACS).
     // This does not uniquely identify the metadata because there may be multiple images,

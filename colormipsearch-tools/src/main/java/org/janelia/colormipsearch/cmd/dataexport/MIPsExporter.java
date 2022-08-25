@@ -50,10 +50,11 @@ public class MIPsExporter extends AbstractDataExporter {
                         new NeuronSelector()
                                 .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
                                 .setLibraryName(dataSourceParam.getLibraryName())
-                                .addNames(dataSourceParam.getNames()),
+                                .addNames(dataSourceParam.getNames())
+                                .withValidPubishingName(),
                         new PagedRequest().setSortCriteria(
                                 Collections.singletonList(new SortCriteria("publishedName"))
-                        )
+                        ).setFirstPageOffset(dataSourceParam.getOffset()).setPageSize(dataSourceParam.getSize())
                 ).getResultList().stream()
                 .map(AbstractNeuronEntity::getPublishedName)
                 .filter(StringUtils::isNotBlank)

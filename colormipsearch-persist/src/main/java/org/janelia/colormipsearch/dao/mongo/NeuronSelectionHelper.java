@@ -15,6 +15,7 @@ import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.LMNeuronEntity;
 
 class NeuronSelectionHelper {
 
@@ -35,6 +36,12 @@ class NeuronSelectionHelper {
         }
         if (neuronSelector.hasLibraryName()) {
             filter.add(Filters.eq(qualifier + "libraryName", neuronSelector.getLibraryName()));
+        }
+        if (neuronSelector.isCheckIfNameValid()) {
+            filter.add(Filters.and(
+                    Filters.exists(qualifier + "publishedName"),
+                    Filters.ne(qualifier + "publishedName", AbstractNeuronEntity.NO_CONSENSUS))
+            );
         }
         if (neuronSelector.hasNames()) {
             filter.add(Filters.in(qualifier + "publishedName", neuronSelector.getNames()));
