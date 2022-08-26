@@ -100,14 +100,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
-        TransactionOptions txOptions = TransactionOptions.builder()
-                .readConcern(ReadConcern.MAJORITY)
-                .writeConcern(WriteConcern.MAJORITY)
-                .readPreference(ReadPreference.primaryPreferred())
-                .maxCommitTime(100L, TimeUnit.MILLISECONDS)
-                .build();
         ClientSession session = mongoClient.startSession();
-        session.startTransaction(txOptions);
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
@@ -121,10 +114,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         );
                 neuron.setEntityId(updatedNeuron.getEntityId());
                 neuron.setCreatedDate(updatedNeuron.getCreatedDate());
-                session.commitTransaction();
-                if (i == 0) {
-                    selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
-                }
                 break;
             } catch (Exception e) {
                 System.out.println("!!!!! FIND AND UPDATE " + neuron + " " + i + " failed " + e.toString());
