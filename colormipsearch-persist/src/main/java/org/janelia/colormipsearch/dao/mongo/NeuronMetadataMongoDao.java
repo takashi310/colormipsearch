@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadConcern;
+import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
@@ -94,9 +96,18 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
-        ClientSession session = mongoClient.startSession();
+        TransactionOptions txOptions = TransactionOptions.builder()
+                .readConcern(ReadConcern.SNAPSHOT)
+                .writeConcern(WriteConcern.MAJORITY)
+                .build();
+        ClientSessionOptions sessionOptions = ClientSessionOptions.builder()
+                .snapshot(true)
+                .causallyConsistent(true)
+                .defaultTransactionOptions(txOptions)
+                .build();
+        ClientSession session = mongoClient.startSession(sessionOptions);
         try {
-            session.startTransaction();
+            session.startTransaction(sessionOptions.getDefaultTransactionOptions());
             N updatedNeuron = mongoCollection
                     .withReadConcern(ReadConcern.SNAPSHOT)
                     .withWriteConcern(WriteConcern.MAJORITY)
