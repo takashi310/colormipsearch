@@ -201,11 +201,16 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         new DataSourceParam(e.getKey().getLeft(), e.getKey().getRight(), null, 0, -1)
                                 .setMipIDs(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream())
                 .collect(Collectors.toMap(n -> {
-                    AbstractNeuronEntity n1 = n.duplicate();
-                    // just to make sure - reset the entity ID because we don't want the key to match based on entity ID
-                    n1.setEntityId(null);
-                    return n1;
-                }, n -> n));
+                            AbstractNeuronEntity n1 = n.duplicate();
+                            // just to make sure - reset the entity ID because we don't want the key to match based on entity ID
+                            n1.setEntityId(null);
+                            return n1;
+                        },
+                        n -> n,
+                        (n1, n2) -> {
+                            LOG.warn("Conflict found for {}, {}", n1, n2);
+                            return n1;
+                        }));
         Map<AbstractNeuronEntity, AbstractNeuronEntity> newNeurons = new HashMap<>();
         // update the entity IDs
         matches.forEach(cdm -> {

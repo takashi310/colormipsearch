@@ -131,6 +131,12 @@ class MongoDaoHelper {
         return StringUtils.isNotBlank(clazz) ? Filters.eq("class", clazz) : new Document();
     }
 
+    static <T, R> List<R> distinctAttributes(String fieldName, Bson filter, MongoCollection<T> mongoCollection, Class<R> resultType) {
+        List<R> results = new ArrayList<>();
+        mongoCollection.distinct(fieldName, filter, resultType).forEach(results::add);
+        return results;
+    }
+
     static <I, T, R> R findById(I id, MongoCollection<T> mongoCollection, Class<R> documentType) {
         if (id == null) {
             return null;

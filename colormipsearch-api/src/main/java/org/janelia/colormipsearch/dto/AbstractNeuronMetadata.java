@@ -140,6 +140,7 @@ public abstract class AbstractNeuronMetadata {
         return new EqualsBuilder()
                 .appendSuper(super.equals(o))
                 .append(mipId, that.mipId)
+                .append(getNeuronFile(FileType.ColorDepthMip), that.getNeuronFile(FileType.ColorDepthMip))
                 .append(getNeuronFile(FileType.ColorDepthMipInput), that.getNeuronFile(FileType.ColorDepthMipInput))
                 .isEquals();
     }
@@ -171,5 +172,4 @@ public abstract class AbstractNeuronMetadata {
         this.neuronFiles.clear();
         this.neuronFiles.putAll(that.getNeuronFiles());
     }
-
 }

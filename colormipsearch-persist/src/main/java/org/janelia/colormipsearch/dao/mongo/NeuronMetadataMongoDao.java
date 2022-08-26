@@ -120,6 +120,14 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         );
     }
 
+    public List<String> findAllNeuronAttributeValues(String attributeName, NeuronSelector neuronSelector) {
+        return MongoDaoHelper.distinctAttributes(
+                attributeName,
+                NeuronSelectionHelper.getNeuronFilter(null, neuronSelector),
+                mongoCollection,
+                String.class);
+    }
+
     private List<Bson> createQueryPipeline(Bson matchFilter) {
         return Collections.singletonList(Aggregates.match(matchFilter));
     }

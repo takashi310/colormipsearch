@@ -18,6 +18,7 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,20 +47,14 @@ public class MIPsExporter extends AbstractDataExporter {
 
     @Override
     public void runExport() {
-        List<String> allPublishedNames = neuronMetadataDao.findNeurons(
+        List<String> allPublishedNames = neuronMetadataDao.findAllNeuronAttributeValues(
+                "publishedName",
                         new NeuronSelector()
                                 .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
                                 .setLibraryName(dataSourceParam.getLibraryName())
+                                .addTags(dataSourceParam.getTags())
                                 .addNames(dataSourceParam.getNames())
-                                .withValidPubishingName(),
-                        new PagedRequest().setSortCriteria(
-                                Collections.singletonList(new SortCriteria("publishedName"))
-                        ).setFirstPageOffset(dataSourceParam.getOffset()).setPageSize(dataSourceParam.getSize())
-                ).getResultList().stream()
-                .map(AbstractNeuronEntity::getPublishedName)
-                .filter(StringUtils::isNotBlank)
-                .distinct()
-                .collect(Collectors.toList());
+                                .withValidPubishingName());
         int from = dataSourceParam.hasOffset() ? Math.min((int) dataSourceParam.getOffset(), allPublishedNames.size()) : 0;
         int to = dataSourceParam.hasSize() ? from + dataSourceParam.getSize() : allPublishedNames.size();
         List<String> publishedNames = allPublishedNames.subList(from, Math.min(allPublishedNames.size(), to));
@@ -84,6 +79,8 @@ public class MIPsExporter extends AbstractDataExporter {
                         List<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                                 .peek(updateNeuronMethod)
                                 .filter(AbstractNeuronMetadata::isPublished)
+                                .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
+                                .distinct()
                                 .collect(Collectors.toList());
                         LOG.info("Write mips for {}", publishedName);
                         mipsWriter.writeItems(publishedNeuronMips, outputDir, publishedName);
