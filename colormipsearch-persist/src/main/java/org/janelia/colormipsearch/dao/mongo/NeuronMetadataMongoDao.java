@@ -121,15 +121,13 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         );
                 neuron.setEntityId(updatedNeuron.getEntityId());
                 neuron.setCreatedDate(updatedNeuron.getCreatedDate());
+                session.commitTransaction();
+                break;
             } catch (Exception e) {
-                session.abortTransaction();
                 if (i >= MAX_UPDATE_RETRIES) {
                     throw new IllegalStateException(e);
                 }
-                continue;
             }
-            session.commitTransaction();
-            break;
         }
         return neuron;
     }
