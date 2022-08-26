@@ -108,6 +108,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                     .withReadConcern(ReadConcern.SNAPSHOT)
                     .withWriteConcern(WriteConcern.MAJORITY)
                     .findOneAndUpdate(
+                            session,
                             MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                             MongoDaoHelper.combineUpdates(updates),
                             updateOptions

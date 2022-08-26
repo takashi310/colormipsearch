@@ -51,10 +51,8 @@ public class PPPMatchesMongoDaoITest extends AbstractMongoDaoITest {
         assertNotNull(persistedPPPMatch);
         assertNotSame(testPPPMatch, persistedPPPMatch);
         assertEquals(testPPPMatch.getEntityId(), persistedPPPMatch.getEntityId());
-        assertNotNull(persistedPPPMatch.getMaskImage());
-        assertSame(persistedPPPMatch.getMaskImage(), persistedPPPMatch.getSourceImage());
-        assertNotNull(persistedPPPMatch.getMatchedImage());
-        assertSame(persistedPPPMatch.getMatchedImage(), persistedPPPMatch.getTargetImage());
+        assertNull(persistedPPPMatch.getMaskImage());
+        assertNull(persistedPPPMatch.getMatchedImage());
         assertEquals(testPPPMatch.getMaskImageRefId().toString(), persistedPPPMatch.getMaskImageRefId().toString());
         assertEquals(testPPPMatch.getMatchedImageRefId().toString(), persistedPPPMatch.getMatchedImageRefId().toString());
     }
