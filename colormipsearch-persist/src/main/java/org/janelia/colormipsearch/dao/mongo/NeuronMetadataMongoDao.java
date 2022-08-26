@@ -25,9 +25,13 @@ import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
                                                                       implements NeuronMetadataDao<N> {
+    private static final Logger LOG = LoggerFactory.getLogger(NeuronMetadataMongoDao.class);
+
     public NeuronMetadataMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoDatabase, idGenerator);
         createDocumentIndexes();
@@ -96,6 +100,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updates.add(MongoDaoHelper.getFieldUpdate("lock",
                 new SetFieldValueHandler<>(new ObjectId())));
 
+        LOG.info("!!!! FIND or UPDATE: {}: {}", neuron, updates);
         N updatedNeuron = mongoCollection
                 .withReadConcern(ReadConcern.MAJORITY)
                 .withWriteConcern(WriteConcern.MAJORITY)
