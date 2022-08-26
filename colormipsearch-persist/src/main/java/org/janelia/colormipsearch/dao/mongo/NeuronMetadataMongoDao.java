@@ -107,9 +107,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 .defaultTransactionOptions(txOptions)
                 .build();
         ClientSession session = mongoClient.startSession(sessionOptions);
-        session.startTransaction(sessionOptions.getDefaultTransactionOptions());
         for (int i = 0; ; i++) {
             try {
+                session.startTransaction(sessionOptions.getDefaultTransactionOptions());
                 N updatedNeuron = mongoCollection
                         .withReadConcern(ReadConcern.SNAPSHOT)
                         .withWriteConcern(WriteConcern.MAJORITY)
@@ -124,6 +124,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 neuron.setCreatedDate(updatedNeuron.getCreatedDate());
                 break;
             } catch (Exception e) {
+                session.abortTransaction();
                 if (i >= MAX_UPDATE_RETRIES) {
                     throw new IllegalStateException(e);
                 }
