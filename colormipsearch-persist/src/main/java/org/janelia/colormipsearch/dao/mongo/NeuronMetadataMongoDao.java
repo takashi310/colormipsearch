@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
@@ -90,11 +91,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
-        N updatedNeuron = mongoCollection.findOneAndUpdate(
-                MongoDaoHelper.createBsonFilterCriteria(selectFilters),
-                MongoDaoHelper.combineUpdates(updates),
-                updateOptions
-        );
+        N updatedNeuron = mongoCollection.withWriteConcern(WriteConcern.ACKNOWLEDGED)
+                .findOneAndUpdate(
+                        MongoDaoHelper.createBsonFilterCriteria(selectFilters),
+                        MongoDaoHelper.combineUpdates(updates),
+                        updateOptions
+                );
         neuron.setEntityId(updatedNeuron.getEntityId());
         neuron.setCreatedDate(updatedNeuron.getCreatedDate());
         return neuron;
