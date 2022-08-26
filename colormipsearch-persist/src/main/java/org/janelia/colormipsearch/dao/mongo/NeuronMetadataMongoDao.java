@@ -125,7 +125,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 }
                 break;
             } catch (Exception e) {
-                System.out.println("!!!!! FIND AND UPDATE " + neuron + " " + i + " failed");
+                System.out.println("!!!!! FIND AND UPDATE " + neuron + " " + i + " failed " + e.toString());
                 if (i >= MAX_UPDATE_RETRIES) {
                     throw new IllegalStateException(e);
                 }
