@@ -209,7 +209,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         n -> n,
                         (n1, n2) -> {
                             LOG.warn("Conflict found for {}, {}", n1, n2);
-                            return n1;
+                            throw new IllegalArgumentException("Throw conflict found for " + n1 + " and " + n2);
                         }));
         Map<AbstractNeuronEntity, AbstractNeuronEntity> newNeurons = new HashMap<>();
         // update the entity IDs
