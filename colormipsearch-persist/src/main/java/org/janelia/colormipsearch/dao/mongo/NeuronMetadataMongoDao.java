@@ -122,6 +122,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 neuron.setEntityId(updatedNeuron.getEntityId());
                 neuron.setCreatedDate(updatedNeuron.getCreatedDate());
                 session.commitTransaction();
+                if (i == 0) {
+                    selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
+                }
                 break;
             } catch (Exception e) {
                 if (i >= MAX_UPDATE_RETRIES) {
