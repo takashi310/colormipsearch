@@ -17,23 +17,17 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
 
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
-import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
                                                                       implements NeuronMetadataDao<N> {
-    private static final Logger LOG = LoggerFactory.getLogger(NeuronMetadataMongoDao.class);
-
     public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
@@ -101,7 +95,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
         ClientSession session = mongoClient.startSession();
-        LOG.info("!!!! Session: {}, FIND or UPDATE: {}: {}", session, neuron, updates);
         try {
             session.startTransaction();
             N updatedNeuron = mongoCollection
