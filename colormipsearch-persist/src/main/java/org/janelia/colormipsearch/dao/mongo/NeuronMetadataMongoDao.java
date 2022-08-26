@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import com.mongodb.ReadConcern;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -14,9 +15,11 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
 
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
@@ -90,8 +93,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
+        updates.add(MongoDaoHelper.getFieldUpdate("lock",
+                new SetFieldValueHandler<>(new ObjectId())));
 
-        N updatedNeuron = mongoCollection.withWriteConcern(WriteConcern.ACKNOWLEDGED)
+        N updatedNeuron = mongoCollection
+                .withReadConcern(ReadConcern.MAJORITY)
+                .withWriteConcern(WriteConcern.MAJORITY)
                 .findOneAndUpdate(
                         MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                         MongoDaoHelper.combineUpdates(updates),
