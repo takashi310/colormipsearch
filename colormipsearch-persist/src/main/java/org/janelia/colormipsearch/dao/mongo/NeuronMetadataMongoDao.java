@@ -100,18 +100,17 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
 
         TransactionOptions txOptions = TransactionOptions.builder()
-                .readConcern(ReadConcern.SNAPSHOT)
+                .readConcern(ReadConcern.MAJORITY)
                 .writeConcern(WriteConcern.MAJORITY)
                 .readPreference(ReadPreference.primaryPreferred())
                 .build();
-        ClientSessionOptions sessionOptions = ClientSessionOptions.builder()
-                .defaultTransactionOptions(txOptions)
-                .build();
-        ClientSession session = mongoClient.startSession(sessionOptions);
-        session.startTransaction(sessionOptions.getDefaultTransactionOptions());
+        ClientSession session = mongoClient.startSession();
+        session.startTransaction(txOptions);
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
+                        .withReadConcern(ReadConcern.MAJORITY)
+                        .withWriteConcern(WriteConcern.MAJORITY)
                         .findOneAndUpdate(
                                 session,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
