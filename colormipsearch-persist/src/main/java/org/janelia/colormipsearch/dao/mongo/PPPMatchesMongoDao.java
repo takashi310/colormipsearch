@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dao.mongo;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.UnwindOptions;
@@ -16,7 +17,7 @@ import org.janelia.colormipsearch.model.PPPMatchEntity;
 
 public class PPPMatchesMongoDao<R extends PPPMatchEntity<? extends AbstractNeuronEntity,
                                                          ? extends AbstractNeuronEntity>> extends AbstractNeuronMatchesMongoDao<R> {
-    public PPPMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
-        super(mongoDatabase, idGenerator);
+    public PPPMatchesMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+        super(mongoClient, mongoDatabase, idGenerator);
     }
 }

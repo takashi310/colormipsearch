@@ -50,21 +50,21 @@ public class DaosProvider {
 
     public <T extends AbstractSessionEntity> MatchSessionDao<T>
     getMatchParametersDao() {
-        return new MatchSessionMongoDao<>(mongoDatabase, idGenerator);
+        return new MatchSessionMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 
     public <R extends CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getCDMatchesDao() {
-        return new CDMatchesMongoDao<>(mongoDatabase, idGenerator);
+        return new CDMatchesMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 
     public <R extends PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getPPPMatchesDao() {
-        return new PPPMatchesMongoDao<>(mongoDatabase, idGenerator);
+        return new PPPMatchesMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 
     public <N extends AbstractNeuronEntity> NeuronMetadataDao<N>
     getNeuronMetadataDao() {
-        return new NeuronMetadataMongoDao<>(mongoDatabase, idGenerator);
+        return new NeuronMetadataMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 }

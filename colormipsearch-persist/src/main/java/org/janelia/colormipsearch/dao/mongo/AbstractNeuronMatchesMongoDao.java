@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
@@ -36,8 +37,8 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                                                                           ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
                                                                                                            implements NeuronMatchesDao<R> {
 
-    protected AbstractNeuronMatchesMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
-        super(mongoDatabase, idGenerator);
+    protected AbstractNeuronMatchesMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+        super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
     }
 

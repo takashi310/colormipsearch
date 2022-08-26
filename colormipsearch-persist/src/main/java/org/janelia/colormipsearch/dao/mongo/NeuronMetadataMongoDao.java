@@ -7,6 +7,8 @@ import java.util.List;
 
 import com.mongodb.ReadConcern;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.ClientSession;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
@@ -32,8 +34,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                                                                       implements NeuronMetadataDao<N> {
     private static final Logger LOG = LoggerFactory.getLogger(NeuronMetadataMongoDao.class);
 
-    public NeuronMetadataMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
-        super(mongoDatabase, idGenerator);
+    public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+        super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
     }
 
@@ -97,20 +99,27 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
-        updates.add(MongoDaoHelper.getFieldUpdate("lock",
-                new SetFieldValueHandler<>(new ObjectId())));
 
-        LOG.info("!!!! FIND or UPDATE: {}: {}", neuron, updates);
-        N updatedNeuron = mongoCollection
-                .withReadConcern(ReadConcern.MAJORITY)
-                .withWriteConcern(WriteConcern.MAJORITY)
-                .findOneAndUpdate(
-                        MongoDaoHelper.createBsonFilterCriteria(selectFilters),
-                        MongoDaoHelper.combineUpdates(updates),
-                        updateOptions
-                );
-        neuron.setEntityId(updatedNeuron.getEntityId());
-        neuron.setCreatedDate(updatedNeuron.getCreatedDate());
+        ClientSession session = mongoClient.startSession();
+        LOG.info("!!!! Session: {}, FIND or UPDATE: {}: {}", session, neuron, updates);
+        try {
+            session.startTransaction();
+            N updatedNeuron = mongoCollection
+                    .withReadConcern(ReadConcern.SNAPSHOT)
+                    .withWriteConcern(WriteConcern.MAJORITY)
+                    .findOneAndUpdate(
+                            MongoDaoHelper.createBsonFilterCriteria(selectFilters),
+                            MongoDaoHelper.combineUpdates(updates),
+                            updateOptions
+                    );
+            neuron.setEntityId(updatedNeuron.getEntityId());
+            neuron.setCreatedDate(updatedNeuron.getCreatedDate());
+        } catch (Exception e) {
+            session.abortTransaction();
+            throw new IllegalStateException(e);
+        } finally {
+            session.commitTransaction();
+        }
         return neuron;
     }
 
