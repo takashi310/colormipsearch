@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadConcern;
+import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.ClientSession;
@@ -101,9 +102,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         TransactionOptions txOptions = TransactionOptions.builder()
                 .readConcern(ReadConcern.SNAPSHOT)
                 .writeConcern(WriteConcern.MAJORITY)
+                .readPreference(ReadPreference.primaryPreferred())
                 .build();
         ClientSessionOptions sessionOptions = ClientSessionOptions.builder()
-                .causallyConsistent(true)
                 .defaultTransactionOptions(txOptions)
                 .build();
         ClientSession session = mongoClient.startSession(sessionOptions);
