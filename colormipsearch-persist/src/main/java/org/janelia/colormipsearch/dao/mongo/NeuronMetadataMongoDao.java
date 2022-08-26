@@ -40,7 +40,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
     @Override
     public N createOrUpdate(N neuron) {
         FindOneAndReplaceOptions updateOptions = new FindOneAndReplaceOptions();
-        updateOptions.upsert(true);
+        updateOptions.upsert(false); // here the document should not be created - minimalCreateOrUpdate will create it
         updateOptions.returnDocument(ReturnDocument.AFTER);
         N toUpdate;
         if (neuron.hasEntityId()) {
