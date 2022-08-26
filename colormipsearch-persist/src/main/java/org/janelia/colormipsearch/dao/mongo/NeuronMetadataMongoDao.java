@@ -101,7 +101,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 .writeConcern(WriteConcern.MAJORITY)
                 .build();
         ClientSessionOptions sessionOptions = ClientSessionOptions.builder()
-                .snapshot(true)
                 .causallyConsistent(true)
                 .defaultTransactionOptions(txOptions)
                 .build();
