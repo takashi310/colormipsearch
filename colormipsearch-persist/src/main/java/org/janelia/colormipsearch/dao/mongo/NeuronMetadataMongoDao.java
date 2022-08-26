@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadConcern;
@@ -103,6 +104,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 .readConcern(ReadConcern.MAJORITY)
                 .writeConcern(WriteConcern.MAJORITY)
                 .readPreference(ReadPreference.primaryPreferred())
+                .maxCommitTime(100L, TimeUnit.MILLISECONDS)
                 .build();
         ClientSession session = mongoClient.startSession();
         session.startTransaction(txOptions);
