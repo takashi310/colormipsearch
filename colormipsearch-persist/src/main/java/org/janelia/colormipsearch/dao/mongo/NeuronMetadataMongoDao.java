@@ -107,8 +107,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 .defaultTransactionOptions(txOptions)
                 .build();
         ClientSession session = mongoClient.startSession(sessionOptions);
+        session.startTransaction(sessionOptions.getDefaultTransactionOptions());
         for (int i = 0; ; i++) {
-            session.startTransaction(sessionOptions.getDefaultTransactionOptions());
             try {
                 N updatedNeuron = mongoCollection
                         .withReadConcern(ReadConcern.SNAPSHOT)
