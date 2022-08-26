@@ -30,6 +30,8 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
                                                                       implements NeuronMetadataDao<N> {
+    private static final int MAX_UPDATE_RETRIES = 3;
+
     public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
@@ -105,24 +107,28 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 .defaultTransactionOptions(txOptions)
                 .build();
         ClientSession session = mongoClient.startSession(sessionOptions);
-        try {
-            session.startTransaction(sessionOptions.getDefaultTransactionOptions());
-            N updatedNeuron = mongoCollection
-                    .withReadConcern(ReadConcern.SNAPSHOT)
-                    .withWriteConcern(WriteConcern.MAJORITY)
-                    .findOneAndUpdate(
-                            session,
-                            MongoDaoHelper.createBsonFilterCriteria(selectFilters),
-                            MongoDaoHelper.combineUpdates(updates),
-                            updateOptions
-                    );
-            neuron.setEntityId(updatedNeuron.getEntityId());
-            neuron.setCreatedDate(updatedNeuron.getCreatedDate());
-        } catch (Exception e) {
-            session.abortTransaction();
-            throw new IllegalStateException(e);
-        } finally {
-            session.commitTransaction();
+        session.startTransaction(sessionOptions.getDefaultTransactionOptions());
+        for (int i = 0; ; i++) {
+            try {
+                N updatedNeuron = mongoCollection
+                        .withReadConcern(ReadConcern.SNAPSHOT)
+                        .withWriteConcern(WriteConcern.MAJORITY)
+                        .findOneAndUpdate(
+                                session,
+                                MongoDaoHelper.createBsonFilterCriteria(selectFilters),
+                                MongoDaoHelper.combineUpdates(updates),
+                                updateOptions
+                        );
+                session.commitTransaction();
+                neuron.setEntityId(updatedNeuron.getEntityId());
+                neuron.setCreatedDate(updatedNeuron.getCreatedDate());
+                break;
+            } catch (Exception e) {
+                session.abortTransaction();
+                if (i >= MAX_UPDATE_RETRIES) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
         return neuron;
     }
