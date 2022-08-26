@@ -111,8 +111,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
-                        .withReadConcern(ReadConcern.SNAPSHOT)
-                        .withWriteConcern(WriteConcern.MAJORITY)
                         .findOneAndUpdate(
                                 session,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
@@ -127,6 +125,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 }
                 break;
             } catch (Exception e) {
+                System.out.println("!!!!! FIND AND UPDATE " + neuron + " " + i + " failed");
                 if (i >= MAX_UPDATE_RETRIES) {
                     throw new IllegalStateException(e);
                 }
