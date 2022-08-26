@@ -140,9 +140,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 m.getMatchedImage().setLibraryName(getLibraryName(m.getMatchedImage().getLibraryName()));
             });
             // update MIP IDs for all masks
-            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader);
+            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader, cdMatchesFile);
             // update MIP IDs for all targets
-            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader);
+            updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader, cdMatchesFile);
             // write matches
             cdMatchesWriter.write(cdMatchesForMask);
         } catch (Exception e) {
@@ -188,7 +188,8 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
     private void updateMIPRefs(List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches,
                                Function<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>, AbstractNeuronEntity> mipSelector,
-                               CDMIPsReader cdmiPsReader) {
+                               CDMIPsReader cdmiPsReader,
+                               String filename) {
         CDMIPsWriter cdMIPsWriter = new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
         Map<AbstractNeuronEntity, AbstractNeuronEntity> indexedPersistedMIPs = matches.stream()
                 .map(mipSelector)
@@ -208,8 +209,8 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         },
                         n -> n,
                         (n1, n2) -> {
-                            LOG.warn("Conflict found for {}, {}", n1, n2);
-                            throw new IllegalArgumentException("Throw conflict found for " + n1 + " and " + n2);
+                            LOG.warn("Conflict found for {}, {} while processing {}", n1, n2, filename);
+                            throw new IllegalArgumentException("Throw conflict found for " + n1 + " and " + n2 + " while processing " + filename);
                         }));
         Map<AbstractNeuronEntity, AbstractNeuronEntity> newNeurons = new HashMap<>();
         // update the entity IDs
