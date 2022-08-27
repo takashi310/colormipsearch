@@ -4,14 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import com.mongodb.ClientSessionOptions;
 import com.mongodb.ReadConcern;
-import com.mongodb.ReadPreference;
-import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
-import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -52,20 +47,17 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         FindOneAndReplaceOptions updateOptions = new FindOneAndReplaceOptions();
         updateOptions.upsert(false); // here the document should not be created - minimalCreateOrUpdate will create it
         updateOptions.returnDocument(ReturnDocument.AFTER);
-        N toUpdate;
-        if (neuron.hasEntityId()) {
-            toUpdate = neuron;
-        } else if (isIdentifiable(neuron)) {
-            toUpdate = minimalCreateOrUpdate(neuron);
+        if (isIdentifiable(neuron)) {
+            N toUpdate = minimalCreateOrUpdate(neuron);
+            return mongoCollection.findOneAndReplace(
+                    MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
+                    neuron,
+                    updateOptions
+            );
         } else {
             save(neuron);
             return neuron;
         }
-        return mongoCollection.findOneAndReplace(
-                MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
-                neuron,
-                updateOptions
-        );
     }
 
     private N minimalCreateOrUpdate(N neuron) {
@@ -99,15 +91,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
                 new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
-
-        ClientSession session = mongoClient.startSession();
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
                         .withReadConcern(ReadConcern.MAJORITY)
                         .withWriteConcern(WriteConcern.MAJORITY)
                         .findOneAndUpdate(
-                                session,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
