@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd.dataexport;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -76,12 +77,11 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
                         // update neurons and filter out unpublished ones
-                        List<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
+                        Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                                 .peek(updateNeuronMethod)
-                                .filter(AbstractNeuronMetadata::isPublished)
                                 .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
-                                .distinct()
-                                .collect(Collectors.toList());
+                                .filter(AbstractNeuronMetadata::isPublished)
+                                .collect(Collectors.toSet());
                         LOG.info("Write mips for {}", publishedName);
                         mipsWriter.writeItems(publishedNeuronMips, outputDir, publishedName);
                     });

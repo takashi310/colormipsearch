@@ -138,7 +138,6 @@ public abstract class AbstractNeuronMetadata {
         AbstractNeuronMetadata that = (AbstractNeuronMetadata) o;
 
         return new EqualsBuilder()
-                .appendSuper(super.equals(o))
                 .append(mipId, that.mipId)
                 .append(getNeuronFile(FileType.ColorDepthMip), that.getNeuronFile(FileType.ColorDepthMip))
                 .append(getNeuronFile(FileType.ColorDepthMipInput), that.getNeuronFile(FileType.ColorDepthMipInput))
@@ -148,8 +147,8 @@ public abstract class AbstractNeuronMetadata {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-                .appendSuper(super.hashCode())
                 .append(mipId)
+                .append(getNeuronFile(FileType.ColorDepthMip))
                 .append(getNeuronFile(FileType.ColorDepthMipInput))
                 .toHashCode();
     }

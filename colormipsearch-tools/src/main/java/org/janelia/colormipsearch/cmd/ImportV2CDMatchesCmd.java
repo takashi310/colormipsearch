@@ -212,8 +212,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         },
                         n -> n,
                         (n1, n2) -> {
+                            // resolve the conflict by selecting the first element
                             LOG.warn("Conflict found for {}, {} while processing {}", n1, n2, filename);
-                            throw new IllegalStateException("Throw conflict found for " + n1 + " and " + n2 + " while processing " + filename);
+                            return n1;
                         }));
         Map<AbstractNeuronEntity, AbstractNeuronEntity> newNeurons = new HashMap<>();
         // update the entity IDs

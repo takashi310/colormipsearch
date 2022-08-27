@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.dataio.fileutils;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -21,7 +22,7 @@ public class ItemsWriterToJSONFile {
         this.jsonWriter = jsonWriter;
     }
 
-    public <M> void writeItems(List<M> itemsList, Path outputDir, String filename) {
+    public <M> void writeItems(Collection<M> itemsList, Path outputDir, String filename) {
         FSUtils.createDirs(outputDir);
         JsonOutputHelper.writeToJSONFile(
                 itemsList,
