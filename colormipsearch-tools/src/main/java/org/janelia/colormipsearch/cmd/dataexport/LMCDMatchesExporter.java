@@ -42,22 +42,26 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     @Override
     public void runExport() {
         List<String> targets = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
-        ItemsHandling.partitionCollection(targets, processingPartitionSize).entrySet().stream().parallel()
+        ItemsHandling.partitionCollection(targets, processingPartitionSize)
+                .entrySet().stream().parallel()
                 .forEach(indexedPartition -> {
+                    long startProcessingTime = System.currentTimeMillis();
+                    LOG.info("Start processing partition {}", indexedPartition.getKey());
                     indexedPartition.getValue().forEach(targetId -> {
                         LOG.info("Read color depth matches for {}", targetId);
                         List<CDMatchEntity<?, ?>> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
                                 dataSourceParam.getAlignmentSpace(),
-                                dataSourceParam.getLibraryName(),
+                                null, // no target library specified - we use target MIP
                                 Collections.singletonList(targetId),
                                 scoresFilter,
                                 null, // use the tags for selecting the masks but not for selecting the matches
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
-                        LOG.info("Write color depth matches for {}", targetId);
+                        LOG.info("Write {} color depth matches for {}", matchesForTarget.size(), targetId);
                         writeResults(matchesForTarget);
                     });
+                    LOG.info("Finished processing partition {} in {}s", indexedPartition.getKey(), (System.currentTimeMillis()-startProcessingTime)/1000.);
                 });
     }
 

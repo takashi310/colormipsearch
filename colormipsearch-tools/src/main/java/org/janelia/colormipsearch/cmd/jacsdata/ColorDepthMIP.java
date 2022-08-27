@@ -124,7 +124,7 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setAnatomicalArea(anatomicalArea);
         emNeuron.setNeuronInstance(neuronInstance);
         emNeuron.setNeuronType(neuronType);
-        if (emBody == null) {
+        if (bodyId == null) {
             emNeuron.setUnpublished(true);
         }
     }
