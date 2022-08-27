@@ -42,11 +42,12 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     public EMPPPMatchesExporter(CachedJacsDataHelper jacsDataHelper,
                                 DataSourceParam dataSourceParam,
                                 ScoresFilter scoresFilter,
+                                int relativesUrlsToComponent,
                                 Path outputDir,
                                 NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader,
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, outputDir);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;

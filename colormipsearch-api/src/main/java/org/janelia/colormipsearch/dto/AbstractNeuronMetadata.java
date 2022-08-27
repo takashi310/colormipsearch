@@ -2,6 +2,8 @@ package org.janelia.colormipsearch.dto;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -127,6 +129,13 @@ public abstract class AbstractNeuronMetadata {
         } else {
             neuronFiles.remove(t);
         }
+    }
+
+    public void updateAllNeuronFiles(Function<String, String> fileNameMap) {
+        Set<FileType> neuronFileTypes = neuronFiles.keySet();
+        neuronFileTypes.forEach(
+                ft -> setNeuronFile(ft, fileNameMap.apply(getNeuronFile(ft)))
+        );
     }
 
     @Override

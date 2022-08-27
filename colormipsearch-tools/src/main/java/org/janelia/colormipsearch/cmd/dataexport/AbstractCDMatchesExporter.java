@@ -33,11 +33,12 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     protected AbstractCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
                                         DataSourceParam dataSourceParam,
                                         ScoresFilter scoresFilter,
+                                        int relativesUrlsToComponent,
                                         Path outputDir,
                                         NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, outputDir);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;
@@ -71,8 +72,10 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                  Consumer<M> updateKeyMethod,
                                  Consumer<T> updateTargetMatchMethod) {
         updateKeyMethod.accept(resultMatches.getKey());
+        resultMatches.getKey().updateAllNeuronFiles(this::relativizeURL);
         resultMatches.getItems().forEach(target -> {
             updateTargetMatchMethod.accept(target.getTargetImage());
+            target.getTargetImage().updateAllNeuronFiles(this::relativizeURL);
         });
     }
 }

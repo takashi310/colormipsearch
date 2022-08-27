@@ -32,11 +32,12 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
     public EMCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                ScoresFilter scoresFilter,
+                               int relativesUrlsToComponent,
                                Path outputDir,
                                NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, outputDir, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper, dataSourceParam, scoresFilter, relativesUrlsToComponent, outputDir, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override

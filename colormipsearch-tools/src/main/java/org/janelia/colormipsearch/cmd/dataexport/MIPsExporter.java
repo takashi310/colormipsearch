@@ -34,12 +34,13 @@ public class MIPsExporter extends AbstractDataExporter {
 
     public MIPsExporter(CachedJacsDataHelper jacsDataHelper,
                         DataSourceParam dataSourceParam,
+                        int relativesUrlsToComponent,
                         Path outputDir,
                         NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                         ItemsWriterToJSONFile mipsWriter,
                         int processingPartitionSize,
                         Class<? extends AbstractNeuronMetadata> exportedClasstype) {
-        super(jacsDataHelper, dataSourceParam, outputDir);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
         this.neuronMetadataDao = neuronMetadataDao;
         this.mipsWriter = mipsWriter;
         this.processingPartitionSize = processingPartitionSize;
@@ -79,8 +80,9 @@ public class MIPsExporter extends AbstractDataExporter {
                         // update neurons and filter out unpublished ones
                         Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                                 .peek(updateNeuronMethod)
-                                .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
                                 .filter(AbstractNeuronMetadata::isPublished)
+                                .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
+                                .peek(n -> n.updateAllNeuronFiles(this::relativizeURL))
                                 .collect(Collectors.toSet());
                         LOG.info("Write mips for {}", publishedName);
                         mipsWriter.writeItems(publishedNeuronMips, outputDir, publishedName);

@@ -79,6 +79,9 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 5000;
 
+        @Parameter(names = {"--relativize-urls-to-component"}, description = "URLs are relative to the specified component")
+        int relativesUrlsToComponent = -1;
+
         @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
         List<String> tags = new ArrayList<>();
 
@@ -161,6 +164,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         jacsDataHelper,
                         dataSource,
                         getCDScoresFilter(),
+                        args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
@@ -174,6 +178,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         jacsDataHelper,
                         dataSource,
                         getCDScoresFilter(),
+                        args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
@@ -187,6 +192,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         jacsDataHelper,
                         dataSource,
                         getPPPScoresFilter(),
+                        args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
@@ -199,6 +205,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new MIPsExporter(
                         jacsDataHelper,
                         dataSource,
+                        args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
@@ -209,6 +216,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new MIPsExporter(
                         jacsDataHelper,
                         dataSource,
+                        args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
