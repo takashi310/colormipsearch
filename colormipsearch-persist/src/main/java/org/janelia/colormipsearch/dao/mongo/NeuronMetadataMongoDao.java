@@ -8,6 +8,7 @@ import java.util.List;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -50,7 +51,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updateOptions.upsert(false); // here the document should not be created - minimalCreateOrUpdate will create it
         updateOptions.returnDocument(ReturnDocument.AFTER);
         if (isIdentifiable(neuron)) {
-            N toUpdate = minimalCreateOrUpdate(neuron);
+            ClientSession session = mongoClient.startSession();
+            N toUpdate = minimalCreateOrUpdate(neuron, session);
             return mongoCollection.findOneAndReplace(
                     MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
                     neuron,
@@ -62,7 +64,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         }
     }
 
-    private N minimalCreateOrUpdate(N neuron) {
+    private N minimalCreateOrUpdate(N neuron, ClientSession clientSession) {
         FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
@@ -96,10 +98,11 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
-                        .withReadConcern(ReadConcern.MAJORITY)
+                        .withReadConcern(ReadConcern.LINEARIZABLE)
                         .withWriteConcern(WriteConcern.MAJORITY)
                         .withReadPreference(ReadPreference.primaryPreferred())
                         .findOneAndUpdate(
+                                clientSession,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
