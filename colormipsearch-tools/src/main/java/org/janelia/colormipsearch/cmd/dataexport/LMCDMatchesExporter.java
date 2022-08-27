@@ -1,12 +1,17 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
@@ -49,7 +54,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     LOG.info("Start processing partition {}", indexedPartition.getKey());
                     indexedPartition.getValue().forEach(targetId -> {
                         LOG.info("Read color depth matches for {}", targetId);
-                        List<CDMatchEntity<?, ?>> matchesForTarget = neuronMatchesReader.readMatchesForTargets(
+                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
                                 dataSourceParam.getAlignmentSpace(),
                                 null, // no target library specified - we use target MIP
                                 Collections.singletonList(targetId),
@@ -58,10 +63,12 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
-                        LOG.info("Write {} color depth matches for {}", matchesForTarget.size(), targetId);
-                        writeResults(matchesForTarget);
+                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget =
+                                selectBestMatchPerMIPPair(allMatchesForTarget);
+                        LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);
+                        writeResults(selectedMatchesForTarget);
                     });
-                    LOG.info("Finished processing partition {} in {}s", indexedPartition.getKey(), (System.currentTimeMillis()-startProcessingTime)/1000.);
+                    LOG.info("Finished processing partition {} in {}s", indexedPartition.getKey(), (System.currentTimeMillis() - startProcessingTime) / 1000.);
                 });
     }
 

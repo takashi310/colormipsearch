@@ -49,7 +49,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     LOG.info("Start processing partition {}", indexedPartition.getKey());
                     indexedPartition.getValue().forEach(maskId -> {
                         LOG.info("Read color depth matches for {}", maskId);
-                        List<CDMatchEntity<?, ?>> matchesForMask = neuronMatchesReader.readMatchesForMasks(
+                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 dataSourceParam.getAlignmentSpace(),
                                 null, // no mask library specified - we use mask MIP
                                 Collections.singletonList(maskId),
@@ -58,8 +58,10 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
-                        LOG.info("Write {} color depth matches for {}", matchesForMask.size(), maskId);
-                        writeResults(matchesForMask);
+                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask =
+                                selectBestMatchPerMIPPair(allMatchesForMask);
+                        LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskId);
+                        writeResults(selectedMatchesForMask);
                     });
                     LOG.info("Finished processing partition {} in {}s", indexedPartition.getKey(), (System.currentTimeMillis()-startProcessingTime)/1000.);
                 });
