@@ -19,6 +19,7 @@ import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
@@ -88,9 +89,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
         );
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.InputColorDepthImage",
-                new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
+                new SetFieldValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
         updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
-                new SetOnCreateValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
+                new SetFieldValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
