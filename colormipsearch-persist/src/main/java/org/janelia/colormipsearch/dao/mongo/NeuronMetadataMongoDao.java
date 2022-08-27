@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.mongodb.ReadConcern;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
@@ -97,6 +98,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 N updatedNeuron = mongoCollection
                         .withReadConcern(ReadConcern.MAJORITY)
                         .withWriteConcern(WriteConcern.MAJORITY)
+                        .withReadPreference(ReadPreference.primaryPreferred())
                         .findOneAndUpdate(
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                                 MongoDaoHelper.combineUpdates(updates),
