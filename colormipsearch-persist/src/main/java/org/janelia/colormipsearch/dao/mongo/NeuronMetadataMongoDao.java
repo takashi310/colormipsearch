@@ -32,9 +32,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                                                                       implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
 
+    private ClientSession session;
+
     public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
+        session = mongoClient.startSession();
     }
 
     @Override
@@ -51,9 +54,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         updateOptions.upsert(false); // here the document should not be created - minimalCreateOrUpdate will create it
         updateOptions.returnDocument(ReturnDocument.AFTER);
         if (isIdentifiable(neuron)) {
-            ClientSession session = mongoClient.startSession();
-            N toUpdate = minimalCreateOrUpdate(neuron, session);
+            N toUpdate = minimalCreateOrUpdate(neuron);
             return mongoCollection.findOneAndReplace(
+                    session,
                     MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
                     neuron,
                     updateOptions
@@ -64,7 +67,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         }
     }
 
-    private N minimalCreateOrUpdate(N neuron, ClientSession clientSession) {
+    private N minimalCreateOrUpdate(N neuron) {
         FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
@@ -102,7 +105,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         .withWriteConcern(WriteConcern.MAJORITY)
                         .withReadPreference(ReadPreference.primaryPreferred())
                         .findOneAndUpdate(
-                                clientSession,
+                                session,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
