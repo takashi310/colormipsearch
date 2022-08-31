@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 class MIPsHandlingUtils {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsHandlingUtils.class);
-    private static final int MAX_IMAGE_DATA_DEPTH = 5;
 
     static int extractColorChannelFromMIPName(String mipName, int channelBase) {
         Pattern regExPattern = Pattern.compile("[_-]ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
@@ -251,7 +250,7 @@ class MIPsHandlingUtils {
 
     private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir, String nameSuffixFilter) {
         try {
-            return Files.find(baseDir, MAX_IMAGE_DATA_DEPTH,
+            return Files.find(baseDir, 1,
                             (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
                     .filter(entryName -> StringUtils.isNotBlank(indexingFieldFromName.apply(entryName)))
