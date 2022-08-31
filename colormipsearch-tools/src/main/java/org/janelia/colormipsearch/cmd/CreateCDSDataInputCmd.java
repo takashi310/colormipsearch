@@ -143,9 +143,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 description = "Comma-delimited list of LM slide codes or EM body ids to be excluded from the requested list")
         List<String> excludedNeurons;
 
-        @Parameter(names = {"--urls-relative-to"}, description = "URLs are relative to the specified component")
-        int urlsRelativeTo = -1;
-
         @Parameter(names = {"--output-filename"}, description = "Output file name")
         String outputFileName;
 
@@ -213,8 +210,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     serverEndpoint,
                     lpaths,
                     getAllVariantsForColorDepthInput(),
-                    excludedNeurons,
-                    getNeuronFileURLMapper()
+                    excludedNeurons
             );
         } else {
             // offline mode is not supported yet in this version
@@ -240,30 +236,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         }
     }
 
-    private Function<String, String> getNeuronFileURLMapper() {
-        return aUrl -> {
-            if (StringUtils.isBlank(aUrl)) {
-                return "";
-            } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
-                    StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
-                if (args.urlsRelativeTo >= 0) {
-                    URI uri = URI.create(aUrl);
-                    Path uriPath = Paths.get(uri.getPath());
-                    return uriPath.subpath(args.urlsRelativeTo, uriPath.getNameCount()).toString();
-                } else {
-                    return aUrl;
-                }
-            } else {
-                return aUrl;
-            }
-        };
-    }
-
     private void createColorDepthSearchInputData(WebTarget serverEndpoint,
                                                  LibraryPathsArgs libraryPaths,
                                                  Set<String> computationInputVariantTypes,
-                                                 Set<String> excludedNeurons,
-                                                 Function<String, String> neuronFileURLMapping) {
+                                                 Set<String> excludedNeurons) {
 
         int cdmsCount = countColorDepthMips(
                 serverEndpoint,
@@ -311,8 +287,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             List<AbstractNeuronEntity> cdNeurons = cdmipsPage.stream()
                     .filter(cdmip -> checkLibraries(cdmip, args.includedLibraries, args.excludedLibraries))
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryPaths.getLibraryName())
-                            ? asEMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping)
-                            : asLMNeuron(cdmip, libraryNameExtractor, neuronFileURLMapping))
+                            ? asEMNeuron(cdmip, libraryNameExtractor)
+                            : asLMNeuron(cdmip, libraryNameExtractor))
                     .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(
                             cdmip.getSourceMIP(),
                             cdmip.getNeuronMetadata(),
@@ -392,8 +368,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     }
 
     private InputCDMipNeuron<EMNeuronEntity> asEMNeuron(ColorDepthMIP cdmip,
-                                                        Function<ColorDepthMIP, String> libraryNameExtractor,
-                                                        Function<String, String> urlMapping) {
+                                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         EMNeuronEntity neuronMetadata = new EMNeuronEntity();
         neuronMetadata.setMipId(cdmip.id);
@@ -407,8 +382,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     }
 
     private InputCDMipNeuron<LMNeuronEntity> asLMNeuron(ColorDepthMIP cdmip,
-                                                        Function<ColorDepthMIP, String> libraryNameExtractor,
-                                                        Function<String, String> urlMapping) {
+                                                        Function<ColorDepthMIP, String> libraryNameExtractor) {
         String libraryName = libraryNameExtractor.apply(cdmip);
         LMNeuronEntity neuronMetadata = new LMNeuronEntity();
         neuronMetadata.setMipId(cdmip.id);
