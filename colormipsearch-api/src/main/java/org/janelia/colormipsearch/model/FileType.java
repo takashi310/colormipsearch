@@ -11,7 +11,7 @@ public enum FileType {
     SignalMip("_1_raw.png"), // PPPM-only. The full MIP of all channels of the matching sample. 'LM - Sample All-Channel MIP' in the NeuronBridge GUI.
     SignalMipMasked("_2_masked_raw.png"), // PPPM-only. LM signal content masked with the matching LM segmentation fragments. 'PPPM Mask' in the NeuronBridge GUI.
     SignalMipMaskedSkel("_3_skel.png"), // PPPM-only. LM signal content masked with the matching LM segmentation fragments, overlaid with the EM skeleton. 'PPPM Mask with EM Overlay' in the NeuronBridge GUI.
-    SignalMipExpression, // MCFO-only. A representative CDM image of the full expression of the line.
+    Gal4Expression, // MCFO-only. A representative CDM image of the full expression of the line.
     VisuallyLosslessStack, // LMImage-only. An H5J 3D image stack of all channels of the LM image.
     AlignedBodySWC, // EMImage-only, A 3D SWC skeleton of the EM body in the alignment space.
     AlignedBodyOBJ; // EMImage-only. A 3D OBJ representation of the EM body in the alignment space.

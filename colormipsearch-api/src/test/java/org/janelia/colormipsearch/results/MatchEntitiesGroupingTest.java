@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
@@ -67,7 +68,6 @@ public class MatchEntitiesGroupingTest {
                 assertNull(CDMatch.getMaskImage());
                 assertNotNull(CDMatch.getMatchedImage());
                 assertEquals(expectedTargetClass, CDMatch.getMatchedImage().getClass());
-                assertTrue(CDMatch.getMatchFiles().size() > 0);
                 assertTrue(CDMatch.getMatchComputeFiles().size() > 0);
             }
         }
@@ -86,7 +86,7 @@ public class MatchEntitiesGroupingTest {
                 Comparator.comparing(m -> m.getMaskImage().getMipId() + m.getMatchedImage().getMipId() + m.getMatchingPixels());
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expectedResults =
                 testMatches.stream()
-                        .peek(m -> { m.resetMatchFiles(); m.resetMatchComputeFiles(); })
+                        .peek(m -> { m.resetMatchComputeFiles(); })
                         .sorted(ordering)
                         .collect(Collectors.toList());
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expandedResults =
@@ -111,7 +111,7 @@ public class MatchEntitiesGroupingTest {
                 Comparator.comparing(m -> m.getMaskImage().getMipId() + m.getMatchedImage().getMipId() + ((CDMatchEntity<?,?>) m).getMatchingPixels());
         List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expectedResults =
                 testMatches.stream()
-                        .peek(m -> { m.resetMatchFiles(); m.resetMatchComputeFiles(); })
+                        .peek(m -> { m.resetMatchComputeFiles(); })
                         .sorted(ordering)
                         .collect(Collectors.toList());
         List<AbstractMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> expandedResults =
@@ -125,7 +125,8 @@ public class MatchEntitiesGroupingTest {
 
     private List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> readTestMatches() {
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             return mapper.readValue(new File(TESTCDSMATCHES_FILE), new TypeReference<List<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>>>() {
             });
         } catch (IOException e) {

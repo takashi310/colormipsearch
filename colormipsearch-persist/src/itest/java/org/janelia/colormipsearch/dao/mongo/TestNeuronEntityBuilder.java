@@ -34,11 +34,6 @@ class TestNeuronEntityBuilder<N extends AbstractNeuronEntity> {
         return this;
     }
 
-    public TestNeuronEntityBuilder<N> fileData(FileType ft, String fn) {
-        n.setNeuronFile(ft, fn);
-        return this;
-    }
-
     public TestNeuronEntityBuilder<N> computeFileData(ComputeFileType ft, FileData fd) {
         n.setComputeFileData(ft, fd);
         return this;

@@ -36,8 +36,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     private String sourceRefId;
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
-    // neuronFiles holds S3 files used by the NeuronBridge app
-    private final Map<FileType, String> neuronFiles = new HashMap<>();
 
     public String getMipId() {
         return mipId;
@@ -122,37 +120,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         return computeFiles.containsKey(t);
     }
 
-    @JsonProperty("files")
-    Map<FileType, String> getNeuronFiles() {
-        return neuronFiles;
-    }
-
-    void setNeuronFiles(Map<FileType, String> neuronFiles) {
-        if (neuronFiles != null) {
-            this.neuronFiles.putAll(neuronFiles);
-        }
-    }
-
-    public void resetNeuronFiles(Set<FileType> ts) {
-        ts.forEach(neuronFiles::remove);
-    }
-
-    public boolean hasNeuronFile(FileType t) {
-        return neuronFiles.containsKey(t);
-    }
-
-    public String getNeuronFile(FileType t) {
-        return neuronFiles.get(t);
-    }
-
-    public void setNeuronFile(FileType t, String fn) {
-        if (StringUtils.isNotBlank(fn)) {
-            neuronFiles.put(t, fn);
-        } else {
-            neuronFiles.remove(t);
-        }
-    }
-
     public abstract AbstractNeuronEntity duplicate();
 
     public abstract AbstractNeuronMetadata metadata();
@@ -200,8 +167,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.sourceRefId = that.getSourceRefId();
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
-        this.neuronFiles.clear();
-        this.neuronFiles.putAll(that.getNeuronFiles());
     }
 
 }

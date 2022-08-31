@@ -28,7 +28,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
     private T matchedImage;
     private boolean mirrored; // if true the matchedImage was mirrored
     private Map<MatchComputeFileType, FileData> matchComputeFiles = new HashMap<>();
-    private Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
 
     public Number getSessionRefId() {
         return sessionRefId;
@@ -139,31 +138,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
         matchComputeFiles.clear();
     }
 
-    @JsonProperty("files")
-    public Map<FileType, String> getMatchFiles() {
-        return matchFiles;
-    }
-
-    public void setMatchFiles(Map<FileType, String> matchFiles) {
-        this.matchFiles = matchFiles;
-    }
-
-    public String getMatchFile(FileType t) {
-        return matchFiles.get(t);
-    }
-
-    public void setMatchFile(FileType t, String fn) {
-        if (StringUtils.isNotBlank(fn)) {
-            matchFiles.put(t, fn);
-        } else {
-            matchFiles.remove(t);
-        }
-    }
-
-    public void resetMatchFiles() {
-        matchFiles.clear();
-    }
-
     /**
      * This method only copies data that can be safely assigned to the destination fields;
      * that is why it doess not copy the mask and the target images since the type for
@@ -178,8 +152,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
                T1 extends AbstractNeuronEntity,
                R1 extends AbstractMatchEntity<M1, T1>> void safeFieldsCopyFrom(R1 that) {
         this.mirrored = that.isMirrored();
-        this.matchFiles.clear();
-        this.matchFiles.putAll(that.getMatchFiles());
         this.matchComputeFiles.clear();
         this.matchComputeFiles.putAll(that.getMatchComputeFiles());
     }
@@ -197,12 +169,22 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
 
         AbstractMatchEntity<?, ?> that = (AbstractMatchEntity<?, ?>) o;
 
-        return new EqualsBuilder().append(mirrored, that.mirrored).append(maskImage, that.maskImage).append(matchedImage, that.matchedImage).append(matchComputeFiles, that.matchComputeFiles).append(matchFiles, that.matchFiles).isEquals();
+        return new EqualsBuilder()
+                .append(maskImage, that.maskImage)
+                .append(matchedImage, that.matchedImage)
+                .append(mirrored, that.mirrored)
+                .append(matchComputeFiles, that.matchComputeFiles)
+                .isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(maskImage).append(matchedImage).append(mirrored).append(matchComputeFiles).append(matchFiles).toHashCode();
+        return new HashCodeBuilder(17, 37)
+                .append(maskImage)
+                .append(matchedImage)
+                .append(mirrored)
+                .append(matchComputeFiles)
+                .toHashCode();
     }
 
     @Override
@@ -212,7 +194,6 @@ public abstract class AbstractMatchEntity<M extends AbstractNeuronEntity, T exte
                 .append("matchedImage", matchedImage != null ? matchedImage.getMipId() : "<null>")
                 .append("mirrored", mirrored)
                 .append("matchComputeFiles", matchComputeFiles)
-                .append("matchFiles", matchFiles)
                 .toString();
     }
 }

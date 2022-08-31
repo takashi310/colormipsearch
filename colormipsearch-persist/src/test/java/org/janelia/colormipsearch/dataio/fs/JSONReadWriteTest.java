@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
@@ -55,7 +56,8 @@ public class JSONReadWriteTest {
 
     @Before
     public void setUp() {
-        mapper = new ObjectMapper();
+        mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         em2lmJsonWriter = new JSONNeuronMatchesWriter<>(mapper.writerWithDefaultPrettyPrinter(),
                 AbstractNeuronEntity::getMipId, // group results by neuron MIP ID
                 Comparator.comparingDouble(m -> -(((CDMatchEntity<?,?>) m).getMatchingPixels())), // descending order by matching pixels
@@ -101,7 +103,6 @@ public class JSONReadWriteTest {
                             .filter(cdsMatch -> cdsMatch.getMaskImage().getMipId().equals(mId))
                             .peek(cdsMatch -> {
                                 cdsMatch.resetMatchComputeFiles();
-                                cdsMatch.resetMatchFiles();
                             })
                             .sorted(Comparator.comparingDouble(m -> -m.getMatchingPixels()))
                             .collect(Collectors.toList());
@@ -122,7 +123,6 @@ public class JSONReadWriteTest {
 
     private List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readTestMatches(File f) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> CDMatches =
                     mapper.readValue(f, new TypeReference<List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>>() {});
             CDMatches.sort(Comparator.comparingDouble(m -> -m.getMatchingPixels()));

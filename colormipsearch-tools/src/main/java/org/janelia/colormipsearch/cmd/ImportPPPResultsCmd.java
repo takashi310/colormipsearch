@@ -313,27 +313,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         pppMatch.setSourceEmLibrary(args.emLibrary);
         pppMatch.setSourceLmLibrary(args.lmLibrary);
         pppMatch.addTag(args.tag);
-
-        if (inputPPPMatch.getPPPMatch().hasSourceImageFiles()) {
-            inputPPPMatch.getPPPMatch().getSourceImageFiles()
-                    .forEach((k, fn) -> inputPPPMatch.getPPPMatch().setMatchFile(
-                            k.getFileType(),
-                            buildImageRelativePath(inputPPPMatch, k.getFileType().getDisplayPPPSuffix())));
-        }
         return pppMatch;
-    }
-
-    private String buildImageRelativePath(InputPPPMatch inputPPPMatch, String suffix) {
-        String emNeuronName = inputPPPMatch.getEmNeuronName();
-        String lmNeuronName = inputPPPMatch.getLmNeuronName();
-        String lmObjective = inputPPPMatch.getLmObjective();
-        return emNeuronName.substring(0, 2) + '/' +
-                emNeuronName + '/' +
-                emNeuronName + '-' +
-                lmNeuronName + "-" +
-                lmObjective + "-" +
-                args.alignmentSpace + '-' +
-                suffix;
     }
 
     private Map<String, EMNeuronEntity> retrieveEMNeurons(CDMIPsReader cdmipsReader, Set<String> emNeuronNames) {

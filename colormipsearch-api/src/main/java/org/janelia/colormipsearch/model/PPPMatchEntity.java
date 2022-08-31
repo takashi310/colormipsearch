@@ -143,7 +143,6 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         m.setRank(getRank());
         m.setCoverageScore(getCoverageScore());
         m.setAggregateCoverage(getAggregateCoverage());
-        m.setMatchFiles(getMatchFiles());
         return m;
     }
 

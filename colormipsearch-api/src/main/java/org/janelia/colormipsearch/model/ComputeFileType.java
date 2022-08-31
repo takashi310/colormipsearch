@@ -13,8 +13,7 @@ public enum ComputeFileType {
     ZGapImage,
     MatchedColorDepthImage,
     MatchedGradientImage,
-    MatchedZGapImage,
-    SWCBody;
+    MatchedZGapImage;
 
     public static ComputeFileType fromName(String name) {
         for (ComputeFileType vt : values()) {

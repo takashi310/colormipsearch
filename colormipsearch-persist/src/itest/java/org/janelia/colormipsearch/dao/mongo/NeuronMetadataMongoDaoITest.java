@@ -179,8 +179,6 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 .mipId(mipId)
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mipSegmentation"))
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("sourceMip"))
-                .fileData(FileType.ColorDepthMip, "cdmip")
-                .fileData(FileType.ColorDepthMipInput, "cdmipInput")
                 .get();
         testData.add(testNeuron);
         return testNeuron;
