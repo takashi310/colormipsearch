@@ -531,9 +531,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                         .queryParam("offset", offset)
                         .queryParam("length", pageLength),
                 credentials)
-                .stream()
-                .map(colorDepthMIP -> retrieve3DImageStack(colorDepthMIP, serverEndpoint, credentials))
-                .collect(Collectors.toList())
                 ;
     }
 
@@ -546,53 +543,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             return response.readEntity(new GenericType<>(new TypeReference<List<ColorDepthMIP>>() {
             }.getType()));
         }
-    }
-
-    private ColorDepthMIP retrieve3DImageStack(ColorDepthMIP cdmip, WebTarget endpoint, String credentials) {
-        if (cdmip.sample != null) {
-            // only for LM images
-            WebTarget refImageEndpoint = endpoint.path("/publishedImage/imageWithGen1Image")
-                    .path(cdmip.alignmentSpace)
-                    .path(cdmip.sample.slideCode)
-                    .path(cdmip.objective);
-            try {
-                Response response = HttpHelper.createRequestWithCredentials(refImageEndpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-                if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-                    Map<String, SamplePublishedData> publishedImages = response.readEntity(new GenericType<>(new TypeReference<Map<String, SamplePublishedData>>() {
-                    }.getType()));
-                    SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
-                    SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
-                    cdmip.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
-                    cdmip.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("Error getting published data from " + refImageEndpoint, e);
-            }
-        }
-        return cdmip;
-    }
-
-    static Map<String, String> retrieveLibraryNameMapping(Client httpClient, String configURL) {
-        Response response = httpClient.target(configURL).request(MediaType.APPLICATION_JSON).get();
-        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Invalid response from " + configURL + " -> " + response);
-        }
-        Map<String, Object> configJSON = response.readEntity(new GenericType<>(new TypeReference<Map<String, Object>>() {
-        }.getType()));
-        Object configEntry = configJSON.get("config");
-        if (!(configEntry instanceof Map)) {
-            LOG.error("Config entry from {} is null or it's not a map", configJSON);
-            throw new IllegalStateException("Config entry not found");
-        }
-        Map<String, String> cdmLibraryNamesMapping = new HashMap<>();
-        @SuppressWarnings("unchecked")
-        Map<String, Map<String, Object>> configEntryMap = (Map<String, Map<String, Object>>) configEntry;
-        configEntryMap.forEach((lid, ldata) -> {
-            String lname = (String) ldata.get("name");
-            cdmLibraryNamesMapping.put(lid, lname);
-        });
-        LOG.info("Using {} for mapping library names", cdmLibraryNamesMapping);
-        return cdmLibraryNamesMapping;
     }
 
 }
