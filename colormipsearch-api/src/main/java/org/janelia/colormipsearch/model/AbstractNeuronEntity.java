@@ -167,6 +167,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.sourceRefId = that.getSourceRefId();
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
+        this.addAllTags(that.getTags());
     }
 
 }

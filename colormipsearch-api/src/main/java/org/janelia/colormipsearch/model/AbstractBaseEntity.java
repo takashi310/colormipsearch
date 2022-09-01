@@ -65,6 +65,10 @@ public abstract class AbstractBaseEntity implements BaseEntity {
         }
     }
 
+    public boolean hasTag(String tag) {
+        return tags.contains(tag);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

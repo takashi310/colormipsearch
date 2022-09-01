@@ -66,8 +66,8 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         @Parameter(names = {"--imported-neuron-tag"}, description = "Tag assigned to neurons created by this import process")
         String importedNeuronTag = "Created by import";
 
-        @Parameter(names = {"--bad-match-candidate-tag"}, description = "Tag assigned to matches that may be wrong")
-        String mayBeWrongMatchTag = "May be wrong";
+        @Parameter(names = {"--suspicious-match-tag"}, description = "Tag assigned to suspicious matches - these are matches that do not have a valid neuron reference")
+        String suspiciousMatchTag = "Suspicious match";
 
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
@@ -229,6 +229,9 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.getOrDefault(n, newNeurons.get(n));
             if (persistedNeuron != null) {
                 n.setEntityId(persistedNeuron.getEntityId());
+                if (persistedNeuron.hasTag(args.importedNeuronTag)) {
+                    cdm.addTag(args.suspiciousMatchTag);
+                }
             } else {
                 /*
                  * I don't know if this is a good idea or not because it leads to importing actually bad matches.
@@ -245,7 +248,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 n.addTag(args.importedNeuronTag);
                 cdMIPsWriter.writeOne(n);
                 newNeurons.put(nKey, n);
-                cdm.addTag(args.mayBeWrongMatchTag);
+                cdm.addTag(args.suspiciousMatchTag);
             }
         });
     }
