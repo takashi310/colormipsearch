@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.CDSMatches;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
@@ -102,7 +103,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                                                                    Collection<String> matchTags,
                                                                                    List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
-                .flatMap(maskMipId -> maskLibraries.isEmpty()
+                .flatMap(maskMipId -> CollectionUtils.isEmpty(maskLibraries)
                         ?  Stream.of(new File(maskMipId))
                         : maskLibraries.stream().map(l ->  Paths.get(l, maskMipId).toFile()))
                 .map(this::readEMMatches)
