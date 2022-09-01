@@ -68,7 +68,8 @@ public class JacsDataGetter {
                         .queryParam("refs", sampleRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                 authorization,
                 new TypeReference<List<CDMIPSample>>() {
-                });
+                },
+                Collections.emptyList());
     }
 
     private void update3DStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
@@ -88,7 +89,8 @@ public class JacsDataGetter {
                         .path(colorDepthMIP.objective),
                 authorization,
                 new TypeReference<Map<String, SamplePublishedData>>() {
-                });
+                },
+                Collections.emptyMap());
         SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
         SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
         colorDepthMIP.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
@@ -124,8 +126,8 @@ public class JacsDataGetter {
                             .path("/emdata/emBodies")
                             .queryParam("refs", emBodyRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                     authorization,
-                    new TypeReference<List<CDMIPBody>>() {
-                    });
+                    new TypeReference<List<CDMIPBody>>() {},
+                    Collections.emptyList());
         }
     }
 
@@ -167,16 +169,16 @@ public class JacsDataGetter {
                         .path("/data/colorDepthMIPsWithSamples")
                         .queryParam("id", mipIds.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                 authorization,
-                new TypeReference<List<ColorDepthMIP>>() {
-                });
+                new TypeReference<List<ColorDepthMIP>>() {},
+                Collections.emptyList());
     }
 
     public Map<String, String> retrieveLibraryNameMapping() {
         Map<String, Object> configJSON = HttpHelper.retrieveData(HttpHelper.createClient().target(configURL)
                         .path("/cdm_library"),
                 null, // this does not require any authorization
-                new TypeReference<Map<String, Object>>() {
-                });
+                new TypeReference<Map<String, Object>>() {},
+                Collections.emptyMap());
         Object configEntry = configJSON.get("config");
         if (!(configEntry instanceof Map)) {
             LOG.error("Config entry from {} is null or it's not a map", configJSON);

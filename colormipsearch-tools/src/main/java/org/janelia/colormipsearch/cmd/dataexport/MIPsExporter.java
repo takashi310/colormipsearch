@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd.dataexport;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -57,6 +58,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .addTags(dataSourceParam.getTags())
                                 .addNames(dataSourceParam.getNames())
                                 .withValidPubishingName());
+        allPublishedNames.sort(Comparator.naturalOrder());
         int from = dataSourceParam.hasOffset() ? Math.min((int) dataSourceParam.getOffset(), allPublishedNames.size()) : 0;
         int to = dataSourceParam.hasSize() ? from + dataSourceParam.getSize() : allPublishedNames.size();
         List<String> publishedNames = allPublishedNames.subList(from, Math.min(allPublishedNames.size(), to));

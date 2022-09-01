@@ -146,7 +146,7 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, sample3DImageStack);
         lmNeuron.setNeuronFile(FileType.Gal4Expression, sampleGen1Gal4ExpressionImage);
 
-        if (sample == null || sample.publishingName == null) {
+        if (sample == null || StringUtils.isBlank(sample.publishingName)) {
             lmNeuron.setUnpublished(true);
         }
     }

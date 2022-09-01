@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -105,24 +106,29 @@ public class HttpHelper {
             return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream()
                     .flatMap(indexedNamesSubset -> {
                         LOG.info("Retrieve {} items", indexedNamesSubset.getValue().size());
-                        return retrieveData(
+                        List<T> subsetResults = retrieveData(
                                 endpointSupplier.get().queryParam("name", indexedNamesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 authorization,
-                                t).stream();
+                                t,
+                                Collections.emptyList());
+                        return subsetResults.stream();
                     });
         } else {
-            return retrieveData(
+            List<T> results = retrieveData(
                     endpointSupplier.get().queryParam("name", CollectionUtils.isNotEmpty(names) ? names.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
                     authorization,
-                    t).stream();
+                    t,
+                    Collections.emptyList());
+            return results.stream();
         }
     }
 
-    public static <T> T retrieveData(WebTarget endpoint, String authorization, TypeReference<T> t) {
+    public static <T> T retrieveData(WebTarget endpoint, String authorization, TypeReference<T> t, T resultOnError) {
         LOG.debug("Retrieve data from {}", endpoint);
         try (Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), authorization).get()) {
             if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-                throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);
+                LOG.error("Invalid response from {}: {}", endpoint.getUri(), response);
+                return resultOnError;
             } else {
                 return response.readEntity(new GenericType<>(t.getType()));
             }
