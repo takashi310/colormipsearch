@@ -119,6 +119,7 @@ public class HttpHelper {
     }
 
     public static <T> T retrieveData(WebTarget endpoint, String authorization, TypeReference<T> t) {
+        LOG.debug("Retrieve data from {}", endpoint);
         try (Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), authorization).get()) {
             if (response.getStatus() != Response.Status.OK.getStatusCode()) {
                 throw new IllegalStateException("Invalid response from " + endpoint.getUri() + " -> " + response);

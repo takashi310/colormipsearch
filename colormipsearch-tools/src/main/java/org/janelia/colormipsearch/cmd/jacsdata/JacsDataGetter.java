@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd.jacsdata;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,119 +37,146 @@ public class JacsDataGetter {
         if (CollectionUtils.isEmpty(sampleNames)) {
             return Collections.emptyMap();
         } else {
-            return httpRetrieveLMSamplesByName(HttpHelper.createClient(), sampleNames);
+            return CDMIPSample.indexBySampleName(
+                    httpRetrieveLMSamplesByName(HttpHelper.createClient(), sampleNames));
         }
     }
 
-    private Map<String, CDMIPSample> httpRetrieveLMSamplesByName(Client httpClient, Set<String> sampleNames) {
-        LOG.debug("Read LM metadata for {} samples", sampleNames.size());
-        return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
-                                .path("/data/samples"),
-                        authorization,
-                        readBatchSize,
-                        sampleNames,
-                        new TypeReference<List<CDMIPSample>>() {
-                        })
-                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
-                .collect(Collectors.toMap(n -> n.name, n -> n));
-    }
-
-    public Map<String, CDMIPSample> retrieveLMSamplesByRefs(Set<String> sampleRefs) {
-        if (CollectionUtils.isEmpty(sampleRefs)) {
-            return Collections.emptyMap();
+    private List<CDMIPSample> httpRetrieveLMSamplesByName(Client httpClient, Set<String> sampleNames) {
+        if (CollectionUtils.isEmpty(sampleNames)) {
+            return Collections.emptyList();
         } else {
-            return httpRetrieveLMSamplesByRefs(HttpHelper.createClient(), sampleRefs);
+            LOG.debug("Read LM metadata for {} samples", sampleNames.size());
+            return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
+                                    .path("/data/samples"),
+                            authorization,
+                            readBatchSize,
+                            sampleNames,
+                            new TypeReference<List<CDMIPSample>>() {
+                            })
+                    .collect(Collectors.toList());
         }
     }
 
-    private Map<String, CDMIPSample> httpRetrieveLMSamplesByRefs(Client httpClient, Set<String> sampleRefs) {
+    private List<CDMIPSample> httpRetrieveLMSamplesByRefs(Client httpClient, Set<String> sampleRefs) {
         LOG.debug("Read LM metadata for {} samples", sampleRefs.size());
+        if (CollectionUtils.isEmpty(sampleRefs)) {
+            return Collections.emptyList();
+        }
         return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                                .path("/data/samples")
-                                .queryParam("refs", sampleRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
-                        authorization,
-                        new TypeReference<List<CDMIPSample>>() {
-                        })
-                .stream()
-                .filter(sample -> StringUtils.isNotBlank(sample.publishingName))
-                .collect(Collectors.toMap(n -> n.sampleRef, n -> n));
+                        .path("/data/samples")
+                        .queryParam("refs", sampleRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                authorization,
+                new TypeReference<List<CDMIPSample>>() {
+                });
     }
 
-    public Map<String, CDMIPBody> retrieveEMNeuronsByDatasetAndBodyIds(String emDataset,
-                                                                       String emDatasetVersion,
-                                                                       Set<String> neuronBodyIds) {
+    private void update3DStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
+        if (colorDepthMIP.sample != null) {
+            updateLM3DImageStack(httpClient, colorDepthMIP);
+        } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
+            colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
+        }
+    }
+
+    private void updateLM3DImageStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
+        LOG.debug("Read LM 3D stack {}", colorDepthMIP);
+        Map<String, SamplePublishedData> publishedImages = HttpHelper.retrieveData(httpClient.target(dataServiceURL)
+                        .path("/publishedImage/imageWithGen1Image")
+                        .path(colorDepthMIP.alignmentSpace)
+                        .path(colorDepthMIP.sample.slideCode)
+                        .path(colorDepthMIP.objective),
+                authorization,
+                new TypeReference<Map<String, SamplePublishedData>>() {
+                });
+        SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
+        SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
+        colorDepthMIP.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
+        colorDepthMIP.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
+    }
+
+    private List<CDMIPBody> httpRetrieveEMNeuronsByDatasetAndBodyIds(Client httpClient,
+                                                                     String emDataset,
+                                                                     String emDatasetVersion,
+                                                                     Set<String> neuronBodyIds) {
         if (CollectionUtils.isEmpty(neuronBodyIds)) {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         } else {
-            return httpRetrieveEMNeuronsByDatasetAndBodyIds(HttpHelper.createClient(), emDataset, emDatasetVersion, neuronBodyIds);
+            LOG.debug("Read EM metadata for {} neurons", neuronBodyIds.size());
+            return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
+                            .path("/emdata/dataset")
+                            .path(emDataset)
+                            .path(emDatasetVersion),
+                    authorization,
+                    readBatchSize,
+                    neuronBodyIds,
+                    new TypeReference<List<CDMIPBody>>() {
+                    }).collect(Collectors.toList());
         }
     }
 
-    private Map<String, CDMIPBody> httpRetrieveEMNeuronsByDatasetAndBodyIds(Client httpClient,
-                                                                            String emDataset,
-                                                                            String emDatasetVersion,
-                                                                            Set<String> neuronBodyIds) {
-        LOG.debug("Read EM metadata for {} neurons", neuronBodyIds.size());
-        return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
-                                .path("/emdata/dataset")
-                                .path(emDataset)
-                                .path(emDatasetVersion),
-                        authorization,
-                        readBatchSize,
-                        neuronBodyIds,
-                        new TypeReference<List<CDMIPBody>>() {
-                        })
-                .collect(Collectors.toMap(
-                        n -> n.name,
-                        n -> n));
-    }
-
-    public Map<String, CDMIPBody> retrieveEMBodiesByRefs(Set<String> emBodyRefs) {
+    private List<CDMIPBody> httpRetrieveEMBodiesByRefs(Client httpClient, Set<String> emBodyRefs) {
         if (CollectionUtils.isEmpty(emBodyRefs)) {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         } else {
-            return httpRetrieveEMBodiesByRefs(HttpHelper.createClient(), emBodyRefs);
+            LOG.debug("Read EM metadata for {} EM bodies", emBodyRefs.size());
+            return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
+                            .path("/emdata/emBodies")
+                            .queryParam("refs", emBodyRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                    authorization,
+                    new TypeReference<List<CDMIPBody>>() {
+                    });
         }
-    }
-
-    private Map<String, CDMIPBody> httpRetrieveEMBodiesByRefs(Client httpClient, Set<String> emBodyRefs) {
-        LOG.debug("Read EM metadata for {} EM bodies", emBodyRefs.size());
-        return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                                .path("/emdata/emBodies")
-                                .queryParam("refs", emBodyRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
-                        authorization,
-                        new TypeReference<List<CDMIPBody>>() {
-                        })
-                .stream()
-                .collect(Collectors.toMap(n -> "EMBody#" + n.id, n -> n));
     }
 
     public Map<String, ColorDepthMIP> retrieveCDMIPs(Set<String> mipIds) {
         if (CollectionUtils.isEmpty(mipIds)) {
             return Collections.emptyMap();
         } else {
-            return httpRetrieveCDMIPs(HttpHelper.createClient(), mipIds);
+            List<ColorDepthMIP> colorDepthMIPS = httpRetrieveCDMIPs(HttpHelper.createClient(), mipIds);
+            Set<String> lmSamplesToRetrieve = new HashSet<>();
+            Set<String> emBodiesToRetrieve = new HashSet<>();
+            colorDepthMIPS.forEach(cdmip -> {
+                if (cdmip.needsEMBody()) {
+                    emBodiesToRetrieve.add(cdmip.emBodyRef);
+                } else if (cdmip.needsLMSample()) {
+                    lmSamplesToRetrieve.add(cdmip.sampleRef);
+                }
+            });
+            Client httpClient = HttpHelper.createClient();
+            Map<String, CDMIPSample> lmSamples = CDMIPSample.indexByRef(
+                    httpRetrieveLMSamplesByRefs(httpClient, lmSamplesToRetrieve));
+            Map<String, CDMIPBody> emBodies = CDMIPBody.indexByRef(
+                    httpRetrieveEMBodiesByRefs(httpClient, emBodiesToRetrieve));
+            return colorDepthMIPS.stream()
+                    .peek(cdmip -> {
+                        if (cdmip.needsEMBody()) {
+                            cdmip.emBody = emBodies.get(cdmip.emBodyRef);
+                        } else if (cdmip.needsLMSample()) {
+                            cdmip.sample = lmSamples.get(cdmip.sampleRef);
+                        }
+                        update3DStack(httpClient, cdmip);
+                    })
+                    .collect(Collectors.toMap(n -> n.id, n -> n));
         }
     }
 
-    private Map<String, ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {
+    private List<ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {
         LOG.debug("Read {} MIPs", mipIds.size());
         return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                                .path("/data/colorDepthMIPsWithSamples")
-                                .queryParam("id", mipIds.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
-                        authorization,
-                        new TypeReference<List<ColorDepthMIP>>() {
-                        })
-                .stream()
-                .collect(Collectors.toMap(n -> n.id, n -> n));
+                        .path("/data/colorDepthMIPsWithSamples")
+                        .queryParam("id", mipIds.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                authorization,
+                new TypeReference<List<ColorDepthMIP>>() {
+                });
     }
 
     public Map<String, String> retrieveLibraryNameMapping() {
         Map<String, Object> configJSON = HttpHelper.retrieveData(HttpHelper.createClient().target(configURL)
-                                .path("/cdm_library"),
-                        null, // this does not require any authorization
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                        .path("/cdm_library"),
+                null, // this does not require any authorization
+                new TypeReference<Map<String, Object>>() {
+                });
         Object configEntry = configJSON.get("config");
         if (!(configEntry instanceof Map)) {
             LOG.error("Config entry from {} is null or it's not a map", configJSON);
