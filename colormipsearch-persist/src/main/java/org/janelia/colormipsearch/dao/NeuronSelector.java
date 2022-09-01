@@ -12,8 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 public class NeuronSelector {
     private String neuronClassname; // full class name
     private String alignmentSpace; // alignment space
-    private String libraryName; // library name
     private boolean checkIfNameValid = false;
+    private final Set<String> libraries = new HashSet<>(); // library names
     private final Set<String> names = new HashSet<>(); // matching published names
     private final Set<String> mipIDs = new HashSet<>(); // matching MIP IDs
     private final Set<Number> entityIds = new HashSet<>(); // matching internal entity IDs
@@ -44,17 +44,22 @@ public class NeuronSelector {
         return StringUtils.isNotBlank(alignmentSpace);
     }
 
-    public String getLibraryName() {
-        return libraryName;
+    public Set<String> getLibraries() {
+        return libraries;
     }
 
-    public NeuronSelector setLibraryName(String libraryName) {
-        this.libraryName = libraryName;
+    public NeuronSelector addLibrary(String libraryName) {
+        if (StringUtils.isNotBlank(libraryName)) this.libraries.add(libraryName);
         return this;
     }
 
-    public boolean hasLibraryName() {
-        return StringUtils.isNotBlank(libraryName);
+    public NeuronSelector addLibraries(Collection<String> libraries) {
+        if (libraries != null) libraries.forEach(this::addLibrary);
+        return this;
+    }
+
+    public boolean hasLibraries() {
+        return CollectionUtils.isNotEmpty(libraries);
     }
 
     public NeuronSelector withValidPubishingName() {
@@ -139,7 +144,7 @@ public class NeuronSelector {
     }
 
     public boolean isEmpty() {
-        return !hasLibraryName()
+        return !hasLibraries()
                 && !hasNames()
                 && !hasMipIDs()
                 && !hasEntityIds()

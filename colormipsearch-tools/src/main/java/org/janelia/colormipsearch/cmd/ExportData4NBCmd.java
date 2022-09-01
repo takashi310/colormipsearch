@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -66,12 +67,12 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"-as", "--alignment-space"}, description = "Alignment space")
         String alignmentSpace;
 
-        @Parameter(names = {"-l", "--library"}, description = "Selected library for the mask or target based on the export type",
-                converter = ListArg.ListArgConverter.class)
-        ListArg library;
+        @Parameter(names = {"-l", "--library"}, description = "Library names from which mips or matches are selected for export",
+                variableArity = true)
+        List<String> libraries = new ArrayList<>();
 
         @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
-        List<String> exportedNames;
+        List<String> exportedNames = new ArrayList<>();
 
         @Parameter(names = {"--subdir"}, description = "Results subdirectory for results")
         String subDir;
@@ -81,6 +82,12 @@ class ExportData4NBCmd extends AbstractCmd {
 
         @Parameter(names = {"--relativize-urls-to-component"}, description = "URLs are relative to the specified component")
         int relativesUrlsToComponent = -1;
+
+        @Parameter(names = {"--offset"}, description = "Offset of the exported data")
+        long offset = 0;
+
+        @Parameter(names = {"--size"}, description = "Size of the exported data")
+        int size = 0;
 
         @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
         List<String> tags = new ArrayList<>();
@@ -152,12 +159,13 @@ class ExportData4NBCmd extends AbstractCmd {
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(args.dataServiceURL, args.configURL, args.authorization, args.processingPartitionSize)
         );
-        DataSourceParam dataSource = new DataSourceParam(args.alignmentSpace,
-                args.library.input,
-                args.tags,
-                args.library.offset,
-                args.library.length)
-                .setNames(args.exportedNames);
+        DataSourceParam dataSource = new DataSourceParam()
+                .setAlignmentSpace(args.alignmentSpace)
+                .addLibraries(args.libraries)
+                .addTags(args.tags)
+                .addNames(args.exportedNames)
+                .setOffset(args.offset)
+                .setSize(args.size);
         switch (args.exportedResultType) {
             case EM_CD_MATCHES:
                 return new EMCDMatchesExporter(

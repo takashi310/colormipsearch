@@ -151,11 +151,11 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
             NeuronsMatchFilter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesFilter =
                     new NeuronsMatchFilter<>();
             NeuronSelector emNeuronSelector = new NeuronSelector()
-                    .setLibraryName("FlyEM Hemibrain")
+                    .addLibrary("FlyEM Hemibrain")
                     .addMipID("123232232423232")
                     .addName("23232345");
             NeuronSelector lmNeuronSelector = new NeuronSelector()
-                    .setLibraryName("Split GAL4")
+                    .addLibrary("Split GAL4")
                     .addMipID("5565655454545432")
                     .addName("S1234");
             for (int i = 0; i < nTestMatches; i += pageSize) {

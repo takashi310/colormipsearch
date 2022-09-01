@@ -1,28 +1,24 @@
 package org.janelia.colormipsearch.dataio;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class DataSourceParam {
     private String alignmentSpace;
-    private String libraryName;
-    private Collection<String> mipIDs;
-    private Collection<String> names;
-    private Collection<String> tags;
+    private Collection<String> libraries = new HashBag<>();
+    private Collection<String> mipIDs = new HashSet<>();
+    private Collection<String> names = new HashSet<>();
+    private Collection<String> tags = new HashSet<>();
     private long offset;
     private int size;
-
-    public DataSourceParam(String alignmentSpace, String libraryName, List<String> tags, long offset, int size) {
-        this.alignmentSpace = alignmentSpace;
-        this.libraryName = libraryName;
-        this.tags = tags;
-        this.offset = offset;
-        this.size = size;
-    }
 
     public String getAlignmentSpace() {
         return alignmentSpace;
@@ -33,12 +29,17 @@ public class DataSourceParam {
         return this;
     }
 
-    public String getLibraryName() {
-        return libraryName;
+    public Collection<String> getLibraries() {
+        return libraries;
     }
 
-    public DataSourceParam setLibraryName(String libraryName) {
-        this.libraryName = libraryName;
+    public DataSourceParam addLibrary(String libraryName) {
+        if (StringUtils.isNotBlank(libraryName)) this.libraries.add(libraryName);
+        return this;
+    }
+
+    public DataSourceParam addLibraries(Collection<String> libraries) {
+        if (libraries != null) libraries.forEach(this::addLibrary);
         return this;
     }
 
@@ -46,8 +47,13 @@ public class DataSourceParam {
         return names;
     }
 
-    public DataSourceParam setNames(Collection<String> names) {
-        this.names = names;
+    public DataSourceParam addName(String name) {
+        if (StringUtils.isNotBlank(name)) this.names.add(name);
+        return this;
+    }
+
+    public DataSourceParam addNames(Collection<String> names) {
+        if (names != null) names.forEach(this::addName);
         return this;
     }
 
@@ -55,8 +61,13 @@ public class DataSourceParam {
         return mipIDs;
     }
 
-    public DataSourceParam setMipIDs(Collection<String> mipIDs) {
-        this.mipIDs = mipIDs;
+    public DataSourceParam addMipID(String mipID) {
+        if (StringUtils.isNotBlank(mipID)) this.mipIDs.add(mipID);
+        return this;
+    }
+
+    public DataSourceParam addMipIDs(Collection<String> mipIDs) {
+        if (mipIDs != null) mipIDs.forEach(this::addMipID);
         return this;
     }
 
@@ -64,8 +75,8 @@ public class DataSourceParam {
         return tags;
     }
 
-    public DataSourceParam setTags(Collection<String> tags) {
-        this.tags = tags;
+    public DataSourceParam addTags(Collection<String> tags) {
+        if (tags != null) tags.stream().filter(StringUtils::isNotBlank).forEach(t -> this.tags.add(t));
         return this;
     }
 
@@ -95,6 +106,18 @@ public class DataSourceParam {
         return size > 0;
     }
 
+    public Map<String, Object> asMap() {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("alignmentSpace", alignmentSpace);
+        params.put("libraries", libraries);
+        params.put("mipIDs", mipIDs);
+        params.put("names", names);
+        params.put("tags", tags);
+        params.put("offset", hasOffset() ? offset : null);
+        params.put("size", hasSize() ? size : null);
+        return params;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -105,7 +128,9 @@ public class DataSourceParam {
 
         return new EqualsBuilder()
                 .append(alignmentSpace, that.alignmentSpace)
-                .append(libraryName, that.libraryName)
+                .append(libraries, that.libraries)
+                .append(names, that.names)
+                .append(tags, that.tags)
                 .append(offset, that.offset)
                 .append(size, that.size)
                 .isEquals();
@@ -115,7 +140,9 @@ public class DataSourceParam {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
                 .append(alignmentSpace)
-                .append(libraryName)
+                .append(libraries)
+                .append(names)
+                .append(tags)
                 .append(offset)
                 .append(size)
                 .toHashCode();
@@ -127,7 +154,9 @@ public class DataSourceParam {
         if (StringUtils.isNotBlank(alignmentSpace)) {
             sbuilder.append(alignmentSpace).append('/');
         }
-        sbuilder.append(libraryName);
+        if (!libraries.isEmpty()) {
+            sbuilder.append(String.join(",", libraries));
+        }
         if (hasOffset() || hasSize()) {
             sbuilder.append(':').append(getOffset());
         }

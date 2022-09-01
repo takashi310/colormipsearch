@@ -63,7 +63,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                         LOG.info("Read PPP matches for {}", maskId);
                         List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 dataSourceParam.getAlignmentSpace(),
-                                dataSourceParam.getLibraryName(),
+                                dataSourceParam.getLibraries(),
                                 Collections.singletonList(maskId),
                                 scoresFilter,
                                 null, // use the tags for selecting the masks but not for selecting the matches

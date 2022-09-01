@@ -170,10 +170,20 @@ class ColorDepthSearchCmd extends AbstractCmd {
         // save CDS parameters
         Number cdsRunId = getCDSSessionWriter().createSession(
                 args.masksInputs.stream()
-                        .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, args.masksTags, larg.offset, larg.length))
+                        .map(larg -> new DataSourceParam()
+                                .setAlignmentSpace(args.alignmentSpace)
+                                .addLibrary(larg.input)
+                                .addTags(args.masksTags)
+                                .setOffset(larg.offset)
+                                .setSize(larg.length))
                         .collect(Collectors.toList()),
                 args.targetsInputs.stream()
-                        .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, args.targetsTags, larg.offset, larg.length))
+                        .map(larg -> new DataSourceParam()
+                                .setAlignmentSpace(args.alignmentSpace)
+                                .addLibrary(larg.input)
+                                .addTags(args.targetsTags)
+                                .setOffset(larg.offset)
+                                .setSize(larg.length))
                         .collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters(),
                 runTags);
@@ -256,7 +266,12 @@ class ColorDepthSearchCmd extends AbstractCmd {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
         List<? extends AbstractNeuronEntity> allMips = mipsArg.stream()
                 .flatMap(libraryInput -> mipsReader.readMIPs(
-                        new DataSourceParam(args.alignmentSpace, libraryInput.input, mipsTags, libraryInput.offset, libraryInput.length)).stream())
+                        new DataSourceParam()
+                                .setAlignmentSpace(args.alignmentSpace)
+                                .addLibrary(libraryInput.input)
+                                .addTags(mipsTags)
+                                .setOffset(libraryInput.offset)
+                                .setSize(libraryInput.length)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
                         filter.contains(neuronMetadata.getPublishedName().toLowerCase()) ||
                         filter.contains(neuronMetadata.getMipId()))

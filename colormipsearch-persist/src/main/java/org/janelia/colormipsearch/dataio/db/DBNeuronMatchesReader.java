@@ -1,13 +1,12 @@
 package org.janelia.colormipsearch.dataio.db;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.janelia.colormipsearch.config.Config;
-import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
@@ -43,14 +42,14 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     }
 
     @Override
-    public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
+    public List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource) {
         return matchesSource.stream()
                         .flatMap(cdMatchInput -> neuronMetadataDao.findNeurons(
                                 new NeuronSelector()
                                         .setAlignmentSpace(cdMatchInput.getAlignmentSpace())
-                                        .setLibraryName(cdMatchInput.getLibraryName())
-                                        .addTags(cdMatchInput.getTags())
-                                        .addNames(cdMatchInput.getNames()),
+                                        .addLibraries(cdMatchInput.getLibraries())
+                                        .addNames(cdMatchInput.getNames())
+                                        .addTags(cdMatchInput.getTags()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
@@ -61,12 +60,12 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     @Override
     public List<R> readMatchesForMasks(String alignmentSpace,
-                                       String maskLibrary,
-                                       List<String> maskMipIds,
+                                       Collection<String> maskLibraries,
+                                       Collection<String> maskMipIds,
                                        ScoresFilter matchScoresFilter,
-                                       List<String> matchTags,
+                                       Collection<String> matchTags,
                                        List<SortCriteria> sortCriteriaList) {
-        NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).setLibraryName(maskLibrary).addMipIDs(maskMipIds);
+        NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).addLibraries(maskLibraries).addMipIDs(maskMipIds);
         NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
@@ -78,13 +77,13 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     @Override
     public List<R> readMatchesForTargets(String alignmentSpace,
-                                         String targetLibrary,
-                                         List<String> targetMipIds,
+                                         Collection<String> targetLibraries,
+                                         Collection<String> targetMipIds,
                                          ScoresFilter matchScoresFilter,
-                                         List<String> matchTags,
+                                         Collection<String> matchTags,
                                          List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
-        NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).setLibraryName(targetLibrary).addMipIDs(targetMipIds);
+        NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).addLibraries(targetLibraries).addMipIDs(targetMipIds);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setTargetEntityIds(getNeuronEntityIds(targetSelector))

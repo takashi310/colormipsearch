@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.dataio;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
@@ -17,13 +18,13 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param matchesSource
      * @return
      */
-    List<String> listMatchesLocations(List<DataSourceParam> matchesSource);
+    List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource);
 
     /**
      * Read matches for the specified masks library and mips. A null or empty list will ignore that filter.
      *
      * @param alignmentSpace masks alignmentSpace
-     * @param maskLibrary masks library
+     * @param maskLibraries masks libraries
      * @param maskMipIds mask MIPs
      * @param matchScoresFilter additional matches scores filter
      * @param matchTags
@@ -31,17 +32,17 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @return
      */
     List<R> readMatchesForMasks(String alignmentSpace,
-                                String maskLibrary,
-                                List<String> maskMipIds,
+                                Collection<String> maskLibraries,
+                                Collection<String> maskMipIds,
                                 ScoresFilter matchScoresFilter,
-                                List<String> matchTags,
+                                Collection<String> matchTags,
                                 List<SortCriteria> sortCriteriaList);
 
     /**
      * Read matches for the specified targets library and mips. A null or empty list will ignore that filter.
      *
      * @param alignmentSpace targets alignmentSpace
-     * @param targetLibrary masks library
+     * @param targetLibraries masks libraries
      * @param targetMipIds mask MIPs
      * @param matchScoresFilter additional match scores filter
      * @param matchTags
@@ -49,9 +50,9 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @return
      */
     List<R> readMatchesForTargets(String alignmentSpace,
-                                  String targetLibrary,
-                                  List<String> targetMipIds,
+                                  Collection<String> targetLibraries,
+                                  Collection<String> targetMipIds,
                                   ScoresFilter matchScoresFilter,
-                                  List<String> matchTags,
+                                  Collection<String> matchTags,
                                   List<SortCriteria> sortCriteriaList);
 }

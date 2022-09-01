@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -57,13 +58,16 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
         @Parameter(names = {"--results", "-r"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "The location of the v2 results. This can be a list of directories or files ")
-        List<ListArg> cdMatches;
+        List<ListArg> cdMatches = new ArrayList<>();
 
-        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported mips")
+        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported matches")
         String tag;
 
         @Parameter(names = {"--imported-neuron-tag"}, description = "Tag assigned to neurons created by this import process")
-        String impportedNeuronTag = "Created by import";
+        String importedNeuronTag = "Created by import";
+
+        @Parameter(names = {"--bad-match-candidate-tag"}, description = "Tag assigned to matches that may be wrong")
+        String mayBeWrongMatchTag = "May be wrong";
 
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 100;
@@ -101,12 +105,10 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
         // GET JSON files
         List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
-                .map(larg -> new DataSourceParam(
-                        null,
-                        larg.input,
-                        null, // it's not clear from the API but the reader is file based so tags are not important here
-                        larg.offset,
-                        larg.length))
+                .map(larg -> new DataSourceParam()
+                        .addLibrary(larg.input)
+                        .setOffset(larg.offset)
+                        .setSize(larg.length))
                 .collect(Collectors.toList()));
         int size = cdMatchesLocations.size();
         // process JSON files
@@ -141,6 +143,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             cdMatchesForMask.forEach(m -> {
                 m.getMaskImage().setLibraryName(getLibraryName(m.getMaskImage().getLibraryName()));
                 m.getMatchedImage().setLibraryName(getLibraryName(m.getMatchedImage().getLibraryName()));
+                m.addTag(args.tag);
             });
             // update MIP IDs for all masks
             updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMaskImage, mipsReader, cdMatchesFile);
@@ -202,8 +205,10 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                                 Collectors.toSet()))
                 .entrySet().stream()
                 .flatMap(e -> cdmiPsReader.readMIPs(
-                        new DataSourceParam(e.getKey().getLeft(), e.getKey().getRight(), null, 0, -1)
-                                .setMipIDs(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream())
+                        new DataSourceParam()
+                                .setAlignmentSpace(e.getKey().getLeft())
+                                .addLibrary(e.getKey().getRight())
+                                .addMipIDs(e.getValue().stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()))).stream())
                 .collect(Collectors.toMap(n -> {
                             AbstractNeuronEntity n1 = n.duplicate();
                             // just to make sure - reset the entity ID because we don't want the key to match based on entity ID
@@ -237,9 +242,10 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 LOG.info("No persisted MIP found for {}({}) in color depth match {}",
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
                 // persist the neuron now and assign it a specific tag
-                n.addTag(args.impportedNeuronTag);
+                n.addTag(args.importedNeuronTag);
                 cdMIPsWriter.writeOne(n);
                 newNeurons.put(nKey, n);
+                cdm.addTag(args.mayBeWrongMatchTag);
             }
         });
     }

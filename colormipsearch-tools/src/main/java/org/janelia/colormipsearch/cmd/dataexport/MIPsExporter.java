@@ -53,7 +53,7 @@ public class MIPsExporter extends AbstractDataExporter {
                 "publishedName",
                         new NeuronSelector()
                                 .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
-                                .setLibraryName(dataSourceParam.getLibraryName())
+                                .addLibraries(dataSourceParam.getLibraries())
                                 .addTags(dataSourceParam.getTags())
                                 .addNames(dataSourceParam.getNames())
                                 .withValidPubishingName());
@@ -68,7 +68,7 @@ public class MIPsExporter extends AbstractDataExporter {
                         List<AbstractNeuronEntity> neuronMipEntities = neuronMetadataDao.findNeurons(
                                 new NeuronSelector()
                                         .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
-                                        .setLibraryName(dataSourceParam.getLibraryName())
+                                        .addLibraries(dataSourceParam.getLibraries())
                                         .addName(publishedName),
                                 new PagedRequest()).getResultList();
                         jacsDataHelper.retrieveCDMIPs(neuronMipEntities.stream()

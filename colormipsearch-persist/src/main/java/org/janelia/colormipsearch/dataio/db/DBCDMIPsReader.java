@@ -22,7 +22,7 @@ public class DBCDMIPsReader implements CDMIPsReader {
         return neuronMetadataDao.findNeurons(
                 new NeuronSelector()
                         .setAlignmentSpace(mipsDataSource.getAlignmentSpace())
-                        .setLibraryName(mipsDataSource.getLibraryName())
+                        .addLibraries(mipsDataSource.getLibraries())
                         .addNames(mipsDataSource.getNames())
                         .addMipIDs(mipsDataSource.getMipIDs())
                         .addTags(mipsDataSource.getTags()),

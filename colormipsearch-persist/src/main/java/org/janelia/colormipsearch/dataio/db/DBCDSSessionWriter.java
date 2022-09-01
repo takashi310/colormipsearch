@@ -27,8 +27,12 @@ public class DBCDSSessionWriter implements CDSSessionWriter {
         cdsParametersEntity.setUsername(System.getProperty("user.name"));
         cdsParametersEntity.setParams(params);
         cdsParametersEntity.addAllTags(tags);
-        masksInputs.forEach(ds -> cdsParametersEntity.addMask(ds.toString()));
-        targetsInputs.forEach(ds -> cdsParametersEntity.addTarget(ds.toString()));
+        masksInputs.stream()
+                .map(DataSourceParam::asMap)
+                .forEach(cdsParametersEntity::addMask);
+        targetsInputs.stream()
+                .map(DataSourceParam::asMap)
+                .forEach(cdsParametersEntity::addTarget);
         matchSessionDao.save(cdsParametersEntity);
         return cdsParametersEntity.getEntityId();
     }

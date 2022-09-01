@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -19,13 +20,13 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 
 public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> {
@@ -37,10 +38,24 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
     }
 
     @Override
-    public List<String> listMatchesLocations(List<DataSourceParam> matchesSource) {
+    public List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource) {
+        /*
+         * libraries attribute contains either the directories location or full path filenames.
+         */
         return matchesSource.stream()
-                .flatMap(arg -> listFiles(arg.getLibraryName(), (int) arg.getOffset(), arg.getSize()).stream())
+                .flatMap(arg ->  getFilesAtLocation(arg).stream())
                 .collect(Collectors.toList());
+    }
+
+    private List<String> getFilesAtLocation(DataSourceParam dataSourceParam) {
+        List<String> allFiles = dataSourceParam.getLibraries().stream().flatMap(l -> FSUtils.getFiles(l, 0, -1).stream())
+                .skip(dataSourceParam.getOffset())
+                .collect(Collectors.toList());
+        if (dataSourceParam.hasSize() && dataSourceParam.getSize() < allFiles.size()) {
+            return allFiles.subList(0, dataSourceParam.getSize());
+        } else {
+            return allFiles;
+        }
     }
 
     private List<String> listFiles(String location, int offsetParam, int lengthParam) {
@@ -81,13 +96,15 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
 
     @Override
     public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForMasks(String alignmentSpace,
-                                                                                   String maskLibrary,
-                                                                                   List<String> maskMipIds,
+                                                                                   Collection<String> maskLibraries,
+                                                                                   Collection<String> maskMipIds,
                                                                                    ScoresFilter matchScoresFilter,
-                                                                                   List<String> matchTags,
+                                                                                   Collection<String> matchTags,
                                                                                    List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
-                .map(maskMipId -> StringUtils.isNotBlank(maskLibrary) ? Paths.get(maskLibrary, maskMipId).toFile() : new File(maskMipId))
+                .flatMap(maskMipId -> maskLibraries.isEmpty()
+                        ?  Stream.of(new File(maskMipId))
+                        : maskLibraries.stream().map(l ->  Paths.get(l, maskMipId).toFile()))
                 .map(this::readEMMatches)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -95,10 +112,10 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
 
     @Override
     public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForTargets(String alignmentSpace,
-                                                                                     String targetLibrary,
-                                                                                     List<String> targetMipIds,
+                                                                                     Collection<String> targetLibraries,
+                                                                                     Collection<String> targetMipIds,
                                                                                      ScoresFilter matchScoresFilter,
-                                                                                     List<String> matchTags,
+                                                                                     Collection<String> matchTags,
                                                                                      List<SortCriteria> sortCriteriaList) {
         throw new UnsupportedOperationException("This class has very limitted support and it is only intended for import EM to LM matches based on the EM MIP ID(s)");
     }

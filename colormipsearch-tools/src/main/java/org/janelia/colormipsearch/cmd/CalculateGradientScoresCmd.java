@@ -74,8 +74,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                         "This can be a directory of JSON files, a list of specific JSON files or some `DB selector`")
         List<ListArg> matches;
 
-        @Parameter(names = {"--tags"}, description = "Tags associated with the mask of the match to be scored", variableArity = true)
-        List<String> tags = new ArrayList<>();
+        @Parameter(names = {"--mask-tags"}, description = "Tags associated with the mask of the match to be scored", variableArity = true)
+        List<String> maskTags = new ArrayList<>();
 
         @Parameter(names = {"--match-tags"}, description = "Match tags to be scored", variableArity = true)
         List<String> matchTags = new ArrayList<>();
@@ -137,8 +137,14 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 excludedRegions
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
-        List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(args.matches.stream()
-                .map(larg -> new DataSourceParam(args.alignmentSpace, larg.input, args.tags, larg.offset, larg.length))
+        List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(
+                args.matches.stream()
+                        .map(larg -> new DataSourceParam()
+                                        .setAlignmentSpace(args.alignmentSpace)
+                                        .addLibrary(larg.input)
+                                        .addTags(args.maskTags)
+                                        .setOffset(larg.offset)
+                                        .setSize(larg.length))
                 .collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);

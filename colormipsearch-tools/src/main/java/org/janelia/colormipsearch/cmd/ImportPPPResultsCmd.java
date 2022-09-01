@@ -317,7 +317,11 @@ class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private Map<String, EMNeuronEntity> retrieveEMNeurons(CDMIPsReader cdmipsReader, Set<String> emNeuronNames) {
-        return cdmipsReader.readMIPs(new DataSourceParam(args.alignmentSpace, args.emLibrary, args.emTags, 0, -1).setNames(emNeuronNames))
+        return cdmipsReader.readMIPs(new DataSourceParam()
+                        .setAlignmentSpace(args.alignmentSpace)
+                        .addLibrary(args.emLibrary)
+                        .addNames(emNeuronNames)
+                        .addTags(args.emTags))
                 .stream()
                 .filter(n -> emNeuronNames.contains(n.getPublishedName()))
                 .filter(this::notFlippedNeuron)

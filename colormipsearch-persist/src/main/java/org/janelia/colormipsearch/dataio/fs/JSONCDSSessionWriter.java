@@ -58,7 +58,7 @@ public class JSONCDSSessionWriter implements CDSSessionWriter {
 
     private String inputValues(List<DataSourceParam> inputs) {
         return inputs.stream()
-                .map(DataSourceParam::getLibraryName)
+                .flatMap(input -> input.getLibraries().stream())
                 .reduce("", (l1, l2) -> StringUtils.isBlank(l1) ? l2 : l1 + "-" + l2);
     }
 
