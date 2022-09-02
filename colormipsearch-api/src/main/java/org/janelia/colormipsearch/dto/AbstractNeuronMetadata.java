@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.JsonRequired;
@@ -33,6 +34,8 @@ public abstract class AbstractNeuronMetadata {
     private boolean unpublished;
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
+    @JsonIgnore
+    private final Map<ComputeFileType, String> neuronComputeFiles = new HashMap<>();
 
     @JsonProperty("id")
     public String getMipId() {
@@ -136,6 +139,22 @@ public abstract class AbstractNeuronMetadata {
         neuronFileTypes.forEach(
                 ft -> setNeuronFile(ft, fileNameMap.apply(getNeuronFile(ft)))
         );
+    }
+
+    public boolean hasNeuronComputeFile(ComputeFileType t) {
+        return neuronComputeFiles.containsKey(t);
+    }
+
+    public String getNeuronComputeFile(ComputeFileType t) {
+        return neuronComputeFiles.get(t);
+    }
+
+    public void setNeuronComputeFile(ComputeFileType t, String fn) {
+        if (StringUtils.isNotBlank(fn)) {
+            neuronComputeFiles.put(t, fn);
+        } else {
+            neuronComputeFiles.remove(t);
+        }
     }
 
     @Override
