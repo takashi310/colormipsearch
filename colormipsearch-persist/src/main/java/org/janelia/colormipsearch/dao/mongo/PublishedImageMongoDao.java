@@ -11,19 +11,26 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.Var;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Variable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.PublishedImageDao;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.PublishedImage;
+import org.janelia.colormipsearch.model.PublishedImageFields;
 
 public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
-                                    implements PublishedImageDao {
+        implements PublishedImageDao {
 
     private static final List<String> GAL4_RELEASES = Arrays.asList("Gen1 GAL4", "Gen1 LexA");
 
@@ -37,14 +44,13 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
         if (StringUtils.isBlank(sampleRef)) {
             return Collections.emptyList();
         } else {
-            return MongoDaoHelper.find(
-                    MongoDaoHelper.createEqFilter("sampleRef", sampleRef),
+            return MongoDaoHelper.aggregateAsList(
+                    createQueryPipeline(null, Collections.singleton(sampleRef), null),
                     null,
                     0,
-                    -1,
+                    0,
                     mongoCollection,
-                    PublishedImage.class
-            );
+                    getEntityType());
         }
     }
 
@@ -55,75 +61,58 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
-            List<Bson> filters = new ArrayList<>();
-            if (StringUtils.isNotBlank(alignmentSpace)) {
-                filters.add(MongoDaoHelper.createEqFilter("alignmentSpace", alignmentSpace));
-            }
-            filters.add(Filters.in("sampleRef", sampleRefs));
-            if (StringUtils.isNotBlank(objective)) {
-                filters.add(MongoDaoHelper.createEqFilter("objective", objective));
-            }
-            List<PublishedImage> publishedImages = MongoDaoHelper.find(
-                    MongoDaoHelper.createBsonFilterCriteria(filters),
+            return MongoDaoHelper.aggregateAsList(
+                    createQueryPipeline(alignmentSpace, sampleRefs, objective),
                     null,
                     0,
-                    -1,
+                    0,
                     mongoCollection,
-                    PublishedImage.class
-            );
-            return publishedImages.stream().collect(Collectors.groupingBy(
-                    PublishedImage::getSampleRef,
-                    Collectors.toList()
-            ));
+                    getEntityType()).stream()
+                    .collect(Collectors.groupingBy(
+                            PublishedImageFields::getSampleRef,
+                            Collectors.toList()
+                    ));
         }
     }
 
-    @Override
-    public List<PublishedImage> getGal4ExpressionImages(Collection<String> originalLines,
-                                                        @Nullable String anatomicalArea) {
-        if (CollectionUtils.isEmpty(originalLines)) {
-            return Collections.emptyList();
-        } else {
-            List<Bson> filters = new ArrayList<>();
-            filters.add(Filters.in("originalLine", originalLines));
-            if (StringUtils.isNotBlank(anatomicalArea)) {
-                filters.add(MongoDaoHelper.createEqFilter("area", anatomicalArea));
-            }
-            filters.add(Filters.in("releaseName", GAL4_RELEASES));
-            return MongoDaoHelper.find(
-                    // these images must come from one of two releases, but we don't know
-                    //  which a priori
-                    MongoDaoHelper.createBsonFilterCriteria(filters),
-                    null,
-                    0,
-                    -1,
-                    mongoCollection,
-                    PublishedImage.class
-            );
-        }
-    }
-
-    @Override
-    public List<PublishedImage> getAllGal4ExpressionImagesForLine(String originalLine) {
-        if (StringUtils.isBlank(originalLine)) {
-            return Collections.emptyList();
-        } else {
-            return MongoDaoHelper.find(
-                    // these images must come from one of two releases, but we don't know
-                    //  which a priori
-                    MongoDaoHelper.createBsonFilterCriteria(
-                            Arrays.asList(
-                                    MongoDaoHelper.createEqFilter("originalLine", originalLine),
-                                    Filters.in("releaseName", GAL4_RELEASES)
-                            )
-                    ),
-                    null,
-                    0,
-                    -1,
-                    mongoCollection,
-                    PublishedImage.class
-            );
-        }
+    private List<Bson> createQueryPipeline(@Nullable String alignmentSpace,
+                                           Collection<String> sampleRefs,
+                                           @Nullable String objective) {
+        List<Bson> pipeline = new ArrayList<>();
+        pipeline.add(Aggregates.match(
+                MongoDaoHelper.createBsonFilterCriteria(
+                        Arrays.asList(
+                                StringUtils.isBlank(alignmentSpace)
+                                        ? null
+                                        : MongoDaoHelper.createEqFilter("alignmentSpace", alignmentSpace),
+                                Filters.in("sampleRef", sampleRefs),
+                                StringUtils.isBlank(objective)
+                                        ? null
+                                        : MongoDaoHelper.createEqFilter("objective", objective)
+                        )
+                )
+        ));
+        pipeline.add(Aggregates.lookup(
+                EntityUtils.getPersistenceInfo(PublishedImage.class).storeName(),
+                Arrays.asList(
+                        new Variable<>("sourceLine", "$originalLine"),
+                        new Variable<>("sourceArea", "$area"),
+                        new Variable<>("gal4Releases", GAL4_RELEASES)
+                ),
+                Arrays.asList(
+                        Aggregates.match(
+                                Filters.expr(
+                                        Filters.and(
+                                                MongoDaoHelper.createAggregateExpr("$eq", "$originalLine", "$$sourceLine"),
+                                                MongoDaoHelper.createAggregateExpr("$eq", "$area", "$$sourceArea"),
+                                                MongoDaoHelper.createAggregateExpr("$in", "$releaseName", "$$gal4Releases")
+                                        )
+                                )
+                        )
+                ),
+                "gal4"
+                ));
+        return pipeline;
     }
 
     @Override

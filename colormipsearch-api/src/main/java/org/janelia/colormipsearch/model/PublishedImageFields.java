@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 public class PublishedImageFields extends AbstractBaseEntity {
@@ -97,7 +98,15 @@ public class PublishedImageFields extends AbstractBaseEntity {
     }
 
     void setFiles(Map<String, String> files) {
-        this.files = files;
+        if (files != null) {
+            this.files.putAll(files);
+        }
+    }
+
+    public void addFile(String fileType, String file) {
+        if (StringUtils.isNotBlank(fileType) && StringUtils.isNotBlank(file)) {
+            this.files.put(fileType, file);
+        }
     }
 
     @JsonProperty("creationDate")

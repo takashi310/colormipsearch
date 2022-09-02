@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -77,6 +78,10 @@ class MongoDaoHelper {
             LOG.error("Unknown records count field type: {}", recordsCountDoc);
             throw new IllegalStateException("Unknown RECORDS COUNT FIELD TYPE " + recordsCountDoc);
         }
+    }
+
+    static Bson createAggregateExpr(String op, Object... args) {
+        return new Document(op, Arrays.asList(args));
     }
 
     static Bson createBsonFilterCriteria(List<Bson> filters) {

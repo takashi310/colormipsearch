@@ -93,7 +93,9 @@ public class CachedPublishedImageDao implements PublishedImageDao {
     }
 
     @Override
-    public Map<String, List<PublishedImage>> getPublishedImagesBySampleObjectives(@Nullable String alignmentSpace, Collection<String> sampleRefs, @Nullable String objective) {
+    public Map<String, List<PublishedImage>> getPublishedImagesBySampleObjectives(@Nullable String alignmentSpace,
+                                                                                  Collection<String> sampleRefs,
+                                                                                  @Nullable String objective) {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
@@ -110,20 +112,6 @@ public class CachedPublishedImageDao implements PublishedImageDao {
 
     private List<PublishedImage> retrievePublishedImagesBySampleRef(String sampleRef) {
         return impl.getPublishedImagesBySample(sampleRef);
-    }
-
-    @Override
-    public List<PublishedImage> getGal4ExpressionImages(Collection<String> originalLines, @Nullable String anatomicalArea) {
-        return null;
-    }
-
-    @Override
-    public List<PublishedImage> getAllGal4ExpressionImagesForLine(String originalLine) {
-        return null;
-    }
-
-    private List<PublishedImage> retrieveAllGal4ExpressionImagesForLine(String originalLine) {
-        return impl.getAllGal4ExpressionImagesForLine(originalLine);
     }
 
 }
