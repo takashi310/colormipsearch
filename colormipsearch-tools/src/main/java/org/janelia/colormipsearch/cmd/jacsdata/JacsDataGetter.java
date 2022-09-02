@@ -15,18 +15,25 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.HttpHelper;
+import org.janelia.colormipsearch.dao.PublishedImageDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JacsDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(JacsDataGetter.class);
 
+    private final PublishedImageDao publishedImageDao;
     private final String dataServiceURL;
     private final String configURL;
     private final String authorization;
     private final int readBatchSize;
 
-    public JacsDataGetter(String dataServiceURL, String configURL, String authorization, int readBatchSize) {
+    public JacsDataGetter(PublishedImageDao publishedImageDao,
+                          String dataServiceURL,
+                          String configURL,
+                          String authorization,
+                          int readBatchSize) {
+        this.publishedImageDao = publishedImageDao;
         this.dataServiceURL = dataServiceURL;
         this.configURL = configURL;
         this.authorization = authorization;
@@ -72,30 +79,30 @@ public class JacsDataGetter {
                 Collections.emptyList());
     }
 
-    private void update3DStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
-        if (colorDepthMIP.sample != null) {
-            updateLM3DImageStack(httpClient, colorDepthMIP);
-        } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
-            colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
-        }
-    }
+//    private void update3DStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
+//        if (colorDepthMIP.sample != null) {
+//            updateLM3DImageStack(httpClient, colorDepthMIP);
+//        } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
+//            colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
+//        }
+//    }
 
-    private void updateLM3DImageStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
-        LOG.debug("Read LM 3D stack {}", colorDepthMIP);
-        Map<String, SamplePublishedData> publishedImages = HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                        .path("/publishedImage/imageWithGen1Image")
-                        .path(colorDepthMIP.alignmentSpace)
-                        .path(colorDepthMIP.sample.slideCode)
-                        .path(colorDepthMIP.objective),
-                authorization,
-                new TypeReference<Map<String, SamplePublishedData>>() {
-                },
-                Collections.emptyMap());
-        SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
-        SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
-        colorDepthMIP.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
-        colorDepthMIP.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
-    }
+//    private void updateLM3DImageStack(Client httpClient, ColorDepthMIP colorDepthMIP) {
+//        LOG.debug("Read LM 3D stack {}", colorDepthMIP);
+//        Map<String, SamplePublishedData> publishedImages = HttpHelper.retrieveData(httpClient.target(dataServiceURL)
+//                        .path("/publishedImage/imageWithGen1Image")
+//                        .path(colorDepthMIP.alignmentSpace)
+//                        .path(colorDepthMIP.sample.slideCode)
+//                        .path(colorDepthMIP.objective),
+//                authorization,
+//                new TypeReference<Map<String, SamplePublishedData>>() {
+//                },
+//                Collections.emptyMap());
+//        SamplePublishedData sample3DImage = publishedImages.get("VisuallyLosslessStack");
+//        SamplePublishedData gen1Gal4ExpressionImage = publishedImages.get("SignalMipExpression");
+//        colorDepthMIP.sample3DImageStack = sample3DImage != null ? sample3DImage.files.get("VisuallyLosslessStack") : null;
+//        colorDepthMIP.sampleGen1Gal4ExpressionImage = gen1Gal4ExpressionImage != null ? gen1Gal4ExpressionImage.files.get("ColorDepthMip1") : null;
+//    }
 
     private List<CDMIPBody> httpRetrieveEMNeuronsByDatasetAndBodyIds(Client httpClient,
                                                                      String emDataset,
@@ -157,7 +164,7 @@ public class JacsDataGetter {
                         } else if (cdmip.needsLMSample()) {
                             cdmip.sample = lmSamples.get(cdmip.sampleRef);
                         }
-                        update3DStack(httpClient, cdmip);
+//!!!!                        update3DStack(httpClient, cdmip);
                     })
                     .collect(Collectors.toMap(n -> n.id, n -> n));
         }

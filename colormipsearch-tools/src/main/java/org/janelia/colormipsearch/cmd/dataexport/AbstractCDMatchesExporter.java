@@ -81,6 +81,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
         resultMatches.getItems().forEach(target -> {
             updateTargetMatchMethod.accept(target.getTargetImage());
             target.getTargetImage().updateAllNeuronFiles(this::relativizeURL);
+            // update match files
             String maskInputImageName = target.getMatchFile(FileType.ColorDepthMipInput);
             String targetInputImageName = target.getMatchFile(FileType.ColorDepthMipMatch);
             String targetSourceImageName = target.getTargetImage().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);

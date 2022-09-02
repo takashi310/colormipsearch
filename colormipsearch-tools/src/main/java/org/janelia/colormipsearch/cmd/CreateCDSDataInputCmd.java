@@ -1,7 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -38,7 +36,6 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
-import org.janelia.colormipsearch.cmd.jacsdata.SamplePublishedData;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsWriter;

@@ -157,7 +157,12 @@ class ExportData4NBCmd extends AbstractCmd {
                         ? mapper.writer()
                         : mapper.writerWithDefaultPrettyPrinter());
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
-                new JacsDataGetter(args.dataServiceURL, args.configURL, args.authorization, args.processingPartitionSize)
+                new JacsDataGetter(
+                        daosProvider.getPublishedImageDao(),
+                        args.dataServiceURL,
+                        args.configURL,
+                        args.authorization,
+                        args.processingPartitionSize)
         );
         DataSourceParam dataSource = new DataSourceParam()
                 .setAlignmentSpace(args.alignmentSpace)
