@@ -35,6 +35,8 @@ public abstract class AbstractNeuronMetadata {
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
     @JsonIgnore
+    // neuronComputeFiles are needed to temporarily hold the files that were actually matched
+    // in order to be able to generate the corresponding input name as it is on S3
     private final Map<ComputeFileType, String> neuronComputeFiles = new HashMap<>();
 
     @JsonProperty("id")

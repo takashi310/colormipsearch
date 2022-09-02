@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,16 +90,32 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
         });
     }
 
-    private String getMIPFileName(String inputImageName, String sourceImageName, String mipImageName) {
-        if (StringUtils.isNotBlank(mipImageName) && StringUtils.isNotBlank(sourceImageName) && StringUtils.isNotBlank(inputImageName)) {
-            String sourceName = RegExUtils.replacePattern(sourceImageName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
-            String inputName = RegExUtils.replacePattern(inputImageName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
+    /**
+     * This creates the corresponding display name for the input MIP.
+     * To do that it finds the suffix that was used to create the inputImageName from the sourceImageName and appends it to the mipImageName.
+     *
+     * @param inputImageFileName
+     * @param sourceImageFileName
+     * @param mipImageFileName
+     * @return
+     */
+    private String getMIPFileName(String inputImageFileName, String sourceImageFileName, String mipImageFileName) {
+        if (StringUtils.isNotBlank(mipImageFileName) &&
+                StringUtils.isNotBlank(sourceImageFileName) &&
+                StringUtils.isNotBlank(inputImageFileName)) {
+            String sourceName = RegExUtils.replacePattern(
+                    new File(sourceImageFileName).getName(),
+                    "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
+            String inputName = RegExUtils.replacePattern(
+                    new File(inputImageFileName).getName(),
+                    "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
             String imageSuffix = RegExUtils.replacePattern(
                     StringUtils.removeStart(inputName, sourceName), // typically the segmentation name shares the same prefix with the original mip name
                     "^[-_]",
                     ""
             ); // remove the hyphen or underscore prefix
-            String mipName = RegExUtils.replacePattern(mipImageName, "\\..*$", ""); // clear  .<ext> suffix
+            String mipName = RegExUtils.replacePattern(new File(mipImageFileName).getName(),
+                    "\\..*$", ""); // clear  .<ext> suffix
             return StringUtils.isBlank(imageSuffix)
                     ? mipName + ".png"
                     : mipName + "-" + imageSuffix + ".png";

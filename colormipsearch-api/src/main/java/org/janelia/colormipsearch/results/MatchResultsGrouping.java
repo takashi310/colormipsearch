@@ -34,6 +34,7 @@ public class MatchResultsGrouping {
     List<ResultMatches<M, R1>> groupByMask(List<R> matches,
                                            List<Function<M, ?>> maskFieldSelectors,
                                            Comparator<R1> ranking) {
+        // the group invocation must set match files otherwise the actual match info may be lost
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> {
@@ -80,6 +81,7 @@ public class MatchResultsGrouping {
     List<ResultMatches<T, R1>> groupByTarget(List<R> matches,
                                              List<Function<T, ?>> targetFieldSelectors,
                                              Comparator<R1> ranking) {
+        // the group invocation must set match files otherwise the actual match info may be lost
         return ItemsHandling.groupItems(
                 matches,
                 aMatch -> {
