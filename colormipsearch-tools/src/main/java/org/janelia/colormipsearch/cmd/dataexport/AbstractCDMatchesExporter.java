@@ -123,48 +123,4 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             return null;
         }
     }
-//    @SuppressWarnings("unchecked")
-//    private void updateTagAndNeuronFiles(InputCDMipNeuron<? extends AbstractNeuronEntity> cdmip) {
-//        cdmip.getNeuronMetadata().addTag(args.tag);
-//        if (cdmip.getNeuronMetadata().hasComputeFile(ComputeFileType.InputColorDepthImage) &&
-//                cdmip.getNeuronMetadata().hasNeuronFile(FileType.ColorDepthMip)) {
-//            // ColorDepthInput filename must be expressed in terms of publishedName (not internal name),
-//            //  and must include the integer suffix that identifies exactly which image it is (for LM),
-//            //  when there are multiple images for a given combination of parameters
-//            // in practical terms, we take the filename from imageURL, which has
-//            //  the publishedName in it, and graft on the required integer from imageName (for LM), which
-//            //  has the internal name; we have to similarly grab _FL from EM names
-//
-//            // remove directories and extension (which we know is ".png") from imageURL:
-//            Path imagePath = Paths.get(cdmip.getNeuronMetadata().getNeuronFile(FileType.ColorDepthMip));
-//            String colorDepthInputName = createColorDepthInputName(
-//                    Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(),
-//                    Paths.get(cdmip.getNeuronMetadata().getComputeFileName(ComputeFileType.InputColorDepthImage)).getFileName().toString(),
-//                    imagePath.getFileName().toString());
-//            cdmip.getNeuronMetadata().setNeuronFile(FileType.ColorDepthMipInput, colorDepthInputName);
-//        }
-//    }
-//
-//    /**
-//     * Create the published name for the input image - the one that will actually be "color depth searched".
-//     *
-//     * @param mipFileName
-//     * @param imageFileName
-//     * @param displayFileName
-//     * @return
-//     */
-//    private String createColorDepthInputName(String mipFileName, String imageFileName, String displayFileName) {
-//        String mipName = RegExUtils.replacePattern(mipFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
-//        String imageName = RegExUtils.replacePattern(imageFileName, "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
-//        String imageSuffix = RegExUtils.replacePattern(
-//                StringUtils.removeStart(imageName, mipName), // typically the segmentation name shares the same prefix with the original mip name
-//                "^[-_]",
-//                ""
-//        ); // remove the hyphen or underscore prefix
-//        String displayName = RegExUtils.replacePattern(displayFileName, "\\..*$", ""); // clear  .<ext> suffix
-//        return StringUtils.isBlank(imageSuffix)
-//                ? displayName + ".png"
-//                : displayName + "-" + imageSuffix + ".png";
-//    }
-
 }
