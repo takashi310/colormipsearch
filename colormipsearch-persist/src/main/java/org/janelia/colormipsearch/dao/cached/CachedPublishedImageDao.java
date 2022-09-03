@@ -91,11 +91,15 @@ public class CachedPublishedImageDao implements PublishedImageDao {
         if (publishedImagesBySampleRefs == null) {
             return impl.getPublishedImagesBySample(sampleRef);
         } else {
-            try {
-                return publishedImagesBySampleRefs.get(sampleRef);
-            } catch (ExecutionException e) {
-                LOG.error("Error loading published images for {}", sampleRef, e);
+            if (StringUtils.isBlank(sampleRef)) {
                 return Collections.emptyList();
+            } else {
+                try {
+                    return publishedImagesBySampleRefs.get(sampleRef);
+                } catch (ExecutionException e) {
+                    LOG.error("Error loading published images for {}", sampleRef, e);
+                    return Collections.emptyList();
+                }
             }
         }
     }

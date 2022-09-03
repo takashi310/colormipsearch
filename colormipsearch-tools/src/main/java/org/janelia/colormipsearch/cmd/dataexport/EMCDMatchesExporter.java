@@ -83,6 +83,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
+        LOG.info("Fill in missing info for {} matches", matches.size());
         // update all neuron from all grouped matches
         List<ResultMatches<M, CDMatchedTarget<T>>> publishedMatches = groupedMatches.stream()
                 .peek(m -> updateMatchedResultsMetadata(m,

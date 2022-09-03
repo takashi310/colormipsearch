@@ -92,22 +92,24 @@ public class HttpHelper {
     /**
      * @param endpointSupplier Data endpoint supplier
      * @param chunkSize
-     * @param names is a non empty set of item names to be retrieved
+     * @param fieldName query field name
+     * @param fieldValues is a non empty set of item values to be retrieved
      * @param t data type reference
      * @param <T> data type
      * @return
      */
-    public static <T> Stream<T> retrieveDataStreamForNames(Supplier<WebTarget> endpointSupplier,
-                                                           String authorization,
-                                                           int chunkSize,
-                                                           Set<String> names,
-                                                           TypeReference<List<T>> t) {
+    public static <T> Stream<T> retrieveDataStreamForFieldValues(Supplier<WebTarget> endpointSupplier,
+                                                                 String authorization,
+                                                                 int chunkSize,
+                                                                 String fieldName,
+                                                                 Set<String> fieldValues,
+                                                                 TypeReference<List<T>> t) {
         if (chunkSize > 0) {
-            return ItemsHandling.partitionCollection(names, chunkSize).entrySet().stream()
-                    .flatMap(indexedNamesSubset -> {
-                        LOG.info("Retrieve {} items", indexedNamesSubset.getValue().size());
+            return ItemsHandling.partitionCollection(fieldValues, chunkSize).entrySet().stream()
+                    .flatMap(indexedValuesSubset -> {
+                        LOG.info("Retrieve {} items", indexedValuesSubset.getValue().size());
                         List<T> subsetResults = retrieveData(
-                                endpointSupplier.get().queryParam("name", indexedNamesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+                                endpointSupplier.get().queryParam(fieldName, indexedValuesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 authorization,
                                 t,
                                 Collections.emptyList());
@@ -115,7 +117,7 @@ public class HttpHelper {
                     });
         } else {
             List<T> results = retrieveData(
-                    endpointSupplier.get().queryParam("name", CollectionUtils.isNotEmpty(names) ? names.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
+                    endpointSupplier.get().queryParam(fieldName, CollectionUtils.isNotEmpty(fieldValues) ? fieldValues.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null),
                     authorization,
                     t,
                     Collections.emptyList());

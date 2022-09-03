@@ -25,6 +25,7 @@ public class CachedJacsDataHelper {
     public void retrieveCDMIPs(Set<String> mipIds) {
         if (CollectionUtils.isNotEmpty(mipIds)) {
             Set<String> toRetrieve = mipIds.stream().filter(mipId -> !CD_MIPS_CACHE.containsKey(mipId)).collect(Collectors.toSet());
+            LOG.info("Retrieve {} MIPs to populate missing information", toRetrieve.size());
             CD_MIPS_CACHE.putAll(jacsDataGetter.retrieveCDMIPs(toRetrieve));
         }
     }
@@ -44,6 +45,7 @@ public class CachedJacsDataHelper {
     public void retrieveLMSamples(Set<String> lmSampleNames) {
         if (CollectionUtils.isNotEmpty(lmSampleNames)) {
             Set<String> toRetrieve = lmSampleNames.stream().filter(n -> !LM_SAMPLES_CACHE.containsKey(n)).collect(Collectors.toSet());
+            LOG.info("Retrieve {} samples to populate missing information", toRetrieve.size());
             LM_SAMPLES_CACHE.putAll(jacsDataGetter.retrieveLMSamplesByName(toRetrieve));
         }
     }

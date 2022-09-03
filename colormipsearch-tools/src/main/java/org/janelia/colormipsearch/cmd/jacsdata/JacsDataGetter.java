@@ -55,10 +55,11 @@ public class JacsDataGetter {
             return Collections.emptyList();
         } else {
             LOG.debug("Read LM metadata for {} samples", sampleNames.size());
-            return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
+            return HttpHelper.retrieveDataStreamForFieldValues(() -> httpClient.target(dataServiceURL)
                                     .path("/data/samples"),
                             authorization,
                             readBatchSize,
+                            "name",
                             sampleNames,
                             new TypeReference<List<CDMIPSample>>() {
                             })
@@ -108,12 +109,13 @@ public class JacsDataGetter {
             return Collections.emptyList();
         } else {
             LOG.debug("Read EM metadata for {} neurons", neuronBodyIds.size());
-            return HttpHelper.retrieveDataStreamForNames(() -> httpClient.target(dataServiceURL)
+            return HttpHelper.retrieveDataStreamForFieldValues(() -> httpClient.target(dataServiceURL)
                             .path("/emdata/dataset")
                             .path(emDataset)
                             .path(emDatasetVersion),
                     authorization,
                     readBatchSize,
+                    "name",
                     neuronBodyIds,
                     new TypeReference<List<CDMIPBody>>() {
                     }).collect(Collectors.toList());
@@ -141,6 +143,7 @@ public class JacsDataGetter {
             List<ColorDepthMIP> colorDepthMIPS = httpRetrieveCDMIPs(HttpHelper.createClient(), mipIds);
             Set<String> lmSamplesToRetrieve = new HashSet<>();
             Set<String> emBodiesToRetrieve = new HashSet<>();
+            LOG.info("Retrieve published images for {} mips", mipIds.size());
             Map<String, List<PublishedImage>> publishedImagesBySampleRefs = publishedImageDao.getPublishedImagesBySampleObjectives(
                     null,
                     colorDepthMIPS.stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
@@ -154,10 +157,13 @@ public class JacsDataGetter {
                 }
             });
             Client httpClient = HttpHelper.createClient();
+            LOG.info("Retrieve {} LM samples", lmSamplesToRetrieve.size());
             Map<String, CDMIPSample> lmSamples = CDMIPSample.indexByRef(
                     httpRetrieveLMSamplesByRefs(httpClient, lmSamplesToRetrieve));
+            LOG.info("Retrieve {} EM bodies", emBodiesToRetrieve.size());
             Map<String, CDMIPBody> emBodies = CDMIPBody.indexByRef(
                     httpRetrieveEMBodiesByRefs(httpClient, emBodiesToRetrieve));
+            LOG.info("Update 3D stack info for {} mips", colorDepthMIPS.size());
             return colorDepthMIPS.stream()
                     .peek(cdmip -> {
                         if (cdmip.needsEMBody()) {
@@ -173,12 +179,14 @@ public class JacsDataGetter {
 
     private List<ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {
         LOG.debug("Read {} MIPs", mipIds.size());
-        return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                        .path("/data/colorDepthMIPsWithSamples")
-                        .queryParam("id", mipIds.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
-                authorization,
-                new TypeReference<List<ColorDepthMIP>>() {},
-                Collections.emptyList());
+        return HttpHelper.retrieveDataStreamForFieldValues(
+                        () -> httpClient.target(dataServiceURL).path("/data/colorDepthMIPsWithSamples"),
+                        authorization,
+                        readBatchSize,
+                        "id",
+                        mipIds,
+                        new TypeReference<List<ColorDepthMIP>>() {})
+                .collect(Collectors.toList());
     }
 
     public Map<String, String> retrieveLibraryNameMapping() {
