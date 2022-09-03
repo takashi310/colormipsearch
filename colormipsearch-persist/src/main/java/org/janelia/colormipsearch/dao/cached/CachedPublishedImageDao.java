@@ -30,16 +30,20 @@ public class CachedPublishedImageDao implements PublishedImageDao {
     private final PublishedImageDao impl;
     private final LoadingCache<String, List<PublishedImage>> publishedImagesBySampleRefs;
 
-    public CachedPublishedImageDao(PublishedImageDao impl, long maxSize) {
+    public CachedPublishedImageDao(PublishedImageDao impl, Long maxSize) {
         this.impl = impl;
-        this.publishedImagesBySampleRefs = CacheBuilder.newBuilder()
-                .maximumSize(maxSize)
-                .build(new CacheLoader<String, List<PublishedImage>>() {
-                    @Override
-                    public List<PublishedImage> load(String sampleRef) {
-                        return retrievePublishedImagesBySampleRef(sampleRef);
-                    }
-                });
+        if (maxSize == null || maxSize <= 0) {
+            this.publishedImagesBySampleRefs = null;
+        } else {
+            this.publishedImagesBySampleRefs = CacheBuilder.newBuilder()
+                    .maximumSize(maxSize)
+                    .build(new CacheLoader<String, List<PublishedImage>>() {
+                        @Override
+                        public List<PublishedImage> load(String sampleRef) {
+                            return retrievePublishedImagesBySampleRef(sampleRef);
+                        }
+                    });
+        }
     }
 
     @Override
@@ -84,11 +88,15 @@ public class CachedPublishedImageDao implements PublishedImageDao {
 
     @Override
     public List<PublishedImage> getPublishedImagesBySample(String sampleRef) {
-        try {
-            return publishedImagesBySampleRefs.get(sampleRef);
-        } catch (ExecutionException e) {
-            LOG.error("Error loading published images for {}", sampleRef, e);
-            return Collections.emptyList();
+        if (publishedImagesBySampleRefs == null) {
+            return impl.getPublishedImagesBySample(sampleRef);
+        } else {
+            try {
+                return publishedImagesBySampleRefs.get(sampleRef);
+            } catch (ExecutionException e) {
+                LOG.error("Error loading published images for {}", sampleRef, e);
+                return Collections.emptyList();
+            }
         }
     }
 
@@ -99,14 +107,18 @@ public class CachedPublishedImageDao implements PublishedImageDao {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
-            return sampleRefs.stream()
-                    .flatMap(sr -> getPublishedImagesBySample(sr).stream())
-                    .filter(pi -> StringUtils.isBlank(alignmentSpace) || alignmentSpace.equals(pi.getAlignmentSpace()))
-                    .filter(pi -> StringUtils.isBlank(objective) || objective.equals(pi.getObjective()))
-                    .collect(Collectors.groupingBy(
-                            PublishedImage::getSampleRef,
-                            Collectors.toList()
-                    ));
+            if (publishedImagesBySampleRefs == null) {
+                return impl.getPublishedImagesBySampleObjectives(alignmentSpace, sampleRefs, objective);
+            } else {
+                return sampleRefs.stream()
+                        .flatMap(sr -> getPublishedImagesBySample(sr).stream())
+                        .filter(pi -> StringUtils.isBlank(alignmentSpace) || alignmentSpace.equals(pi.getAlignmentSpace()))
+                        .filter(pi -> StringUtils.isBlank(objective) || objective.equals(pi.getObjective()))
+                        .collect(Collectors.groupingBy(
+                                PublishedImage::getSampleRef,
+                                Collectors.toList()
+                        ));
+            }
         }
     }
 

@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -22,6 +23,7 @@ import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
+import org.janelia.colormipsearch.dao.cached.CachedPublishedImageDao;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -105,11 +107,13 @@ class ExportData4NBCmd extends AbstractCmd {
     }
 
     private final ExportMatchesCmdArgs args;
+    private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
 
-    ExportData4NBCmd(String commandName, CommonArgs commonArgs) {
+    ExportData4NBCmd(String commandName, CommonArgs commonArgs, Supplier<Long> cacheSizeSupplier) {
         super(commandName);
         this.args = new ExportMatchesCmdArgs(commonArgs);
+        this.cacheSizeSupplier = cacheSizeSupplier;
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -158,7 +162,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         : mapper.writerWithDefaultPrettyPrinter());
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(
-                        daosProvider.getPublishedImageDao(),
+                        new CachedPublishedImageDao(daosProvider.getPublishedImageDao(), cacheSizeSupplier.get()),
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,

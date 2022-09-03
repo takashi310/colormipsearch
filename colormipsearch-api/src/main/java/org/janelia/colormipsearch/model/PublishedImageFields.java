@@ -5,10 +5,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
+/**
+ * The reason for the typeInfo annotation here is to deal with the wrong classname persisted in the collection.
+ * The class name used is the JACS class: org.janelia.model.domain.sample.PublishedImage so the published
+ * class will be deserialized based on the context the deserialization is invoked from.
+ */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class PublishedImageFields extends AbstractBaseEntity {
     private String sampleRef;
     private String line;
@@ -107,6 +114,14 @@ public class PublishedImageFields extends AbstractBaseEntity {
         if (StringUtils.isNotBlank(fileType) && StringUtils.isNotBlank(file)) {
             this.files.put(fileType, file);
         }
+    }
+
+    public String getFile(String fileType) {
+        return this.files.get(fileType);
+    }
+
+    public boolean hasFile(String fileType) {
+        return this.files.containsKey(fileType);
     }
 
     @JsonProperty("creationDate")

@@ -15,7 +15,6 @@ import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.LMNeuronEntity;
 
 class NeuronSelectionHelper {
 

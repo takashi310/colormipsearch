@@ -49,7 +49,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     long startProcessingTime = System.currentTimeMillis();
                     LOG.info("Start processing partition {}", indexedPartition.getKey());
                     indexedPartition.getValue().forEach(maskId -> {
-                        LOG.info("Read color depth matches for {}", maskId);
+                        LOG.info("Read EM color depth matches for {}", maskId);
                         List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 dataSourceParam.getAlignmentSpace(),
                                 null, // no mask library specified - we use mask MIP
@@ -59,6 +59,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
+                        LOG.info("Select best EM matches for {} out of {} matches", maskId, allMatchesForMask.size());
                         List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask =
                                 selectBestMatchPerMIPPair(allMatchesForMask);
                         LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskId);

@@ -54,7 +54,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     long startProcessingTime = System.currentTimeMillis();
                     LOG.info("Start processing partition {}", indexedPartition.getKey());
                     indexedPartition.getValue().forEach(targetId -> {
-                        LOG.info("Read color depth matches for {}", targetId);
+                        LOG.info("Read LM color depth matches for {}", targetId);
                         List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
                                 dataSourceParam.getAlignmentSpace(),
                                 null, // no target library specified - we use target MIP
@@ -64,6 +64,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                 Collections.singletonList(
                                         new SortCriteria("normalizedScore", SortDirection.DESC)
                                 ));
+                        LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
                         List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget =
                                 selectBestMatchPerMIPPair(allMatchesForTarget);
                         LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);

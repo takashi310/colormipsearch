@@ -16,7 +16,6 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.janelia.colormipsearch.model.AbstractMatchEntity;
 
 public class JacksonCodecProvider implements CodecProvider {
 

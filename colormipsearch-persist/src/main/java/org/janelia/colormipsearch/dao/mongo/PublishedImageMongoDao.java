@@ -10,8 +10,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableList;
-import com.google.errorprone.annotations.Var;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -20,12 +18,10 @@ import com.mongodb.client.model.Variable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.PublishedImageDao;
-import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.PublishedImage;
 import org.janelia.colormipsearch.model.PublishedImageFields;
 
