@@ -82,6 +82,9 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--processingPartitionSize", "-ps", "--libraryPartitionSize"}, description = "Processing partition size")
         int processingPartitionSize = 5000;
 
+        @Parameter(names = {"--read-batch-size"}, description = "JACS read chunk size")
+        int readBatchSize = 1000;
+
         @Parameter(names = {"--relativize-urls-to-component"}, description = "URLs are relative to the specified component")
         int relativesUrlsToComponent = -1;
 
@@ -166,7 +169,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,
-                        args.processingPartitionSize)
+                        args.readBatchSize)
         );
         DataSourceParam dataSource = new DataSourceParam()
                 .setAlignmentSpace(args.alignmentSpace)

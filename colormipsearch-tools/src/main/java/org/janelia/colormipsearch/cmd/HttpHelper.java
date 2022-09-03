@@ -107,7 +107,7 @@ public class HttpHelper {
         if (chunkSize > 0) {
             return ItemsHandling.partitionCollection(fieldValues, chunkSize).entrySet().stream()
                     .flatMap(indexedValuesSubset -> {
-                        LOG.info("Retrieve {} items", indexedValuesSubset.getValue().size());
+                        LOG.debug("Retrieve {}:{} items", indexedValuesSubset.getKey(), indexedValuesSubset.getValue().size());
                         List<T> subsetResults = retrieveData(
                                 endpointSupplier.get().queryParam(fieldName, indexedValuesSubset.getValue().stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
                                 authorization,

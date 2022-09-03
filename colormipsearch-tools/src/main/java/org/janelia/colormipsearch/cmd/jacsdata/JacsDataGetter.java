@@ -72,12 +72,14 @@ public class JacsDataGetter {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyList();
         }
-        return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                        .path("/data/samples")
-                        .queryParam("refs", sampleRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+        return HttpHelper.retrieveDataStreamForFieldValues(
+                () -> httpClient.target(dataServiceURL).path("/data/samples"),
                 authorization,
-                new TypeReference<List<CDMIPSample>>() {},
-                Collections.emptyList());
+                readBatchSize,
+                "refs",
+                sampleRefs,
+                new TypeReference<List<CDMIPSample>>() {})
+                .collect(Collectors.toList());
     }
 
     private PublishedImage findPublishedImage(ColorDepthMIP colorDepthMIP, List<PublishedImage> publishedImages) {
@@ -127,12 +129,14 @@ public class JacsDataGetter {
             return Collections.emptyList();
         } else {
             LOG.debug("Read EM metadata for {} EM bodies", emBodyRefs.size());
-            return HttpHelper.retrieveData(httpClient.target(dataServiceURL)
-                            .path("/emdata/emBodies")
-                            .queryParam("refs", emBodyRefs.stream().reduce((s1, s2) -> s1 + "," + s2).orElse(null)),
+            return HttpHelper.retrieveDataStreamForFieldValues(() -> httpClient.target(dataServiceURL)
+                            .path("/emdata/emBodies"),
                     authorization,
-                    new TypeReference<List<CDMIPBody>>() {},
-                    Collections.emptyList());
+                    readBatchSize,
+                    "refs",
+                    emBodyRefs,
+                    new TypeReference<List<CDMIPBody>>() {
+                    }).collect(Collectors.toList());
         }
     }
 
@@ -190,8 +194,8 @@ public class JacsDataGetter {
     }
 
     public Map<String, String> retrieveLibraryNameMapping() {
-        Map<String, Object> configJSON = HttpHelper.retrieveData(HttpHelper.createClient().target(configURL)
-                        .path("/cdm_library"),
+        Map<String, Object> configJSON = HttpHelper.retrieveData(
+                HttpHelper.createClient().target(configURL).path("/cdm_library"),
                 null, // this does not require any authorization
                 new TypeReference<Map<String, Object>>() {},
                 Collections.emptyMap());
