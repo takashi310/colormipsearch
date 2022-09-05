@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
-import org.janelia.colormipsearch.datarequests.PagedRequest;
-import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
+import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
@@ -26,25 +26,21 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final NeuronMatchesDao<R> neuronMatchesDao;
-    private final Function<AbstractNeuronEntity, String> neuronLocationNameSelector;
-
-    public DBNeuronMatchesReader(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
-                                 NeuronMatchesDao<R> neuronMatchesDao) {
-        this(neuronMetadataDao, neuronMatchesDao, AbstractNeuronEntity::getMipId);
-    }
+    private final String neuronLocationAttributeName;
 
     public DBNeuronMatchesReader(NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                  NeuronMatchesDao<R> neuronMatchesDao,
-                                 Function<AbstractNeuronEntity, String> neuronLocationNameSelector) {
+                                 String neuronLocationAttributeName) {
         this.neuronMetadataDao = neuronMetadataDao;
         this.neuronMatchesDao = neuronMatchesDao;
-        this.neuronLocationNameSelector = neuronLocationNameSelector;
+        this.neuronLocationAttributeName = neuronLocationAttributeName;
     }
 
     @Override
     public List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource) {
         return matchesSource.stream()
-                        .flatMap(cdMatchInput -> neuronMetadataDao.findNeurons(
+                        .flatMap(cdMatchInput -> neuronMetadataDao.findDistinctNeuronAttributeValues(
+                                Collections.singletonList(neuronLocationAttributeName),
                                 new NeuronSelector()
                                         .setAlignmentSpace(cdMatchInput.getAlignmentSpace())
                                         .addLibraries(cdMatchInput.getLibraries())
@@ -53,9 +49,17 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
                                         .setPageSize(cdMatchInput.getSize())
-                        ).getResultList().stream().map(neuronLocationNameSelector))
-                .distinct()
+                        ).getResultList().stream()
+                                .map(this::getNeuronLocationAttributeValue))
                 .collect(Collectors.toList());
+    }
+
+    private String getNeuronLocationAttributeValue(Map<String, Object> n) {
+        try {
+            return (String) n.get(neuronLocationAttributeName);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     @Override

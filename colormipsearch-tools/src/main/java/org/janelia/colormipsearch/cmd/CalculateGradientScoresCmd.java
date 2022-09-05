@@ -197,7 +197,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
             DaosProvider daosProvider = getDaosProvider();
             return new DBNeuronMatchesReader<>(
                     daosProvider.getNeuronMetadataDao(),
-                    daosProvider.getCDMatchesDao());
+                    daosProvider.getCDMatchesDao(),
+                    "mipId");
         } else {
             return new JSONNeuronMatchesReader<>(mapper);
         }

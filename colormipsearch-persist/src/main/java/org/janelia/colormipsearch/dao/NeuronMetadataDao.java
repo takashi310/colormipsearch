@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
@@ -23,11 +24,14 @@ public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N
     PagedResult<N> findNeurons(NeuronSelector neuronSelector, PagedRequest pageRequest);
 
     /**
-     * Find all distinct values for the specified attribute using the given neuron selector for filtering.
+     * Find all distinct values for the specified attributes using the given neuron selector for filtering.
      *
-     * @param attributeName neuron attribute values projected in the result
+     * @param attributeNames neuron distinct attributes that are being searched
      * @param neuronSelector neuron filter
+     * @param pagedRequest
      * @return
      */
-    List<String> findAllNeuronAttributeValues(String attributeName, NeuronSelector neuronSelector);
+    PagedResult<Map<String, Object>> findDistinctNeuronAttributeValues(List<String> attributeNames,
+                                                                       NeuronSelector neuronSelector,
+                                                                       PagedRequest pagedRequest);
 }

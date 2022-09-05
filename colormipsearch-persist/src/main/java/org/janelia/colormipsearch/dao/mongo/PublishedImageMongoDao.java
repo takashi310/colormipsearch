@@ -36,7 +36,62 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
     }
 
     @Override
-    public List<PublishedImage> getPublishedImagesBySample(String sampleRef) {
+    public Map<String, List<PublishedImage>> getPublishedImages(@Nullable String alignmentSpace, Collection<String> sampleRefs, @Nullable String objective) {
+        if (CollectionUtils.isEmpty(sampleRefs)) {
+            return Collections.emptyMap();
+        } else {
+            return MongoDaoHelper.find(
+                            MongoDaoHelper.createBsonFilterCriteria(
+                                    Arrays.asList(
+                                            StringUtils.isBlank(alignmentSpace)
+                                                    ? null
+                                                    : MongoDaoHelper.createEqFilter("alignmentSpace", alignmentSpace),
+                                            Filters.in("sampleRef", sampleRefs),
+                                            StringUtils.isBlank(objective)
+                                                    ? null
+                                                    : MongoDaoHelper.createEqFilter("objective", objective)
+                                    )
+                            ),
+                            null,
+                            0,
+                            -1,
+                            mongoCollection,
+                            getEntityType()).stream()
+                    .collect(Collectors.groupingBy(
+                            PublishedImageFields::getSampleRef,
+                            Collectors.toList()
+                    ));
+        }
+    }
+
+    @Override
+    public Map<String, List<PublishedImage>> getGAL4ExpressionImages(Collection<String> originalLines, @Nullable String area) {
+        if (CollectionUtils.isEmpty(originalLines)) {
+            return Collections.emptyMap();
+        } else {
+            return MongoDaoHelper.find(
+                            MongoDaoHelper.createBsonFilterCriteria(
+                                    Arrays.asList(
+                                            Filters.in("originalLine", originalLines),
+                                            StringUtils.isBlank(area)
+                                                    ? null
+                                                    : MongoDaoHelper.createEqFilter("area", area)
+                                    )
+                            ),
+                            null,
+                            0,
+                            -1,
+                            mongoCollection,
+                            getEntityType()).stream()
+                    .collect(Collectors.groupingBy(
+                            PublishedImageFields::getOriginalLine,
+                            Collectors.toList()
+                    ));
+        }
+    }
+
+    @Override
+    public List<PublishedImage> getPublishedImagesWithGal4BySample(String sampleRef) {
         if (StringUtils.isBlank(sampleRef)) {
             return Collections.emptyList();
         } else {
@@ -46,24 +101,26 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                     0,
                     0,
                     mongoCollection,
-                    getEntityType());
+                    getEntityType(),
+                    true);
         }
     }
 
     @Override
-    public Map<String, List<PublishedImage>> getPublishedImagesBySampleObjectives(@Nullable String alignmentSpace,
-                                                                                  Collection<String> sampleRefs,
-                                                                                  @Nullable String objective) {
+    public Map<String, List<PublishedImage>> getPublishedImagesWithGal4BySampleObjectives(@Nullable String alignmentSpace,
+                                                                                          Collection<String> sampleRefs,
+                                                                                          @Nullable String objective) {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
             return MongoDaoHelper.aggregateAsList(
-                    createQueryPipeline(alignmentSpace, sampleRefs, objective),
-                    null,
-                    0,
-                    0,
-                    mongoCollection,
-                    getEntityType()).stream()
+                            createQueryPipeline(alignmentSpace, sampleRefs, objective),
+                            null,
+                            0,
+                            0,
+                            mongoCollection,
+                            getEntityType(),
+                            true).stream()
                     .collect(Collectors.groupingBy(
                             PublishedImageFields::getSampleRef,
                             Collectors.toList()
@@ -107,7 +164,7 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                         )
                 ),
                 "gal4"
-                ));
+        ));
         return pipeline;
     }
 

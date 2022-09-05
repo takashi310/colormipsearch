@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd.jacsdata;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +15,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.HttpHelper;
 import org.janelia.colormipsearch.dao.PublishedImageDao;
 import org.janelia.colormipsearch.model.PublishedImage;
@@ -147,12 +150,25 @@ public class JacsDataGetter {
             List<ColorDepthMIP> colorDepthMIPS = httpRetrieveCDMIPs(HttpHelper.createClient(), mipIds);
             Set<String> lmSamplesToRetrieve = new HashSet<>();
             Set<String> emBodiesToRetrieve = new HashSet<>();
-            LOG.info("Retrieve published images for {} mips", mipIds.size());
-            Map<String, List<PublishedImage>> publishedImagesBySampleRefs = publishedImageDao.getPublishedImagesBySampleObjectives(
-                    null,
-                    colorDepthMIPS.stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
-                    null
-            );
+            Map<String, List<ColorDepthMIP>> mipsGroupedByAlignmentSpace = colorDepthMIPS.stream()
+                    .filter(cdmip -> StringUtils.isNotBlank(cdmip.sampleRef))
+                    .collect(Collectors.groupingBy(
+                            cdmip -> cdmip.alignmentSpace,
+                            Collectors.toList())
+                    );
+            Map<String, List<PublishedImage>> publishedImagesBySampleRefs = mipsGroupedByAlignmentSpace.entrySet().stream()
+                            .flatMap(e -> {
+                                LOG.info("Retrieve {} published images for alignment space {}",
+                                        mipIds.size(),
+                                        e.getKey(), // alignment space
+                                        null); // objective
+                                return publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(
+                                        e.getKey(),
+                                        e.getValue().stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
+                                        null
+                                ).values().stream().flatMap(Collection::stream);
+                            })
+                    .collect(Collectors.groupingBy(PublishedImage::getSampleRef, Collectors.toList()));
             colorDepthMIPS.forEach(cdmip -> {
                 if (cdmip.needsEMBody()) {
                     emBodiesToRetrieve.add(cdmip.emBodyRef);

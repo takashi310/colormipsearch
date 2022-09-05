@@ -15,6 +15,7 @@ import java.util.stream.StreamSupport;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BsonField;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
@@ -36,15 +37,17 @@ class MongoDaoHelper {
     private static final String RECORDS_COUNT_FIELD = "recordsCount";
 
     static <T, R> List<R> aggregateAsList(List<Bson> aggregationOperators, Bson sortCriteria, long offset, int length,
-                                          MongoCollection<T> mongoCollection, Class<R> resultType) {
+                                          MongoCollection<T> mongoCollection, Class<R> resultType,
+                                          boolean allowDisk) {
         List<R> results = new ArrayList<>();
-        Iterable<R> resultsItr = aggregateIterable(aggregationOperators, sortCriteria, offset, length, mongoCollection, resultType);
+        Iterable<R> resultsItr = aggregateIterable(aggregationOperators, sortCriteria, offset, length, mongoCollection, resultType, allowDisk);
         resultsItr.forEach(results::add);
         return results;
     }
 
     static <T, R> Iterable<R> aggregateIterable(List<Bson> aggregationOperators, Bson sortCriteria, long offset, int length,
-                                                MongoCollection<T> mongoCollection, Class<R> resultType) {
+                                                MongoCollection<T> mongoCollection, Class<R> resultType,
+                                                boolean allowDisk) {
         List<Bson> aggregatePipeline = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(aggregationOperators)) {
             aggregatePipeline.addAll(aggregationOperators);
@@ -58,7 +61,7 @@ class MongoDaoHelper {
         if (length > 0) {
             aggregatePipeline.add(Aggregates.limit(length));
         }
-        return mongoCollection.aggregate(aggregatePipeline, resultType);
+        return mongoCollection.aggregate(aggregatePipeline, resultType).allowDiskUse(allowDisk);
     }
 
     static <T> Long countAggregate(List<Bson> aggregationOperators, MongoCollection<T> mongoCollection) {
@@ -136,10 +139,14 @@ class MongoDaoHelper {
         return StringUtils.isNotBlank(clazz) ? Filters.eq("class", clazz) : new Document();
     }
 
-    static <T, R> List<R> distinctAttributes(String fieldName, Bson filter, MongoCollection<T> mongoCollection, Class<R> resultType) {
-        List<R> results = new ArrayList<>();
-        mongoCollection.distinct(fieldName, filter, resultType).forEach(results::add);
-        return results;
+    static Bson distinctAttributesExpr(List<String> fieldNames) {
+        Document expr = new Document();
+        fieldNames.forEach(fn -> expr.put(fn, "$" + fn));
+        return expr;
+    }
+
+    static BsonField firstDocument(String attribute) {
+        return new BsonField(attribute, new Document("$first", "$" + attribute));
     }
 
     static <I, T, R> R findById(I id, MongoCollection<T> mongoCollection, Class<R> documentType) {

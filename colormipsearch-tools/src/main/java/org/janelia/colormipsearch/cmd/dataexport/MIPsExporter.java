@@ -50,18 +50,18 @@ public class MIPsExporter extends AbstractDataExporter {
 
     @Override
     public void runExport() {
-        List<String> allPublishedNames = neuronMetadataDao.findAllNeuronAttributeValues(
-                "publishedName",
-                        new NeuronSelector()
-                                .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
-                                .addLibraries(dataSourceParam.getLibraries())
-                                .addTags(dataSourceParam.getTags())
-                                .addNames(dataSourceParam.getNames())
-                                .withValidPubishingName());
-        allPublishedNames.sort(Comparator.naturalOrder());
-        int from = dataSourceParam.hasOffset() ? Math.min((int) dataSourceParam.getOffset(), allPublishedNames.size()) : 0;
-        int to = dataSourceParam.hasSize() ? from + dataSourceParam.getSize() : allPublishedNames.size();
-        List<String> publishedNames = allPublishedNames.subList(from, Math.min(allPublishedNames.size(), to));
+        List<String> publishedNames = neuronMetadataDao.findDistinctNeuronAttributeValues(
+                Collections.singletonList("publishedName"),
+                new NeuronSelector()
+                        .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
+                        .addLibraries(dataSourceParam.getLibraries())
+                        .addTags(dataSourceParam.getTags())
+                        .addNames(dataSourceParam.getNames())
+                        .withValidPubishingName(),
+                new PagedRequest()
+                        .setFirstPageOffset(dataSourceParam.getOffset())
+                        .setPageSize(dataSourceParam.getSize()))
+                .getResultList().stream().map(n -> (String) n.get("publishedName")).collect(Collectors.toList());
         Consumer<AbstractNeuronMetadata> updateNeuronMethod = getUpdateMethod();
         ItemsHandling.partitionCollection(publishedNames, processingPartitionSize).entrySet().stream().parallel()
                 .forEach(indexedPartition -> {

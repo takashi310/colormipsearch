@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
@@ -12,7 +14,6 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.junit.After;
 import org.junit.Before;
@@ -167,6 +168,24 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         AbstractNeuronEntity persistedEmNeuron = persistedEmNeurons.getResultList().get(0);
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
+    }
+
+    @Test
+    public void findDistinctNeurons() {
+        String testLibrary = "flyem";
+        EMNeuronEntity testEmNeuron = createTestNeuron(
+                EMNeuronEntity::new,
+                testLibrary,
+                "123445",
+                "mip123");
+        int nNeurons = 3;
+        for (int i = 0; i < nNeurons; i++) testDao.save(testEmNeuron.duplicate());
+
+        PagedResult<Map<String, Object>> distinctNeurons = testDao.findDistinctNeuronAttributeValues(
+                Collections.singletonList("mipId"),
+                new NeuronSelector().addLibrary(testLibrary).setNeuronClassname(EMNeuronEntity.class.getName()),
+                new PagedRequest());
+        assertEquals(1, distinctNeurons.getResultList().size());
     }
 
     private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,

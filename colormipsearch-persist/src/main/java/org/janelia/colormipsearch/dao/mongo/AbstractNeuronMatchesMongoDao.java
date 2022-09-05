@@ -21,15 +21,15 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
+import org.janelia.colormipsearch.dao.EntityUtils;
+import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
-import org.janelia.colormipsearch.datarequests.PagedRequest;
-import org.janelia.colormipsearch.datarequests.PagedResult;
-import org.janelia.colormipsearch.dao.EntityUtils;
-import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
@@ -146,7 +146,8 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 offset,
                 length,
                 mongoCollection,
-                getEntityType());
+                getEntityType(),
+                true);
     }
 
     protected List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {

@@ -56,9 +56,8 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                 Collections.singletonList(maskId),
                                 scoresFilter,
                                 null, // use the tags for selecting the masks but not for selecting the matches
-                                Collections.singletonList(
-                                        new SortCriteria("normalizedScore", SortDirection.DESC)
-                                ));
+                                null // no sorting because it uses too much memory on the server
+                        );
                         LOG.info("Select best EM matches for {} out of {} matches", maskId, allMatchesForMask.size());
                         List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask =
                                 selectBestMatchPerMIPPair(allMatchesForMask);

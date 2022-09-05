@@ -1,9 +1,13 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
@@ -15,8 +19,10 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReturnDocument;
 
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
@@ -25,11 +31,12 @@ import org.janelia.colormipsearch.dao.SetFieldValueHandler;
 import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
+import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
-                                                                      implements NeuronMetadataDao<N> {
+        implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
 
     private ClientSession session;
@@ -126,7 +133,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
 
     private boolean isIdentifiable(N neuron) {
         return neuron.hasComputeFile(ComputeFileType.InputColorDepthImage)
-            && neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage);
+                && neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage);
     }
 
     @Override
@@ -139,17 +146,37 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         pageRequest.getOffset(),
                         pageRequest.getPageSize(),
                         mongoCollection,
-                        getEntityType()
+                        getEntityType(),
+                        true
                 )
         );
     }
 
-    public List<String> findAllNeuronAttributeValues(String attributeName, NeuronSelector neuronSelector) {
-        return MongoDaoHelper.distinctAttributes(
-                attributeName,
-                NeuronSelectionHelper.getNeuronFilter(null, neuronSelector),
+    @Override
+    public PagedResult<Map<String, Object>> findDistinctNeuronAttributeValues(List<String> attributeNames, NeuronSelector neuronSelector, PagedRequest pagedRequest) {
+        List<Document> selectedNeuronDocuments = MongoDaoHelper.aggregateAsList(
+                Arrays.asList(
+                        Aggregates.match(NeuronSelectionHelper.getNeuronFilter(null, neuronSelector)),
+                        Aggregates.group(
+                                MongoDaoHelper.distinctAttributesExpr(attributeNames),
+                                attributeNames.stream().map(MongoDaoHelper::firstDocument).collect(Collectors.toList())
+                        ),
+                        Aggregates.project(Projections.fields(
+                                Stream.concat(
+                                        Stream.of(Projections.excludeId()),
+                                        attributeNames.stream().map(Projections::include)
+                                ).collect(Collectors.toList())
+                        ))
+                ),
+                MongoDaoHelper.createBsonSortCriteria(
+                        attributeNames.stream().map(SortCriteria::new).collect(Collectors.toList())),
+                pagedRequest.getOffset(),
+                pagedRequest.getPageSize(),
                 mongoCollection,
-                String.class);
+                Document.class,
+                true
+        );
+        return new PagedResult<>(pagedRequest, new ArrayList<>(selectedNeuronDocuments));
     }
 
     private List<Bson> createQueryPipeline(Bson matchFilter) {

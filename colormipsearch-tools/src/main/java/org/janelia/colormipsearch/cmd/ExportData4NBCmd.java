@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -16,14 +15,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
-import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
-import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
-import org.janelia.colormipsearch.dao.cached.CachedPublishedImageDao;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -165,7 +163,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         : mapper.writerWithDefaultPrettyPrinter());
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(
-                        new CachedPublishedImageDao(daosProvider.getPublishedImageDao(), cacheSizeSupplier.get()),
+                        daosProvider.getPublishedImageDao(),
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,
@@ -188,7 +186,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
-                                daosProvider.getCDMatchesDao()
+                                daosProvider.getCDMatchesDao(),
+                                "mipId"
                         ),
                         itemsWriter,
                         args.processingPartitionSize
@@ -202,7 +201,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
-                                daosProvider.getCDMatchesDao()
+                                daosProvider.getCDMatchesDao(),
+                                "mipId"
                         ),
                         itemsWriter,
                         args.processingPartitionSize
@@ -216,7 +216,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.getOutputResultsDir(),
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
-                                daosProvider.getPPPMatchesDao()
+                                daosProvider.getPPPMatchesDao(),
+                                "mipId"
                         ),
                         itemsWriter,
                         args.processingPartitionSize
