@@ -108,7 +108,7 @@ public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
                         i -> ImmutablePair.of(i.getAlignmentSpace(), i.getObjective()),
                         Collectors.toList()
                 ));
-        
+
         testImagesByAlignmentSpaceAndObjective.forEach((asAndObjective, testImagesSubset) -> {
             Set<String> testSampleRefs = testImagesSubset.stream().map(PublishedImage::getSampleRef).collect(Collectors.toSet());
             Map<String, List<PublishedImage>> foundImages = publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(asAndObjective.getLeft(), testSampleRefs, asAndObjective.getRight());
