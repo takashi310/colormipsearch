@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractMatchedTarget<T> {
     private String sourceLmName;
+    private String sourceObjective;
     private String sourceLmLibrary;
     private Double rank;
     private Double coverageScore;
@@ -45,6 +46,15 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
 
     public void setSourceLmName(String sourceLmName) {
         this.sourceLmName = sourceLmName;
+    }
+
+    @JsonIgnore
+    public String getSourceObjective() {
+        return sourceObjective;
+    }
+
+    public void setSourceObjective(String sourceObjective) {
+        this.sourceObjective = sourceObjective;
     }
 
     @JsonIgnore

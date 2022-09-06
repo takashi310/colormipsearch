@@ -3,7 +3,9 @@ package org.janelia.colormipsearch.cmd.dataexport;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,6 +25,7 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
@@ -61,7 +64,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                 .forEach(indexedPartition -> {
                     indexedPartition.getValue().forEach(maskId -> {
                         LOG.info("Read PPP matches for {}", maskId);
-                        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = neuronMatchesReader.readMatchesForMasks(
+                        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
                                 dataSourceParam.getAlignmentSpace(),
                                 dataSourceParam.getLibraries(),
                                 Collections.singletonList(maskId),
@@ -70,7 +73,12 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 Collections.singletonList(
                                         new SortCriteria("rank", SortDirection.ASC)
                                 ));
-                        LOG.info("Write PPP matches for {}", maskId);
+                        LOG.info("Filter out PPP matches without any images for {}", maskId);
+                        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = allMatchesForMask.stream()
+                                .filter(PPPMatchEntity::hasSourceImageFiles)
+                                .collect(Collectors.toList());
+                        LOG.info("Write {} PPP matches for {} out of {}",
+                                matchesForMask.size(), maskId, allMatchesForMask.size());
                         writeResults(matchesForMask);
                     });
                 });
@@ -82,18 +90,18 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         List<Function<EMNeuronMetadata, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getPublishedName
         );
+        // retrieve source data
+        jacsDataHelper.retrieveCDMIPs(matches.stream()
+                .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet()));
+        jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
         // order ascending by rank
         Comparator<PPPMatchedTarget<LMNeuronMetadata>> ordering = Comparator.comparingDouble(PPPMatchedTarget::getRank);
         List<ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>>> matchesByMask = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);
-        // retrieve source data
-        jacsDataHelper.retrieveCDMIPs(matches.stream()
-                .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toSet()));
-        jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::getSourceLmName).collect(Collectors.toSet()));
         // update grouped matches
         matchesByMask.forEach(this::updateMatchedResultsMetadata);
         // write results by mask (EM) published name
@@ -103,13 +111,14 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     private void
     updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches) {
         updateEMNeuron(resultMatches.getKey());
-        resultMatches.getItems().forEach(this::updateTargetFromLMSample);
+        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m));
     }
 
-    private void updateTargetFromLMSample(PPPMatchedTarget<LMNeuronMetadata> pppMatch) {
+    private void updateTargetFromLMSample(EMNeuronMetadata emNeuron, PPPMatchedTarget<LMNeuronMetadata> pppMatch) {
         LMNeuronMetadata lmNeuron;
         if (pppMatch.getTargetImage() == null) {
             lmNeuron = new LMNeuronMetadata();
+            lmNeuron.setAlignmentSpace(emNeuron.getAlignmentSpace());
             pppMatch.setTargetImage(lmNeuron);
         } else {
             lmNeuron = pppMatch.getTargetImage();
@@ -117,11 +126,23 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
         CDMIPSample sample = jacsDataHelper.getLMSample(pppMatch.getSourceLmName());
         if (sample != null) {
-            lmNeuron.setPublishedName(sample.line);
+            lmNeuron.setPublishedName(sample.lmLineName());
             lmNeuron.setSlideCode(sample.slideCode);
             lmNeuron.setGender(Gender.fromVal(sample.gender));
             lmNeuron.setDriver(sample.driver);
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
+            // collect updated match files
+            Map<FileType, String> updatedMatchFiles = new LinkedHashMap<>();
+            pppMatch.getMatchFiles()
+                    .forEach((ft, fn) -> {
+                        String updatedFN = fn.replace("{lmLine}", sample.lmLineName())
+                                .replace("{lmSlideCode}", sample.slideCode);
+                        updatedMatchFiles.put(ft, updatedFN);
+                    });
+            // then replace them just to be safe that we are not updating what we're reading
+            updatedMatchFiles.forEach(pppMatch::setMatchFile);
+        } else {
+            LOG.info("No sample found for {}", pppMatch.getSourceLmName());
         }
     }
 }

@@ -17,15 +17,21 @@ public class CDMIPSample {
         return lmLines.stream().collect(Collectors.toMap(s -> "Sample#" + s.id, s -> s));
     }
 
-    public static Map<String, CDMIPSample> indexByPublishedName(List<CDMIPSample> lmLines) {
-        return lmLines.stream()
-                .filter(s -> StringUtils.isNotBlank(s.publishingName))
-                .collect(Collectors.toMap(s -> s.publishingName, s -> s));
-    }
-
     public static Map<String, CDMIPSample> indexBySampleName(List<CDMIPSample> lmLines) {
+        // index LM samples
+        // Note: it is possible to have multiple samples with the same name so resolve the conflict
+        // by picking the first one found that is sageSynced
         return lmLines.stream()
-                .collect(Collectors.toMap(s -> s.name, s -> s));
+                .collect(Collectors.toMap(
+                        s -> s.name,
+                        s -> s,
+                        (s1, s2) -> {
+                            if (s1.sageSynced != null && s1.sageSynced) {
+                                return s1;
+                            } else {
+                                return s2;
+                            }
+                        })); // in case of conflict pick the first one with sageSynced
     }
 
     @JsonProperty("_id")
@@ -55,6 +61,8 @@ public class CDMIPSample {
     @JsonProperty
     public Boolean publishedToStaging;
     @JsonProperty
+    public Boolean sageSynced;
+    @JsonProperty
     public String publishedExternally;
     @JsonProperty
     public String crossBarcode;
@@ -66,6 +74,10 @@ public class CDMIPSample {
     public String releaseLabel;
     @JsonProperty
     public List<String> publishedObjectives;
+
+    public String lmLineName() {
+        return publishingName != null ? publishingName : line;
+    }
 
     @Override
     public String toString() {

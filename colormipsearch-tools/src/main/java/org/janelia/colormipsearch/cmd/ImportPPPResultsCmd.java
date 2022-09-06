@@ -270,8 +270,10 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private InputPPPMatch fillInNeuronMetadata(PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch) {
         InputPPPMatch inputPPPMatch = new InputPPPMatch(pppMatch);
+        // from EM we only need the neuron body ID so that
+        // we can retrieve currently registered neurons in order to set the mask image reference
         updateEMMetadata(pppMatch.getSourceEmName(), inputPPPMatch);
-        updateLMMetadata(pppMatch.getSourceLmName(), inputPPPMatch);
+        // there's no need to update anything from LM data - the only thing that we need from there is the source LM name
         return inputPPPMatch;
     }
 
@@ -280,19 +282,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
             inputPPPMatch.setEmNeuronName(matcher.group(1));
-            inputPPPMatch.setEmNeuronType(matcher.group(2));
-        }
-    }
-
-    private void updateLMMetadata(String lmFullName, InputPPPMatch inputPPPMatch) {
-        Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = lmRegExPattern.matcher(lmFullName);
-        if (matcher.find()) {
-            inputPPPMatch.setLmSampleName(matcher.group(1));
-            String objectiveCandidate = matcher.group(2);
-            if (!StringUtils.equalsIgnoreCase(args.anatomicalArea, objectiveCandidate)) {
-                inputPPPMatch.setLmObjective(objectiveCandidate);
-            }
         }
     }
 

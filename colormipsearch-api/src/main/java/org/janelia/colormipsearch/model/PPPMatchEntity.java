@@ -3,6 +3,8 @@ package org.janelia.colormipsearch.model;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.MapUtils;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
@@ -11,6 +13,13 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="pppMatches")
 public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
+
+    private static final Pattern EM_REG_EX_PATTERN = Pattern.compile("([0-9]+)-([^-]*)-(.*)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LM_REG_EX_PATTERN = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern OBJECTIVE_PATTERN = Pattern.compile("\\d+x", Pattern.CASE_INSENSITIVE);
+    private static final String DEFAULT_OBJECTIVE = "40x";
+    private static final String UNKNOWN_ALIGNMENT_SPACE = "UNKNOWN-AS";
+
     private String sourceEmName;
     private String sourceEmLibrary;
     private String sourceLmName;
@@ -137,13 +146,82 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
             AbstractNeuronMetadata n = getMatchedImage().metadata();
             m.setTargetImage(n);
         }
-        m.setSourceLmName(getSourceLmName());
-        m.setSourceLmLibrary(getSourceLmLibrary());
+        updateLMSample(m);
+        if (hasSourceImageFiles()) {
+            updateMatchFiles(m);
+        }
         m.setMirrored(isMirrored());
         m.setRank(getRank());
         m.setCoverageScore(getCoverageScore());
         m.setAggregateCoverage(getAggregateCoverage());
         return m;
+    }
+
+    public String extractLMSampleName() {
+        Matcher matcher = LM_REG_EX_PATTERN.matcher(getSourceLmName());
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return getSourceLmName();
+        }
+    }
+
+    private String extractEMBodyID() {
+        Matcher matcher = EM_REG_EX_PATTERN.matcher(getSourceEmName());
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return getSourceEmName();
+        }
+    }
+
+    private void updateMatchFiles(PPPMatchedTarget<AbstractNeuronMetadata> m) {
+        sourceImageFiles.forEach((k, fn) -> m.setMatchFile(
+                k.getFileType(),
+                buildImageRelativePath(
+                        getAlignmentSpace(),
+                        extractEMBodyID(),
+                        m.getSourceObjective(),
+                        k.getFileType().getDisplayPPPSuffix())
+        ));
+    }
+
+    private String getAlignmentSpace() {
+        if (getMaskImage() != null && getMaskImage().hasAlignmentSpace()) {
+            return getMaskImage().getAlignmentSpace();
+        } else if (getMatchedImage() != null && getMatchedImage().hasAlignmentSpace()) {
+            return getMatchedImage().getAlignmentSpace();
+        } else {
+            return UNKNOWN_ALIGNMENT_SPACE;
+        }
+    }
+
+    private String buildImageRelativePath(String alignmentSpace,
+                                          String emNeuronName,
+                                          String objective,
+                                          String suffix) {
+        return emNeuronName.substring(0, 2) + '/' +
+                emNeuronName + '/' +
+                emNeuronName + '-' +
+                "{lmLine}" + "-" + // placeholder for LM line
+                "{lmSlideCode}" + "-" + // placeholder for LM slide code
+                objective + "-" +
+                alignmentSpace + '-' +
+                suffix;
+    }
+
+    private void updateLMSample(PPPMatchedTarget<AbstractNeuronMetadata> m) {
+        m.setSourceLmName(getSourceLmName());
+        m.setSourceObjective(DEFAULT_OBJECTIVE);
+        m.setSourceLmLibrary(getSourceLmLibrary());
+        Matcher matcher = LM_REG_EX_PATTERN.matcher(getSourceLmName());
+        if (matcher.find()) {
+            m.setSourceLmName(matcher.group(1));
+            String objectiveCandidate = matcher.group(2);
+            if (OBJECTIVE_PATTERN.matcher(objectiveCandidate).find()) {
+                m.setSourceObjective(objectiveCandidate);
+            }
+        }
     }
 
 }

@@ -62,7 +62,7 @@ public abstract class AbstractDataExporter implements DataExporter {
         } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
                 StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
             if (relativesUrlsToComponent >= 0) {
-                URI uri = URI.create(aUrl);
+                URI uri = URI.create(aUrl.replace(' ', '+'));
                 Path uriPath = Paths.get(uri.getPath());
                 return uriPath.subpath(relativesUrlsToComponent,  uriPath.getNameCount()).toString();
             } else {

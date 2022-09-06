@@ -60,6 +60,10 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.alignmentSpace = alignmentSpace;
     }
 
+    public boolean hasAlignmentSpace() {
+        return StringUtils.isNotBlank(alignmentSpace);
+    }
+
     public String getLibraryName() {
         return libraryName;
     }
