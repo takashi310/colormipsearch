@@ -45,10 +45,11 @@ public class MatchResultsGrouping {
                         AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
                         // the target is set based on the original target
                         matchResult.setTargetImage((T) targetImage.metadata());
+                        // only set match files if the target is present
                         matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                        // in the match result input file comes from the mask and matched file comes from the target
+                        matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     }
-                    // in the match result input file comes from the mask and matched file comes from the target
-                    matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     return new GroupingCriteria<R1, M>(
                             matchResult,
                             m -> (M) maskImage.metadata(),

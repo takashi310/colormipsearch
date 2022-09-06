@@ -67,8 +67,6 @@ public class CDMIPSample {
     @JsonProperty
     public String crossBarcode;
     @JsonProperty
-    public String sampleRef;
-    @JsonProperty
     public String status;
     @JsonProperty
     public String releaseLabel;
@@ -77,6 +75,10 @@ public class CDMIPSample {
 
     public String lmLineName() {
         return publishingName != null ? publishingName : line;
+    }
+
+    public String sampleRef() {
+        return "Sample#" + id;
     }
 
     @Override

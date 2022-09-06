@@ -46,5 +46,4 @@ public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractM
     public void setGradientAreaGap(Long gradientAreaGap) {
         this.gradientAreaGap = gradientAreaGap;
     }
-
 }

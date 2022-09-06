@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,6 +30,7 @@ import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
+import org.janelia.colormipsearch.model.PublishedImage;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
@@ -90,31 +92,40 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         List<Function<EMNeuronMetadata, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getPublishedName
         );
-        // retrieve source data
-        jacsDataHelper.retrieveCDMIPs(matches.stream()
-                .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toSet()));
-        jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
         // order ascending by rank
         Comparator<PPPMatchedTarget<LMNeuronMetadata>> ordering = Comparator.comparingDouble(PPPMatchedTarget::getRank);
         List<ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>>> matchesByMask = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);
+
+        // retrieve source data
+        jacsDataHelper.retrieveCDMIPs(matches.stream()
+                .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet()));
+        Map<String, CDMIPSample> retrievedSamples = jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
+        Map<String, List<PublishedImage>> lmPublishedImages = jacsDataHelper.retrievePublishedImages(
+                null,
+                retrievedSamples.values().stream().map(CDMIPSample::sampleRef).collect(Collectors.toSet()));
+
         // update grouped matches
-        matchesByMask.forEach(this::updateMatchedResultsMetadata);
+        matchesByMask.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages));
         // write results by mask (EM) published name
         resultMatchesWriter.writeGroupedItemsList(matchesByMask, AbstractNeuronMetadata::getPublishedName, outputDir);
     }
 
     private void
-    updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches) {
+    updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches,
+                                 Map<String, List<PublishedImage>> lmPublishedImages) {
         updateEMNeuron(resultMatches.getKey());
-        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m));
+        resultMatches.getKey().updateAllNeuronFiles(this::relativizeURL);
+        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages));
     }
 
-    private void updateTargetFromLMSample(EMNeuronMetadata emNeuron, PPPMatchedTarget<LMNeuronMetadata> pppMatch) {
+    private void updateTargetFromLMSample(EMNeuronMetadata emNeuron,
+                                          PPPMatchedTarget<LMNeuronMetadata> pppMatch,
+                                          Map<String, List<PublishedImage>> lmPublishedImages) {
         LMNeuronMetadata lmNeuron;
         if (pppMatch.getTargetImage() == null) {
             lmNeuron = new LMNeuronMetadata();
@@ -131,6 +142,12 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setGender(Gender.fromVal(sample.gender));
             lmNeuron.setDriver(sample.driver);
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
+            lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack,
+                    findPublishedLM3DStack(
+                            sample.sampleRef(),
+                            lmNeuron.getAlignmentSpace(),
+                            pppMatch.getSourceObjective(),
+                            lmPublishedImages));
             // collect updated match files
             Map<FileType, String> updatedMatchFiles = new LinkedHashMap<>();
             pppMatch.getMatchFiles()
@@ -140,9 +157,26 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                         updatedMatchFiles.put(ft, updatedFN);
                     });
             // then replace them just to be safe that we are not updating what we're reading
-            updatedMatchFiles.forEach(pppMatch::setMatchFile);
+            updatedMatchFiles.forEach((ft, fn) -> pppMatch.setMatchFile(ft, relativizeURL(fn)));
         } else {
             LOG.info("No sample found for {}", pppMatch.getSourceLmName());
+        }
+    }
+
+    private String findPublishedLM3DStack(String sampleRef,
+                                          String alignmentSpace,
+                                          String objective,
+                                          Map<String, List<PublishedImage>> lmPublishedImages) {
+        if (lmPublishedImages.containsKey(sampleRef)) {
+            return lmPublishedImages.get(sampleRef).stream()
+                    .filter(pi -> pi.getAlignmentSpace().equals(alignmentSpace))
+                    .filter(pi -> pi.getObjective().equals(objective))
+                    .filter(pi -> pi.hasFile("VisuallyLosslessStack"))
+                    .findFirst()
+                    .map(pi -> pi.getFile("VisuallyLosslessStack"))
+                    .orElse(null);
+        } else {
+            return null;
         }
     }
 }

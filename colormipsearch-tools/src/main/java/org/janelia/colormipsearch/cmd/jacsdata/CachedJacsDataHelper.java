@@ -1,11 +1,14 @@
 package org.janelia.colormipsearch.cmd.jacsdata;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.janelia.colormipsearch.model.PublishedImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +44,20 @@ public class CachedJacsDataHelper {
     }
 
 
-    public void retrieveLMSamples(Set<String> lmSampleNames) {
+    public Map<String, CDMIPSample> retrieveLMSamples(Set<String> lmSampleNames) {
         if (CollectionUtils.isNotEmpty(lmSampleNames)) {
             Set<String> toRetrieve = lmSampleNames.stream().filter(n -> !LM_SAMPLES_CACHE.containsKey(n)).collect(Collectors.toSet());
             LOG.info("Retrieve {} samples to populate missing information", toRetrieve.size());
-            LM_SAMPLES_CACHE.putAll(jacsDataGetter.retrieveLMSamplesByName(toRetrieve));
+            Map<String, CDMIPSample> retrievedSamples = jacsDataGetter.retrieveLMSamplesByName(toRetrieve);
+            LM_SAMPLES_CACHE.putAll(retrievedSamples);
+            return retrievedSamples;
+        } else {
+            return Collections.emptyMap();
         }
+    }
+
+    public Map<String, List<PublishedImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
+        return jacsDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
     }
 
     public CDMIPSample getLMSample(String lmName) {

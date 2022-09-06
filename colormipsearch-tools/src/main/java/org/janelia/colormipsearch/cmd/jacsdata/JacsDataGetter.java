@@ -15,8 +15,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.HttpHelper;
 import org.janelia.colormipsearch.dao.PublishedImageDao;
 import org.janelia.colormipsearch.model.PublishedImage;
@@ -195,6 +193,14 @@ public class JacsDataGetter {
                     })
                     .collect(Collectors.toMap(n -> n.id, n -> n));
         }
+    }
+
+    public Map<String, List<PublishedImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
+        return publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(
+                alignmentSpace,
+                sampleRefs,
+                null
+        );
     }
 
     private List<ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {
