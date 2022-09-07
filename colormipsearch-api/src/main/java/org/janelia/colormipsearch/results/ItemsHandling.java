@@ -76,41 +76,6 @@ public class ItemsHandling {
                 .collect(Collectors.groupingBy(docId -> index.getAndIncrement() / partitionSize));
     }
 
-    public static <T> void processPartitionStream(Stream<T> stream,
-                                                  int partitionSize,
-                                                  Consumer<List<T>> partitionHandler,
-                                                  boolean parallel) {
-        if (partitionSize == 1) {
-            // trivial cause because the other one gets messed up
-            // it's here only for completion purpose
-            stream.map(Collections::singletonList).forEach(partitionHandler);
-        } else {
-            AtomicReference<List<T>> currentPartitionHolder = new AtomicReference<>(Collections.emptyList());
-            Stream<List<T>> streamOfPartitions = stream
-                    .flatMap(e -> {
-                        List<T> l = currentPartitionHolder.accumulateAndGet(Collections.singletonList(e), (l1, l2) -> {
-                            if (l1.size() == partitionSize) {
-                                return l2;
-                            } else {
-                                List<T> updatedList = new ArrayList<>(l1);
-                                updatedList.addAll(l2);
-                                return updatedList;
-                            }
-                        });
-                        return l.size() == partitionSize ? Stream.of(l) : Stream.empty();
-                    });
-            if (parallel) {
-                streamOfPartitions.parallel().forEach(partitionHandler);
-            } else {
-                streamOfPartitions.sequential().forEach(partitionHandler);
-            }
-            List<T> leftContent = currentPartitionHolder.get();
-            if (leftContent.size() > 0 && leftContent.size() < partitionSize) {
-                partitionHandler.accept(leftContent);
-            }
-        }
-    }
-
     public static <T> List<ScoredEntry<List<T>>> selectTopRankedElements(List<T> l,
                                                                          Function<T, String> groupingCriteria,
                                                                          Function<T, Number> scoreExtractor,

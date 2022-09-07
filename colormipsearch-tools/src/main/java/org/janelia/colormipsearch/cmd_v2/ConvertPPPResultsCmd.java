@@ -49,9 +49,9 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.Utils;
-import org.janelia.colormipsearch.api_v2.pppsearch.RawPPPMatchesReader;
 import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatch;
 import org.janelia.colormipsearch.api_v2.pppsearch.EmPPPMatches;
+import org.janelia.colormipsearch.api_v2.pppsearch.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,9 +161,9 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
 
     private void convertPPPResults(ConvertPPPResultsArgs args) {
         long startTime = System.currentTimeMillis();
-        Stream<Path> filesToProcess;
+        List<Path> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = args.resultsFiles.stream().map(Paths::get);
+            filesToProcess = args.resultsFiles.stream().map(Paths::get).collect(Collectors.toList());
         } else {
             Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
             Stream<Path> dirsToProcess;
@@ -173,13 +173,11 @@ public class ConvertPPPResultsCmd extends AbstractCmd {
             } else {
                 dirsToProcess = allDirsWithPPPResults.skip(offset);
             }
-            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
+            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream()).collect(Collectors.toList());
         }
-        ItemsHandling.processPartitionStream(
-                filesToProcess,
-                args.processingPartitionSize,
-                this::processPPPFiles,
-                true);
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize)
+                        .entrySet().stream().parallel()
+                        .forEach(indexedPartition -> this.processPPPFiles(indexedPartition.getValue()));
         LOG.info("Processed all files in {}s", (System.currentTimeMillis()-startTime)/1000.);
     }
 

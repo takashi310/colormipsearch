@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch.dataio;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
@@ -23,21 +25,24 @@ public class PartitionedNeuronMatchesWriter<R extends AbstractMatchEntity<? exte
 
     @Override
     public void write(List<R> matches) {
-        ItemsHandling.processPartitionStream(
-                matches.stream(),
-                partitionSize,
-                writer::write,
-                parallel
-        );
+        Stream<Map.Entry<Integer, List<R>>> partitionsStream;
+        if (parallel) {
+            partitionsStream = ItemsHandling.partitionCollection(matches, partitionSize).entrySet().stream().parallel();
+        } else {
+            partitionsStream = ItemsHandling.partitionCollection(matches, partitionSize).entrySet().stream();
+        }
+        partitionsStream.forEach(e -> writer.write(e.getValue()));
     }
 
     @Override
     public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
-        ItemsHandling.processPartitionStream(
-                matches.stream(),
-                partitionSize,
-                partition -> writer.writeUpdates(partition, fieldSelectors),
-                parallel
-        );
+        Stream<Map.Entry<Integer, List<R>>> partitionsStream;
+        if (parallel) {
+            partitionsStream = ItemsHandling.partitionCollection(matches, partitionSize).entrySet().stream().parallel();
+        } else {
+            partitionsStream = ItemsHandling.partitionCollection(matches, partitionSize).entrySet().stream();
+        }
+        partitionsStream.forEach(e -> writer.writeUpdates(e.getValue(), fieldSelectors));
     }
+
 }
