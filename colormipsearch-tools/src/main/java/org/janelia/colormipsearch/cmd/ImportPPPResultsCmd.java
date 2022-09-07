@@ -154,11 +154,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
-        long start = System.currentTimeMillis();
         CDMIPsReader cdmiPsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
         NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.forEach(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader, pppMatchesWriter));
-        LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 
     private Stream<Path> streamDirsWithPPPResults(Path startPath) {
@@ -260,7 +258,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         LOG.info("Read {} PPP matches from {} in {}s", pppMatches.size(), pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
         writePPPMatches(pppMatches, pppMatchesWriter);
         LOG.info("Persisted {} PPP matches from {}", pppMatches.size(), pppResultsFile);
-        LOG.info("Finished importing PPP matches from {} in {}s", pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
+        LOG.info("Finished importing {} PPP matches from {} in {}s", pppMatches.size(), pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
         return pppMatches;
     }
 
