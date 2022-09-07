@@ -125,9 +125,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
     private void importPPPResults() {
         long startTime = System.currentTimeMillis();
-        Stream<Path> filesToProcess;
+        List<Path> filesToProcess;
         if (CollectionUtils.isNotEmpty(args.resultsFiles)) {
-            filesToProcess = args.resultsFiles.stream().map(Paths::get);
+            filesToProcess = args.resultsFiles.stream().map(Paths::get).collect(Collectors.toList());
         } else {
             Stream<Path> allDirsWithPPPResults = streamDirsWithPPPResults(args.resultsDir.getInputPath());
             Stream<Path> dirsToProcess;
@@ -137,28 +137,27 @@ class ImportPPPResultsCmd extends AbstractCmd {
             } else {
                 dirsToProcess = allDirsWithPPPResults.skip(offset);
             }
-            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream());
+            filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream()).collect(Collectors.toList());
         }
-        ItemsHandling.processPartitionStream(
-                filesToProcess,
-                args.processingPartitionSize,
-                this::processPPPFiles,
-                true);
+        ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize)
+                        .entrySet().stream().parallel()
+                        .forEach(indexedPartition -> {
+                            long startPartition = System.currentTimeMillis();
+                            LOG.info("Start processing {} files from partition {}", indexedPartition.getValue().size(), indexedPartition.getKey());
+                            this.processPPPFiles(indexedPartition.getValue());
+                            LOG.info("Finished processing {} files from partition {} in {}s",
+                                    indexedPartition.getValue().size(),
+                                    indexedPartition.getKey(),
+                                    (System.currentTimeMillis()-startPartition) / 1000.);
+                        });
         LOG.info("Processed all files in {}s", (System.currentTimeMillis() - startTime) / 1000.);
     }
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
         long start = System.currentTimeMillis();
         CDMIPsReader cdmiPsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
-
         NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
-        listOfPPPResults.stream()
-                .peek(fp -> MDC.put("PPPFile", fp.getFileName().toString()))
-                .map(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader))
-                .forEach(inputPPPMatches -> {
-                    writePPPMatches(inputPPPMatches, pppMatchesWriter);
-                    MDC.remove("PPPFile");
-                });
+        listOfPPPResults.forEach(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader, pppMatchesWriter));
         LOG.info("Processed {} PPP results in {}s", listOfPPPResults.size(), (System.currentTimeMillis() - start) / 1000.);
     }
 
@@ -225,22 +224,29 @@ class ImportPPPResultsCmd extends AbstractCmd {
      * Import PPP results from a list of file matches that are all for the same neuron.
      *
      * @param pppResultsFile path of PPP file to import
+     * @param cdmipsReader color depth MIPs reader
+     * @param pppMatchesWriter PPP matches writer
+     *
      * @return a list of PPP matches imported from the given file
      */
-    private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile, CDMIPsReader cdmipsReader) {
+    private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile,
+                                                                                           CDMIPsReader cdmipsReader,
+                                                                                           NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
+        LOG.info("Start processing {}", pppResultsFile);
+        long start = System.currentTimeMillis();
+        // Read PPP matches from the source PPP results file
         List<InputPPPMatch> inputPPPMatches = rawPPPMatchesReader.readPPPMatches(
                         pppResultsFile.toString(), args.onlyBestSkeletonMatches, args.includeRawSkeletonMatches)
                 .map(this::fillInNeuronMetadata)
                 .collect(Collectors.toList());
-
-        // extract neuron names from the imported PPP match
+        // extract neuron names from the PPP matches to be imported
         Set<String> emNeuronNames = inputPPPMatches.stream()
                 .map(InputPPPMatch::getEmNeuronName)
                 .collect(Collectors.toSet());
-
+        // retrieve EM neurons info in order to create the proper mask reference for the PPP match
         Map<String, EMNeuronEntity> registeredEMNeurons = retrieveEMNeurons(cdmipsReader, emNeuronNames);
-
-        return inputPPPMatches.stream()
+        // fill in the rest of the information
+        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches = inputPPPMatches.stream()
                 .map(inputPPPMatch -> {
                     PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
                     if (pppMatch.getRank() < 500) {
@@ -251,6 +257,11 @@ class ImportPPPResultsCmd extends AbstractCmd {
                     return updatePPPMatchData(inputPPPMatch);
                 })
                 .collect(Collectors.toList());
+        LOG.info("Read {} PPP matches from {} in {}s", pppMatches.size(), pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
+        writePPPMatches(pppMatches, pppMatchesWriter);
+        LOG.info("Persisted {} PPP matches from {}", pppMatches.size(), pppResultsFile);
+        LOG.info("Finished importing PPP matches from {} in {}s", pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
+        return pppMatches;
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<PPPMatchEntity<M, T>>
