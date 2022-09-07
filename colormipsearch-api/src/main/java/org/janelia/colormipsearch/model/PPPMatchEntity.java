@@ -146,10 +146,8 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
             AbstractNeuronMetadata n = getMatchedImage().metadata();
             m.setTargetImage(n);
         }
-        updateLMSample(m);
-        if (hasSourceImageFiles()) {
-            updateMatchFiles(m);
-        }
+        updateLMSampleInfo(m);
+        generateMatchFiles(m);
         m.setMirrored(isMirrored());
         m.setRank(getRank());
         m.setCoverageScore(getCoverageScore());
@@ -175,15 +173,20 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         }
     }
 
-    private void updateMatchFiles(PPPMatchedTarget<AbstractNeuronMetadata> m) {
-        sourceImageFiles.forEach((k, fn) -> m.setMatchFile(
-                k.getFileType(),
-                buildImageRelativePath(
-                        getAlignmentSpace(),
-                        extractEMBodyID(),
-                        m.getSourceObjective(),
-                        k.getFileType().getDisplayPPPSuffix())
-        ));
+    private void generateMatchFiles(PPPMatchedTarget<AbstractNeuronMetadata> m) {
+        if (hasSourceImageFiles()) {
+            sourceImageFiles.keySet().stream()
+                    .flatMap(k -> k.getFileTypes().stream())
+                    .forEach(ft -> m.setMatchFile(
+                            ft,
+                            buildImageRelativePath(
+                                    getAlignmentSpace(),
+                                    extractEMBodyID(),
+                                    m.getSourceObjective(),
+                                    ft.getDisplayPPPSuffix()
+                            )
+                    ));
+        }
     }
 
     private String getAlignmentSpace() {
@@ -210,7 +213,7 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
                 suffix;
     }
 
-    private void updateLMSample(PPPMatchedTarget<AbstractNeuronMetadata> m) {
+    private void updateLMSampleInfo(PPPMatchedTarget<AbstractNeuronMetadata> m) {
         m.setSourceLmName(getSourceLmName());
         m.setSourceObjective(DEFAULT_OBJECTIVE);
         m.setSourceLmLibrary(getSourceLmLibrary());
