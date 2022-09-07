@@ -10,7 +10,7 @@ public enum PPPScreenshotType {
     CH(FileType.ColorDepthMipBest, FileType.ColorDepthMipBestThumbnail), // for a CH file we generate a reference to the MIP and a reference to the thumbnail
     CH_SKEL(FileType.ColorDepthMipSkel);
 
-    private List<FileType> fileTypes;
+    private final List<FileType> fileTypes;
 
     PPPScreenshotType(FileType... fileType) {
         this.fileTypes = Arrays.asList(fileType);
