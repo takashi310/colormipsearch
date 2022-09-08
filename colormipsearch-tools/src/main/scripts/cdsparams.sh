@@ -1,21 +1,15 @@
-WORKING_DIR=/nrs/scicompsoft/goinac/em-lm-cds/work/em_1_1-fl-run
-INPUT_DIR=/groups/scicompsoft/informatics/data/release_libraries
-MASK_NAME=flyem_hemibrain_1_1_with_fl
-LIBRARY_NAME=all_flylight_split_gal4
-GA_PRECOMPUTED_FILES_LOCATION=/nrs/scicompsoft/otsuna/SS_vol
+MASKS_LIBRARY=flyem_hemibrain_1_2_1
+TARGETS_LIBRARY=flylight_gen1_mcfo_published
 
-# MASKS_FILES and LIBRARIES_FILES are - comma or space separated - json files
-# created with the "createColorDepthSearchJSONInput" command
-export MASKS_FILES="${INPUT_DIR}/flyem_hemibrain_1_1_with_fl.json"
-export LIBRARIES_FILES="${INPUT_DIR}/flylight_split_gal4_published.json ${INPUT_DIR}/flylight_split_gal4_drivers_missing_from_published.json"
-
-# to get the value for TOTAL_MASKS we can simply run `grep imageURL "$WORKING_DIR/mips/flyem_hemibrain_with_fl.json | wc`
+# TOTAL_MASKS is the total number of mask images used for color depth search,
+# e.g. for EM is the number of MIPs for the EM neurons plus the number of FL neurons if some neurons require an FL (flip) transformation
 export TOTAL_MASKS=44593
-# to get the value for TOTAL_LIBRARIES we can simply run `grep imageURL "$WORKING_DIR/mips/flylight_gen1_mcfo_published_gamma1_4.json | wc`
-export TOTAL_LIBRARIES=7391
+# TOTAL_TARGETS is the total number of target images,
+# e.g. for LM this is the total number of segmented MIPs used for color depth search
+export TOTAL_TARGETS=7391
 # the selection of the number of masks or libraries per job is empirical based on the size of the libraries and/or masks
-export MASKS_PER_JOB=7391
-export LIBRARIES_PER_JOB=44593
+export MASKS_PER_JOB=44593
+export TARGETS_PER_JOB=7391
 # this is the partition value used both for CDS and GA so it might need to be set differently for GA than it is for CDS
 # for CDS the recommended value is between 100-500
 # for GA the recommended value is between 5-50
@@ -29,18 +23,6 @@ export MEM_RESOURCE=170
 # to some other reasonable value based on the available memory
 export MIPS_CACHE_SIZE=100000
 
-CDSMATCHES_SUBDIR=cdsresults.matches
-export CDSMATCHES_RESULTS_DIR=$WORKING_DIR/${CDSMATCHES_SUBDIR}
-
-export RESULTS_SUBDIR_FOR_MASKS="${MASK_NAME}-vs-${LIBRARY_NAME}"
-export RESULTS_SUBDIR_FOR_LIBRARIES="${LIBRARY_NAME}-vs-${MASK_NAME}"
-
-CDSGA_SUBDIR=cdsresults.ga
-export CDGAS_RESULTS_DIR=${WORKING_DIR}/${CDSGA_SUBDIR}
-export CDGA_GRADIENTS_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/SSnew_05202020_gradient.zip
-export CDGA_ZGAP_LOCATION=${GA_PRECOMPUTED_FILES_LOCATION}/SSnew_05202020_RGB20px.zip
-export CDGA_ZGAP_SUFFIX=_RGB20px
-
 export LOGCONFIGFILE=
 
 # JAVA OPTS
@@ -53,7 +35,7 @@ export LOGCONFIGFILE=
 export GC_OPTS=
 
 # this only needs to change on a new release
-export CDS_JAR_VERSION="2.4"
+export CDS_JAR_VERSION="3.0.0"
 export CDS_JAR=${CDS_JAR:-target/colormipsearch-${CDS_JAR_VERSION}-jar-with-dependencies.jar}
 
 # Color depth search params
@@ -64,17 +46,16 @@ export PIX_FLUCTUATION=1
 export PIX_PCT_MATCH=1
 
 # GA params
-# TOTAL_FILES is the least number > the number of files containing matches by EM that is divisible by FILES_PER_JOB
-# the reason for that is that in bash TOTAL_FILES/FILES_PER_JOB is an integer division and if it does not divide exactly
+# TOTAL_MIP_IDS is the number of "distinct" MIP IDs containing matches by EM that is divisible by MIP_IDS_PER_JOB
+# the reason for that is that in bash TOTAL_MIP_IDS/MIP_IDS_PER_JOB is an integer division and if it does not divide exactly
 # we may not process all the files
-# so to calculate it `ls ${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS} | wc` then take the least number > the value
-# that is divisible by the selected value for FILES_PER_JOB
-export TOTAL_FILES=34800
-export START_FILE_INDEX=0
+export TOTAL_MIP_IDS=34800
+# an offset of the MIPs to be excluded from the gradient scoring process
+export START_MIP_ID_INDEX=0
 # the value depends on the CPU and memory resources available on the machine. If running on the grid requesting 20 cores
 # for split gal4 drivers we can use up to 200 files per job - for MCFO we cannot go higher than 100 since the number of MCFOs
 # is much larger
-export FILES_PER_JOB=100
+export MIP_IDS_PER_JOB=100
 
 # this specifies the number of lines to select for gradient scoring.
 export TOP_RESULTS=300

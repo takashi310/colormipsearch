@@ -7,9 +7,9 @@ source ${SCRIPT_DIR}/cdsparams.sh
 source ${CDSPARAMS}
 
 # round up the total numbers because the operations are integer divisions
-export JOBS_FOR_LIBRARIES=$((TOTAL_LIBRARIES / LIBRARIES_PER_JOB))
 export JOBS_FOR_MASKS=$((TOTAL_MASKS / MASKS_PER_JOB))
-export TOTAL_JOBS=$((JOBS_FOR_LIBRARIES * JOBS_FOR_MASKS))
+export JOBS_FOR_TARGETS=$((TOTAL_TARGETS / TARGETS_PER_JOB))
+export TOTAL_JOBS=$((JOBS_FOR_MASKS * JOBS_FOR_TARGETS))
 
 function localRun {
     if [[ $# -lt 2 ]] ; then

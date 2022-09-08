@@ -6,10 +6,7 @@ CDSPARAMS=${CDSPARAMS:-${SCRIPT_DIR}/cdsparams.sh}
 source ${SCRIPT_DIR}/cdsparams.sh
 source ${CDSPARAMS}
 
-export CDGA_INPUT_DIR=${CDSMATCHES_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS}
-export CDGA_OUTPUT_DIR=${CDGAS_RESULTS_DIR}/${RESULTS_SUBDIR_FOR_MASKS}
-
-export TOTAL_JOBS=$(((TOTAL_FILES - START_FILE_INDEX) / FILES_PER_JOB))
+export TOTAL_JOBS=$(((TOTAL_MIP_IDS - START_MIP_ID_INDEX) / MIP_IDS_PER_JOB))
 
 function localRun {
     if [[ $# -lt 2 ]] ; then
@@ -20,7 +17,7 @@ function localRun {
     to=$2
     echo "Running jobs: ${from} - ${to}"
     for ((LSB_JOBINDEX=${from}; LSB_JOBINDEX<=${to}; LSB_JOBINDEX++)) ; do
-        ${SCRIPT_DIR}/submitGAJob.sh ${CDGA_INPUT_DIR} ${CDGA_OUTPUT_DIR} ${LSB_JOBINDEX}
+        ${SCRIPT_DIR}/submitGAJob.sh ${LSB_JOBINDEX}
     done
 }
 
@@ -33,7 +30,7 @@ function gridRun {
     to=$2
     echo "Running jobs: ${from} - ${to}"
     bsub -n ${CORES_RESOURCE} -J CDGA[${from}-${to}] -P neuronbridge \
-        ${SCRIPT_DIR}/submitGAJob.sh ${CDGA_INPUT_DIR} ${CDGA_OUTPUT_DIR}
+        ${SCRIPT_DIR}/submitGAJob.sh
 }
 
 echo "Total jobs: ${TOTAL_JOBS}"

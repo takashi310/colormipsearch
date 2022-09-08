@@ -2,13 +2,13 @@
 
 function runCDSJob {
     MASK_INDEX=$(($1))
-    LIBRARY_INDEX=$(($2))
+    TARGET_INDEX=$(($2))
 
     shift
     shift
 
     MASK_OFFSET=$((MASK_INDEX * MASKS_PER_JOB))
-    LIBRARY_OFFSET=$((LIBRARY_INDEX * LIBRARIES_PER_JOB))
+    TARGET_OFFSET=$((TARGET_INDEX * TARGETS_PER_JOB))
 
     REQUESTED_CORES=$((${CORES_RESOURCE:-0}))
     CPU_RESERVE=$((${CPU_RESERVE:-1}))
@@ -33,11 +33,11 @@ function runCDSJob {
     cmd="${JAVA_EXEC} ${JAVA_OPTS} ${GC_OPTS} ${MEM_OPTS} ${LOG_OPTS} \
         -jar ${CDS_JAR} \
         --cacheSize ${MIPS_CACHE_SIZE} \
-        searchFromJSON \
-        -m ${MASKS_FILES} \
+        colorDepthSearch \
+        -m ${MASKS_LIBRARY} \
         --masks-index ${MASK_OFFSET} --masks-length ${MASKS_PER_JOB} \
-        -i ${LIBRARIES_FILES} \
-        --images-index ${LIBRARY_OFFSET} --images-length ${LIBRARIES_PER_JOB} \
+        -i ${TARGETS_LIBRARY} \
+        --targets-index ${TARGET_OFFSET} --targets-length ${TARGETS_PER_JOB} \
         --maskThreshold ${MASK_THRESHOLD} \
         --dataThreshold ${DATA_THRESHOLD} \
         --xyShift ${XY_SHIFT} \
@@ -57,9 +57,9 @@ function runCDSJob {
 
 LSB_JOBINDEX=$((${LSB_JOBINDEX:-$1}))
 JOB_INDEX=$((LSB_JOBINDEX - 1))
-LIBRARY_INDEX=$((JOB_INDEX / JOBS_FOR_MASKS))
+TARGET_INDEX=$((JOB_INDEX / JOBS_FOR_MASKS))
 MASK_INDEX=$((JOB_INDEX % JOBS_FOR_MASKS))
 
 JOB_LOGPREFIX=${JOB_LOGPREFIX:-}
-echo "$(date) Run Job ($LSB_JOBINDEX, ${MASK_INDEX}, ${LIBRARY_INDEX})"
-runCDSJob ${MASK_INDEX} ${LIBRARY_INDEX} > ${JOB_LOGPREFIX}cds_${LSB_JOBINDEX}.log
+echo "$(date) Run Job ($LSB_JOBINDEX, ${MASK_INDEX}, ${TARGET_INDEX})"
+runCDSJob ${MASK_INDEX} ${TARGET_INDEX} > ${JOB_LOGPREFIX}cds_${LSB_JOBINDEX}.log
