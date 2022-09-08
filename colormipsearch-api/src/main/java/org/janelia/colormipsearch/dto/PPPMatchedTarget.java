@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Metadata about a PPP matched target.
@@ -12,9 +13,9 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
     private String sourceObjective;
     private String sourceLmLibrary;
     private Double rank;
-    private Double coverageScore;
-    private Double aggregateCoverage;
+    private int score;
 
+    @JsonProperty("pppmRank")
     public Double getRank() {
         return rank;
     }
@@ -23,20 +24,13 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
         this.rank = rank;
     }
 
-    public Double getCoverageScore() {
-        return coverageScore;
+    @JsonProperty("pppmScore")
+    public int getScore() {
+        return score;
     }
 
-    public void setCoverageScore(Double coverageScore) {
-        this.coverageScore = coverageScore;
-    }
-
-    public Double getAggregateCoverage() {
-        return aggregateCoverage;
-    }
-
-    public void setAggregateCoverage(Double aggregateCoverage) {
-        this.aggregateCoverage = aggregateCoverage;
+    public void setScore(int score) {
+        this.score = score;
     }
 
     @JsonIgnore

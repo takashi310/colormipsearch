@@ -150,8 +150,7 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         generateMatchFiles(m);
         m.setMirrored(isMirrored());
         m.setRank(getRank());
-        m.setCoverageScore(getCoverageScore());
-        m.setAggregateCoverage(getAggregateCoverage());
+        m.setScore((int)Math.abs(coverageScore));
         return m;
     }
 
