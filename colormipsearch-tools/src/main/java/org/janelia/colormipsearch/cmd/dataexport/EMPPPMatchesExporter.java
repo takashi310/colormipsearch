@@ -94,30 +94,38 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         );
         // order ascending by rank
         Comparator<PPPMatchedTarget<LMNeuronMetadata>> ordering = Comparator.comparingDouble(PPPMatchedTarget::getRank);
-        List<ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>>> matchesByMask = MatchResultsGrouping.groupByMask(
+        List<ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>>> groupedMatches = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
                 ordering);
 
         // retrieve source data
+        Map<String, List<PublishedImage>> lmPublishedImages = retrieveEMAndLMSourceData(matches);
+        // update grouped matches
+        groupedMatches.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages));
+        // write results by mask (EM) published name
+        resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getPublishedName, outputDir);
+    }
+
+    /**
+     * Retrieve EM color depth MIPs and LM published images for the given PPP matches
+     *
+     * @param matches
+     * @return LM published images indexed by Sample reference.
+     */
+    private Map<String, List<PublishedImage>> retrieveEMAndLMSourceData(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches) {
         jacsDataHelper.retrieveCDMIPs(matches.stream()
                 .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet()));
         Map<String, CDMIPSample> retrievedSamples = jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
-        Map<String, List<PublishedImage>> lmPublishedImages = jacsDataHelper.retrievePublishedImages(
+        return jacsDataHelper.retrievePublishedImages(
                 null,
                 retrievedSamples.values().stream().map(CDMIPSample::sampleRef).collect(Collectors.toSet()));
-
-        // update grouped matches
-        matchesByMask.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages));
-        // write results by mask (EM) published name
-        resultMatchesWriter.writeGroupedItemsList(matchesByMask, AbstractNeuronMetadata::getPublishedName, outputDir);
     }
 
-    private void
-    updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches,
-                                 Map<String, List<PublishedImage>> lmPublishedImages) {
+    private void updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches,
+                                              Map<String, List<PublishedImage>> lmPublishedImages) {
         updateEMNeuron(resultMatches.getKey());
         resultMatches.getKey().updateAllNeuronFiles(this::relativizeURL);
         resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages));
@@ -140,7 +148,6 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setPublishedName(sample.lmLineName());
             lmNeuron.setSlideCode(sample.slideCode);
             lmNeuron.setGender(Gender.fromVal(sample.gender));
-            lmNeuron.setDriver(sample.driver);
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
             lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack,
                     findPublishedLM3DStack(

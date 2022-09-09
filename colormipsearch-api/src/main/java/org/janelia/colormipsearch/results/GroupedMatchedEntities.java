@@ -8,7 +8,7 @@ import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.JsonRequired;
 
-public class GroupedMatchedEntities<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>> extends AbstractGroupedItems<M, R> {
+public class GroupedMatchedEntities<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>> extends GroupedItems<M, R> {
 
     @JsonRequired
     @JsonProperty("inputImage")

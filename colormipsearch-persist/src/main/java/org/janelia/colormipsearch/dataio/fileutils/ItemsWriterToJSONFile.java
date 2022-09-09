@@ -9,7 +9,7 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.janelia.colormipsearch.dataio.fs.JsonOutputHelper;
-import org.janelia.colormipsearch.results.AbstractGroupedItems;
+import org.janelia.colormipsearch.results.GroupedItems;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,15 +22,15 @@ public class ItemsWriterToJSONFile {
         this.jsonWriter = jsonWriter;
     }
 
-    public <M> void writeItems(Collection<M> itemsList, Path outputDir, String filename) {
+    public <R> void writeJSON(R result, Path outputDir, String filename) {
         FSUtils.createDirs(outputDir);
         JsonOutputHelper.writeToJSONFile(
-                itemsList,
+                result,
                 FSUtils.getOutputPath(outputDir, new File(filename + ".json")),
                 jsonWriter);
     }
 
-    public <M, R> void writeGroupedItemsList(List<? extends AbstractGroupedItems<M, R>> groupedItemsList,
+    public <M, R> void writeGroupedItemsList(List<? extends GroupedItems<M, R>> groupedItemsList,
                                              Function<M, String> filenameSelector,
                                              Path outputDir) {
         long startTime = System.currentTimeMillis();
@@ -41,7 +41,7 @@ public class ItemsWriterToJSONFile {
         LOG.info("Finished writing {} file results in {}s", groupedItemsList.size(), (System.currentTimeMillis() - startTime) / 1000.);
     }
 
-    private <M, R> void writeGroupedItems(AbstractGroupedItems<M, R> groupedItems,
+    private <M, R> void writeGroupedItems(GroupedItems<M, R> groupedItems,
                                           Function<M, String> filenameSelector,
                                           Path outputDir) {
         String filename = filenameSelector.apply(groupedItems.getKey());

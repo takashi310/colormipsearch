@@ -4,7 +4,6 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String slideCode;
     private String objective;
     private String mountingProtocol;
-    private String driver;
     private Integer channel; // 1-based channel number
 
     public String getSlideCode() {
@@ -29,14 +28,6 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
 
     public void setMountingProtocol(String mountingProtocol) {
         this.mountingProtocol = mountingProtocol;
-    }
-
-    public String getDriver() {
-        return driver;
-    }
-
-    public void setDriver(String driver) {
-        this.driver = driver;
     }
 
     public Integer getChannel() {

@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +22,7 @@ import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.results.GroupedItems;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +89,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .peek(n -> n.updateAllNeuronFiles(this::relativizeURL))
                                 .collect(Collectors.toSet());
                         LOG.info("Write mips for {}", publishedName);
-                        mipsWriter.writeItems(publishedNeuronMips, outputDir, publishedName);
+                        mipsWriter.writeJSON(GroupedItems.createGroupedItems(null, publishedNeuronMips), outputDir, publishedName);
                     });
                 });
     }

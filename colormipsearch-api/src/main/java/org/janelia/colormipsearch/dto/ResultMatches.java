@@ -5,14 +5,14 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.janelia.colormipsearch.model.JsonRequired;
-import org.janelia.colormipsearch.results.AbstractGroupedItems;
+import org.janelia.colormipsearch.results.GroupedItems;
 
 /**
  * Metadata about result matches grouped by a given mask type.
  *
  * @param <T>
  */
-public class ResultMatches<M extends AbstractNeuronMetadata, R extends AbstractMatchedTarget<? extends AbstractNeuronMetadata>> extends AbstractGroupedItems<M, R> {
+public class ResultMatches<M extends AbstractNeuronMetadata, R extends AbstractMatchedTarget<? extends AbstractNeuronMetadata>> extends GroupedItems<M, R> {
     @JsonRequired
     @JsonProperty("inputImage")
     @Override

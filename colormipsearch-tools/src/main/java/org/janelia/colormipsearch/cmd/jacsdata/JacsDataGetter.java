@@ -158,8 +158,7 @@ public class JacsDataGetter {
                             .flatMap(e -> {
                                 LOG.info("Retrieve {} published images for alignment space {}",
                                         mipIds.size(),
-                                        e.getKey(), // alignment space
-                                        null); // objective
+                                        e.getKey()); // alignment space
                                 return publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(
                                         e.getKey(),
                                         e.getValue().stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),

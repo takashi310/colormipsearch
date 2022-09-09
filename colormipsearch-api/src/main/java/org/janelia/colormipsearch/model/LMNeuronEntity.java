@@ -6,6 +6,9 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
 
     // LM slide code is required for selecting the top ranked matches during gradient scoring
     private String slideCode;
+    private String anatomicalArea;
+    private Gender gender;
+    private String objective;
 
     @Override
     public String getNeuronId() {
@@ -20,11 +23,38 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         this.slideCode = slideCode;
     }
 
+    public String getAnatomicalArea() {
+        return anatomicalArea;
+    }
+
+    public void setAnatomicalArea(String anatomicalArea) {
+        this.anatomicalArea = anatomicalArea;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public String getObjective() {
+        return objective;
+    }
+
+    public void setObjective(String objective) {
+        this.objective = objective;
+    }
+
     @Override
     public LMNeuronEntity duplicate() {
         LMNeuronEntity n = new LMNeuronEntity();
         n.copyFrom(this);
         n.slideCode = this.getSlideCode();
+        n.anatomicalArea = this.getAnatomicalArea();
+        n.gender = this.getGender();
+        n.objective = this.getObjective();
         return n;
     }
 
@@ -36,6 +66,9 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         n.setLibraryName(getLibraryName());
         n.setPublishedName(getPublishedName());
         n.setSlideCode(slideCode);
+        n.setAnatomicalArea(anatomicalArea);
+        n.setGender(gender);
+        n.setObjective(objective);
         getComputeFiles().forEach((ft, fd) -> {
             n.setNeuronComputeFile(ft, fd.getFileName());
         });

@@ -7,12 +7,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -33,7 +30,7 @@ public class ItemsHandling {
      * @param <G>                  result group type
      * @return
      */
-    public static <E1, E2, K, G extends AbstractGroupedItems<K, E2>>
+    public static <E1, E2, K, G extends GroupedItems<K, E2>>
     List<G> groupItems(List<E1> items,
                        Function<E1, GroupingCriteria<E2, K>> toGroupingCriteria,
                        Function<GroupingCriteria<E2, K>, E2> fromGroupingCriteria,

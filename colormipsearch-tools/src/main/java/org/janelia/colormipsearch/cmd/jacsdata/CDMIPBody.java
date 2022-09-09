@@ -17,6 +17,15 @@ public class CDMIPBody {
         return emBodies.stream().collect(Collectors.toMap(n -> "EMBody#" + n.id, n -> n));
     }
 
+    public static class EMDataSet {
+        @JsonProperty
+        public String gender;
+        @JsonProperty
+        public Boolean published;
+        @JsonProperty
+        public Boolean active;
+    }
+
     @JsonProperty("_id")
     public String id;
     @JsonProperty("name")
@@ -31,6 +40,9 @@ public class CDMIPBody {
     public String datasetIdentifier;
     @JsonProperty
     public Map<String, String> files;
+    // EM Dataset properties
+    @JsonProperty
+    public EMDataSet emDataSet;
 
     @Override
     public String toString() {

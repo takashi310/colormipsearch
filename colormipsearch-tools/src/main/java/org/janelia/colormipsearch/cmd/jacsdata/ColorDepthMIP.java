@@ -102,6 +102,10 @@ public class ColorDepthMIP implements Serializable {
         return emBody != null ? emBody.name : null;
     }
 
+    public String emGender() {
+        return emBody != null && emBody.emDataSet != null ? emBody.emDataSet.gender : null;
+    }
+
     public String emSWCFilename(String prefix) {
         if (StringUtils.isBlank(emSWCFile)) {
             return null;
@@ -137,7 +141,6 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setSlideCode(lmSlideCode());
         lmNeuron.setAnatomicalArea(anatomicalArea);
         lmNeuron.setMountingProtocol(lmMountingProtocol());
-        lmNeuron.setDriver(lmDriver());
         lmNeuron.setObjective(lmObjective());
         lmNeuron.setChannel(channelNumber());
         // set neuron files
@@ -156,6 +159,7 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setAnatomicalArea(anatomicalArea);
         emNeuron.setNeuronInstance(neuronInstance);
         emNeuron.setNeuronType(neuronType);
+        emNeuron.setGender(Gender.fromVal(emGender()));
         // set neuron files
         emNeuron.setNeuronFile(FileType.ColorDepthMip, publicImageUrl);
         emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
