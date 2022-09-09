@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -16,14 +17,20 @@ import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BsonField;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.UnwindOptions;
+import com.mongodb.client.model.Variable;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
@@ -32,8 +39,12 @@ import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
+import org.janelia.colormipsearch.model.MIPMatchesCount;
+import org.janelia.colormipsearch.model.PPPMatchEntity;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
         implements NeuronMetadataDao<N> {
@@ -159,7 +170,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         Aggregates.match(NeuronSelectionHelper.getNeuronFilter(null, neuronSelector)),
                         Aggregates.group(
                                 MongoDaoHelper.distinctAttributesExpr(attributeNames),
-                                attributeNames.stream().map(MongoDaoHelper::firstDocument).collect(Collectors.toList())
+                                attributeNames.stream()
+                                        .map(attr -> MongoDaoHelper.createGroupResultExpression(attr, MongoDaoHelper.createFirstExpression(attr)))
+                                        .collect(Collectors.toList())
                         ),
                         Aggregates.project(Projections.fields(
                                 Stream.concat(
@@ -181,5 +194,65 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
 
     private List<Bson> createQueryPipeline(Bson matchFilter) {
         return Collections.singletonList(Aggregates.match(matchFilter));
+    }
+
+    @Override
+    public List<MIPMatchesCount> countAllMatchesForMIPs(Collection<String> mipIds) {
+        if (CollectionUtils.isEmpty(mipIds)) {
+            return Collections.emptyList();
+        }
+        return MongoDaoHelper.aggregateAsList(
+                Arrays.asList(
+                        Aggregates.match(NeuronSelectionHelper.getNeuronFilter(null, new NeuronSelector().addMipIDs(mipIds))),
+                        createCountLookupStage(CDMatchEntity.class, "maskImageRefId", "cdMatchesCountAsMask"),
+                        createCountLookupStage(CDMatchEntity.class, "matchedImageRefId", "cdMatchesCountAsTarget"),
+                        createCountLookupStage(PPPMatchEntity.class, "maskImageRefId", "pppMatchesCount"),
+                        createUnwindStage("cdMatchesCountAsMask"),
+                        createUnwindStage("cdMatchesCountAsTarget"),
+                        createUnwindStage("pppMatchesCount"),
+                        Aggregates.group("$mipId",
+                                MongoDaoHelper.createGroupResultExpression(
+                                        "cdMatchesCountAsMask",
+                                        MongoDaoHelper.createSumExpression("$cdMatchesCountAsMask.c")),
+                                MongoDaoHelper.createGroupResultExpression(
+                                        "cdMatchesCountAsTarget",
+                                        MongoDaoHelper.createSumExpression("$cdMatchesCountAsTarget.c")),
+                                MongoDaoHelper.createGroupResultExpression(
+                                        "pppMatchesCount",
+                                        MongoDaoHelper.createSumExpression("$pppMatchesCount.c"))
+                        )
+                ),
+                null,
+                0,
+                -1,
+                mongoCollection,
+                MIPMatchesCount.class,
+                true
+        );
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Bson createCountLookupStage(Class<? extends AbstractMatchEntity> entityType,
+                                        String matchingField,
+                                        String countFieldName) {
+        return Aggregates.lookup(
+                EntityUtils.getPersistenceInfo(entityType).storeName(),
+                Arrays.asList(
+                        new Variable<>("sourceId", "$_id")
+                ),
+                Arrays.asList(
+                        Aggregates.match(
+                                Filters.expr(
+                                        MongoDaoHelper.createAggregateExpr("$eq", "$" + matchingField, "$$sourceId")
+                                )
+                        ),
+                        Aggregates.count("c")
+                ),
+                countFieldName
+        );
+    }
+
+    private Bson createUnwindStage(String fieldName) {
+        return Aggregates.unwind("$" + fieldName, new UnwindOptions().preserveNullAndEmptyArrays(true));
     }
 }

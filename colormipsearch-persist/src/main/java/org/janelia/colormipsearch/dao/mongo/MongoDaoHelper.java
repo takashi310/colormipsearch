@@ -145,8 +145,16 @@ class MongoDaoHelper {
         return expr;
     }
 
-    static BsonField firstDocument(String attribute) {
-        return new BsonField(attribute, new Document("$first", "$" + attribute));
+    static Bson createFirstExpression(String attributeName) {
+        return new Document("$first", "$" + attributeName);
+    }
+
+    static Bson createSumExpression(Object toSum) {
+        return new Document("$sum", toSum);
+    }
+
+    static BsonField createGroupResultExpression(String attribute, Bson expression) {
+        return new BsonField(attribute, expression);
     }
 
     static <I, T, R> R findById(I id, MongoCollection<T> mongoCollection, Class<R> documentType) {

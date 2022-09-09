@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -22,6 +23,7 @@ import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.MIPMatchesCount;
 import org.janelia.colormipsearch.results.GroupedItems;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -75,9 +77,12 @@ public class MIPsExporter extends AbstractDataExporter {
                                         .addLibraries(dataSourceParam.getLibraries())
                                         .addName(publishedName),
                                 new PagedRequest()).getResultList();
-                        jacsDataHelper.retrieveCDMIPs(neuronMipEntities.stream()
+                        Set<String> mipIds = neuronMipEntities.stream()
                                 .map(AbstractNeuronEntity::getMipId)
-                                .collect(Collectors.toSet()));
+                                .collect(Collectors.toSet());
+                        jacsDataHelper.retrieveCDMIPs(mipIds);
+                        Map<String, MIPMatchesCount> matchesCountList = neuronMetadataDao.countAllMatchesForMIPs(mipIds).stream()
+                                .collect(Collectors.toMap(MIPMatchesCount::getMipId, c -> c));
                         List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
