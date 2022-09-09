@@ -2,6 +2,14 @@
 
 JAR_VERSION=3.0.0
 
+AREA=brain
+# EXPORT_TYPE can be one of [EM_CD_MATCHES, LM_CD_MATCHES, EM_PPP_MATCHES, EM_MIPS, LM_MIPS]
+EXPORT_TYPE=EM_PPP_MATCHES
+OUTPUT_DIR=/nrs/neuronbridge/v3.0.0/${AREA}
+CONFIG="--config local/proddb-config.properties"
+RUNNER=
+
+# Typically no change is required below this point
 EM_HEMIBRAIN_LIB=flyem_hemibrain_1_2_1
 EM_VNC_LIB=flyem_vnc_0_6
 
@@ -11,11 +19,6 @@ ANNOTATOR_MCFO_LIB=flylight_annotator_gen1_mcfo_published
 
 LM_LIBS="${SGAL4_LIB} ${MCFO_LIB} ${ANNOTATOR_MCFO_LIB}"
 EM_LIBS="${EM_HEMIBRAIN_LIB} ${EM_VNC_LIB}"
-
-AREA=brain
-# EXPORT_TYPE can be one of [EM_CD_MATCHES, LM_CD_MATCHES, EM_PPP_MATCHES, EM_MIPS, LM_MIPS]
-EXPORT_TYPE=EM_PPP_MATCHES
-OUTPUT_DIR=/nrs/neuronbridge/v3.0.0/${AREA}
 
 case $EXPORT_TYPE in
   EM_CD_MATCHES)
@@ -44,20 +47,21 @@ case $EXPORT_TYPE in
     ;;
 esac
 
-if [[ ${AREA} == "brain" ]] ; then
-  ALIGNMENT_SPACE=JRC2018_Unisex_20x_HR
-elif [[ ${AREA} == "vnc" ]] ; then
-  ALIGNMENT_SPACE=JRC2018_VNC_Unisex_40x_DS
-else
-  echo "Invalid area: ${AREA}"
-  exit 1
-fi
+case ${AREA} in
+  brain)
+    ALIGNMENT_SPACE=JRC2018_Unisex_20x_HR
+    ;;
+  vnc)
+    ALIGNMENT_SPACE=JRC2018_VNC_Unisex_40x_DS
+    ;;
+  *)
+    echo "Invalid area: ${AREA}"
+    exit 1
+    ;;
+esac
 
 # AS: "JRC2018_Unisex_20x_HR", "JRC2018_VNC_Unisex_40x_DS"
 AS_ARG="-as ${ALIGNMENT_SPACE}"
-
-CONFIG="--config local/proddb-config.properties"
-RUNNER=
 
 $RUNNER java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 \
     -Xmx270G -Xms270G \
