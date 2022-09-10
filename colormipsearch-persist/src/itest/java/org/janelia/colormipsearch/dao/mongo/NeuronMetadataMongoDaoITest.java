@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 "flyem",
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("createOrUpdateEmNeuron"));
         AbstractNeuronEntity createdEmNeuron = testDao.createOrUpdate(testEmNeuron);
         assertEquals(testEmNeuron, createdEmNeuron);
 
@@ -64,7 +66,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 "flyem",
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("createOrUpdateNonIdentifiableEmNeuron"));
         EMNeuronEntity n1 = testEmNeuron.duplicate();
         n1.setComputeFileData(ComputeFileType.InputColorDepthImage, null); // reset input file
         testData.add(n1);
@@ -92,7 +95,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 "flyem",
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("saveFollowedByCreateOrUpdateEmNeuron"));
         testDao.save(testEmNeuron);
         Number testEmId = testEmNeuron.getEntityId();
 
@@ -114,7 +118,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 "flyem",
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("persistEmNeuron"));
         testDao.save(testEmNeuron);
         AbstractNeuronEntity persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
         assertEquals(testEmNeuron, persistedEmNeuron);
@@ -127,7 +132,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 LMNeuronEntity::new,
                 "flylight_mcfo",
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("persistLmNeuron"));
         testDao.save(testLmNeuron);
         AbstractNeuronEntity persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
         assertEquals(testLmNeuron, persistedLmNeuron);
@@ -141,7 +147,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 testLibrary,
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("findByLibrary"));
         testDao.save(testEmNeuron);
         PagedResult<? extends AbstractNeuronEntity> persistedEmNeurons = testDao.findNeurons(
                 new NeuronSelector().addLibrary(testLibrary),
@@ -159,7 +166,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 testLibrary,
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("findByLibraryAndType"));
         testDao.save(testEmNeuron);
         PagedResult<? extends AbstractNeuronEntity> persistedEmNeurons = testDao.findNeurons(
                 new NeuronSelector().addLibrary(testLibrary).setNeuronClassname(EMNeuronEntity.class.getName()),
@@ -177,10 +185,14 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 EMNeuronEntity::new,
                 testLibrary,
                 "123445",
-                "mip123");
+                "mip123",
+                Collections.singleton("findDistinctNeurons"));
         int nNeurons = 3;
-        for (int i = 0; i < nNeurons; i++) testDao.save(testEmNeuron.duplicate());
-
+        for (int i = 0; i < nNeurons; i++) {
+            EMNeuronEntity n = testEmNeuron.duplicate();
+            testData.add(n);
+            testDao.save(n);
+        }
         PagedResult<Map<String, Object>> distinctNeurons = testDao.findDistinctNeuronAttributeValues(
                 Collections.singletonList("mipId"),
                 new NeuronSelector().addLibrary(testLibrary).setNeuronClassname(EMNeuronEntity.class.getName()),
@@ -191,11 +203,13 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,
                                                                 String libraryName,
                                                                 String name,
-                                                                String mipId) {
+                                                                String mipId,
+                                                                Collection<String> tags) {
         N testNeuron = new TestNeuronEntityBuilder<>(neuronGenerator)
                 .library(libraryName)
                 .publishedName(name)
                 .mipId(mipId)
+                .addTags(tags)
                 .computeFileData(ComputeFileType.InputColorDepthImage, FileData.fromString("mipSegmentation"))
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("sourceMip"))
                 .get();

@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,7 +60,7 @@ public abstract class AbstractBaseEntity implements BaseEntity {
             this.tags.add(tag.trim());
     }
 
-    public void addAllTags(Set<String> tags) {
+    public void addAllTags(Collection<String> tags) {
         if (tags != null) {
             tags.forEach(this::addTag);
         }

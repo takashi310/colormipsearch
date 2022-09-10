@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.dao.mongo;
 
+import java.util.Collection;
+
 import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -41,6 +43,11 @@ class TestNeuronEntityBuilder<N extends AbstractNeuronEntity> {
 
     public TestNeuronEntityBuilder<N> library(String library) {
         n.setLibraryName(library);
+        return this;
+    }
+
+    public TestNeuronEntityBuilder<N> addTags(Collection<String> tags) {
+        n.addAllTags(tags);
         return this;
     }
 }
