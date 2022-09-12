@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -11,8 +10,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -32,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
@@ -288,12 +284,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                             ? asEMNeuron(cdmip, libraryNameExtractor)
                             : asLMNeuron(cdmip, libraryNameExtractor))
                     .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(
-                            cdmip.getSourceMIP(),
-                            cdmip.getNeuronMetadata(),
-                            inputLibraryVariantChoice.map(lv -> lv.variantPath).orElse(null),
-                            inputImages,
-                            args.includeOriginalWithSegmentation,
-                            args.segmentedImageChannelBase)
+                                    cdmip.getSourceMIP(),
+                                    cdmip.getNeuronMetadata(),
+                                    inputLibraryVariantChoice.map(lv -> lv.variantPath).orElse(null),
+                                    inputImages,
+                                    args.includeOriginalWithSegmentation,
+                                    args.segmentedImageChannelBase)
                             .stream()
                             .map(n -> new InputCDMipNeuron<>(cdmip.getSourceMIP(), n))
                     )
@@ -413,8 +409,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .queryParam("alignmentSpace", alignmentSpace)
                 .queryParam("dataset", datasets != null ? datasets.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
                 .queryParam("release", releases != null ? releases.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                .queryParam("id", mips != null ? mips.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null)
-                ;
+                .queryParam("id", mips != null ? mips.stream().filter(StringUtils::isNotBlank).reduce((s1, s2) -> s1 + "," + s2).orElse(null) : null);
         LOG.info("Count color depth mips using {}, l={}, as={}, ds={}, rs={}", target, library, alignmentSpace, datasets, releases);
         Response response = HttpHelper.createRequestWithCredentials(target.request(MediaType.TEXT_PLAIN), credentials).get();
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
