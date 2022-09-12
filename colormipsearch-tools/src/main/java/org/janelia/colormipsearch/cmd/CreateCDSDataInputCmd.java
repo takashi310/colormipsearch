@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsWriter;
+import org.janelia.colormipsearch.dataio.db.DBCheckedCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsWriter;
 import org.janelia.colormipsearch.mips.FileDataUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -140,8 +141,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--output-filename"}, description = "Output file name")
         String outputFileName;
 
-        @Parameter(names = {"--append-output"}, description = "Append output if it exists", arity = 0)
-        boolean appendOutput;
+        @Parameter(names = {"--for-update"},
+                description = "If entry (or file exists when persisting to the filesystem) update the entry",
+                arity = 0)
+        boolean forUpdate;
 
         CreateColorDepthSearchDataInputArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -336,13 +339,18 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
     private CDMIPsWriter getCDSInputWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return new DBCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
+            if (args.forUpdate) {
+                // if update flag is set check if entry exists before creating a new one
+                return new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
+            } else {
+                return new DBCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
+            }
         } else {
             return new JSONCDMIPsWriter(args.getOutputDir(),
                     args.getOutputFileName(),
                     args.library.offset,
                     args.library.length,
-                    args.appendOutput,
+                    args.forUpdate,
                     mapper);
         }
     }
