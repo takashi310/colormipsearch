@@ -149,6 +149,10 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         return this;
     }
 
+    public boolean hasAnyProcessedTag(ProcessingType processingType) {
+        return CollectionUtils.isNotEmpty(processedTags.get(processingType));
+    }
+
     public boolean hasProcessedTag(ProcessingType processingType, String tag) {
         return CollectionUtils.isNotEmpty(processedTags.get(processingType)) &&
                 processedTags.get(processingType).contains(tag);
