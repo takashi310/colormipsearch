@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.dao.PublishedImageDao;
+import org.janelia.colormipsearch.dao.PublishedLMImageDao;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
-import org.janelia.colormipsearch.model.PublishedImage;
+import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,30 +22,29 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
+public class PublishedLMImageMongoDaoITest extends AbstractMongoDaoITest {
 
     private static final String testName = "unittester";
-    private static final String testUser = "user:"+testName;
 
-    private Map<Number, PublishedImage> testImages = new HashMap<>();
+    private Map<Number, PublishedLMImage> testImages = new HashMap<>();
 
-    private PublishedImageDao publishedImageDao;
+    private PublishedLMImageDao publishedLMImageDao;
 
     @Before
     public void setUp() {
-        publishedImageDao = daosProvider.getPublishedImageDao();
+        publishedLMImageDao = daosProvider.getPublishedImageDao();
         testImages.putAll(createTestImages());
     }
 
     @After
     public void tearDown() {
-        testImages.forEach((id, img) -> publishedImageDao.delete(img));
+        testImages.forEach((id, img) -> publishedLMImageDao.delete(img));
     }
 
-    private Map<Number, PublishedImage> createTestImages() {
-        List<PublishedImage> images = new ArrayList<>();
+    private Map<Number, PublishedLMImage> createTestImages() {
+        List<PublishedLMImage> images = new ArrayList<>();
 
-        PublishedImage image1 = new PublishedImage();
+        PublishedLMImage image1 = new PublishedLMImage();
         image1.setLine("line 1");
         image1.setSampleRef("Sample#1234");
         image1.setArea("brain");
@@ -58,7 +57,7 @@ public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
         image1.addFile("VisuallyLosslessStack", "http://s3/images/etc");
         images.add(image1);
 
-        PublishedImage image2 = new PublishedImage();
+        PublishedLMImage image2 = new PublishedLMImage();
         image2.setLine("line 2");
         image2.setSampleRef("Sample#5678");
         image2.setArea("brain");
@@ -71,7 +70,7 @@ public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
         image2.addFile("VisuallyLosslessStack", "http://s3/images/etc2");
         images.add(image2);
 
-        PublishedImage image3 = new PublishedImage();
+        PublishedLMImage image3 = new PublishedLMImage();
         image3.setLine("line 3");
         image3.setSampleRef("Sample#1357");
         image3.setArea("brain");
@@ -84,7 +83,7 @@ public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
         image3.addFile("VisuallyLosslessStack", "http://s3/images/etc3");
         images.add(image3);
 
-        PublishedImage image4 = new PublishedImage();
+        PublishedLMImage image4 = new PublishedLMImage();
         image4.setLine("line 3");
         image4.setSampleRef("Sample#1357");
         image4.setArea("vnc");
@@ -97,30 +96,30 @@ public class PublishedImageMongoDaoITest extends AbstractMongoDaoITest {
         image4.addFile("VisuallyLosslessStack", "http://s3/images/etc3");
         images.add(image4);
 
-        publishedImageDao.saveAll(images);
+        publishedLMImageDao.saveAll(images);
         return images.stream().collect(Collectors.toMap(AbstractBaseEntity::getEntityId, i -> i));
     }
 
     @Test
     public void testGetImage() {
-        Map<Pair<String, String>, List<PublishedImage>> testImagesByAlignmentSpaceAndObjective =
+        Map<Pair<String, String>, List<PublishedLMImage>> testImagesByAlignmentSpaceAndObjective =
                 testImages.values().stream().collect(Collectors.groupingBy(
                         i -> ImmutablePair.of(i.getAlignmentSpace(), i.getObjective()),
                         Collectors.toList()
                 ));
 
         testImagesByAlignmentSpaceAndObjective.forEach((asAndObjective, testImagesSubset) -> {
-            Set<String> testSampleRefs = testImagesSubset.stream().map(PublishedImage::getSampleRef).collect(Collectors.toSet());
-            Map<String, List<PublishedImage>> foundImages = publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(asAndObjective.getLeft(), testSampleRefs, asAndObjective.getRight());
+            Set<String> testSampleRefs = testImagesSubset.stream().map(PublishedLMImage::getSampleRef).collect(Collectors.toSet());
+            Map<String, List<PublishedLMImage>> foundImages = publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(asAndObjective.getLeft(), testSampleRefs, asAndObjective.getRight());
             assertEquals(testSampleRefs.size(), foundImages.size());
             compareImages(testImagesSubset, foundImages.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         });
     }
 
-    private void compareImages(Collection<PublishedImage> referenceImages, Collection<PublishedImage> toCheck) {
-        Map<Number, PublishedImage> indexedReferenceImages = referenceImages.stream().collect(Collectors.toMap(AbstractBaseEntity::getEntityId, i -> i));
+    private void compareImages(Collection<PublishedLMImage> referenceImages, Collection<PublishedLMImage> toCheck) {
+        Map<Number, PublishedLMImage> indexedReferenceImages = referenceImages.stream().collect(Collectors.toMap(AbstractBaseEntity::getEntityId, i -> i));
         toCheck.forEach(foundImage -> {
-            PublishedImage image = indexedReferenceImages.get(foundImage.getEntityId());
+            PublishedLMImage image = indexedReferenceImages.get(foundImage.getEntityId());
             assertNotNull(image);
             // test a few key attributes
             assertEquals(image.getEntityId(), foundImage.getEntityId());

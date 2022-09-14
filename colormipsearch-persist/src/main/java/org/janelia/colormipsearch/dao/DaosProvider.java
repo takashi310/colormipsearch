@@ -8,7 +8,7 @@ import org.janelia.colormipsearch.dao.mongo.CDMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.MatchSessionMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
 import org.janelia.colormipsearch.dao.mongo.PPPMatchesMongoDao;
-import org.janelia.colormipsearch.dao.mongo.PublishedImageMongoDao;
+import org.janelia.colormipsearch.dao.mongo.PublishedLMImageMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.AbstractSessionEntity;
@@ -69,7 +69,7 @@ public class DaosProvider {
         return new NeuronMetadataMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 
-    public PublishedImageDao getPublishedImageDao() {
-        return new PublishedImageMongoDao(mongoClient, mongoDatabase, idGenerator);
+    public PublishedLMImageDao getPublishedImageDao() {
+        return new PublishedLMImageMongoDao(mongoClient, mongoDatabase, idGenerator);
     }
 }

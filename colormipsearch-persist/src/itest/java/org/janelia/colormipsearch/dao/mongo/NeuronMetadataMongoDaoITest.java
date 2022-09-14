@@ -5,7 +5,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+
+import com.google.common.collect.ImmutableSet;
 
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
@@ -16,6 +19,7 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
@@ -198,6 +203,36 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 new NeuronSelector().addLibrary(testLibrary).setNeuronClassname(EMNeuronEntity.class.getName()),
                 new PagedRequest());
         assertEquals(1, distinctNeurons.getResultList().size());
+    }
+
+    @Test
+    public void addProcessingTags() {
+        String testLibrary = "flyem";
+        int nNeurons = 3;
+        List<Number> nIds = new ArrayList<>();
+        for (int i = 0; i < nNeurons; i++) {
+            EMNeuronEntity n = createTestNeuron(
+                    EMNeuronEntity::new,
+                    testLibrary,
+                    "123445",
+                    "mip123",
+                    Collections.singleton("addProcessingTags"));
+            testDao.save(n);
+            nIds.add(n.getEntityId());
+        }
+        int iterations = 3;
+        for (int iter = 0; iter < iterations; iter++) {
+            Set<String> colorDepthTags = ImmutableSet.of("cd1-" + (iter+1), "cd2-" + (iter+1));
+            Set<String> pppTags = ImmutableSet.of("ppp1-" + (iter+1), "ppp2-" + (iter+1));
+            testDao.addProcessingTags(nIds, ProcessingType.ColorDepthSearch, colorDepthTags);
+            testDao.addProcessingTags(nIds, ProcessingType.PPPMatch, pppTags);
+            List<AbstractNeuronEntity> persistedNeurons = testDao.findByEntityIds(nIds);
+            assertEquals(nNeurons, persistedNeurons.size());
+            persistedNeurons.forEach(n -> {
+                assertTrue(n.hasProcessedTags(ProcessingType.ColorDepthSearch, colorDepthTags));
+                assertTrue(n.hasProcessedTags(ProcessingType.PPPMatch, pppTags));
+            });
+        }
     }
 
     private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,

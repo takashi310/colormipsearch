@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.janelia.colormipsearch.model.PublishedImage;
+import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class CachedJacsDataHelper {
         }
     }
 
-    public Map<String, List<PublishedImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
+    public Map<String, List<PublishedLMImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
         return jacsDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
     }
 

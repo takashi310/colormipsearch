@@ -10,20 +10,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="publishedImage")
-public class PublishedImage extends PublishedImageFields {
-    private List<PublishedImageFields> gal4Expressions;
+public class PublishedLMImage extends PublishedLMImageFields {
+    private List<PublishedLMImageFields> gal4Expressions;
 
     public boolean hasGal4Expression() {
         return CollectionUtils.isNotEmpty(gal4Expressions);
     }
 
     @JsonIgnore
-    public List<PublishedImageFields> getGal4Expressions() {
+    public List<PublishedLMImageFields> getGal4Expressions() {
         return gal4Expressions;
     }
 
     @JsonProperty("gal4")
-    public void setGal4Expressions(List<PublishedImageFields> gal4Expressions) {
+    public void setGal4Expressions(List<PublishedLMImageFields> gal4Expressions) {
         this.gal4Expressions = gal4Expressions;
     }
 

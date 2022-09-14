@@ -16,26 +16,26 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.HttpHelper;
-import org.janelia.colormipsearch.dao.PublishedImageDao;
-import org.janelia.colormipsearch.model.PublishedImage;
+import org.janelia.colormipsearch.dao.PublishedLMImageDao;
+import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JacsDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(JacsDataGetter.class);
 
-    private final PublishedImageDao publishedImageDao;
+    private final PublishedLMImageDao publishedLMImageDao;
     private final String dataServiceURL;
     private final String configURL;
     private final String authorization;
     private final int readBatchSize;
 
-    public JacsDataGetter(PublishedImageDao publishedImageDao,
+    public JacsDataGetter(PublishedLMImageDao publishedLMImageDao,
                           String dataServiceURL,
                           String configURL,
                           String authorization,
                           int readBatchSize) {
-        this.publishedImageDao = publishedImageDao;
+        this.publishedLMImageDao = publishedLMImageDao;
         this.dataServiceURL = dataServiceURL;
         this.configURL = configURL;
         this.authorization = authorization;
@@ -83,22 +83,22 @@ public class JacsDataGetter {
                 .collect(Collectors.toList());
     }
 
-    private PublishedImage findPublishedImage(ColorDepthMIP colorDepthMIP, List<PublishedImage> publishedImages) {
-        if (CollectionUtils.isEmpty(publishedImages)) {
-            return new PublishedImage();
+    private PublishedLMImage findPublishedImage(ColorDepthMIP colorDepthMIP, List<PublishedLMImage> publishedLMImages) {
+        if (CollectionUtils.isEmpty(publishedLMImages)) {
+            return new PublishedLMImage();
         } else {
-            return publishedImages.stream()
+            return publishedLMImages.stream()
                     .filter(pi -> pi.getAlignmentSpace().equals(colorDepthMIP.alignmentSpace))
                     .filter(pi -> pi.getObjective().equals(colorDepthMIP.objective))
                     .findFirst()
-                    .orElse(new PublishedImage());
+                    .orElse(new PublishedLMImage());
         }
     }
 
-    private void update3DStack(ColorDepthMIP colorDepthMIP, PublishedImage publishedImage) {
+    private void update3DStack(ColorDepthMIP colorDepthMIP, PublishedLMImage publishedLMImage) {
         if (colorDepthMIP.sample != null) {
-            colorDepthMIP.sample3DImageStack = publishedImage.getFile("VisuallyLosslessStack");
-            colorDepthMIP.sampleGen1Gal4ExpressionImage = publishedImage.getGal4Expression4Image(colorDepthMIP.anatomicalArea);
+            colorDepthMIP.sample3DImageStack = publishedLMImage.getFile("VisuallyLosslessStack");
+            colorDepthMIP.sampleGen1Gal4ExpressionImage = publishedLMImage.getGal4Expression4Image(colorDepthMIP.anatomicalArea);
         } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
             colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
         }
@@ -154,18 +154,18 @@ public class JacsDataGetter {
                             cdmip -> cdmip.alignmentSpace,
                             Collectors.toList())
                     );
-            Map<String, List<PublishedImage>> publishedImagesBySampleRefs = mipsGroupedByAlignmentSpace.entrySet().stream()
+            Map<String, List<PublishedLMImage>> publishedImagesBySampleRefs = mipsGroupedByAlignmentSpace.entrySet().stream()
                             .flatMap(e -> {
                                 LOG.info("Retrieve {} published images for alignment space {}",
                                         mipIds.size(),
                                         e.getKey()); // alignment space
-                                return publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(
+                                return publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(
                                         e.getKey(),
                                         e.getValue().stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
                                         null
                                 ).values().stream().flatMap(Collection::stream);
                             })
-                    .collect(Collectors.groupingBy(PublishedImage::getSampleRef, Collectors.toList()));
+                    .collect(Collectors.groupingBy(PublishedLMImage::getSampleRef, Collectors.toList()));
             colorDepthMIPS.forEach(cdmip -> {
                 if (cdmip.needsEMBody()) {
                     emBodiesToRetrieve.add(cdmip.emBodyRef);
@@ -194,8 +194,8 @@ public class JacsDataGetter {
         }
     }
 
-    public Map<String, List<PublishedImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
-        return publishedImageDao.getPublishedImagesWithGal4BySampleObjectives(
+    public Map<String, List<PublishedLMImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
+        return publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(
                 alignmentSpace,
                 sampleRefs,
                 null

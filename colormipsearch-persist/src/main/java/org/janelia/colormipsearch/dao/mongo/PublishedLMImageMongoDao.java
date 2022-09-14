@@ -21,22 +21,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
-import org.janelia.colormipsearch.dao.PublishedImageDao;
-import org.janelia.colormipsearch.model.PublishedImage;
-import org.janelia.colormipsearch.model.PublishedImageFields;
+import org.janelia.colormipsearch.dao.PublishedLMImageDao;
+import org.janelia.colormipsearch.model.PublishedLMImage;
+import org.janelia.colormipsearch.model.PublishedLMImageFields;
 
-public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
-        implements PublishedImageDao {
+public class PublishedLMImageMongoDao extends AbstractMongoDao<PublishedLMImage>
+        implements PublishedLMImageDao {
 
     private static final List<String> GAL4_RELEASES = Arrays.asList("Gen1 GAL4", "Gen1 LexA");
 
-    public PublishedImageMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+    public PublishedLMImageMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
     }
 
     @Override
-    public Map<String, List<PublishedImage>> getPublishedImages(@Nullable String alignmentSpace, Collection<String> sampleRefs, @Nullable String objective) {
+    public Map<String, List<PublishedLMImage>> getPublishedImages(@Nullable String alignmentSpace, Collection<String> sampleRefs, @Nullable String objective) {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
@@ -58,14 +58,14 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                             mongoCollection,
                             getEntityType()).stream()
                     .collect(Collectors.groupingBy(
-                            PublishedImageFields::getSampleRef,
+                            PublishedLMImageFields::getSampleRef,
                             Collectors.toList()
                     ));
         }
     }
 
     @Override
-    public Map<String, List<PublishedImage>> getGAL4ExpressionImages(Collection<String> originalLines, @Nullable String area) {
+    public Map<String, List<PublishedLMImage>> getGAL4ExpressionImages(Collection<String> originalLines, @Nullable String area) {
         if (CollectionUtils.isEmpty(originalLines)) {
             return Collections.emptyMap();
         } else {
@@ -84,14 +84,14 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                             mongoCollection,
                             getEntityType()).stream()
                     .collect(Collectors.groupingBy(
-                            PublishedImageFields::getOriginalLine,
+                            PublishedLMImageFields::getOriginalLine,
                             Collectors.toList()
                     ));
         }
     }
 
     @Override
-    public List<PublishedImage> getPublishedImagesWithGal4BySample(String sampleRef) {
+    public List<PublishedLMImage> getPublishedImagesWithGal4BySample(String sampleRef) {
         if (StringUtils.isBlank(sampleRef)) {
             return Collections.emptyList();
         } else {
@@ -107,9 +107,9 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
     }
 
     @Override
-    public Map<String, List<PublishedImage>> getPublishedImagesWithGal4BySampleObjectives(@Nullable String alignmentSpace,
-                                                                                          Collection<String> sampleRefs,
-                                                                                          @Nullable String objective) {
+    public Map<String, List<PublishedLMImage>> getPublishedImagesWithGal4BySampleObjectives(@Nullable String alignmentSpace,
+                                                                                            Collection<String> sampleRefs,
+                                                                                            @Nullable String objective) {
         if (CollectionUtils.isEmpty(sampleRefs)) {
             return Collections.emptyMap();
         } else {
@@ -122,7 +122,7 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                             getEntityType(),
                             true).stream()
                     .collect(Collectors.groupingBy(
-                            PublishedImageFields::getSampleRef,
+                            PublishedLMImageFields::getSampleRef,
                             Collectors.toList()
                     ));
         }
@@ -146,7 +146,7 @@ public class PublishedImageMongoDao extends AbstractMongoDao<PublishedImage>
                 )
         ));
         pipeline.add(Aggregates.lookup(
-                EntityUtils.getPersistenceInfo(PublishedImage.class).storeName(),
+                EntityUtils.getPersistenceInfo(PublishedLMImage.class).storeName(),
                 Arrays.asList(
                         new Variable<>("sourceLine", "$originalLine"),
                         new Variable<>("sourceArea", "$area"),

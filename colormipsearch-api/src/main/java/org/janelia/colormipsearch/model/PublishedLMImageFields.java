@@ -16,7 +16,7 @@ import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
  * class will be deserialized based on the context the deserialization is invoked from.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class PublishedImageFields extends AbstractBaseEntity {
+public class PublishedLMImageFields extends AbstractBaseEntity {
     private String sampleRef;
     private String line;
     private String area;
