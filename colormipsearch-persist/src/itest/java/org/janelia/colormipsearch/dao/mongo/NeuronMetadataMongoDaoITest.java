@@ -214,8 +214,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
             EMNeuronEntity n = createTestNeuron(
                     EMNeuronEntity::new,
                     testLibrary,
-                    "123445",
-                    "mip123",
+                    "1234456",
+                    "mip1234",
                     Collections.singleton("addProcessingTags"));
             testDao.save(n);
             nIds.add(n.getEntityId());

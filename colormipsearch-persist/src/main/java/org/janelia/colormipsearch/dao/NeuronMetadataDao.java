@@ -8,7 +8,6 @@ import java.util.Set;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.MIPMatchesCount;
 import org.janelia.colormipsearch.model.ProcessingType;
 
 public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N> {
@@ -38,14 +37,6 @@ public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N
     PagedResult<Map<String, Object>> findDistinctNeuronAttributeValues(List<String> attributeNames,
                                                                        NeuronSelector neuronSelector,
                                                                        PagedRequest pagedRequest);
-
-    /**
-     * Count all matches for the given MIP IDs. The method counts both the matches for the MIPs in which the MIPs appear
-     * as a mask or as a target both in color depth match results and in PPP match results.
-     * @param mipIds the MIP ids for which the counts are retrieved - if the collection is empty it retrieves an empty list
-     * @return
-     */
-    List<MIPMatchesCount> countAllMatchesForMIPs(Collection<String> mipIds);
 
     /**
      * Add processing tags for the specified neuron IDs.
