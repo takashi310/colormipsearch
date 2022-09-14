@@ -6,8 +6,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -33,6 +35,7 @@ import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +63,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 description = "The location of the v2 results. This can be a list of directories or files ")
         List<ListArg> cdMatches = new ArrayList<>();
 
-        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported matches")
+        @Parameter(names = {"--tag"}, required = true, description = "Tag to assign to the imported matches")
         String tag;
 
         @Parameter(names = {"--imported-neuron-tag"}, description = "Tag assigned to neurons created by this import process")
@@ -100,6 +103,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         long startTime = System.currentTimeMillis();
 
         CDMIPsReader mipsReader = getCDMIPsReader();
+        CDMIPsWriter mipsWriter = getCDMIPsWriter();
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
@@ -117,7 +121,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     // process each item from the current partition sequentially
                     indexedPartititionItems.getValue().forEach(maskIdToProcess -> processCDMatchesFromFile(
-                            maskIdToProcess, mipsReader, cdMatchesReader, cdMatchesWriter));
+                            maskIdToProcess, mipsReader, mipsWriter, cdMatchesReader, cdMatchesWriter));
                     LOG.info("Finished batch {} of {} in {}s - memory usage {}M out of {}M",
                             indexedPartititionItems.getKey(),
                             indexedPartititionItems.getValue().size(),
@@ -134,6 +138,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
     private void processCDMatchesFromFile(String cdMatchesFile,
                                           CDMIPsReader mipsReader,
+                                          CDMIPsWriter mipsWriter,
                                           NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader,
                                           NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter) {
         try {
@@ -151,6 +156,17 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             updateMIPRefs(cdMatchesForMask, AbstractMatchEntity::getMatchedImage, mipsReader, cdMatchesFile);
             // write matches
             cdMatchesWriter.write(cdMatchesForMask);
+            // update processing tags
+            mipsWriter.addProcessingTags(
+                    cdMatchesForMask.stream()
+                            .flatMap(cdm -> Stream.of(cdm.getMaskImage(), cdm.getMatchedImage()))
+                            .filter(Objects::nonNull)
+                            .filter(n -> n.hasProcessedTag(ProcessingType.ColorDepthSearch, args.tag))
+                            .collect(Collectors.toList()),
+                    ProcessingType.ColorDepthSearch,
+                    Collections.singleton(args.tag)
+            );
+
         } catch (Exception e) {
             throw new IllegalArgumentException("Error processing " + cdMatchesFile, e);
         }
@@ -158,6 +174,10 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
 
     private CDMIPsReader getCDMIPsReader() {
         return new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
+    }
+
+    private CDMIPsWriter getCDMIPsWriter() {
+        return new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
     }
 
     private NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> getCDMatchesReader() {
@@ -229,6 +249,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
             AbstractNeuronEntity persistedNeuron = indexedPersistedMIPs.getOrDefault(n, newNeurons.get(n));
             if (persistedNeuron != null) {
                 n.setEntityId(persistedNeuron.getEntityId());
+                n.addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton(args.tag));
                 if (persistedNeuron.hasTag(args.importedNeuronTag)) {
                     cdm.addTag(args.suspiciousMatchTag);
                 }
@@ -246,6 +267,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                         n, n.getComputeFileData(ComputeFileType.InputColorDepthImage), cdm);
                 // persist the neuron now and assign it a specific tag
                 n.addTag(args.importedNeuronTag);
+                n.addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton(args.tag));
                 cdMIPsWriter.writeOne(n);
                 newNeurons.put(nKey, n);
                 cdm.addTag(args.suspiciousMatchTag);

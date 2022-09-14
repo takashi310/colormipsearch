@@ -16,6 +16,7 @@ import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,13 +55,16 @@ abstract class AbstractColorMIPSearchProcessor<M extends AbstractNeuronEntity, T
      * @param targetImage
      * @return null if no match was found otherwise it returns a @CDSMatch@
      */
+    @SuppressWarnings("unchecked")
     @Nonnull
     CDMatchEntity<M, T> findPixelMatch(ColorDepthSearchAlgorithm<PixelMatchScore> cdsAlgorithm,
                                        NeuronMIP<M> maskImage,
                                        NeuronMIP<T> targetImage) {
         CDMatchEntity<M, T> result = new CDMatchEntity<>();
-        result.setMaskImage(maskImage.getNeuronInfo());
-        result.setMatchedImage(targetImage.getNeuronInfo());
+        // set the mask and the target with the corresponding processing tags set
+        // I am wondering if this has a big cost considering that the processed tags for the mask can be set only once
+        result.setMaskImage((M) maskImage.getNeuronInfo().addProcessedTags(ProcessingType.ColorDepthSearch, tags));
+        result.setMatchedImage((T) targetImage.getNeuronInfo().addProcessedTags(ProcessingType.ColorDepthSearch, tags));
         try {
             Map<ComputeFileType, Supplier<ImageArray<?>>> variantImageSuppliers =
                     getVariantImagesSuppliers(cdsAlgorithm.getRequiredTargetVariantTypes(), targetImage.getNeuronInfo());

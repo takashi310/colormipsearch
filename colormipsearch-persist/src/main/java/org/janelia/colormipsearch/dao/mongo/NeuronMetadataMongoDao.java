@@ -7,9 +7,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableMap;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
@@ -30,6 +32,8 @@ import com.mongodb.client.model.Variable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
+import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
@@ -45,12 +49,13 @@ import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.MIPMatchesCount;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
         implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
 
-    private ClientSession session;
+    private final ClientSession session;
 
     public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
@@ -254,5 +259,21 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
 
     private Bson createUnwindStage(String fieldName) {
         return Aggregates.unwind("$" + fieldName, new UnwindOptions().preserveNullAndEmptyArrays(true));
+    }
+
+    @Override
+    public void addProcessingTags(List<Number> neuronIds, ProcessingType processingType, Set<String> tags) {
+        if (CollectionUtils.isEmpty(neuronIds) || processingType == null || CollectionUtils.isEmpty(tags)) {
+            // don't do anything if neuronIds or tags are empty or if the processing type is not specified
+            return;
+        }
+        Map<String, EntityFieldValueHandler<?>> toUpdate = ImmutableMap.of(
+                "processedTags." + processingType.name(),
+                new AppendFieldValueHandler<>(tags)
+        );
+        mongoCollection.updateMany(
+                MongoDaoHelper.createFilterByIds(neuronIds),
+                getUpdates(toUpdate)
+        );
     }
 }

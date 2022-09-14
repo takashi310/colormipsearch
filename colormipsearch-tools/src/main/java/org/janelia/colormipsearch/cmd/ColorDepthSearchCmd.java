@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -14,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider;
 import org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory;
 import org.janelia.colormipsearch.cds.ColorMIPSearch;
@@ -24,6 +24,7 @@ import org.janelia.colormipsearch.cmd.cdsprocess.LocalColorMIPSearchProcessor;
 import org.janelia.colormipsearch.cmd.cdsprocess.SparkColorMIPSearchProcessor;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
@@ -31,6 +32,7 @@ import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBCDSSessionWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
+import org.janelia.colormipsearch.dataio.db.DBCheckedCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONCDMIPsReader;
 import org.janelia.colormipsearch.dataio.fs.JSONCDSSessionWriter;
@@ -38,6 +40,7 @@ import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,19 +92,16 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--targets-tags"}, description = "Targets MIPs tags to be selected for CDS", variableArity = true)
         List<String> targetsTags;
 
-        @Parameter(names = {"--run-tag"}, description = "Associate this tag with the run")
-        String runTag;
+        @Parameter(names = {"--processing-tag"}, required = true,
+                description = "Associate this tag with the run. Also all MIPs that are color depth searched will be stamped with this processing tag")
+        String processingTag;
 
         ColorDepthSearchArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
 
-        boolean hasTag() {
-            return StringUtils.isNotBlank(runTag);
-        }
-
-        String getTag() {
-            return runTag.trim();
+        String getProcessingTag() {
+            return processingTag.trim();
         }
     }
 
@@ -138,7 +138,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void runColorDepthSearch() {
-        CDMIPsReader cdmiPsReader = getCDMipsReader();
+        CDMIPsReader cdmipsReader = getCDMipsReader();
         ColorMIPSearchProcessor<M, T> colorMIPSearchProcessor;
         ColorDepthSearchAlgorithmProvider<PixelMatchScore> cdsAlgorithmProvider;
         ImageRegionDefinition excludedRegions = args.getRegionGeneratorForTextLabels();
@@ -151,13 +151,13 @@ class ColorDepthSearchCmd extends AbstractCmd {
         );
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, args.maskThreshold, cdsAlgorithmProvider);
         @SuppressWarnings("unchecked")
-        List<M> maskMips = (List<M>) readMIPs(cdmiPsReader,
+        List<M> maskMips = (List<M>) readMIPs(cdmipsReader,
                 args.masksInputs,
                 args.masksTags,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
-        List<T> targetMips = (List<T>) readMIPs(cdmiPsReader,
+        List<T> targetMips = (List<T>) readMIPs(cdmipsReader,
                 args.targetsInputs,
                 args.targetsTags,
                 args.targetsStartIndex, args.targetsLength,
@@ -166,7 +166,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
             LOG.info("Nothing to do for {} masks and {} targets", maskMips.size(), targetMips.size());
             return;
         }
-        Set<String> runTags = args.hasTag() ? Collections.singleton(args.getTag()) : Collections.emptySet();
+        Set<String> processingTags = Collections.singleton(args.getProcessingTag());
         // save CDS parameters
         Number cdsRunId = getCDSSessionWriter().createSession(
                 args.masksInputs.stream()
@@ -186,14 +186,14 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                 .setSize(larg.length))
                         .collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters(),
-                runTags);
+                processingTags);
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
                     cdsRunId,
                     args.appName,
                     colorMIPSearch,
                     args.processingPartitionSize,
-                    runTags
+                    processingTags
             );
         } else {
             colorMIPSearchProcessor = new LocalColorMIPSearchProcessor<>(
@@ -201,14 +201,26 @@ class ColorDepthSearchCmd extends AbstractCmd {
                     colorMIPSearch,
                     args.processingPartitionSize,
                     CmdUtils.createCmdExecutor(args.commonArgs),
-                    runTags
+                    processingTags
             );
         }
         try {
+            // start the pairwise color depth search
             List<CDMatchEntity<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
             NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
             cdsResultsWriter.write(cdsResults);
         } finally {
+            // update the mips processing tags
+            getCDMipsWriter().ifPresent(cdmiPsWriter -> {
+                cdmiPsWriter.addProcessingTags(
+                        filterProcessedNeurons(maskMips, processingTags),
+                        ProcessingType.ColorDepthSearch,
+                        processingTags);
+                cdmiPsWriter.addProcessingTags(
+                        filterProcessedNeurons(targetMips, processingTags),
+                        ProcessingType.ColorDepthSearch,
+                        processingTags);
+            });
             colorMIPSearchProcessor.terminate();
         }
     }
@@ -218,6 +230,14 @@ class ColorDepthSearchCmd extends AbstractCmd {
             return new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
         } else {
             return new JSONCDMIPsReader(mapper);
+        }
+    }
+
+    private Optional<CDMIPsWriter> getCDMipsWriter() {
+        if (args.mipsStorage == StorageType.DB) {
+            return Optional.of(new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao()));
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -281,4 +301,9 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 ? allMips.subList(0, length)
                 : allMips;
     }
+
+    private <N extends AbstractNeuronEntity> List<N> filterProcessedNeurons(List<N> neurons, Set<String> processedTags) {
+        return neurons.stream().filter(n -> n.hasProcessedTags(ProcessingType.ColorDepthSearch, processedTags)).collect(Collectors.toList());
+    }
+
 }

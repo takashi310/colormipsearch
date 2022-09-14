@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.model;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -36,6 +38,9 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     private String sourceRefId;
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
+    // processed tags holds the corresponding processing tag used for the ColorDepthSearch or PPPM import
+    // to mark that the entity was part of the process;
+    private final Map<ProcessingType, Set<String>> processedTags = new HashMap<>();
 
     public String getMipId() {
         return mipId;
@@ -124,6 +129,41 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         return computeFiles.containsKey(t);
     }
 
+    public Map<ProcessingType, Set<String>> getProcessedTags() {
+        return processedTags;
+    }
+
+    void setProcessedTags(Map<ProcessingType, Set<String>> processedTags) {
+        if (processedTags != null) {
+            this.processedTags.putAll(processedTags);
+        }
+    }
+
+    public AbstractNeuronEntity addProcessedTags(ProcessingType processingType, Set<String> tags) {
+        if (processingType != null && CollectionUtils.isNotEmpty(tags)) {
+            synchronized (processedTags) {
+                processedTags.computeIfAbsent(processingType, k -> new HashSet<>());
+            }
+            tags.stream().filter(StringUtils::isNotBlank).forEach(t -> processedTags.get(processingType).add(t));
+        }
+        return this;
+    }
+
+    public boolean hasProcessedTag(ProcessingType processingType, String tag) {
+        return CollectionUtils.isNotEmpty(processedTags.get(processingType)) &&
+                processedTags.get(processingType).contains(tag);
+    }
+
+    public boolean hasProcessedTags(ProcessingType processingType, Set<String> tags) {
+        if (processingType == null || CollectionUtils.isEmpty(tags)) {
+            // if the check does not make any sense return false
+            return false;
+        } else {
+            return CollectionUtils.isNotEmpty(processedTags.get(processingType)) &&
+                    processedTags.get(processingType).containsAll(tags);
+        }
+    }
+
     public abstract AbstractNeuronEntity duplicate();
 
     public abstract AbstractNeuronMetadata metadata();
@@ -172,6 +212,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
         this.addAllTags(that.getTags());
+        this.setProcessedTags(that.getProcessedTags());
     }
 
 }

@@ -10,10 +10,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,17 +23,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Nullable;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
+import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
+import org.janelia.colormipsearch.dataio.db.DBCheckedCDMIPsWriter;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -39,17 +44,21 @@ import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.janelia.colormipsearch.ppp.RawPPPMatchesReader;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 class ImportPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ImportPPPResultsCmd.class);
 
     @Parameters(commandDescription = "Convert the original PPP results into NeuronBridge compatible results")
     static class CreatePPPResultsArgs extends AbstractCmdArgs {
+        @Parameter(names = {"--mips-storage"},
+                description = "Specifies MIPs storage")
+        StorageType mipsStorage = StorageType.DB;
+
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
         String alignmentSpace;
 
@@ -93,8 +102,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--processing-partition-size", "-ps"}, description = "Processing partition size")
         int processingPartitionSize = 1000;
 
-        @Parameter(names = {"--tag"}, description = "Tag to assign to the imported PPP matches")
-        String tag;
+        @Parameter(names = {"--processing-tag"}, required = true,
+                description = "Tag to assign to the imported PPP matches as well as with the MIPs that will PPP matches once the import is completed")
+        String processingTag;
 
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -154,7 +164,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
     }
 
     private void processPPPFiles(List<Path> listOfPPPResults) {
-        CDMIPsReader cdmiPsReader = new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
+        CDMIPsReader cdmiPsReader = getCDMipsReader();
         NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
         listOfPPPResults.forEach(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader, pppMatchesWriter));
     }
@@ -228,7 +238,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
      * @return a list of PPP matches imported from the given file
      */
     private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile,
-                                                                                           CDMIPsReader cdmipsReader,
+                                                                                           @Nullable CDMIPsReader cdmipsReader,
                                                                                            NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
         LOG.info("Start processing {}", pppResultsFile);
         long start = System.currentTimeMillis();
@@ -252,12 +262,23 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         lookupScreenshots(screenshotsPath, inputPPPMatch);
                     }
                     pppMatch.setMaskImage(registeredEMNeurons.get(inputPPPMatch.getEmNeuronName()));
+                    if (pppMatch.getMaskImage() != null) {
+                        pppMatch.getMaskImage().addProcessedTags(ProcessingType.PPPMatch, Collections.singleton(args.processingTag));
+                    }
                     return updatePPPMatchData(inputPPPMatch);
                 })
                 .collect(Collectors.toList());
         LOG.info("Read {} PPP matches from {} in {}s", pppMatches.size(), pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
         writePPPMatches(pppMatches, pppMatchesWriter);
         LOG.info("Persisted {} PPP matches from {}", pppMatches.size(), pppResultsFile);
+        // update the mips processing tags
+        getCDMipsWriter().ifPresent(cdmiPsWriter -> {
+            cdmiPsWriter.addProcessingTags(
+                    filterProcessedNeurons(registeredEMNeurons.values()),
+                    ProcessingType.PPPMatch,
+                    Collections.singleton(args.processingTag));
+        });
+
         LOG.info("Finished importing {} PPP matches from {} in {}s", pppMatches.size(), pppResultsFile, (System.currentTimeMillis()-start) / 1000.);
         return pppMatches;
     }
@@ -274,6 +295,23 @@ class ImportPPPResultsCmd extends AbstractCmd {
                     args.getOutputDir(),
                     null // only write results per mask
             );
+        }
+    }
+
+    @Nullable
+    private CDMIPsReader getCDMipsReader() {
+        if (args.mipsStorage == StorageType.DB) {
+            return new DBCDMIPsReader(getDaosProvider().getNeuronMetadataDao());
+        } else {
+            return null;
+        }
+    }
+
+    private Optional<CDMIPsWriter> getCDMipsWriter() {
+        if (args.mipsStorage == StorageType.DB) {
+            return Optional.of(new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao()));
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -310,20 +348,24 @@ class ImportPPPResultsCmd extends AbstractCmd {
         PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
         pppMatch.setSourceEmLibrary(args.emLibrary);
         pppMatch.setSourceLmLibrary(args.lmLibrary);
-        pppMatch.addTag(args.tag);
+        pppMatch.addTag(args.processingTag);
         return pppMatch;
     }
 
-    private Map<String, EMNeuronEntity> retrieveEMNeurons(CDMIPsReader cdmipsReader, Set<String> emNeuronNames) {
-        return cdmipsReader.readMIPs(new DataSourceParam()
-                        .setAlignmentSpace(args.alignmentSpace)
-                        .addLibrary(args.emLibrary)
-                        .addNames(emNeuronNames)
-                        .addTags(args.emTags))
-                .stream()
-                .filter(n -> emNeuronNames.contains(n.getPublishedName()))
-                .filter(this::notFlippedNeuron)
-                .collect(Collectors.toMap(AbstractNeuronEntity::getPublishedName, n -> (EMNeuronEntity) n));
+    private Map<String, EMNeuronEntity> retrieveEMNeurons(@Nullable CDMIPsReader cdmipsReader, Set<String> emNeuronNames) {
+        if (cdmipsReader == null) {
+            return Collections.emptyMap();
+        } else {
+            return cdmipsReader.readMIPs(new DataSourceParam()
+                            .setAlignmentSpace(args.alignmentSpace)
+                            .addLibrary(args.emLibrary)
+                            .addNames(emNeuronNames)
+                            .addTags(args.emTags))
+                    .stream()
+                    .filter(n -> emNeuronNames.contains(n.getPublishedName()))
+                    .filter(this::notFlippedNeuron)
+                    .collect(Collectors.toMap(AbstractNeuronEntity::getPublishedName, n -> (EMNeuronEntity) n));
+        }
     }
 
     private boolean notFlippedNeuron(AbstractNeuronEntity n) {
@@ -335,4 +377,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
     private void writePPPMatches(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches, NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
         pppMatchesWriter.write(pppMatches);
     }
+
+    private <N extends AbstractNeuronEntity> List<N> filterProcessedNeurons(Collection<N> neurons) {
+        return neurons.stream().filter(n -> n.hasProcessedTag(ProcessingType.PPPMatch, args.processingTag)).collect(Collectors.toList());
+    }
+
 }

@@ -3,11 +3,13 @@ package org.janelia.colormipsearch.dao;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.MIPMatchesCount;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N> {
     /**
@@ -45,4 +47,12 @@ public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N
      */
     List<MIPMatchesCount> countAllMatchesForMIPs(Collection<String> mipIds);
 
+    /**
+     * Add processing tags for the specified neuron IDs.
+     *
+     * @param neuronIds
+     * @param processingType
+     * @param tags
+     */
+    void addProcessingTags(List<Number> neuronIds, ProcessingType processingType, Set<String> tags);
 }

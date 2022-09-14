@@ -1,8 +1,10 @@
 package org.janelia.colormipsearch.dataio;
 
 import java.util.List;
+import java.util.Set;
 
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 /**
  * Writer for Color Depth MIPs metadata.
@@ -16,16 +18,25 @@ public interface CDMIPsWriter {
     /**
      * Write all items.
      *
-     * @param neuronMetadata items to write
+     * @param neuronEntities items to write
      */
-    void write(List<AbstractNeuronEntity> neuronMetadata);
+    void write(List<? extends AbstractNeuronEntity> neuronEntities);
 
     /**
      * Write one item.
      *
-     * @param neuronMetadata item to write
+     * @param neuronEntity item to write
      */
-    void writeOne(AbstractNeuronEntity neuronMetadata);
+    void writeOne(AbstractNeuronEntity neuronEntity);
+
+    /**
+     * Add provided processing tags to the list of neurons.
+     *
+     * @param neuronEntities
+     * @param processingType
+     * @param tags
+     */
+    void addProcessingTags(List<? extends AbstractNeuronEntity> neuronEntities, ProcessingType processingType, Set<String> tags);
 
     /**
      * Finish all writes and close the writer.

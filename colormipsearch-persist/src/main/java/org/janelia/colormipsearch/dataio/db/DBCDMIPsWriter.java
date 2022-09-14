@@ -1,10 +1,14 @@
 package org.janelia.colormipsearch.dataio.db;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
+import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 public class DBCDMIPsWriter implements CDMIPsWriter {
 
@@ -19,14 +23,24 @@ public class DBCDMIPsWriter implements CDMIPsWriter {
         // nothing to do for the DB writer
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void write(List<AbstractNeuronEntity> neuronMetadata) {
-        neuronMetadataDao.saveAll(neuronMetadata);
+    public void write(List<? extends AbstractNeuronEntity> neuronEntities) {
+        List<AbstractNeuronEntity> toWrite = (List<AbstractNeuronEntity>) neuronEntities;
+        neuronMetadataDao.saveAll(toWrite);
     }
 
     @Override
-    public void writeOne(AbstractNeuronEntity neuronMetadata) {
-        neuronMetadataDao.save(neuronMetadata);
+    public void writeOne(AbstractNeuronEntity neuronEntity) {
+        neuronMetadataDao.save(neuronEntity);
+    }
+
+    @Override
+    public void addProcessingTags(List<? extends AbstractNeuronEntity> neuronEntities, ProcessingType processingType, Set<String> tags) {
+        neuronMetadataDao.addProcessingTags(
+                neuronEntities.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toList()),
+                processingType,
+                tags);
     }
 
     @Override

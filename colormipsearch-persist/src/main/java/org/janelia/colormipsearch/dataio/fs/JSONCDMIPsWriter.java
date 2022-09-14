@@ -9,6 +9,7 @@ import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -17,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ProcessingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,17 +54,22 @@ public class JSONCDMIPsWriter implements CDMIPsWriter {
     }
 
     @Override
-    public void write(List<AbstractNeuronEntity> neuronMetadata) {
-        neuronMetadata.forEach(this::writeOne);
+    public void write(List<? extends AbstractNeuronEntity> neuronEntities) {
+        neuronEntities.forEach(this::writeOne);
     }
 
     @Override
-    public void writeOne(AbstractNeuronEntity neuronMetadata) {
+    public void writeOne(AbstractNeuronEntity neuronEntity) {
         try {
-            gen.writeObject(neuronMetadata);
+            gen.writeObject(neuronEntity);
         } catch (Exception e) {
-            LOG.error("Error writing {}", neuronMetadata, e);
+            LOG.error("Error writing {}", neuronEntity, e);
         }
+    }
+
+    @Override
+    public void addProcessingTags(List<? extends AbstractNeuronEntity> neuronEntities, ProcessingType processingType, Set<String> tags) {
+        // do nothing here
     }
 
     @Override
