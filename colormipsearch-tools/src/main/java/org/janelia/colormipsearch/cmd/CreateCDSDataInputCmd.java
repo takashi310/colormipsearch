@@ -362,9 +362,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             }
         }
         if (CollectionUtils.isNotEmpty(excludedLibraries)) {
-            return cdmip.libraries.stream()
-                    .filter(l -> excludedLibraries.contains(l))
-                    .count() == 0;
+            return cdmip.libraries.stream().noneMatch(excludedLibraries::contains);
         }
         return true;
     }
