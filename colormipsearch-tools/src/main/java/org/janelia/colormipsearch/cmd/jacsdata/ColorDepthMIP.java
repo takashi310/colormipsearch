@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd.jacsdata;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -9,12 +8,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
-import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 /**
  * This is the representation of a JACS ColorDepthMIP image.
@@ -57,6 +56,7 @@ public class ColorDepthMIP implements Serializable {
     public String sample3DImageStack;
     public String sampleGen1Gal4ExpressionImage;
     public String emSWCFile;
+    public String emOBJFile;
 
     public String findLibrary(String libraryName) {
         if (CollectionUtils.isEmpty(libraries)) {
@@ -106,11 +106,11 @@ public class ColorDepthMIP implements Serializable {
         return emBody != null && emBody.emDataSet != null ? emBody.emDataSet.gender : null;
     }
 
-    public String emSWCFilename(String prefix) {
-        if (StringUtils.isBlank(emSWCFile)) {
+    public String em3DFilename(String prefix, String em3DFile, String ext) {
+        if (StringUtils.isBlank(em3DFile)) {
             return null;
         } else {
-            String fname = emBodyId() + ".swc";
+            String fname = emBodyId() + ext;
             if (StringUtils.isBlank(prefix)) {
                 return fname;
             } else {
@@ -148,6 +148,7 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
         lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, sample3DImageStack);
         lmNeuron.setNeuronFile(FileType.Gal4Expression, sampleGen1Gal4ExpressionImage);
+        updateResultsFiles(lmNeuron);
 
         if (sample == null || StringUtils.isBlank(sample.publishingName)) {
             lmNeuron.setUnpublished(true);
@@ -163,10 +164,21 @@ public class ColorDepthMIP implements Serializable {
         // set neuron files
         emNeuron.setNeuronFile(FileType.ColorDepthMip, publicImageUrl);
         emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
-        emNeuron.setNeuronFile(FileType.AlignedBodySWC, emSWCFilename(emNeuron.getLibraryName()));
+        emNeuron.setNeuronFile(FileType.AlignedBodySWC, em3DFilename(emNeuron.getLibraryName(), emSWCFile, ".swc"));
+        emNeuron.setNeuronFile(FileType.AlignedBodyOBJ, em3DFilename(emNeuron.getLibraryName(), emOBJFile, ".obj"));
+        updateResultsFiles(emNeuron);
 
         if (bodyId == null) {
             emNeuron.setUnpublished(true);
+        }
+    }
+
+    private void updateResultsFiles(AbstractNeuronMetadata n) {
+        if (n.hasAnyProcessedTag(ProcessingType.ColorDepthSearch)) {
+            n.setNeuronFile(FileType.CDSResults, n.getMipId() + ".json");
+        }
+        if (n.hasAnyProcessedTag(ProcessingType.PPPMatch)) {
+            n.setNeuronFile(FileType.PPPMResults, n.getPublishedName() + ".json");
         }
     }
 

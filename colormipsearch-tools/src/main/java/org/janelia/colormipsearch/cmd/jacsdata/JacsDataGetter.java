@@ -101,6 +101,7 @@ public class JacsDataGetter {
             colorDepthMIP.sampleGen1Gal4ExpressionImage = publishedLMImage.getGal4Expression4Image(colorDepthMIP.anatomicalArea);
         } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
             colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
+            colorDepthMIP.emOBJFile = colorDepthMIP.emBody.files.get("SkeletonOBJ");
         }
     }
 
