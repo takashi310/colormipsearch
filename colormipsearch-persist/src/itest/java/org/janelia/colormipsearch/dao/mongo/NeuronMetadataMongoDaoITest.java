@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dao.mongo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -209,7 +210,7 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     public void addProcessingTags() {
         String testLibrary = "flyem";
         int nNeurons = 3;
-        List<Number> nIds = new ArrayList<>();
+        Map<Number, String> nIds = new HashMap<>();
         for (int i = 0; i < nNeurons; i++) {
             EMNeuronEntity n = createTestNeuron(
                     EMNeuronEntity::new,
@@ -218,15 +219,15 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                     "mip1234",
                     Collections.singleton("addProcessingTags"));
             testDao.save(n);
-            nIds.add(n.getEntityId());
+            nIds.put(n.getEntityId(), n.getMipId());
         }
         int iterations = 3;
         for (int iter = 0; iter < iterations; iter++) {
             Set<String> colorDepthTags = ImmutableSet.of("cd1-" + (iter+1), "cd2-" + (iter+1));
             Set<String> pppTags = ImmutableSet.of("ppp1-" + (iter+1), "ppp2-" + (iter+1));
-            testDao.addProcessingTags(nIds, ProcessingType.ColorDepthSearch, colorDepthTags);
-            testDao.addProcessingTags(nIds, ProcessingType.PPPMatch, pppTags);
-            List<AbstractNeuronEntity> persistedNeurons = testDao.findByEntityIds(nIds);
+            testDao.addProcessingTags(nIds.values(), ProcessingType.ColorDepthSearch, colorDepthTags);
+            testDao.addProcessingTags(nIds.values(), ProcessingType.PPPMatch, pppTags);
+            List<AbstractNeuronEntity> persistedNeurons = testDao.findByEntityIds(nIds.keySet());
             assertEquals(nNeurons, persistedNeurons.size());
             persistedNeurons.forEach(n -> {
                 assertTrue(n.hasProcessedTags(ProcessingType.ColorDepthSearch, colorDepthTags));

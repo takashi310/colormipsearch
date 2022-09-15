@@ -69,9 +69,8 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         n.setAnatomicalArea(anatomicalArea);
         n.setGender(gender);
         n.setObjective(objective);
-        getComputeFiles().forEach((ft, fd) -> {
-            n.setNeuronComputeFile(ft, fd.getFileName());
-        });
+        getComputeFiles().forEach((ft, fd) -> n.setNeuronComputeFile(ft, fd.getFileName()));
+        getProcessedTags().forEach(n::putProcessedTags);
         return n;
     }
 }

@@ -36,7 +36,7 @@ public class DBCheckedCDMIPsWriter implements CDMIPsWriter {
     @Override
     public void addProcessingTags(List<? extends AbstractNeuronEntity> neuronEntities, ProcessingType processingType, Set<String> tags) {
         neuronMetadataDao.addProcessingTags(
-                neuronEntities.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toList()),
+                neuronEntities.stream().map(AbstractNeuronEntity::getMipId).collect(Collectors.toSet()),
                 processingType,
                 tags);
     }

@@ -200,8 +200,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
     }
 
     @Override
-    public void addProcessingTags(List<Number> neuronIds, ProcessingType processingType, Set<String> tags) {
-        if (CollectionUtils.isEmpty(neuronIds) || processingType == null || CollectionUtils.isEmpty(tags)) {
+    public void addProcessingTags(Collection<String> neuronMIPIds, ProcessingType processingType, Set<String> tags) {
+        if (CollectionUtils.isEmpty(neuronMIPIds) || processingType == null || CollectionUtils.isEmpty(tags)) {
             // don't do anything if neuronIds or tags are empty or if the processing type is not specified
             return;
         }
@@ -210,7 +210,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 new AppendFieldValueHandler<>(tags)
         );
         mongoCollection.updateMany(
-                MongoDaoHelper.createFilterByIds(neuronIds),
+                MongoDaoHelper.createInFilter("mipId", neuronMIPIds),
                 getUpdates(toUpdate)
         );
     }

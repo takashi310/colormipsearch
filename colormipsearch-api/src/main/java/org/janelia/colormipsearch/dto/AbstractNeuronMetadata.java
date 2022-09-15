@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dto;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -9,14 +10,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.JsonRequired;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 /**
  * This is the representation of the neuron metadata that will get uploaded to AWS
@@ -38,6 +42,8 @@ public abstract class AbstractNeuronMetadata {
     // neuronComputeFiles are needed to temporarily hold the files that were actually matched
     // in order to be able to generate the corresponding input name as it is on S3
     private final Map<ComputeFileType, String> neuronComputeFiles = new HashMap<>();
+    @JsonIgnore
+    private final Map<ProcessingType, Set<String>> processedTags = new HashMap<>();
 
     @JsonProperty("id")
     public String getMipId() {
@@ -157,6 +163,16 @@ public abstract class AbstractNeuronMetadata {
         } else {
             neuronComputeFiles.remove(t);
         }
+    }
+
+    public void putProcessedTags(ProcessingType processingType, Set<String> tags) {
+        if (processingType != null && CollectionUtils.isNotEmpty(tags)) {
+            processedTags.put(processingType, tags);
+        }
+    }
+
+    public boolean hasAnyProcessedTag(ProcessingType processingType) {
+        return CollectionUtils.isNotEmpty(processedTags.get(processingType));
     }
 
     @Override
