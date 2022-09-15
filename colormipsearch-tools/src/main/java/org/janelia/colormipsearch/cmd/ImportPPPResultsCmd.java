@@ -62,9 +62,6 @@ class ImportPPPResultsCmd extends AbstractCmd {
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
         String alignmentSpace;
 
-        @Parameter(names = {"--anatomical-area", "-area"}, description = "Anatomical area")
-        String anatomicalArea = "Brain";
-
         @Parameter(names = {"--em-library"}, description = "EM library name", required = true)
         String emLibrary;
 
