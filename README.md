@@ -26,7 +26,7 @@ at ~/.m2/settings.xml
 
   <servers>
     <server>
-      <id>janelia-repo</id>
+      <id>janelia-releases</id>
       <username>yourusername</username>
       <password>yourpassword</password>
     </server>

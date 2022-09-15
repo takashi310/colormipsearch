@@ -315,7 +315,7 @@
 
     <distributionManagement>
         <repository>
-            <id>janelia-repo</id>
+            <id>janelia-releases</id>
             <name>Janelia Nexus Repository</name>
             <url>https://nexus.janelia.org/repository/maven-releases</url>
         </repository>
