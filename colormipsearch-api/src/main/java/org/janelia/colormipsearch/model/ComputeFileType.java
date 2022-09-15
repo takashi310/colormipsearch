@@ -11,9 +11,8 @@ public enum ComputeFileType {
     GradientImage,
     // RGB 20px Z-gap images
     ZGapImage,
-    MatchedColorDepthImage,
-    MatchedGradientImage,
-    MatchedZGapImage;
+    SkeletonSWC,
+    SkeletonOBJ;
 
     public static ComputeFileType fromName(String name) {
         for (ComputeFileType vt : values()) {

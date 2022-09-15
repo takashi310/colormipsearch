@@ -379,6 +379,14 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronMetadata.setPublishedName(cdmip.emBodyId());
         // set source color depth image
         neuronMetadata.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
+        if (cdmip.emBody != null && cdmip.emBody.files != null) {
+            neuronMetadata.setComputeFileData(
+                    ComputeFileType.SkeletonSWC,
+                    FileData.fromString(cdmip.emBody.files.get("SkeletonSWC")));
+            neuronMetadata.setComputeFileData(
+                    ComputeFileType.SkeletonOBJ,
+                    FileData.fromString(cdmip.emBody.files.get("SkeletonOBJ")));
+        }
         return new InputCDMipNeuron<>(cdmip, neuronMetadata);
     }
 
