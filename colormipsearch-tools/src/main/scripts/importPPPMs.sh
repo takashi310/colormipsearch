@@ -5,6 +5,11 @@ JAR_VERSION=3.0.0
 SOURCE_PPP_RESULTS=/nrs/saalfeld/maisl/flymatch/all_hemibrain_1.2_NB/setup22_nblast_20/results
 PPP_RES_SUBDIR=lm_cable_length_20_v4_iter_2_tanh
 
+ALIGNMENT_SPACE=JRC2018_Unisex_20x_HR
+EM_LIBRARY=flyem_hemibrain_1_2_1
+LM_LIBRARY=flylight_gen1_mcfo_published
+TAG=2.3.0
+
 NEURON_DIR=${SOURCE_PPP_RESULTS}
 RES_SUBDIR=${PPP_RES_SUBDIR}
 
@@ -15,26 +20,24 @@ NEURON_SUBDIRS="\
 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 \
 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99"
 
-MISSING="06 08 22 24 31 61 73 79 85 96"
-
 DEV_CONFIG="--config local/devdb-config.properties"
 PROD_CONFIG="--config local/proddb-config.properties"
-RUNNER=
+RUNNER=echo
 
 for nd in ${NEURON_SUBDIRS} ; do
     echo "$(date) Process dir ${NEURON_DIR}/${nd}"
     ${RUNNER} java ${LOG_OPTS} \
         -jar target/colormipsearch-${JAR_VERSION}-jar-with-dependencies.jar \
         importPPPResults \
-        ${PROD_CONFIG} \
-        -as JRC2018_Unisex_20x_HR \
-        --em-library flyem_hemibrain_1_2_1 \
-        --lm-library flylight_gen1_mcfo_published \
+        ${DEV_CONFIG} \
+        -as ${ALIGNMENT_SPACE} \
+        --em-library ${}EM_LIBRARY} \
+        --lm-library ${}LM_LIBRARY} \
         -rd ${NEURON_DIR}/${nd} \
         --neuron-matches-sub-dir ${RES_SUBDIR} \
         -ps 20 \
         --only-best-skeleton-matches \
-        --processing-tag 2.3.0 \
+        --processing-tag ${TAG} \
         $*
     echo "$(date) Completed dir ${NEURON_DIR}/${nd}"
 done
