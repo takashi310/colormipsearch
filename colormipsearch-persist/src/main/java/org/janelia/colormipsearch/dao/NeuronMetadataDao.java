@@ -45,5 +45,5 @@ public interface NeuronMetadataDao<N extends AbstractNeuronEntity> extends Dao<N
      * @param processingType
      * @param tags
      */
-    void addProcessingTags(Collection<String> neuronMIPIds, ProcessingType processingType, Set<String> tags);
+    void addProcessingTagsToMIPIDs(Collection<String> neuronMIPIds, ProcessingType processingType, Set<String> tags);
 }

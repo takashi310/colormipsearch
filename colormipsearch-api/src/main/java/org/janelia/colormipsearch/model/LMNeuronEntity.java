@@ -1,5 +1,9 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 
 public class LMNeuronEntity extends AbstractNeuronEntity {
@@ -45,6 +49,16 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
 
     public void setObjective(String objective) {
         this.objective = objective;
+    }
+
+    @Override
+    public Map<String, Object> getUpdateableFields() {
+        Map<String, Object> dict = new HashMap<>(super.getUpdateableFields());
+        dict.put("slideCode", slideCode);
+        dict.put("anatomicalArea", anatomicalArea);
+        dict.put("gender", gender);
+        dict.put("objective", objective);
+        return dict;
     }
 
     @Override

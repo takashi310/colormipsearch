@@ -198,6 +198,14 @@ class MongoDaoHelper {
                 .into(entityDocs);
     }
 
+    static Bson getFieldUpdate(String prefix, String fieldName, EntityFieldValueHandler<?> valueHandler) {
+        if (StringUtils.isNotBlank(prefix)) {
+            return getFieldUpdate(prefix + "." + fieldName, valueHandler);
+        } else {
+            return getFieldUpdate(fieldName, valueHandler);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     static Bson getFieldUpdate(String fieldName, EntityFieldValueHandler<?> valueHandler) {
         if (valueHandler == null || valueHandler.getFieldValue() == null) {

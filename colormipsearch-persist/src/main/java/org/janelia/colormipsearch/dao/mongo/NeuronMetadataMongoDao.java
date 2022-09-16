@@ -19,21 +19,16 @@ import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReturnDocument;
-import com.mongodb.client.model.UnwindOptions;
-import com.mongodb.client.model.Variable;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
-import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
@@ -42,11 +37,8 @@ import org.janelia.colormipsearch.dao.SetOnCreateValueHandler;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
-import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.model.ProcessingType;
 
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
@@ -72,24 +64,15 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
 
     @Override
     public N createOrUpdate(N neuron) {
-        FindOneAndReplaceOptions updateOptions = new FindOneAndReplaceOptions();
-        updateOptions.upsert(false); // here the document should not be created - minimalCreateOrUpdate will create it
-        updateOptions.returnDocument(ReturnDocument.AFTER);
         if (isIdentifiable(neuron)) {
-            N toUpdate = minimalCreateOrUpdate(neuron);
-            return mongoCollection.findOneAndReplace(
-                    session,
-                    MongoDaoHelper.createFilterById(toUpdate.getEntityId()),
-                    neuron,
-                    updateOptions
-            );
+            return findAndUpdate(neuron);
         } else {
             save(neuron);
             return neuron;
         }
     }
 
-    private N minimalCreateOrUpdate(N neuron) {
+    private N findAndUpdate(N neuron) {
         FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
         updateOptions.upsert(true);
         updateOptions.returnDocument(ReturnDocument.AFTER);
@@ -116,10 +99,13 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 "computeFiles.SourceColorDepthImage",
                 neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
         );
-        updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.InputColorDepthImage",
-                new SetFieldValueHandler<>(neuron.getComputeFileData(ComputeFileType.InputColorDepthImage))));
-        updates.add(MongoDaoHelper.getFieldUpdate("computeFiles.SourceColorDepthImage",
-                new SetFieldValueHandler<>(neuron.getComputeFileData(ComputeFileType.SourceColorDepthImage))));
+        neuron.getUpdateableFields().forEach((fn, fv) -> {
+            if (fv instanceof Iterable) {
+                updates.add(MongoDaoHelper.getFieldUpdate(fn, new AppendFieldValueHandler<>(fv)));
+            } else {
+                updates.add(MongoDaoHelper.getFieldUpdate(fn, new SetFieldValueHandler<>(fv)));
+            }
+        });
         for (int i = 0; ; i++) {
             try {
                 N updatedNeuron = mongoCollection
@@ -132,17 +118,13 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
                         );
-                neuron.setEntityId(updatedNeuron.getEntityId());
-                neuron.setCreatedDate(updatedNeuron.getCreatedDate());
-                break;
+                return updatedNeuron;
             } catch (Exception e) {
-                System.out.println("!!!!! FIND AND UPDATE " + neuron + " " + i + " failed " + e.toString());
                 if (i >= MAX_UPDATE_RETRIES) {
                     throw new IllegalStateException(e);
                 }
             }
         }
-        return neuron;
     }
 
     private boolean isIdentifiable(N neuron) {
@@ -200,7 +182,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
     }
 
     @Override
-    public void addProcessingTags(Collection<String> neuronMIPIds, ProcessingType processingType, Set<String> tags) {
+    public void addProcessingTagsToMIPIDs(Collection<String> neuronMIPIds, ProcessingType processingType, Set<String> tags) {
         if (CollectionUtils.isEmpty(neuronMIPIds) || processingType == null || CollectionUtils.isEmpty(tags)) {
             // don't do anything if neuronIds or tags are empty or if the processing type is not specified
             return;

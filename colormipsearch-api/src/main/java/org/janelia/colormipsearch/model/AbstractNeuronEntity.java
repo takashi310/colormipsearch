@@ -1,12 +1,12 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -171,6 +171,16 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     public abstract AbstractNeuronEntity duplicate();
 
     public abstract AbstractNeuronMetadata metadata();
+
+    public Map<String, Object> getUpdateableFields() {
+        Map<String, Object> dict = new HashMap<>();
+        dict.put("publishedName", publishedName);
+        dict.put("sourceRefId", sourceRefId);
+        computeFiles.forEach((ft, fd) -> dict.put("computeFiles." + ft.name(), fd));
+        processedTags.forEach((pt, t) -> dict.put("processedTags." + pt.name(), t));
+        dict.put("tags", getTags());
+        return dict;
+    }
 
     @Override
     public boolean equals(Object o) {

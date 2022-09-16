@@ -225,8 +225,8 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         for (int iter = 0; iter < iterations; iter++) {
             Set<String> colorDepthTags = ImmutableSet.of("cd1-" + (iter+1), "cd2-" + (iter+1));
             Set<String> pppTags = ImmutableSet.of("ppp1-" + (iter+1), "ppp2-" + (iter+1));
-            testDao.addProcessingTags(nIds.values(), ProcessingType.ColorDepthSearch, colorDepthTags);
-            testDao.addProcessingTags(nIds.values(), ProcessingType.PPPMatch, pppTags);
+            testDao.addProcessingTagsToMIPIDs(nIds.values(), ProcessingType.ColorDepthSearch, colorDepthTags);
+            testDao.addProcessingTagsToMIPIDs(nIds.values(), ProcessingType.PPPMatch, pppTags);
             List<AbstractNeuronEntity> persistedNeurons = testDao.findByEntityIds(nIds.keySet());
             assertEquals(nNeurons, persistedNeurons.size());
             persistedNeurons.forEach(n -> {
