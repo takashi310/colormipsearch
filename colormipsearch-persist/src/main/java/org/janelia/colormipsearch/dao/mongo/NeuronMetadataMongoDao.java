@@ -99,7 +99,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 "computeFiles.SourceColorDepthImage",
                 neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
         );
-        neuron.getUpdateableFields().forEach((fn, fv) -> {
+        neuron.updateableFieldValues().forEach((fn, fv) -> {
             if (fv instanceof Iterable) {
                 updates.add(MongoDaoHelper.getFieldUpdate(fn, new AppendFieldValueHandler<>(fv)));
             } else {
@@ -118,6 +118,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
                         );
+                neuron.setEntityId(updatedNeuron.getEntityId());
+                neuron.setCreatedDate(updatedNeuron.getCreatedDate());
                 return updatedNeuron;
             } catch (Exception e) {
                 if (i >= MAX_UPDATE_RETRIES) {
@@ -128,8 +130,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
     }
 
     private boolean isIdentifiable(N neuron) {
-        return neuron.hasComputeFile(ComputeFileType.InputColorDepthImage)
-                && neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage);
+        return neuron.hasEntityId() ||
+                neuron.hasComputeFile(ComputeFileType.InputColorDepthImage) && neuron.hasComputeFile(ComputeFileType.SourceColorDepthImage);
     }
 
     @Override

@@ -1,12 +1,8 @@
 package org.janelia.colormipsearch.dao.mongo.support;
 
-import java.io.UncheckedIOException;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.bson.BsonReader;
-import org.bson.BsonSerializationException;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
@@ -23,10 +19,16 @@ public class FileDataCodec implements Codec<FileData> {
 
     @Override
     public void encode(final BsonWriter writer, final FileData value, final EncoderContext encoderContext) {
-        try {
-            writer.writeString(objectMapper.writeValueAsString(value));
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
+        if (value == null) {
+            writer.writeNull();
+        } else if (value.getDataType() == FileData.FileDataType.zipEntry) {
+            writer.writeStartDocument();
+            writer.writeString("dataType", value.getDataType().toString());
+            writer.writeString("fileName", value.getFileName());
+            writer.writeString("entryName", value.getEntryName());
+            writer.writeEndDocument();
+        } else {
+            writer.writeString(value.getFileName());
         }
     }
 

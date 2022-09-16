@@ -2,12 +2,14 @@ package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.Collection;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.ProcessingType;
 
 class TestNeuronEntityBuilder<N extends AbstractNeuronEntity> {
 
@@ -48,6 +50,11 @@ class TestNeuronEntityBuilder<N extends AbstractNeuronEntity> {
 
     public TestNeuronEntityBuilder<N> addTags(Collection<String> tags) {
         n.addAllTags(tags);
+        return this;
+    }
+
+    public TestNeuronEntityBuilder<N> addProcessedTags(ProcessingType processingType, Set<String> tags) {
+        n.addProcessedTags(processingType, tags);
         return this;
     }
 }

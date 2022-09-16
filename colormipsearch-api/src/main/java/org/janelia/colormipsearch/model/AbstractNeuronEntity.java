@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -172,7 +171,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     public abstract AbstractNeuronMetadata metadata();
 
-    public Map<String, Object> getUpdateableFields() {
+    public Map<String, Object> updateableFieldValues() {
         Map<String, Object> dict = new HashMap<>();
         dict.put("publishedName", publishedName);
         dict.put("sourceRefId", sourceRefId);
