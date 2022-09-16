@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.TestEMNeuronEntity;
+import org.janelia.colormipsearch.model.TestLMNeuronEntity;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;

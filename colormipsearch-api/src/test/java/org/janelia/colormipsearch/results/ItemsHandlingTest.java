@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.TestEMNeuronEntity;
+import org.janelia.colormipsearch.model.TestLMNeuronEntity;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

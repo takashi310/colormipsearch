@@ -1,7 +1,4 @@
-package org.janelia.colormipsearch.results;
-
-import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.Gender;
+package org.janelia.colormipsearch.model;
 
 public class TestEMNeuronEntity extends EMNeuronEntity {
     private String neuronType;

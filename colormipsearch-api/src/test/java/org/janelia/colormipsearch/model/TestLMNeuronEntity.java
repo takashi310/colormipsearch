@@ -1,9 +1,6 @@
-package org.janelia.colormipsearch.results;
+package org.janelia.colormipsearch.model;
 
-import org.janelia.colormipsearch.model.Gender;
-import org.janelia.colormipsearch.model.LMNeuronEntity;
-
-class TestLMNeuronEntity extends LMNeuronEntity {
+public class TestLMNeuronEntity extends LMNeuronEntity {
     private String sampleRef;
     private String sampleName;
     private String objective;
