@@ -213,8 +213,6 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
     }
 
     private void updateLMSampleInfo(PPPMatchedTarget<AbstractNeuronMetadata> m) {
-        m.setSourceLmName(getSourceLmName());
-        m.setSourceObjective(DEFAULT_OBJECTIVE);
         m.setSourceLmLibrary(getSourceLmLibrary());
         Matcher matcher = LM_REG_EX_PATTERN.matcher(getSourceLmName());
         if (matcher.find()) {
@@ -222,7 +220,13 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
             String objectiveCandidate = matcher.group(2);
             if (OBJECTIVE_PATTERN.matcher(objectiveCandidate).find()) {
                 m.setSourceObjective(objectiveCandidate);
+            } else {
+                m.setSourceObjective(DEFAULT_OBJECTIVE);
             }
+        } else {
+            // set some default values
+            m.setSourceLmName(getSourceLmName());
+            m.setSourceObjective(DEFAULT_OBJECTIVE);
         }
     }
 

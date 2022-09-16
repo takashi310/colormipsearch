@@ -1,5 +1,10 @@
 package org.janelia.colormipsearch.model;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.junit.Test;
@@ -10,11 +15,18 @@ public class PPPMatchEntityTest {
 
     @Test
     public void extractSampleNameAndObjective() {
-        PPPMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity> testPPPM =
-                createTestPPPMatchEntity("577720000--RT_18U", "BJD_128D10_AE_01-20171208_61_E3_REG_UNISEX_40x");
-        PPPMatchedTarget<? extends AbstractNeuronMetadata> testPPPMetadata = testPPPM.metadata();
-        assertEquals("BJD_128D10_AE_01-20171208_61_E3", testPPPMetadata.getSourceLmName());
-        assertEquals("40x", testPPPMetadata.getSourceObjective());
+        List<Pair<String, String>> testData = Arrays.asList(
+                ImmutablePair.of("577720000--RT_18U", "BJD_128D10_AE_01-20171208_61_E3_REG_UNISEX_40x"),
+                ImmutablePair.of("34000--_18U", "GMR_80D06_AE_01-20190426_64_C1_REG_UNISEX_VNC")
+        );
+        for (Pair<String, String> testSourceNames : testData) {
+            PPPMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity> testPPPM =
+                    createTestPPPMatchEntity(testSourceNames.getLeft(), testSourceNames.getRight());
+            PPPMatchedTarget<? extends AbstractNeuronMetadata> testPPPMetadata = testPPPM.metadata();
+            int nameEnd = testSourceNames.getRight().indexOf("_REG_UNISEX");
+            assertEquals(testSourceNames.getRight().substring(0,nameEnd), testPPPMetadata.getSourceLmName());
+            assertEquals("40x", testPPPMetadata.getSourceObjective());
+        }
     }
 
     private PPPMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity> createTestPPPMatchEntity(
