@@ -144,16 +144,16 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
         CDMIPSample sample = jacsDataHelper.getLMSample(pppMatch.getSourceLmName());
         if (sample != null) {
+            String lm3DStackURL = findPublishedLM3DStack(
+                    sample.sampleRef(),
+                    lmNeuron.getAlignmentSpace(),
+                    pppMatch.getSourceObjective(),
+                    lmPublishedImages);
             lmNeuron.setPublishedName(sample.lmLineName());
             lmNeuron.setSlideCode(sample.slideCode);
             lmNeuron.setGender(Gender.fromVal(sample.gender));
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
-            lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack,
-                    findPublishedLM3DStack(
-                            sample.sampleRef(),
-                            lmNeuron.getAlignmentSpace(),
-                            pppMatch.getSourceObjective(),
-                            lmPublishedImages));
+            lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(lm3DStackURL));
             // collect updated match files
             Map<FileType, String> updatedMatchFiles = new LinkedHashMap<>();
             pppMatch.getMatchFiles()
