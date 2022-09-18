@@ -6,10 +6,12 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
@@ -38,6 +40,7 @@ import org.slf4j.LoggerFactory;
 public class EMPPPMatchesExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
 
+    private final Set<String> publishedAlignmentSpaceAliases;
     private final ScoresFilter scoresFilter;
     private final NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader;
     private final ItemsWriterToJSONFile resultMatchesWriter;
@@ -45,6 +48,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
     public EMPPPMatchesExporter(CachedJacsDataHelper jacsDataHelper,
                                 DataSourceParam dataSourceParam,
+                                Set<String> publishedAlignmentSpaceAliases,
                                 ScoresFilter scoresFilter,
                                 int relativesUrlsToComponent,
                                 Path outputDir,
@@ -52,6 +56,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
+        this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;
@@ -109,7 +114,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     /**
      * Retrieve EM color depth MIPs and LM published images for the given PPP matches
      *
-     * @param matches
+     * @param matches for which to retrieve source data
      * @return LM published images indexed by Sample reference.
      */
     private Map<String, List<PublishedLMImage>> retrieveEMAndLMSourceData(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches) {
@@ -175,7 +180,8 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                           Map<String, List<PublishedLMImage>> lmPublishedImages) {
         if (lmPublishedImages.containsKey(sampleRef)) {
             return lmPublishedImages.get(sampleRef).stream()
-                    .filter(pi -> pi.getAlignmentSpace().equals(alignmentSpace))
+                    .filter(pi -> pi.getAlignmentSpace().equals(alignmentSpace) ||
+                            (CollectionUtils.isNotEmpty(publishedAlignmentSpaceAliases) && publishedAlignmentSpaceAliases.contains(pi.getAlignmentSpace())))
                     .filter(pi -> pi.getObjective().equals(objective))
                     .filter(pi -> pi.hasFile("VisuallyLosslessStack"))
                     .findFirst()

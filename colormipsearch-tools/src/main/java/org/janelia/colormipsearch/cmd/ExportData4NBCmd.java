@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -66,6 +67,9 @@ class ExportData4NBCmd extends AbstractCmd {
 
         @Parameter(names = {"-as", "--alignment-space"}, description = "Alignment space")
         String alignmentSpace;
+
+        @Parameter(names = {"--publishd-alignment-space-alias"}, description = "Alignment space aliases", variableArity = true)
+        List<String> publishedAlignmentSpaceAliases = new ArrayList<>();
 
         @Parameter(names = {"-l", "--library"}, description = "Library names from which mips or matches are selected for export",
                 variableArity = true)
@@ -211,6 +215,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new EMPPPMatchesExporter(
                         jacsDataHelper,
                         dataSource,
+                        new HashSet<>(args.publishedAlignmentSpaceAliases),
                         getPPPScoresFilter(),
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),

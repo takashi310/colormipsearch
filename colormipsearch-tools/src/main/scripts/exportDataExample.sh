@@ -50,9 +50,11 @@ esac
 case ${AREA} in
   brain)
     ALIGNMENT_SPACE=JRC2018_Unisex_20x_HR
+    ALIAS_ALIGNMENT_SPACE_ARG=""
     ;;
   vnc)
     ALIGNMENT_SPACE=JRC2018_VNC_Unisex_40x_DS
+    ALIAS_ALIGNMENT_SPACE_ARG="--publishd-alignment-space-alias JRC2018_VNC_Unisex"
     ;;
   *)
     echo "Invalid area: ${AREA}"
@@ -61,7 +63,7 @@ case ${AREA} in
 esac
 
 # AS: "JRC2018_Unisex_20x_HR", "JRC2018_VNC_Unisex_40x_DS"
-AS_ARG="-as ${ALIGNMENT_SPACE}"
+AS_ARG="-as ${ALIGNMENT_SPACE} ${ALIAS_ALIGNMENT_SPACE_ARG}"
 
 $RUNNER java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 \
     -Xmx270G -Xms270G \
