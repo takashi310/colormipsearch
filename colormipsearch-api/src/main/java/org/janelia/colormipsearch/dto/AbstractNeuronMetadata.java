@@ -6,6 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,7 +49,9 @@ public abstract class AbstractNeuronMetadata {
     @JsonIgnore
     private final Map<ProcessingType, Set<String>> processedTags = new HashMap<>();
 
-    @JsonProperty("id")
+    @NotBlank
+    @JsonRequired
+    @JsonProperty(value = "id")
     public String getMipId() {
         return mipId;
     }
@@ -58,6 +64,7 @@ public abstract class AbstractNeuronMetadata {
         return StringUtils.isNotBlank(mipId);
     }
 
+    @NotBlank
     @JsonRequired
     public String getLibraryName() {
         return libraryName;
@@ -67,6 +74,7 @@ public abstract class AbstractNeuronMetadata {
         this.libraryName = libraryName;
     }
 
+    @NotBlank
     @JsonRequired
     public String getPublishedName() {
         return publishedName;
@@ -76,6 +84,7 @@ public abstract class AbstractNeuronMetadata {
         this.publishedName = publishedName;
     }
 
+    @NotBlank
     @JsonRequired
     public String getAlignmentSpace() {
         return alignmentSpace;
@@ -85,6 +94,8 @@ public abstract class AbstractNeuronMetadata {
         this.alignmentSpace = alignmentSpace;
     }
 
+    @NotBlank
+    @JsonRequired
     public String getAnatomicalArea() {
         return anatomicalArea;
     }
@@ -93,6 +104,8 @@ public abstract class AbstractNeuronMetadata {
         this.anatomicalArea = anatomicalArea;
     }
 
+    @NotNull
+    @JsonRequired
     public Gender getGender() {
         return gender;
     }
@@ -115,6 +128,8 @@ public abstract class AbstractNeuronMetadata {
         return !unpublished;
     }
 
+    @NotEmpty
+    @JsonRequired
     @JsonProperty("files")
     Map<FileType, String> getNeuronFiles() {
         return neuronFiles;

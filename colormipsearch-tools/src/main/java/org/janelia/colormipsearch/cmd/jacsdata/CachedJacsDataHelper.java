@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -14,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 public class CachedJacsDataHelper {
     private static final Logger LOG = LoggerFactory.getLogger(CachedJacsDataHelper.class);
-    private static final Map<String, ColorDepthMIP> CD_MIPS_CACHE = new LinkedHashMap<>();
-    private static final Map<String, CDMIPSample> LM_SAMPLES_CACHE = new LinkedHashMap<>();
+    private static final Map<String, ColorDepthMIP> CD_MIPS_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, CDMIPSample> LM_SAMPLES_CACHE = new ConcurrentHashMap<>();
 
     private final JacsDataGetter jacsDataGetter;
     private Map<String, String> libraryNameMapping;

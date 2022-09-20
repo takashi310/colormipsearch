@@ -48,7 +48,7 @@ public class MIPsExporter extends AbstractDataExporter {
 
     @Override
     public void runExport() {
-        List<String> publishedNames = neuronMetadataDao.findDistinctNeuronAttributeValues(
+        Set<String> publishedNames = neuronMetadataDao.findDistinctNeuronAttributeValues(
                 Collections.singletonList("publishedName"),
                 new NeuronSelector()
                         .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
@@ -59,7 +59,7 @@ public class MIPsExporter extends AbstractDataExporter {
                 new PagedRequest()
                         .setFirstPageOffset(dataSourceParam.getOffset())
                         .setPageSize(dataSourceParam.getSize()))
-                .getResultList().stream().map(n -> (String) n.get("publishedName")).collect(Collectors.toList());
+                .getResultList().stream().map(n -> (String) n.get("publishedName")).collect(Collectors.toSet());
         Consumer<AbstractNeuronMetadata> updateNeuronMethod = getUpdateMethod();
         ItemsHandling.partitionCollection(publishedNames, processingPartitionSize).entrySet().stream().parallel()
                 .forEach(indexedPartition -> {

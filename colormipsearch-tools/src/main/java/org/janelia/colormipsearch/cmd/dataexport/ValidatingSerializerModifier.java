@@ -1,20 +1,23 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
-import java.io.IOException;
+import javax.validation.Validator;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 
-public class ValidatingSerializer extends JsonSerializer<Object> {
-    private final JsonSerializer<Object> defaultSerializer;
+public class ValidatingSerializerModifier extends BeanSerializerModifier {
 
-    public ValidatingSerializer(JsonSerializer<Object> defaultSerializer) {
-        this.defaultSerializer = defaultSerializer;
+    private final Validator validator;
+
+    public ValidatingSerializerModifier(Validator validator) {
+        this.validator = validator;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void serialize(Object v, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        defaultSerializer.serialize(v, jsonGenerator, serializerProvider);
+    public JsonSerializer<?> modifySerializer(SerializationConfig config, BeanDescription beanDesc, JsonSerializer<?> serializer) {
+        return new ValidatingSerializer(validator, (JsonSerializer<Object>) serializer);
     }
 }

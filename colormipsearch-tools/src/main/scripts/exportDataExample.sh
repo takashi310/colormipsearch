@@ -53,10 +53,10 @@ case ${AREA} in
     ;;
   vnc)
     ALIGNMENT_SPACE=JRC2018_VNC_Unisex_40x_DS
-    AS_ARG="-as ${ALIGNMENT_SPACE} --published-alignment-space-alias ${ALIGNMENT_SPACE}:JRC2018_VNC_Unisex"
+    AS_ARG="-as ${ALIGNMENT_SPACE} --published-alignment-space-alias ${ALIGNMENT_SPACE}:JRC2018_VNC_Unisex,JRC2018_Unisex_VNC_20x"
     ;;
   brain+vnc|vnc+brain)
-    AS_ARG="--published-alignment-space-alias JRC2018_VNC_Unisex_40x_DS:JRC2018_VNC_Unisex"
+    AS_ARG="--published-alignment-space-alias JRC2018_VNC_Unisex_40x_DS:JRC2018_VNC_Unisex,JRC2018_Unisex_VNC_20x"
     ;;
   *)
     echo "Invalid area: ${AREA}"

@@ -2,7 +2,6 @@ package org.janelia.colormipsearch.cmd;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,12 +9,16 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +27,7 @@ import org.janelia.colormipsearch.cmd.dataexport.EMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
+import org.janelia.colormipsearch.cmd.dataexport.ValidatingSerializerModifier;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
@@ -35,15 +39,11 @@ import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This command is used to export data from the database to the file system in order to upload it to S3.
  */
 class ExportData4NBCmd extends AbstractCmd {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ExportData4NBCmd.class);
 
     @Parameters(commandDescription = "Export neuron matches")
     static class ExportMatchesCmdArgs extends AbstractCmdArgs {
@@ -125,7 +125,10 @@ class ExportData4NBCmd extends AbstractCmd {
         super(commandName);
         this.args = new ExportMatchesCmdArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        Validator validator = factory.getValidator();
         this.mapper = new ObjectMapper()
+                .registerModule(new SimpleModule().setSerializerModifier(new ValidatingSerializerModifier(validator)))
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         ;
