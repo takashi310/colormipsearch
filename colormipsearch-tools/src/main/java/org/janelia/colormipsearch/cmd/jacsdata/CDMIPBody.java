@@ -19,6 +19,8 @@ public class CDMIPBody {
 
     public static class EMDataSet {
         @JsonProperty
+        public String anatomicalArea;
+        @JsonProperty
         public String gender;
         @JsonProperty
         public Boolean published;

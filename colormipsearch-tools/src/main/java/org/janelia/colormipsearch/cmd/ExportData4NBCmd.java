@@ -4,7 +4,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -13,6 +16,7 @@ import com.beust.jcommander.Parameters;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
@@ -68,8 +72,10 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"-as", "--alignment-space"}, description = "Alignment space")
         String alignmentSpace;
 
-        @Parameter(names = {"--publishd-alignment-space-alias"}, description = "Alignment space aliases", variableArity = true)
-        List<String> publishedAlignmentSpaceAliases = new ArrayList<>();
+        @Parameter(names = {"--published-alignment-space-alias"}, description = "Alignment space aliases",
+                converter = NameValueArg.NameArgConverter.class,
+                variableArity = true)
+        List<NameValueArg> publishedAlignmentSpaceAliases = new ArrayList<>();
 
         @Parameter(names = {"-l", "--library"}, description = "Library names from which mips or matches are selected for export",
                 variableArity = true)
@@ -165,13 +171,19 @@ class ExportData4NBCmd extends AbstractCmd {
                 args.commonArgs.noPrettyPrint
                         ? mapper.writer()
                         : mapper.writerWithDefaultPrettyPrinter());
+        Map<String, Set<String>> publishedAlignmentSpaceAliases = args.publishedAlignmentSpaceAliases.stream()
+                .collect(Collectors.toMap(
+                        nv -> nv.argName,
+                        nv -> ImmutableSet.copyOf(nv.argValues),
+                        (v1s, v2s) -> ImmutableSet.<String>builder().addAll(v1s).addAll(v2s).build()));
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(
                         daosProvider.getPublishedImageDao(),
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,
-                        args.readBatchSize)
+                        args.readBatchSize,
+                        publishedAlignmentSpaceAliases)
         );
         DataSourceParam dataSource = new DataSourceParam()
                 .setAlignmentSpace(args.alignmentSpace)
@@ -215,7 +227,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new EMPPPMatchesExporter(
                         jacsDataHelper,
                         dataSource,
-                        new HashSet<>(args.publishedAlignmentSpaceAliases),
+                        publishedAlignmentSpaceAliases,
                         getPPPScoresFilter(),
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),

@@ -29,17 +29,20 @@ public class JacsDataGetter {
     private final String configURL;
     private final String authorization;
     private final int readBatchSize;
+    private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
 
     public JacsDataGetter(PublishedLMImageDao publishedLMImageDao,
                           String dataServiceURL,
                           String configURL,
                           String authorization,
-                          int readBatchSize) {
+                          int readBatchSize,
+                          Map<String, Set<String>> publishedAlignmentSpaceAliases) {
         this.publishedLMImageDao = publishedLMImageDao;
         this.dataServiceURL = dataServiceURL;
         this.configURL = configURL;
         this.authorization = authorization;
         this.readBatchSize = readBatchSize;
+        this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
     }
 
     public Map<String, CDMIPSample> retrieveLMSamplesByName(Set<String> sampleNames) {
@@ -87,8 +90,12 @@ public class JacsDataGetter {
         if (CollectionUtils.isEmpty(publishedLMImages)) {
             return new PublishedLMImage();
         } else {
+            Set<String> aliasesForAlignmentSpace = publishedAlignmentSpaceAliases.getOrDefault(
+                    colorDepthMIP.alignmentSpace,
+                    Collections.emptySet());
             return publishedLMImages.stream()
-                    .filter(pi -> pi.getAlignmentSpace().equals(colorDepthMIP.alignmentSpace))
+                    .filter(pi -> pi.getAlignmentSpace().equals(colorDepthMIP.alignmentSpace) ||
+                            (CollectionUtils.isNotEmpty(aliasesForAlignmentSpace) && aliasesForAlignmentSpace.contains(pi.getAlignmentSpace())))
                     .filter(pi -> pi.getObjective().equals(colorDepthMIP.objective))
                     .findFirst()
                     .orElse(new PublishedLMImage());
@@ -155,13 +162,13 @@ public class JacsDataGetter {
                             cdmip -> cdmip.alignmentSpace,
                             Collectors.toList())
                     );
-            Map<String, List<PublishedLMImage>> publishedImagesBySampleRefs = mipsGroupedByAlignmentSpace.entrySet().stream()
+            Map<String, List<PublishedLMImage>> publishedImagesBySampleRefsForAllAlignmentSpaces = mipsGroupedByAlignmentSpace.entrySet().stream()
                             .flatMap(e -> {
                                 LOG.info("Retrieve {} published images for alignment space {}",
                                         mipIds.size(),
                                         e.getKey()); // alignment space
                                 return publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(
-                                        e.getKey(),
+                                        null,
                                         e.getValue().stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
                                         null
                                 ).values().stream().flatMap(Collection::stream);
@@ -189,7 +196,7 @@ public class JacsDataGetter {
                         } else if (cdmip.needsLMSample()) {
                             cdmip.sample = lmSamples.get(cdmip.sampleRef);
                         }
-                        update3DStack(cdmip, findPublishedImage(cdmip, publishedImagesBySampleRefs.get(cdmip.sampleRef)));
+                        update3DStack(cdmip, findPublishedImage(cdmip, publishedImagesBySampleRefsForAllAlignmentSpaces.get(cdmip.sampleRef)));
                     })
                     .collect(Collectors.toMap(n -> n.id, n -> n));
         }

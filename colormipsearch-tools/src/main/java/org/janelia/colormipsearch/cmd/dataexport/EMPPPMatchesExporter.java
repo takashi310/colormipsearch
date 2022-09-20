@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class EMPPPMatchesExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
 
-    private final Set<String> publishedAlignmentSpaceAliases;
+    private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
     private final ScoresFilter scoresFilter;
     private final NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader;
     private final ItemsWriterToJSONFile resultMatchesWriter;
@@ -48,7 +48,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
     public EMPPPMatchesExporter(CachedJacsDataHelper jacsDataHelper,
                                 DataSourceParam dataSourceParam,
-                                Set<String> publishedAlignmentSpaceAliases,
+                                Map<String, Set<String>> publishedAlignmentSpaceAliases,
                                 ScoresFilter scoresFilter,
                                 int relativesUrlsToComponent,
                                 Path outputDir,
@@ -179,9 +179,10 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                           String objective,
                                           Map<String, List<PublishedLMImage>> lmPublishedImages) {
         if (lmPublishedImages.containsKey(sampleRef)) {
+            Set<String> aliasesForAlignmentSpace = publishedAlignmentSpaceAliases.getOrDefault(alignmentSpace, Collections.emptySet());
             return lmPublishedImages.get(sampleRef).stream()
                     .filter(pi -> pi.getAlignmentSpace().equals(alignmentSpace) ||
-                            (CollectionUtils.isNotEmpty(publishedAlignmentSpaceAliases) && publishedAlignmentSpaceAliases.contains(pi.getAlignmentSpace())))
+                            (CollectionUtils.isNotEmpty(aliasesForAlignmentSpace) && aliasesForAlignmentSpace.contains(pi.getAlignmentSpace())))
                     .filter(pi -> pi.getObjective().equals(objective))
                     .filter(pi -> pi.hasFile("VisuallyLosslessStack"))
                     .findFirst()
