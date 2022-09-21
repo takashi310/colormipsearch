@@ -35,6 +35,7 @@ public class JsonOutputHelper {
         try {
             if (v != null) {
                 if (p == null) {
+                    LOG.info("Writing JSON to STDOUT");
                     objectWriter.writeValue(System.out, v);
                 } else {
                     LOG.info("Writing {}", p);

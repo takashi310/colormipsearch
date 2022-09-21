@@ -37,7 +37,7 @@ public class FSUtils {
 
     @Nullable
     public static Path getOutputPath(Path outputDir, File inputFile) {
-        if (outputDir == null) {
+        if (outputDir == null || inputFile == null) {
             return null;
         } else {
             return outputDir.resolve(inputFile.getName());

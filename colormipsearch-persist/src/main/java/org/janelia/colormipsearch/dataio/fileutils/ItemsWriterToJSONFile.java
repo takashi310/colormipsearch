@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dataio.fs.JsonOutputHelper;
 import org.janelia.colormipsearch.results.GroupedItems;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class ItemsWriterToJSONFile {
         FSUtils.createDirs(outputDir);
         JsonOutputHelper.writeToJSONFile(
                 result,
-                FSUtils.getOutputPath(outputDir, new File(filename + ".json")),
+                FSUtils.getOutputPath(outputDir, getJsonFile(filename)),
                 jsonWriter);
     }
 
@@ -47,7 +48,15 @@ public class ItemsWriterToJSONFile {
         String filename = filenameSelector.apply(groupedItems.getKey());
         JsonOutputHelper.writeToJSONFile(
                 groupedItems,
-                FSUtils.getOutputPath(outputDir, new File(filename + ".json")),
+                FSUtils.getOutputPath(outputDir, getJsonFile(filename)),
                 jsonWriter);
+    }
+
+    private File getJsonFile(String fn) {
+        if (StringUtils.isBlank(fn)) {
+            return null;
+        } else {
+            return new File(fn + ".json");
+        }
     }
 }
