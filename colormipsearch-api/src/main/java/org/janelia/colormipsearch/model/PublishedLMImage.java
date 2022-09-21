@@ -9,7 +9,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
-@PersistenceInfo(storeName ="publishedImage")
+@PersistenceInfo(storeName ="publishedLMImage")
 public class PublishedLMImage extends PublishedLMImageFields {
     private List<PublishedLMImageFields> gal4Expressions;
 
