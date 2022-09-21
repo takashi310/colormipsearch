@@ -33,6 +33,12 @@ import org.janelia.colormipsearch.model.ProcessingType;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public abstract class AbstractNeuronMetadata {
 
+    /**
+     * Internal ID comes from the internal entity ID, and it is needed for some lookups,
+     * but it should not be exposed in the exported JSON files.
+     */
+    @JsonIgnore
+    private Number internalId;
     private String mipId; // MIP ID - not to be confused with the entityId which is the primary key of this entity
     private String libraryName; // MIP library
     private String publishedName;
@@ -49,6 +55,15 @@ public abstract class AbstractNeuronMetadata {
     private final Map<ComputeFileType, String> neuronComputeFiles = new HashMap<>();
     @JsonIgnore
     private final Map<ProcessingType, Set<String>> processedTags = new HashMap<>();
+
+    @JsonIgnore
+    public Number getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Number internalId) {
+        this.internalId = internalId;
+    }
 
     @NotBlank
     @JsonRequired

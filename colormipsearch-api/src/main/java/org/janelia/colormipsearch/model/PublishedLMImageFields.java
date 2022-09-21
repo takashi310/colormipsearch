@@ -11,8 +11,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 /**
+ * This class holds the published image attributes created in order to avoid the recursive reference to
+ * @PublishedLMImage for GAL4 expressions.
+ *
  * The reason for the typeInfo annotation here is to deal with the wrong classname persisted in the collection.
- * The class name used is the JACS class: org.janelia.model.domain.sample.PublishedImage so the published
+ * The class name used is the JACS class: org.janelia.model.domain.sample.PublishedLMImage so the published
  * class will be deserialized based on the context the deserialization is invoked from.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)

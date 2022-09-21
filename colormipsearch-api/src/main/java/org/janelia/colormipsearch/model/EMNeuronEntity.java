@@ -19,6 +19,7 @@ public class EMNeuronEntity extends AbstractNeuronEntity {
     @Override
     public EMNeuronMetadata metadata() {
         EMNeuronMetadata n = new EMNeuronMetadata();
+        n.setInternalId(getEntityId());
         n.setAlignmentSpace(getAlignmentSpace());
         n.setMipId(getMipId());
         n.setLibraryName(getLibraryName());

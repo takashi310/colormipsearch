@@ -74,6 +74,7 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
     @Override
     public LMNeuronMetadata metadata() {
         LMNeuronMetadata n = new LMNeuronMetadata();
+        n.setInternalId(getEntityId());
         n.setAlignmentSpace(getAlignmentSpace());
         n.setMipId(getMipId());
         n.setLibraryName(getLibraryName());
