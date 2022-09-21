@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.dto;
 
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -15,6 +17,7 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
     private Double rank;
     private int score;
 
+    @NotNull
     @JsonProperty("pppmRank")
     public Double getRank() {
         return rank;

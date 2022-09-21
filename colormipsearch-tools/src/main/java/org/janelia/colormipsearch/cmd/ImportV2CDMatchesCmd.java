@@ -54,6 +54,7 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         put("FlyLight Gen1 MCFO", "flylight_gen1_mcfo_published");
         put("FlyLight Annotator Gen1 MCFO", "flylight_annotator_gen1_mcfo_published");
         put("FlyEM_VNC_v0.6", "flyem_vnc_0_6");
+        put("FlyEM_VNC_v0.5", "flyem_vnc_0_5");
     }};
 
     @Parameters(commandDescription = "Import v2 color depth matches")

@@ -1,5 +1,7 @@
 package org.janelia.colormipsearch.dto;
 
+import javax.validation.constraints.NotNull;
+
 import org.janelia.colormipsearch.model.JsonRequired;
 
 /**
@@ -13,6 +15,7 @@ public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractM
     private Float matchingPixelsRatio;
     private Long gradientAreaGap;
 
+    @NotNull
     @JsonRequired
     public Float getNormalizedScore() {
         return normalizedScore;
@@ -22,6 +25,7 @@ public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractM
         this.normalizedScore = normalizedScore;
     }
 
+    @NotNull
     @JsonRequired
     public Integer getMatchingPixels() {
         return matchingPixels;

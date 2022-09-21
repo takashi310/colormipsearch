@@ -71,6 +71,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                         .addLibraries(dataSourceParam.getLibraries())
                                         .addName(publishedName),
                                 new PagedRequest()).getResultList();
+                        // retrieve the rest of the data needed for all <publishedName>'s MIPs
                         Set<String> mipIds = neuronMipEntities.stream()
                                 .map(AbstractNeuronEntity::getMipId)
                                 .collect(Collectors.toSet());
@@ -78,7 +79,7 @@ public class MIPsExporter extends AbstractDataExporter {
                         List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
-                        // update neurons and filter out unpublished ones
+                        // update neurons info and filter out unpublished ones
                         Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                                 .peek(updateNeuronMethod)
                                 .filter(AbstractNeuronMetadata::isPublished)
