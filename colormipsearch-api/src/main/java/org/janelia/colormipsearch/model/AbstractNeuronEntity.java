@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -90,6 +92,21 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     public void setSourceRefId(String sourceRefId) {
         this.sourceRefId = sourceRefId;
+    }
+
+    @JsonIgnore
+    @Nullable
+    public String getSourceRefIdOnly() {
+        if (StringUtils.isBlank(sourceRefId)) {
+            return null;
+        } else {
+            int separatorIndex = sourceRefId.indexOf('#');
+            if (separatorIndex == -1) {
+                return sourceRefId;
+            } else {
+                return sourceRefId.substring(separatorIndex+1);
+            }
+        }
     }
 
     @JsonProperty

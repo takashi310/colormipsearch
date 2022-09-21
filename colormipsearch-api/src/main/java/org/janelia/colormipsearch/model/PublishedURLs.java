@@ -19,11 +19,15 @@ public class PublishedURLs extends AbstractBaseEntity {
     private Map<String, String> urls = new HashMap<>();
 
     @JsonProperty("uploaded")
-    public Map<String, String> getUrls() {
+    protected Map<String, String> getUrls() {
         return urls;
     }
 
-    void setUrls(Map<String, String> urls) {
+    protected void setUrls(Map<String, String> urls) {
         this.urls = urls;
+    }
+
+    public String getURLFor(String fileType) {
+        return urls.get(fileType);
     }
 }

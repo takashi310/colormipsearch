@@ -107,8 +107,8 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         Map<String, List<PublishedLMImage>> lmPublishedImages = retrieveEMAndLMSourceData(matches);
         // update grouped matches
         groupedMatches.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages));
-        // write results by mask (EM) published name
-        resultMatchesWriter.writeGroupedItemsList(groupedMatches, AbstractNeuronMetadata::getPublishedName, outputDir);
+        // write results by mask (EM) ref ID (this is actually JACS EMBodyRef ID)
+        resultMatchesWriter.writeGroupedItemsList(groupedMatches, EMNeuronMetadata::getEmRefId, outputDir);
     }
 
     /**

@@ -1,9 +1,22 @@
 package org.janelia.colormipsearch.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class EMNeuronMetadata extends AbstractNeuronMetadata {
+    /** This will be used to generate the export file name for PPPM */
+    private String emRefId;
     private String neuronType;
     private String neuronInstance;
     private String state;
+
+    @JsonIgnore
+    public String getEmRefId() {
+        return emRefId;
+    }
+
+    public void setEmRefId(String emRefId) {
+        this.emRefId = emRefId;
+    }
 
     public String getNeuronType() {
         return neuronType;

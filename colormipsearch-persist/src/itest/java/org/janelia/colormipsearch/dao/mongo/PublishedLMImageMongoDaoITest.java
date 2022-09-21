@@ -24,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 
 public class PublishedLMImageMongoDaoITest extends AbstractMongoDaoITest {
 
-    private static final String testName = "unittester";
-
     private Map<Number, PublishedLMImage> testImages = new HashMap<>();
 
     private PublishedLMImageDao publishedLMImageDao;

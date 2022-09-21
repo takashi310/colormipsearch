@@ -161,7 +161,7 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
         lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, sample3DImageStack);
         lmNeuron.setNeuronFile(FileType.Gal4Expression, sampleGen1Gal4ExpressionImage);
-        updateResultsFiles(lmNeuron);
+        updateCDSResultsFiles(lmNeuron);
 
         if (sample == null || StringUtils.isBlank(sample.publishingName)) {
             lmNeuron.setUnpublished(true);
@@ -180,19 +180,26 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
         emNeuron.setNeuronFile(FileType.AlignedBodySWC, em3DFilename(emNeuron.getLibraryName(), emSWCFile, ".swc"));
         emNeuron.setNeuronFile(FileType.AlignedBodyOBJ, em3DFilename(emNeuron.getLibraryName(), emOBJFile, ".obj"));
-        updateResultsFiles(emNeuron);
+        updateCDSResultsFiles(emNeuron);
+        updateEMPPPMResultsFiles(emNeuron);
 
         if (bodyId == null) {
             emNeuron.setUnpublished(true);
         }
     }
 
-    private void updateResultsFiles(AbstractNeuronMetadata n) {
+    private void updateCDSResultsFiles(AbstractNeuronMetadata n) {
         if (n.hasAnyProcessedTag(ProcessingType.ColorDepthSearch)) {
             n.setNeuronFile(FileType.CDSResults, n.getMipId() + ".json");
         }
         if (n.hasAnyProcessedTag(ProcessingType.PPPMatch)) {
             n.setNeuronFile(FileType.PPPMResults, n.getPublishedName() + ".json");
+        }
+    }
+
+    private void updateEMPPPMResultsFiles(EMNeuronMetadata n) {
+        if (n.hasAnyProcessedTag(ProcessingType.PPPMatch)) {
+            n.setNeuronFile(FileType.PPPMResults, n.getEmRefId() + ".json");
         }
     }
 
