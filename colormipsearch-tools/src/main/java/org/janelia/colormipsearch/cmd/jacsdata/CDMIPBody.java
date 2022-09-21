@@ -25,6 +25,8 @@ public class CDMIPBody {
         @JsonProperty
         public Boolean published;
         @JsonProperty
+        public String dataSetIdentifier;
+        @JsonProperty
         public Boolean active;
     }
 

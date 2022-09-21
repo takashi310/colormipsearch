@@ -36,6 +36,7 @@ public abstract class AbstractNeuronMetadata {
     private String mipId; // MIP ID - not to be confused with the entityId which is the primary key of this entity
     private String libraryName; // MIP library
     private String publishedName;
+    private String fullPublishedName;
     private String alignmentSpace;
     private String anatomicalArea;
     private Gender gender;
@@ -74,14 +75,31 @@ public abstract class AbstractNeuronMetadata {
         this.libraryName = libraryName;
     }
 
+    /**
+     * PublishedName property used internally.
+     * For JSON serialization the property is ignored and it will actually be serialized from @getFullPublishedName.
+     * @return
+     */
     @NotBlank
-    @JsonRequired
+    @JsonIgnore
     public String getPublishedName() {
         return publishedName;
     }
 
     public void setPublishedName(String publishedName) {
         this.publishedName = publishedName;
+    }
+
+    @JsonRequired
+    @JsonProperty("publishedName")
+    public String getFullPublishedName() {
+        return StringUtils.isBlank(fullPublishedName)
+            ? publishedName
+            : fullPublishedName;
+    }
+
+    public void setFullPublishedName(String fullPublishedName) {
+        this.fullPublishedName = fullPublishedName;
     }
 
     @NotBlank

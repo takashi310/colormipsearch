@@ -98,8 +98,16 @@ public class ColorDepthMIP implements Serializable {
         return bodyId != null ? bodyId.toString() : null;
     }
 
-    public String emBodyName() {
-        return emBody != null ? emBody.name : null;
+    public String emPublishedName() {
+        if (emBody == null) {
+            return emBodyId();
+        } else {
+            if (StringUtils.isNotBlank(emBody.datasetIdentifier)) {
+                return emBody.datasetIdentifier + ":" + emBodyId();
+            } else {
+                return emBodyId();
+            }
+        }
     }
 
     public String emGender() {
@@ -162,6 +170,7 @@ public class ColorDepthMIP implements Serializable {
 
     public void updateEMNeuron(EMNeuronMetadata emNeuron) {
         emNeuron.setPublishedName(emBodyId());
+        emNeuron.setFullPublishedName(emPublishedName());
         emNeuron.setAnatomicalArea(emAnatomicalArea());
         emNeuron.setNeuronInstance(neuronInstance);
         emNeuron.setNeuronType(neuronType);

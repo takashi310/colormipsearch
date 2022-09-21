@@ -173,6 +173,8 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     public Map<String, Object> updateableFieldValues() {
         Map<String, Object> dict = new HashMap<>();
+        dict.put("alignmentSpace", alignmentSpace);
+        dict.put("libraryName", libraryName);
         dict.put("publishedName", publishedName);
         dict.put("sourceRefId", sourceRefId);
         computeFiles.forEach((ft, fd) -> dict.put("computeFiles." + ft.name(), fd));
