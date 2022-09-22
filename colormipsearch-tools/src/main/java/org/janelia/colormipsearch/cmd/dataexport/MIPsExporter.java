@@ -81,7 +81,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .collect(Collectors.toSet());
                         jacsDataHelper.retrieveCDMIPs(mipIds);
                         List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
-                                .filter(this::hasNotBeenArtificiallyCreated)
+                                .filter(this::hasNotBeenArtificiallyCreated) // filter out MIPs artificially generated at import
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
                         Map<Number, PublishedURLs> indexedNeuronURLs = jacsDataHelper.retrievePublishedURLs(neuronMipEntities);
@@ -92,7 +92,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
                                 .peek(n -> n.transformAllNeuronFiles(this::relativizeURL))
                                 .collect(Collectors.toSet());
-                        LOG.info("Write mips for {}", publishedName);
+                        LOG.info("Write {} mips for {}", publishedNeuronMips.size(), publishedName);
                         mipsWriter.writeJSON(GroupedItems.createGroupedItems(null, publishedNeuronMips), outputDir, publishedName);
                     });
                 });
@@ -116,6 +116,11 @@ public class MIPsExporter extends AbstractDataExporter {
      * @return
      */
     private boolean hasNotBeenArtificiallyCreated(AbstractNeuronEntity n) {
-        return n.getTags().stream().noneMatch(t -> ARTIFICIALLY_CREATED_PATTERN.matcher(t).find());
+        boolean bresult = n.getTags().stream().noneMatch(t -> ARTIFICIALLY_CREATED_PATTERN.matcher(t).find());
+        if (!bresult) {
+            // if the MIP was artificially generated log this fact
+            LOG.warn("Artificially created mip: {}", bresult);
+        }
+        return bresult;
     }
 }
