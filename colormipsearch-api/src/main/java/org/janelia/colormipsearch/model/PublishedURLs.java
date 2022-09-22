@@ -27,7 +27,7 @@ public class PublishedURLs extends AbstractBaseEntity {
         this.urls = urls;
     }
 
-    public String getURLFor(String fileType) {
-        return urls.get(fileType);
+    public String getURLFor(String fileType, String defaultValue) {
+        return urls.getOrDefault(fileType, defaultValue);
     }
 }

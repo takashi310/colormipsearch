@@ -1,7 +1,7 @@
 package org.janelia.colormipsearch.cmd.jacsdata;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,7 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.janelia.colormipsearch.model.AbstractBaseEntity;
+import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.PublishedLMImage;
+import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +62,10 @@ public class CachedJacsDataHelper {
 
     public Map<String, List<PublishedLMImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
         return jacsDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
+    }
+
+    public Map<Number, PublishedURLs> retrievePublishedURLs(Collection<AbstractNeuronEntity> neurons) {
+        return jacsDataGetter.retrievePublishedURLs(neurons.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toSet()));
     }
 
     public CDMIPSample getLMSample(String lmName) {

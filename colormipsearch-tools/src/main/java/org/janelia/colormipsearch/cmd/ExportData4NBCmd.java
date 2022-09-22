@@ -182,6 +182,7 @@ class ExportData4NBCmd extends AbstractCmd {
         CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
                 new JacsDataGetter(
                         daosProvider.getPublishedImageDao(),
+                        daosProvider.getPublishesUrlsDao(),
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,

@@ -10,6 +10,7 @@ import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,21 +37,21 @@ public abstract class AbstractDataExporter implements DataExporter {
         return dataSourceParam;
     }
 
-    void updateEMNeuron(EMNeuronMetadata emNeuron) {
+    void updateEMNeuron(EMNeuronMetadata emNeuron, PublishedURLs publishedURLs) {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(emNeuron.getMipId());
         emNeuron.setLibraryName(jacsDataHelper.getLibraryName(emNeuron.getLibraryName()));
         if (mip != null) {
-            mip.updateEMNeuron(emNeuron);
+            mip.updateEMNeuron(emNeuron, publishedURLs);
         } else {
             LOG.error("No color depth MIP found for EM MIP {}", emNeuron);
         }
     }
 
-    void updateLMNeuron(LMNeuronMetadata lmNeuron) {
+    void updateLMNeuron(LMNeuronMetadata lmNeuron, PublishedURLs publishedURLs) {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(lmNeuron.getMipId());
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(lmNeuron.getLibraryName()));
         if (mip != null) {
-            mip.updateLMNeuron(lmNeuron);
+            mip.updateLMNeuron(lmNeuron, publishedURLs);
         } else {
             LOG.error("No color depth MIP found for LM MIP {}", lmNeuron);
         }

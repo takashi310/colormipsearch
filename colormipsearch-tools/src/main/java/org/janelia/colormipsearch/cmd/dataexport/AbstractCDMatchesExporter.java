@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,6 +27,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
+import org.janelia.colormipsearch.model.PublishedURLs;
 
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     final ScoresFilter scoresFilter;
@@ -72,15 +74,16 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
 
     <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     updateMatchedResultsMetadata(ResultMatches<M, CDMatchedTarget<T>> resultMatches,
-                                 Consumer<M> updateKeyMethod,
-                                 Consumer<T> updateTargetMatchMethod) {
-        updateKeyMethod.accept(resultMatches.getKey());
-        resultMatches.getKey().updateAllNeuronFiles(this::relativizeURL);
+                                 BiConsumer<M, PublishedURLs> updateKeyMethod,
+                                 BiConsumer<T, PublishedURLs> updateTargetMatchMethod,
+                                 Map<Number, PublishedURLs> publisheURLsByNeuronId) {
+        updateKeyMethod.accept(resultMatches.getKey(), publisheURLsByNeuronId.get(resultMatches.getKey().getInternalId()));
+        resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
         String maskSourceImageName = resultMatches.getKey().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
         String maskMipImageName = resultMatches.getKey().getNeuronFile(FileType.ColorDepthMip);
         resultMatches.getItems().forEach(target -> {
-            updateTargetMatchMethod.accept(target.getTargetImage());
-            target.getTargetImage().updateAllNeuronFiles(this::relativizeURL);
+            updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
+            target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
             // update match files
             String maskInputImageName = target.getMatchFile(FileType.ColorDepthMipInput);
             String targetInputImageName = target.getMatchFile(FileType.ColorDepthMipMatch);

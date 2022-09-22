@@ -14,11 +14,18 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.ProcessingType;
+import org.janelia.colormipsearch.model.PublishedURLs;
 
 /**
  * This is the representation of a JACS ColorDepthMIP image.
  */
 public class ColorDepthMIP implements Serializable {
+    private static final String UPLOADED_COLOR_DEPTH_MIP_KEY = "cdm";
+    private static final String UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY = "cdm_thumbnail";
+    private static final String UPLOADED_COLOR_DEPTH_INPUT_KEY = "searchable_neurons";
+    private static final String UPLOADED_SWC_KEY = "skeletonswc";
+    private static final String UPLOADED_OBJ_KEY = "skeletonobj";
+
     @JsonProperty("_id")
     public String id;
     @JsonProperty
@@ -40,10 +47,6 @@ public class ColorDepthMIP implements Serializable {
     @JsonProperty
     public String neuronInstance;
     @JsonProperty
-    public String publicImageUrl;
-    @JsonProperty
-    public String publicThumbnailUrl;
-    @JsonProperty
     public Set<String> libraries;
     @JsonProperty
     public String sampleRef;
@@ -53,6 +56,10 @@ public class ColorDepthMIP implements Serializable {
     public String emBodyRef;
     @JsonProperty
     public CDMIPBody emBody;
+    @JsonProperty
+    public String publicImageUrl;
+    @JsonProperty
+    public String publicThumbnailUrl;
     public String sample3DImageStack;
     public String sampleGen1Gal4ExpressionImage;
     public String emSWCFile;
@@ -148,7 +155,7 @@ public class ColorDepthMIP implements Serializable {
         return StringUtils.isNotBlank(emBodyRef) && emBody == null;
     }
 
-    public void updateLMNeuron(LMNeuronMetadata lmNeuron) {
+    public void updateLMNeuron(LMNeuronMetadata lmNeuron, PublishedURLs neuronURLs) {
         lmNeuron.setPublishedName(lmLineName());
         lmNeuron.setGender(Gender.fromVal(gender()));
         lmNeuron.setSlideCode(lmSlideCode());
@@ -157,8 +164,8 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setObjective(lmObjective());
         lmNeuron.setChannel(channelNumber());
         // set neuron files
-        lmNeuron.setNeuronFile(FileType.ColorDepthMip, publicImageUrl);
-        lmNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
+        lmNeuron.setNeuronFile(FileType.ColorDepthMip, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
+        lmNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
         lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, sample3DImageStack);
         lmNeuron.setNeuronFile(FileType.Gal4Expression, sampleGen1Gal4ExpressionImage);
         updateCDSResultsFiles(lmNeuron);
@@ -168,7 +175,7 @@ public class ColorDepthMIP implements Serializable {
         }
     }
 
-    public void updateEMNeuron(EMNeuronMetadata emNeuron) {
+    public void updateEMNeuron(EMNeuronMetadata emNeuron, PublishedURLs neuronURLs) {
         emNeuron.setPublishedName(emBodyId());
         emNeuron.setFullPublishedName(emPublishedName());
         emNeuron.setAnatomicalArea(emAnatomicalArea());
@@ -176,15 +183,23 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setNeuronType(neuronType);
         emNeuron.setGender(Gender.fromVal(emGender()));
         // set neuron files
-        emNeuron.setNeuronFile(FileType.ColorDepthMip, publicImageUrl);
-        emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, publicThumbnailUrl);
-        emNeuron.setNeuronFile(FileType.AlignedBodySWC, em3DFilename(emNeuron.getLibraryName(), emSWCFile, ".swc"));
-        emNeuron.setNeuronFile(FileType.AlignedBodyOBJ, em3DFilename(emNeuron.getLibraryName(), emOBJFile, ".obj"));
+        emNeuron.setNeuronFile(FileType.ColorDepthMip, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
+        emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
+        emNeuron.setNeuronFile(FileType.AlignedBodySWC, getNeuronURL(neuronURLs, UPLOADED_SWC_KEY, null));
+        emNeuron.setNeuronFile(FileType.AlignedBodyOBJ, getNeuronURL(neuronURLs, UPLOADED_OBJ_KEY, null));
         updateCDSResultsFiles(emNeuron);
         updateEMPPPMResultsFiles(emNeuron);
 
         if (bodyId == null) {
             emNeuron.setUnpublished(true);
+        }
+    }
+
+    private String getNeuronURL(PublishedURLs neuronURLs, String fileType, String defaultValue) {
+        if (neuronURLs == null) {
+            return defaultValue;
+        } else {
+            return neuronURLs.getURLFor(fileType, defaultValue);
         }
     }
 

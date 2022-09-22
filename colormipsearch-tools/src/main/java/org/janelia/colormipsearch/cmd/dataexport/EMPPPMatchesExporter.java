@@ -26,12 +26,14 @@ import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
+import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.model.PublishedLMImage;
+import org.janelia.colormipsearch.model.PublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
@@ -105,8 +107,11 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
         // retrieve source data
         Map<String, List<PublishedLMImage>> lmPublishedImages = retrieveEMAndLMSourceData(matches);
+        Map<Number, PublishedURLs> indexedPublishedURLs = jacsDataHelper.retrievePublishedURLs(
+                matches.stream().map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet())
+        );
         // update grouped matches
-        groupedMatches.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages));
+        groupedMatches.forEach(r -> updateMatchedResultsMetadata(r, lmPublishedImages, indexedPublishedURLs));
         // write results by mask (EM) ref ID (this is actually JACS EMBodyRef ID)
         resultMatchesWriter.writeGroupedItemsList(groupedMatches, EMNeuronMetadata::getEmRefId, outputDir);
     }
@@ -129,9 +134,10 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     }
 
     private void updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches,
-                                              Map<String, List<PublishedLMImage>> lmPublishedImages) {
-        updateEMNeuron(resultMatches.getKey());
-        resultMatches.getKey().updateAllNeuronFiles(this::relativizeURL);
+                                              Map<String, List<PublishedLMImage>> lmPublishedImages,
+                                              Map<Number, PublishedURLs> publishedURLsMap) {
+        updateEMNeuron(resultMatches.getKey(), publishedURLsMap.get(resultMatches.getKey().getInternalId()));
+        resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
         resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages));
     }
 

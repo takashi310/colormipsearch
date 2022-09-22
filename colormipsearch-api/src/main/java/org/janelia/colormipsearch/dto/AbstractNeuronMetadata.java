@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.dto;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -19,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
@@ -190,7 +188,7 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
-    public void updateAllNeuronFiles(Function<String, String> fileNameMap) {
+    public void transformAllNeuronFiles(Function<String, String> fileNameMap) {
         Set<FileType> neuronFileTypes = neuronFiles.keySet();
         neuronFileTypes.forEach(
                 ft -> setNeuronFile(ft, fileNameMap.apply(getNeuronFile(ft)))

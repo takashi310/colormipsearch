@@ -17,7 +17,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.HttpHelper;
 import org.janelia.colormipsearch.dao.PublishedLMImageDao;
+import org.janelia.colormipsearch.dao.PublishedURLsDao;
+import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.PublishedLMImage;
+import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +28,7 @@ public class JacsDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(JacsDataGetter.class);
 
     private final PublishedLMImageDao publishedLMImageDao;
+    private final PublishedURLsDao publishedURLsDao;
     private final String dataServiceURL;
     private final String configURL;
     private final String authorization;
@@ -32,12 +36,14 @@ public class JacsDataGetter {
     private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
 
     public JacsDataGetter(PublishedLMImageDao publishedLMImageDao,
+                          PublishedURLsDao publishedURLsDao,
                           String dataServiceURL,
                           String configURL,
                           String authorization,
                           int readBatchSize,
                           Map<String, Set<String>> publishedAlignmentSpaceAliases) {
         this.publishedLMImageDao = publishedLMImageDao;
+        this.publishedURLsDao = publishedURLsDao;
         this.dataServiceURL = dataServiceURL;
         this.configURL = configURL;
         this.authorization = authorization;
@@ -208,6 +214,11 @@ public class JacsDataGetter {
                 sampleRefs,
                 null
         );
+    }
+
+    public Map<Number, PublishedURLs> retrievePublishedURLs(Set<Number> neuronIds) {
+        return publishedURLsDao.findByEntityIds(neuronIds).stream()
+                .collect(Collectors.toMap(AbstractBaseEntity::getEntityId, urls -> urls));
     }
 
     private List<ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {

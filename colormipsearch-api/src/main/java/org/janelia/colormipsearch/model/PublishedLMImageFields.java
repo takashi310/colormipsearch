@@ -29,7 +29,7 @@ public class PublishedLMImageFields extends AbstractBaseEntity {
     private String objective;
     private String alignmentSpace;
     private String releaseName;
-    private Map<String, String> files = new HashMap<>();
+    private final Map<String, String> files = new HashMap<>();
 
     public String getSampleRef() {
         return sampleRef;

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -26,6 +27,7 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.PublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
@@ -87,12 +89,18 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
+        Map<Number, PublishedURLs> indexedNeuronURLs = jacsDataHelper.retrievePublishedURLs(
+                matches.stream()
+                        .flatMap(m -> Stream.of(m.getMaskImage(), m.getMatchedImage()))
+                        .collect(Collectors.toSet())
+        );
         LOG.info("Fill in missing info for {} matches", matches.size());
         // update all neuron from all grouped matches
         List<ResultMatches<T, CDMatchedTarget<M>>> publishedMatches = groupedMatches.stream()
                 .peek(m -> updateMatchedResultsMetadata(m,
                         this::updateLMNeuron,
-                        this::updateEMNeuron
+                        this::updateEMNeuron,
+                        indexedNeuronURLs
                 ))
                 .filter(resultMatches -> resultMatches.getKey().isPublished()) // filter out unpublished LMs
                 .peek(resultMatches -> resultMatches.setItems(resultMatches.getItems().stream()
