@@ -1,25 +1,21 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
-import org.janelia.colormipsearch.datarequests.SortCriteria;
-import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
@@ -41,38 +37,48 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                ScoresFilter scoresFilter,
                                int relativesUrlsToComponent,
                                Path outputDir,
+                               Executor executor,
                                NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, relativesUrlsToComponent, outputDir, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper, dataSourceParam, scoresFilter, relativesUrlsToComponent, outputDir, executor, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override
     public void runExport() {
+        long startProcessingTime = System.currentTimeMillis();
         List<String> targets = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
-        ItemsHandling.partitionCollection(targets, processingPartitionSize)
+        List<CompletableFuture<Void>> allExportsJobs = ItemsHandling.partitionCollection(targets, processingPartitionSize)
                 .entrySet().stream().parallel()
-                .forEach(indexedPartition -> {
-                    long startProcessingTime = System.currentTimeMillis();
-                    LOG.info("Start processing partition {}", indexedPartition.getKey());
-                    indexedPartition.getValue().forEach(targetId -> {
-                        LOG.info("Read LM color depth matches for {}", targetId);
-                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
-                                dataSourceParam.getAlignmentSpace(),
-                                null, // no target library specified - we use target MIP
-                                Collections.singletonList(targetId),
-                                scoresFilter,
-                                null, // use the tags for selecting the masks but not for selecting the matches
-                                null // no sorting yet because it uses too much memory on the server
-                        );
-                        LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
-                        List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget =
-                                selectBestMatchPerMIPPair(allMatchesForTarget);
-                        LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);
-                        writeResults(selectedMatchesForTarget);
-                    });
-                    LOG.info("Finished processing partition {} in {}s", indexedPartition.getKey(), (System.currentTimeMillis() - startProcessingTime) / 1000.);
-                });
+                .map(indexedPartition -> CompletableFuture.<Void>supplyAsync(() -> {
+                    runExportForTargetIds(indexedPartition.getKey(), indexedPartition.getValue());
+                    return null;
+                }, executor))
+                .collect(Collectors.toList());
+        CompletableFuture.allOf(allExportsJobs.toArray(new CompletableFuture<?>[0])).join();
+        LOG.info("Finished all exports in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
+    }
+
+    private void runExportForTargetIds(int jobId, List<String> targetIds) {
+        long startProcessingTime = System.currentTimeMillis();
+        LOG.info("Start processing {} targets from partition {}", targetIds.size(), jobId);
+        targetIds.forEach(targetId -> {
+            LOG.info("Read LM color depth matches for {}", targetId);
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
+                    dataSourceParam.getAlignmentSpace(),
+                    null, // no target library specified - we use target MIP
+                    Collections.singletonList(targetId),
+                    scoresFilter,
+                    null, // use the tags for selecting the masks but not for selecting the matches
+                    null // no sorting yet because it uses too much memory on the server
+            );
+            LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget =
+                    selectBestMatchPerMIPPair(allMatchesForTarget);
+            LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);
+            writeResults(selectedMatchesForTarget);
+        });
+        LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis() - startProcessingTime) / 1000.);
     }
 
     private <M extends EMNeuronMetadata, T extends LMNeuronMetadata> void

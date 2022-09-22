@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -196,6 +197,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 .addNames(args.exportedNames)
                 .setOffset(args.offset)
                 .setSize(args.size);
+        Executor exportsExecutor = CmdUtils.createCmdExecutor(args.commonArgs);
         switch (args.exportedResultType) {
             case EM_CD_MATCHES:
                 return new EMCDMatchesExporter(
@@ -204,6 +206,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
+                        exportsExecutor,
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao(),
@@ -219,6 +222,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
+                        exportsExecutor,
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getCDMatchesDao(),
@@ -235,6 +239,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         getPPPScoresFilter(),
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
+                        exportsExecutor,
                         new DBNeuronMatchesReader<>(
                                 daosProvider.getNeuronMetadataDao(),
                                 daosProvider.getPPPMatchesDao(),
@@ -249,6 +254,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataSource,
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
+                        exportsExecutor,
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize,
@@ -260,6 +266,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataSource,
                         args.relativesUrlsToComponent,
                         args.getOutputResultsDir(),
+                        exportsExecutor,
                         daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize,

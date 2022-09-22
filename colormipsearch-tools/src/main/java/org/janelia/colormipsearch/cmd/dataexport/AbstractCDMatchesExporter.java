@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,10 +42,11 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                         ScoresFilter scoresFilter,
                                         int relativesUrlsToComponent,
                                         Path outputDir,
+                                        Executor executor,
                                         NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir, executor);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;

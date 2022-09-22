@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,10 +56,11 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 ScoresFilter scoresFilter,
                                 int relativesUrlsToComponent,
                                 Path outputDir,
+                                Executor executor,
                                 NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader,
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir, executor);
         this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
@@ -67,29 +70,41 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
     @Override
     public void runExport() {
+        long startProcessingTime = System.currentTimeMillis();
         List<String> masks = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
-        ItemsHandling.partitionCollection(masks, processingPartitionSize).entrySet().stream().parallel()
-                .forEach(indexedPartition -> {
-                    indexedPartition.getValue().forEach(maskId -> {
-                        LOG.info("Read PPP matches for {}", maskId);
-                        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
-                                dataSourceParam.getAlignmentSpace(),
-                                dataSourceParam.getLibraries(),
-                                Collections.singletonList(maskId),
-                                scoresFilter,
-                                null, // use the tags for selecting the masks but not for selecting the matches
-                                Collections.singletonList(
-                                        new SortCriteria("rank", SortDirection.ASC)
-                                ));
-                        LOG.info("Filter out PPP matches without any images for {}", maskId);
-                        List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = allMatchesForMask.stream()
-                                .filter(PPPMatchEntity::hasSourceImageFiles)
-                                .collect(Collectors.toList());
-                        LOG.info("Write {} PPP matches for {} out of {}",
-                                matchesForMask.size(), maskId, allMatchesForMask.size());
-                        writeResults(matchesForMask);
-                    });
-                });
+        List<CompletableFuture<Void>> allExportsJobs = ItemsHandling.partitionCollection(masks, processingPartitionSize).entrySet().stream().parallel()
+                .map(indexedPartition -> CompletableFuture.<Void>supplyAsync(() -> {
+                    runExportForMaskIds(indexedPartition.getKey(), indexedPartition.getValue());
+                    return null;
+                }, executor))
+                .collect(Collectors.toList());
+        CompletableFuture.allOf(allExportsJobs.toArray(new CompletableFuture<?>[0])).join();
+        LOG.info("Finished all exports in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
+    }
+
+    private void runExportForMaskIds(int jobId, List<String> maskIds) {
+        long startProcessingTime = System.currentTimeMillis();
+        LOG.info("Start processing {} masks from partition {}", maskIds.size(), jobId);
+        maskIds.forEach(maskId -> {
+            LOG.info("Read PPP matches for {}", maskId);
+            List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
+                    dataSourceParam.getAlignmentSpace(),
+                    dataSourceParam.getLibraries(),
+                    Collections.singletonList(maskId),
+                    scoresFilter,
+                    null, // use the tags for selecting the masks but not for selecting the matches
+                    Collections.singletonList(
+                            new SortCriteria("rank", SortDirection.ASC)
+                    ));
+            LOG.info("Filter out PPP matches without any images for {}", maskId);
+            List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = allMatchesForMask.stream()
+                    .filter(PPPMatchEntity::hasSourceImageFiles)
+                    .collect(Collectors.toList());
+            LOG.info("Write {} PPP matches for {} out of {}",
+                    matchesForMask.size(), maskId, allMatchesForMask.size());
+            writeResults(matchesForMask);
+        });
+        LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
     private void

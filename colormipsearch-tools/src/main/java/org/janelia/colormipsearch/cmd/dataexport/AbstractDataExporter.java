@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd.dataexport;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
@@ -21,15 +22,18 @@ public abstract class AbstractDataExporter implements DataExporter {
     final DataSourceParam dataSourceParam;
     final int relativesUrlsToComponent;
     final Path outputDir;
+    final Executor executor;
 
     protected AbstractDataExporter(CachedJacsDataHelper jacsDataHelper,
                                    DataSourceParam dataSourceParam,
                                    int relativesUrlsToComponent,
-                                   Path outputDir) {
+                                   Path outputDir,
+                                   Executor executor) {
         this.jacsDataHelper = jacsDataHelper;
         this.dataSourceParam = dataSourceParam;
         this.relativesUrlsToComponent = relativesUrlsToComponent;
         this.outputDir = outputDir;
+        this.executor = executor;
     }
 
     @Override
