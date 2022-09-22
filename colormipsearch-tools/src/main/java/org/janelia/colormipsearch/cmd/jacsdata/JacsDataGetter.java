@@ -94,17 +94,23 @@ public class JacsDataGetter {
 
     private PublishedLMImage findPublishedImage(ColorDepthMIP colorDepthMIP, List<PublishedLMImage> publishedLMImages) {
         if (CollectionUtils.isEmpty(publishedLMImages)) {
+            LOG.warn("No published images provided to lookup {}:sample={}:as={}",
+                    colorDepthMIP, colorDepthMIP.sampleRef, colorDepthMIP.alignmentSpace);
             return new PublishedLMImage();
         } else {
             Set<String> aliasesForAlignmentSpace = publishedAlignmentSpaceAliases.getOrDefault(
                     colorDepthMIP.alignmentSpace,
                     Collections.emptySet());
+            // we lookup published images in the same alignment space
             return publishedLMImages.stream()
                     .filter(pi -> pi.getAlignmentSpace().equals(colorDepthMIP.alignmentSpace) ||
                             (CollectionUtils.isNotEmpty(aliasesForAlignmentSpace) && aliasesForAlignmentSpace.contains(pi.getAlignmentSpace())))
-                    .filter(pi -> pi.getObjective().equals(colorDepthMIP.objective))
                     .findFirst()
-                    .orElse(new PublishedLMImage());
+                    .orElseGet(() -> {
+                        LOG.warn("No published image found for {}:sample={}:as={}",
+                                colorDepthMIP, colorDepthMIP.sampleRef, colorDepthMIP.alignmentSpace);
+                        return new PublishedLMImage();
+                    });
         }
     }
 
