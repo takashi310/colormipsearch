@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 public class MIPsExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsExporter.class);
+    private static final Pattern ARTIFICIALLY_CREATED_PATTERN = Pattern.compile("Created by .+import");
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     private final ItemsWriterToJSONFile mipsWriter;
@@ -79,6 +81,7 @@ public class MIPsExporter extends AbstractDataExporter {
                                 .collect(Collectors.toSet());
                         jacsDataHelper.retrieveCDMIPs(mipIds);
                         List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
+                                .filter(this::hasNotBeenArtificiallyCreated)
                                 .map(AbstractNeuronEntity::metadata)
                                 .collect(Collectors.toList());
                         Map<Number, PublishedURLs> indexedNeuronURLs = jacsDataHelper.retrievePublishedURLs(neuronMipEntities);
@@ -103,5 +106,16 @@ public class MIPsExporter extends AbstractDataExporter {
         } else {
             throw new IllegalArgumentException("Invalid exported class");
         }
+    }
+
+    /**
+     * This method checks if the neuron has been artificially created during the import.
+     * Such neurons have a tag that looks like: "Created by dataset-vs-dataset import"
+     *
+     * @param n
+     * @return
+     */
+    private boolean hasNotBeenArtificiallyCreated(AbstractNeuronEntity n) {
+        return n.getTags().stream().noneMatch(t -> ARTIFICIALLY_CREATED_PATTERN.matcher(t).find());
     }
 }

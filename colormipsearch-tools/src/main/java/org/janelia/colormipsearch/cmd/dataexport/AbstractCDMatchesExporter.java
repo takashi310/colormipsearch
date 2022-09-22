@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +31,7 @@ import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.PublishedURLs;
 
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
+    private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
     final ItemsWriterToJSONFile resultMatchesWriter;
@@ -65,11 +67,23 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectBestMatchPerMIPPair(
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> cdMatchEntities) {
         Map<Pair<String, String>, CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> bestMatchesPerMIPsPairs = cdMatchEntities.stream()
+                .filter(this::doesNotLookSuspicious)
                 .collect(Collectors.toMap(
                         m -> ImmutablePair.of(m.getMaskMIPId(), m.getMatchedMIPId()),
                         m -> m,
                         (m1, m2) -> m1.getNormalizedScore() >= m2.getNormalizedScore() ? m1 : m2)); // resolve by picking the best match
         return new ArrayList<>(bestMatchesPerMIPsPairs.values());
+    }
+
+    /**
+     * Check if the match was marked as suspicious at the time of import. That happens if one of the neurons,
+     * either the mask or the target, did not exist at the time of import and it was artificially created.
+     *
+     * @param m
+     * @return
+     */
+    private boolean doesNotLookSuspicious(CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity> m) {
+        return m.getTags().stream().noneMatch(t -> SUSPICIOUS_MATCH_PATTERN.matcher(t).find());
     }
 
     <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
