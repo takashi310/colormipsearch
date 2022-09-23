@@ -45,4 +45,15 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     public void setChannel(Integer channel) {
         this.channel = channel;
     }
+
+    @Override
+    protected <N extends AbstractNeuronMetadata> void copyFrom(N that) {
+        super.copyFrom(that);
+        LMNeuronMetadata lmNeuronMetadata = (LMNeuronMetadata) that;
+        this.slideCode = lmNeuronMetadata.slideCode;
+        this.objective = lmNeuronMetadata.objective;
+        this.mountingProtocol = lmNeuronMetadata.mountingProtocol;
+        this.channel = lmNeuronMetadata.channel;
+    }
+
 }

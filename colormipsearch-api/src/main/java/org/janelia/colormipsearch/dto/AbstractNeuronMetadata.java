@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.validation.GroupSequence;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -28,6 +29,7 @@ import org.janelia.colormipsearch.model.ProcessingType;
  * This is the representation of the neuron metadata that will get uploaded to AWS
  * and then used by the NeuronBridge client application.
  */
+@GroupSequence({AbstractNeuronMetadata.class, WithAllRequiredAttrs.class})
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public abstract class AbstractNeuronMetadata {
 
@@ -63,7 +65,7 @@ public abstract class AbstractNeuronMetadata {
         this.internalId = internalId;
     }
 
-    @NotBlank
+    @NotBlank(groups = WithAllRequiredAttrs.class)
     @JsonRequired
     @JsonProperty(value = "id")
     public String getMipId() {
@@ -159,10 +161,10 @@ public abstract class AbstractNeuronMetadata {
         return !unpublished;
     }
 
-    @NotEmpty
+    @NotEmpty(groups = WithAllRequiredAttrs.class)
     @JsonRequired
     @JsonProperty("files")
-    Map<FileType, String> getNeuronFiles() {
+    protected Map<FileType, String> getNeuronFiles() {
         return neuronFiles;
     }
 

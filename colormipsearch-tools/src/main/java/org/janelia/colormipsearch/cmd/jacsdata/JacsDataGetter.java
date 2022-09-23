@@ -114,8 +114,10 @@ public class JacsDataGetter {
         }
     }
 
-    private void update3DStack(ColorDepthMIP colorDepthMIP, PublishedLMImage publishedLMImage) {
+    private void update3DStack(ColorDepthMIP colorDepthMIP,
+                               Map<String, List<PublishedLMImage>> publishedImagesBySampleRefs) {
         if (colorDepthMIP.sample != null) {
+            PublishedLMImage publishedLMImage = findPublishedImage(colorDepthMIP, publishedImagesBySampleRefs.get(colorDepthMIP.sampleRef));
             colorDepthMIP.sample3DImageStack = publishedLMImage.getFile("VisuallyLosslessStack");
             colorDepthMIP.sampleGen1Gal4ExpressionImage = publishedLMImage.getGal4Expression4Image(colorDepthMIP.anatomicalArea);
         } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
@@ -208,7 +210,7 @@ public class JacsDataGetter {
                         } else if (cdmip.needsLMSample()) {
                             cdmip.sample = lmSamples.get(cdmip.sampleRef);
                         }
-                        update3DStack(cdmip, findPublishedImage(cdmip, publishedImagesBySampleRefsForAllAlignmentSpaces.get(cdmip.sampleRef)));
+                        update3DStack(cdmip, publishedImagesBySampleRefsForAllAlignmentSpaces);
                     })
                     .collect(Collectors.toMap(n -> n.id, n -> n));
         }

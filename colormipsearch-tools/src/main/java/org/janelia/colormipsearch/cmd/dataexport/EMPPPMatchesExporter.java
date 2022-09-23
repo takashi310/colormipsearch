@@ -26,6 +26,7 @@ import org.janelia.colormipsearch.datarequests.SortDirection;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+import org.janelia.colormipsearch.dto.LMPPPNeuronMetadata;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
@@ -100,15 +101,15 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = allMatchesForMask.stream()
                     .filter(PPPMatchEntity::hasSourceImageFiles)
                     .collect(Collectors.toList());
-            LOG.info("Write {} PPP matches for {} out of {}",
+            LOG.info("Prepare writing {} PPPM results for {} out of {}",
                     matchesForMask.size(), maskId, allMatchesForMask.size());
-            writeResults(matchesForMask);
+            prepareAndWriteResults(matchesForMask);
         });
         LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
     private void
-    writeResults(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches) {
+    prepareAndWriteResults(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches) {
         // group results by mask's published name
         List<Function<EMNeuronMetadata, ?>> grouping = Collections.singletonList(
                 AbstractNeuronMetadata::getPublishedName
@@ -159,13 +160,16 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     private void updateTargetFromLMSample(EMNeuronMetadata emNeuron,
                                           PPPMatchedTarget<LMNeuronMetadata> pppMatch,
                                           Map<String, List<PublishedLMImage>> lmPublishedImages) {
-        LMNeuronMetadata lmNeuron;
+        LMPPPNeuronMetadata lmNeuron;
         if (pppMatch.getTargetImage() == null) {
-            lmNeuron = new LMNeuronMetadata();
+            lmNeuron = new LMPPPNeuronMetadata();
+            // copy the alignment space and anatomical area from the EM neuron
             lmNeuron.setAlignmentSpace(emNeuron.getAlignmentSpace());
+            lmNeuron.setAnatomicalArea(emNeuron.getAnatomicalArea());
+            lmNeuron.setObjective(pppMatch.getSourceObjective());
             pppMatch.setTargetImage(lmNeuron);
         } else {
-            lmNeuron = pppMatch.getTargetImage();
+            lmNeuron = new LMPPPNeuronMetadata(pppMatch.getTargetImage());
         }
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
         CDMIPSample sample = jacsDataHelper.getLMSample(pppMatch.getSourceLmName());
@@ -173,7 +177,6 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             String lm3DStackURL = findPublishedLM3DStack(
                     sample.sampleRef(),
                     lmNeuron.getAlignmentSpace(),
-                    pppMatch.getSourceObjective(),
                     lmPublishedImages);
             lmNeuron.setPublishedName(sample.lmLineName());
             lmNeuron.setSlideCode(sample.slideCode);
@@ -191,20 +194,18 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             // then replace them just to be safe that we are not updating what we're reading
             updatedMatchFiles.forEach((ft, fn) -> pppMatch.setMatchFile(ft, relativizeURL(fn)));
         } else {
-            LOG.info("No sample found for {}", pppMatch.getSourceLmName());
+            LOG.error("No sample found for {}", pppMatch.getSourceLmName());
         }
     }
 
     private String findPublishedLM3DStack(String sampleRef,
                                           String alignmentSpace,
-                                          String objective,
                                           Map<String, List<PublishedLMImage>> lmPublishedImages) {
         if (lmPublishedImages.containsKey(sampleRef)) {
             Set<String> aliasesForAlignmentSpace = publishedAlignmentSpaceAliases.getOrDefault(alignmentSpace, Collections.emptySet());
             return lmPublishedImages.get(sampleRef).stream()
                     .filter(pi -> pi.getAlignmentSpace().equals(alignmentSpace) ||
                             (CollectionUtils.isNotEmpty(aliasesForAlignmentSpace) && aliasesForAlignmentSpace.contains(pi.getAlignmentSpace())))
-                    .filter(pi -> pi.getObjective().equals(objective))
                     .filter(pi -> pi.hasFile("VisuallyLosslessStack"))
                     .findFirst()
                     .map(pi -> pi.getFile("VisuallyLosslessStack"))
