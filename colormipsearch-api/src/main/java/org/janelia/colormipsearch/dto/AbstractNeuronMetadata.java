@@ -27,7 +27,8 @@ import org.janelia.colormipsearch.model.ProcessingType;
 
 /**
  * This is the representation of the neuron metadata that will get uploaded to AWS
- * and then used by the NeuronBridge client application.
+ * and then used by the NeuronBridge client application. The default group validation for this is
+ * @WithAllRequiredAttrs
  */
 @GroupSequence({AbstractNeuronMetadata.class, WithAllRequiredAttrs.class})
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -65,6 +66,10 @@ public abstract class AbstractNeuronMetadata {
         this.internalId = internalId;
     }
 
+    /**
+     * MipID is validated only within the @WithAllRequiredAttrs group because PPPM target don't really have MIPs
+     * @return
+     */
     @NotBlank(groups = WithAllRequiredAttrs.class)
     @JsonRequired
     @JsonProperty(value = "id")
@@ -161,6 +166,12 @@ public abstract class AbstractNeuronMetadata {
         return !unpublished;
     }
 
+    /**
+     * NeuronFiles attribute is validated only within the @WithAllRequiredAttrs group
+     * because PPPM target may have been generated for not yet published lines so
+     * it may not have any files at all.
+     * @return
+     */
     @NotEmpty(groups = WithAllRequiredAttrs.class)
     @JsonRequired
     @JsonProperty("files")
