@@ -1,102 +1,88 @@
-S3_BUCKET=janelia-neuronbridge-data-dev
-S3_DATA_VERSION=v2_4_0
-REGION=brain
-LOCAL_VERSION_DATA_DIR=/nrs/neuronbridge/v2.4.0
-LOCAL_CDS_DATA_DIR=/nrs/neuronbridge/v2.4.0
-LOCAL_PPP_DATA_DIR=/nrs/neuronbridge/v2.4.0
-PER_EM_DIR=flyem-vs-flylight
-PER_LM_DIR=flylight-vs-flyem
-CDS_RESULTS_DIR=${REGION}/cdsresults.final
-MIPS_DIR=${REGION}/mips
-MCFO_MIPS=all_mcfo_lines
-SGAL4_MIPS=split_gal4_lines
-EM_MIPS=em_bodies
-PPP_RESULTS_DIR=${REGION}/pppresults/flyem-to-flylight.public
+S3_BUCKET=janelia-neuronbridge-data-devpre
+S3_DATA_VERSION=v3_0_0
+LOCAL_DATA_DIR=/nrs/neuronbridge/v3.0.0
+MIPS_DIR=mips
+CDS_RESULTS_DIR=cdmatches
+PPPM_RESULTS_DIR=pppmatches
+PER_EM_DIR=em-vs-lm
+PER_LM_DIR=lm-vs-em
+LM_MIPS=lmlines
+EM_MIPS=embodies
 
 AWS="echo aws"
 
 AWSCP="$AWS s3 cp"
 
-uploadMCFOMIPs() {
-    local d=${LOCAL_CDS_DATA_DIR}/${MIPS_DIR}/${MCFO_MIPS}
-    if [ -d $d ]; then
-        $AWSCP $d s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/by_line --recursive
-    else
-        echo "uploadMCFOMIPs: $d not found"
-    fi
+uploadMIPS() {
+    local region="$1" # brain, vnc, brain+vnc, or vnc+brain
+    local mips_type="$2" # lmlines or embodies
+    local d=${LOCAL_DATA_DIR}/${region}/${MIPS_DIR}/${mips_type}
+    local mips_dest
+
+    case ${mips_type} in
+        lmlines|lm_lines|by_line)
+            mips_dest=by_line
+            ;;
+        embodies|by_body|em_bodies)
+            mips_dest=by_body
+            ;;
+        *)
+            echo "Unsupported mips type: ${mips_type}"
+            exit 1
+    esac
+
+    # upload
+    $AWSCP $d s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/${mips_dest} --recursive
 }
 
-uploadSGal4MIPs() {
-    local d=${LOCAL_CDS_DATA_DIR}/${MIPS_DIR}/${SGAL4_MIPS}
-    if [ -d $d ]; then
-        $AWSCP $d s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/by_line --recursive
-    else
-        echo "uploadSGal4MIPs: $d not found"
-    fi
-}
+uploadMatches() {
+    local region="$1" # brain or vnc
+    local matches_type="$2" # cdmatches or pppmatches
+    local direction="$3" # em-vs-lm or lm-vs-em
 
-uploadEMMIPs() {
-    local d=${LOCAL_CDS_DATA_DIR}/${MIPS_DIR}/${EM_MIPS}
-    if [ -d $d ]; then
-        $AWSCP $d s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/by_body --recursive
-    else
-        echo "uploadEMMIPs: $d not found"
-    fi
-}
-
-uploadEMMatches() {
-    $AWSCP \
-        ${LOCAL_CDS_DATA_DIR}/${CDS_RESULTS_DIR}/${PER_EM_DIR} \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/cdsresults --recursive
-
-}
-
-uploadLMMatches() {
-    $AWSCP \
-        ${LOCAL_CDS_DATA_DIR}/${CDS_RESULTS_DIR}/${PER_LM_DIR} \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/cdsresults --recursive
-}
-
-uploadPPP() {
-    # upload PPP results
-    $AWSCP \
-        ${LOCAL_PPP_DATA_DIR}/${PPP_RESULTS_DIR} \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/pppresults --recursive
-}
-
-uploadDataNotes() {
-    # upload data notes
-    $AWSCP \
-        ${LOCAL_VERSION_DATA_DIR}/DATA_NOTES.md \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/DATA_NOTES.md
+    local src_subdir
+    local dest_subdir
+    case ${matches_type} in
+        cdm|cdmatches|cds|cdsresults)
+            src_subdir=${CDS_RESULTS_DIR}
+            dest_subdir=cdsresults
+            ;;
+        ppp|pppm|pppmatches|pppmresults)
+            src_subdir=${PPPM_RESULTS_DIR}
+            dest_subdir=pppmresults
+            ;;
+        *)
+            echo "Unsupported matches type: ${matches_type}"
+            exit 1
+      esac
+      local d=${LOCAL_DATA_DIR}/${region}/${src_subdir}/${direction}
+      $AWSCP ${d} s3://${S3_BUCKET}/${S3_DATA_VERSION}/metadata/${dest_subdir} --recursive
 }
 
 uploadConfig() {
-    # upload paths.json
-    $AWSCP \
-        ${LOCAL_VERSION_DATA_DIR}/config.json \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/config.json
+    $AWSCP ${LOCAL_DATA_DIR}/config.json s3://${S3_BUCKET}/${S3_DATA_VERSION}/config.json
 }
 
 uploadSchemas() {
-    $AWSCP \
-        ${LOCAL_VERSION_DATA_DIR}/schemas \
-        s3://${S3_BUCKET}/${S3_DATA_VERSION}/schemas --content-type application/json --recursive
+    $AWSCP ${LOCAL_DATA_DIR}/schemas s3://${S3_BUCKET}/${S3_DATA_VERSION} --recursive
 }
 
-uploadCurrentVersion() {
-    $AWSCP \
-        ${LOCAL_VERSION_DATA_DIR}/current.txt \
-        s3://${S3_BUCKET}/current.txt
+uploadVersion() {
+    $AWSCP ${LOCAL_DATA_DIR}/current.txt s3://${S3_BUCKET}/current.txt
+    $AWSCP ${LOCAL_DATA_DIR}/current.txt s3://${S3_BUCKET}/next.txt
 }
 
-uploadEMMIPs
-uploadMCFOMIPs
-uploadSGal4MIPs
-uploadEMMatches
-uploadLMMatches
-uploadPPP
-uploadDataNotes
+uploadMIPS brain+vnc ${LM_MIPS}
+uploadMIPS brain+vnc ${EM_MIPS}
+
+uploadMatches brain cds ${PER_EM_DIR}
+uploadMatches brain cds ${PER_LM_DIR}
+uploadMatches brain pppm ${PER_EM_DIR}
+
+uploadMatches vnc cds ${PER_EM_DIR}
+uploadMatches vnc cds ${PER_LM_DIR}
+uploadMatches vnc pppm ${PER_EM_DIR}
+
 uploadConfig
 uploadSchemas
-uploadCurrentVersion
+uploadVersion
