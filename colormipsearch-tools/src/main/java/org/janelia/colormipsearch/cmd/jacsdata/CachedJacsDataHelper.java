@@ -54,7 +54,9 @@ public class CachedJacsDataHelper {
             LOG.info("Retrieve {} samples to populate missing information", toRetrieve.size());
             Map<String, CDMIPSample> retrievedSamples = jacsDataGetter.retrieveLMSamplesByName(toRetrieve);
             LM_SAMPLES_CACHE.putAll(retrievedSamples);
-            return retrievedSamples;
+            return LM_SAMPLES_CACHE.entrySet().stream()
+                    .filter(e -> lmSampleNames.contains(e.getKey()))
+                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         } else {
             return Collections.emptyMap();
         }

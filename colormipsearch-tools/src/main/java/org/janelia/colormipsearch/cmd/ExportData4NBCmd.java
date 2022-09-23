@@ -119,13 +119,11 @@ class ExportData4NBCmd extends AbstractCmd {
     }
 
     private final ExportMatchesCmdArgs args;
-    private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
 
-    ExportData4NBCmd(String commandName, CommonArgs commonArgs, Supplier<Long> cacheSizeSupplier) {
+    ExportData4NBCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
         this.args = new ExportMatchesCmdArgs(commonArgs);
-        this.cacheSizeSupplier = cacheSizeSupplier;
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         this.mapper = new ObjectMapper()
