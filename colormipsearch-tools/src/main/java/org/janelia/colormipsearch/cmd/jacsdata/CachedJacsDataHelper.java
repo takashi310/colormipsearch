@@ -56,7 +56,7 @@ public class CachedJacsDataHelper {
             LM_SAMPLES_CACHE.putAll(retrievedSamples);
             return LM_SAMPLES_CACHE.entrySet().stream()
                     .filter(e -> lmSampleNames.contains(e.getKey()))
-                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         } else {
             return Collections.emptyMap();
         }

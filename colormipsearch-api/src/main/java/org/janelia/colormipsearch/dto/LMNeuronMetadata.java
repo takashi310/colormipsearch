@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.dto;
 
 import javax.validation.constraints.NotBlank;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.JsonRequired;
 
 public class LMNeuronMetadata extends AbstractNeuronMetadata {
@@ -56,4 +57,11 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
         this.channel = lmNeuronMetadata.channel;
     }
 
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .appendSuper(super.toString())
+                .append("slideCode", getSlideCode())
+                .toString();
+    }
 }
