@@ -6,11 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.JsonRequired;
 
 public class GroupedMatchedEntities<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity, R extends AbstractMatchEntity<M, T>> extends GroupedItems<M, R> {
 
-    @JsonRequired
     @JsonProperty("inputImage")
     @Override
     public M getKey() {
@@ -22,7 +20,6 @@ public class GroupedMatchedEntities<M extends AbstractNeuronEntity, T extends Ab
         super.setKey(key);
     }
 
-    @JsonRequired
     @JsonProperty("results")
     @Override
     public List<R> getItems() {

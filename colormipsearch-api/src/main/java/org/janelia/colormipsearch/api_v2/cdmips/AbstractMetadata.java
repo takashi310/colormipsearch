@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.model.JsonRequired;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractMetadata implements Serializable {
@@ -55,7 +54,6 @@ public abstract class AbstractMetadata implements Serializable {
     @JsonProperty
     private Map<String, String> variants = null;
 
-    @JsonRequired
     @JsonIdentityReference
     @JsonProperty
     public String getId() {
@@ -66,7 +64,6 @@ public abstract class AbstractMetadata implements Serializable {
         this.id = id;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getPublishedName() {
         return publishedName;
@@ -135,7 +132,6 @@ public abstract class AbstractMetadata implements Serializable {
         this.imageType = imageType;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getImageURL() {
         return imageURL;
@@ -145,7 +141,6 @@ public abstract class AbstractMetadata implements Serializable {
         this.imageURL = imageURL;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getThumbnailURL() {
         return thumbnailURL;
@@ -155,7 +150,6 @@ public abstract class AbstractMetadata implements Serializable {
         this.thumbnailURL = thumbnailURL;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getSearchablePNG() {
         return searchablePNG;
@@ -173,7 +167,6 @@ public abstract class AbstractMetadata implements Serializable {
         return imageStack;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getLibraryName() {
         return libraryName;
@@ -244,7 +237,6 @@ public abstract class AbstractMetadata implements Serializable {
         this.anatomicalArea = anatomicalArea;
     }
 
-    @JsonRequired
     @JsonProperty
     public String getAlignmentSpace() {
         return alignmentSpace;

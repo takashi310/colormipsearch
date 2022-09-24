@@ -5,17 +5,13 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.JsonRequired;
 
 /**
  * This is the representation of a matched target. It only contains information about the target image not about the mask.
@@ -29,7 +25,6 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
     private final Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
 
     @NotNull
-    @JsonRequired
     @JsonProperty("image")
     public T getTargetImage() {
         return targetImage;
@@ -39,7 +34,6 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
         this.targetImage = targetImage;
     }
 
-    @JsonRequired
     public boolean isMirrored() {
         return mirrored;
     }
@@ -49,7 +43,6 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
     }
 
     @NotNull
-    @JsonRequired
     @JsonProperty("files")
     public Map<FileType, String> getMatchFiles() {
         return matchFiles;

@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.api_v2.Results;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -170,13 +169,11 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         return sourceNeuronName;
     }
 
-    @JsonRequired
     @JsonProperty("maskId")
     public String getNeuronId() {
         return neuronId;
     }
 
-    @JsonRequired
     @JsonProperty("maskPublishedName")
     public String getNeuronName() {
         return neuronName;
@@ -187,7 +184,6 @@ public class EmPPPMatches extends Results<List<EmPPPMatch>> {
         return neuronType;
     }
 
-    @JsonRequired
     @JsonProperty("maskLibraryName")
     public String getNeuronDataset() {
         return neuronDataset;

@@ -8,8 +8,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.janelia.colormipsearch.model.JsonRequired;
-
 /**
  * @param <K> key type
  * @param <T> type of grouped elements
@@ -36,7 +34,6 @@ public class GroupedItems<K, T> {
         this.key = key;
     }
 
-    @JsonRequired
     @JsonProperty("results")
     public List<T> getItems() {
         return items;

@@ -22,7 +22,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
-import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.model.ProcessingType;
 
 /**
@@ -71,7 +70,6 @@ public abstract class AbstractNeuronMetadata {
      * @return
      */
     @NotBlank(groups = WithAllRequiredAttrs.class)
-    @JsonRequired
     @JsonProperty(value = "id")
     public String getMipId() {
         return mipId;
@@ -86,7 +84,6 @@ public abstract class AbstractNeuronMetadata {
     }
 
     @NotBlank
-    @JsonRequired
     public String getLibraryName() {
         return libraryName;
     }
@@ -110,7 +107,6 @@ public abstract class AbstractNeuronMetadata {
         this.publishedName = publishedName;
     }
 
-    @JsonRequired
     @JsonProperty("publishedName")
     public String getFullPublishedName() {
         return StringUtils.isBlank(fullPublishedName)
@@ -123,7 +119,6 @@ public abstract class AbstractNeuronMetadata {
     }
 
     @NotBlank
-    @JsonRequired
     public String getAlignmentSpace() {
         return alignmentSpace;
     }
@@ -133,7 +128,6 @@ public abstract class AbstractNeuronMetadata {
     }
 
     @NotBlank
-    @JsonRequired
     public String getAnatomicalArea() {
         return anatomicalArea;
     }
@@ -143,7 +137,6 @@ public abstract class AbstractNeuronMetadata {
     }
 
     @NotNull
-    @JsonRequired
     public Gender getGender() {
         return gender;
     }
@@ -173,7 +166,6 @@ public abstract class AbstractNeuronMetadata {
      * @return
      */
     @NotEmpty(groups = WithAllRequiredAttrs.class)
-    @JsonRequired
     @JsonProperty("files")
     protected Map<FileType, String> getNeuronFiles() {
         return neuronFiles;

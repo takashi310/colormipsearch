@@ -18,6 +18,10 @@ import org.slf4j.LoggerFactory;
 
 public class CachedJacsDataHelper {
     private static final Logger LOG = LoggerFactory.getLogger(CachedJacsDataHelper.class);
+    /**
+     * Both color depth mips cache and LM sample "cache" must be thread safe as they
+     * can be updated from multiple threads.
+     */
     private static final Map<String, ColorDepthMIP> CD_MIPS_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, CDMIPSample> LM_SAMPLES_CACHE = new ConcurrentHashMap<>();
 

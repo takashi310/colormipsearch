@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.dto;
 import javax.validation.constraints.NotBlank;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.model.JsonRequired;
 
 public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String slideCode;
@@ -12,7 +11,6 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private Integer channel; // 1-based channel number
 
     @NotBlank
-    @JsonRequired
     public String getSlideCode() {
         return slideCode;
     }
@@ -22,7 +20,6 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     }
 
     @NotBlank
-    @JsonRequired
     public String getObjective() {
         return objective;
     }

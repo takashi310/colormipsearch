@@ -18,7 +18,6 @@ public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeu
     private boolean matchFound;
     private String errors;
 
-    @JsonRequired
     public Float getNormalizedScore() {
         return normalizedScore;
     }
@@ -27,7 +26,6 @@ public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeu
         this.normalizedScore = normalizedScore;
     }
 
-    @JsonRequired
     public Integer getMatchingPixels() {
         return matchingPixels;
     }

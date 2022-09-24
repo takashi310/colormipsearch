@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.results.GroupedItems;
 
 /**
@@ -13,7 +12,6 @@ import org.janelia.colormipsearch.results.GroupedItems;
  * @param <T>
  */
 public class ResultMatches<M extends AbstractNeuronMetadata, R extends AbstractMatchedTarget<? extends AbstractNeuronMetadata>> extends GroupedItems<M, R> {
-    @JsonRequired
     @JsonProperty("inputImage")
     @Override
     public M getKey() {
@@ -25,7 +23,6 @@ public class ResultMatches<M extends AbstractNeuronMetadata, R extends AbstractM
         super.setKey(key);
     }
 
-    @JsonRequired
     @JsonProperty("results")
     @Override
     public List<R> getItems() {

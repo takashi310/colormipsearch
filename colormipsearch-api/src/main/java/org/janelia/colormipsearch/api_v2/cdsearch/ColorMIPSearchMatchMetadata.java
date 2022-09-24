@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.janelia.colormipsearch.model.JsonRequired;
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 
@@ -88,7 +87,6 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private Long gradientAreaGap;
     @JsonProperty
     private Long highExpressionArea;
-    @JsonRequired
     private Double normalizedGapScore;
 
     /**
