@@ -10,6 +10,11 @@ public class LMNeuronMetadata extends AbstractNeuronMetadata {
     private String mountingProtocol;
     private Integer channel; // 1-based channel number
 
+    @Override
+    public String getTypeDiscriminator() {
+        return "LMImage";
+    }
+
     @NotBlank
     public String getSlideCode() {
         return slideCode;

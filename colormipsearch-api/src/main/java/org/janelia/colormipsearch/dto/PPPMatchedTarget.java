@@ -17,6 +17,11 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
     private Double rank;
     private int score;
 
+    @Override
+    public String getTypeDiscriminator() {
+        return "PPPMatch";
+    }
+
     @NotNull
     @JsonProperty("pppmRank")
     public Double getRank() {

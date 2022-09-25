@@ -65,6 +65,14 @@ public abstract class AbstractNeuronMetadata {
         this.internalId = internalId;
     }
 
+    @JsonProperty("type")
+    public abstract String getTypeDiscriminator();
+
+    @JsonIgnore
+    void setTypeDiscriminator(String discriminator) {
+        // do nothing - this is a read only property
+    }
+
     /**
      * MipID is validated only within the @WithAllRequiredAttrs group because PPPM target don't really have MIPs
      * @return

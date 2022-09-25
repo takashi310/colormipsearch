@@ -9,6 +9,11 @@ public class EMNeuronMetadata extends AbstractNeuronMetadata {
     private String neuronInstance;
     private String state;
 
+    @Override
+    public String getTypeDiscriminator() {
+        return "EMImage";
+    }
+
     @JsonIgnore
     public String getEmRefId() {
         return emRefId;

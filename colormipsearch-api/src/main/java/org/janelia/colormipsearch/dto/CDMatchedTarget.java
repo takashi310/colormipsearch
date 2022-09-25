@@ -13,6 +13,11 @@ public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractM
     private Float matchingPixelsRatio;
     private Long gradientAreaGap;
 
+    @Override
+    public String getTypeDiscriminator() {
+        return "CDSMatch";
+    }
+
     @NotNull
     public Float getNormalizedScore() {
         return normalizedScore;

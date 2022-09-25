@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,14 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
     private T targetImage;
     private boolean mirrored;
     private final Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
+
+    @JsonProperty("type")
+    public abstract String getTypeDiscriminator();
+
+    @JsonIgnore
+    void setTypeDiscriminator(String discriminator) {
+        // do nothing - this is a read only property
+    }
 
     @NotNull
     @JsonProperty("image")
