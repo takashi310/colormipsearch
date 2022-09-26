@@ -178,6 +178,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                     sample.sampleRef(),
                     lmNeuron.getAlignmentSpace(),
                     lmPublishedImages);
+            lmNeuron.setSampleId(sample.id);
             lmNeuron.setPublishedName(sample.lmLineName());
             lmNeuron.setSlideCode(sample.slideCode);
             lmNeuron.setGender(Gender.fromVal(sample.gender));
