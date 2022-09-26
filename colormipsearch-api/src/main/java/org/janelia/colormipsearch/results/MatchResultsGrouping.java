@@ -9,8 +9,6 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.ComputeFileType;
-import org.janelia.colormipsearch.model.FileType;
 
 public class MatchResultsGrouping {
 
@@ -40,15 +38,12 @@ public class MatchResultsGrouping {
                 aMatch -> {
                     R1 matchResult = (R1) aMatch.metadata();
                     AbstractNeuronEntity maskImage = aMatch.getMaskImage();
+                    matchResult.setMaskImageInternalId(maskImage.getEntityId());
                     if (aMatch.getMatchedImage() != null) {
                         // target image may be null - specifically for PPP matches
                         AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
                         // the target is set based on the original target
                         matchResult.setTargetImage((T) targetImage.metadata());
-                        // only set match files if the target is present
-                        matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
-                        // in the match result input file comes from the mask and matched file comes from the target
-                        matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     }
                     return new GroupingCriteria<R1, M>(
                             matchResult,
@@ -89,11 +84,9 @@ public class MatchResultsGrouping {
                     R1 matchResult = (R1) aMatch.metadata();
                     AbstractNeuronEntity maskImage = aMatch.getMaskImage();
                     AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
-                    // in this case actual mask image will be set as target
+                    // in this case actual mask image will be set as target and the target image ID will be set to mask ID
+                    matchResult.setMaskImageInternalId(targetImage.getEntityId());
                     matchResult.setTargetImage((M) maskImage.metadata());
-                    // in the match result input file comes from the target and matched file comes from the mask
-                    matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
-                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     return new GroupingCriteria<R1, T>(
                             matchResult,
                             m -> (T) targetImage.metadata(), // group by target image

@@ -21,6 +21,8 @@ import org.janelia.colormipsearch.model.FileType;
  */
 public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
 
+    // Keep the mask internal ID a little longer because we'll need it to retrieve the corresponding image URLs
+    private Number maskImageInternalId;
     private T targetImage;
     private boolean mirrored;
     private final Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
@@ -31,6 +33,19 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
     @JsonIgnore
     void setTypeDiscriminator(String discriminator) {
         // do nothing - this is a read only property
+    }
+
+    /**
+     * The mask internal ID will not be externalized. We only need it to retrieve the corresponding image URLs.
+     * @return
+     */
+    @JsonIgnore
+    public Number getMaskImageInternalId() {
+        return maskImageInternalId;
+    }
+
+    public void setMaskImageInternalId(Number maskImageInternalId) {
+        this.maskImageInternalId = maskImageInternalId;
     }
 
     @NotNull

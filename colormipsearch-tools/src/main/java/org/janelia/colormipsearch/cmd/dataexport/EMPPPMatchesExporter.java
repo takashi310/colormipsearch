@@ -190,7 +190,10 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                     .forEach((ft, fn) -> {
                         String updatedFN = fn.replace("{lmLine}", sample.lmLineName())
                                 .replace("{lmSlideCode}", sample.slideCode);
-                        updatedMatchFiles.put(ft, updatedFN);
+                        updatedMatchFiles.put(
+                                ft,
+                                emNeuron.getAlignmentSpace() + "/" + emNeuron.getLibraryName() + "/" + updatedFN
+                        );
                     });
             // then replace them just to be safe that we are not updating what we're reading
             updatedMatchFiles.forEach((ft, fn) -> pppMatch.setMatchFile(ft, relativizeURL(fn)));

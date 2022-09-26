@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -26,7 +24,6 @@ import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
-import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.PublishedURLs;
 
@@ -94,52 +91,20 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                  Map<Number, PublishedURLs> publisheURLsByNeuronId) {
         updateKeyMethod.accept(resultMatches.getKey(), publisheURLsByNeuronId.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
-        String maskSourceImageName = resultMatches.getKey().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-        String maskMipImageName = resultMatches.getKey().getNeuronFile(FileType.ColorDepthMip);
         resultMatches.getItems().forEach(target -> {
             updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
             target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
             // update match files
-            String maskInputImageName = target.getMatchFile(FileType.ColorDepthMipInput);
-            String targetInputImageName = target.getMatchFile(FileType.ColorDepthMipMatch);
-            String targetSourceImageName = target.getTargetImage().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-            String targetMipImageName = target.getTargetImage().getNeuronFile(FileType.ColorDepthMip);
-            target.setMatchFile(FileType.ColorDepthMipInput, getMIPFileName(maskInputImageName, maskSourceImageName, maskMipImageName));
-            target.setMatchFile(FileType.ColorDepthMipMatch, getMIPFileName(targetInputImageName, targetSourceImageName, targetMipImageName));
+            target.setMatchFile(
+                    FileType.ColorDepthMipInput,
+                    relativizeURL(
+                        publisheURLsByNeuronId.get(target.getMaskImageInternalId()).getURLFor("searchable_neurons", null)
+                    ));
+            target.setMatchFile(
+                    FileType.ColorDepthMipMatch,
+                    relativizeURL(
+                        publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()).getURLFor("searchable_neurons", null)
+                    ));
         });
-    }
-
-    /**
-     * This creates the corresponding display name for the input MIP.
-     * To do that it finds the suffix that was used to create the inputImageName from the sourceImageName and appends it to the mipImageName.
-     *
-     * @param inputImageFileName
-     * @param sourceImageFileName
-     * @param mipImageFileName
-     * @return
-     */
-    private String getMIPFileName(String inputImageFileName, String sourceImageFileName, String mipImageFileName) {
-        if (StringUtils.isNotBlank(mipImageFileName) &&
-                StringUtils.isNotBlank(sourceImageFileName) &&
-                StringUtils.isNotBlank(inputImageFileName)) {
-            String sourceName = RegExUtils.replacePattern(
-                    new File(sourceImageFileName).getName(),
-                    "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
-            String inputName = RegExUtils.replacePattern(
-                    new File(inputImageFileName).getName(),
-                    "(_)?(CDM)?\\..*$", ""); // clear  _CDM.<ext> suffix
-            String imageSuffix = RegExUtils.replacePattern(
-                    StringUtils.removeStart(inputName, sourceName), // typically the segmentation name shares the same prefix with the original mip name
-                    "^[-_]",
-                    ""
-            ); // remove the hyphen or underscore prefix
-            String mipName = RegExUtils.replacePattern(new File(mipImageFileName).getName(),
-                    "\\..*$", ""); // clear  .<ext> suffix
-            return StringUtils.isBlank(imageSuffix)
-                    ? mipName + ".png"
-                    : mipName + "-" + imageSuffix + ".png";
-        } else {
-            return null;
-        }
     }
 }
