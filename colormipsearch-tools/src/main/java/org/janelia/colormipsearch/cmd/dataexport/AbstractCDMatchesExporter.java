@@ -26,8 +26,11 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.PublishedURLs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractCDMatchesExporter.class);
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
@@ -95,16 +98,24 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
             target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
             // update match files
-            target.setMatchFile(
-                    FileType.ColorDepthMipInput,
-                    relativizeURL(
-                        publisheURLsByNeuronId.get(target.getMaskImageInternalId()).getURLFor("searchable_neurons", null)
-                    ));
-            target.setMatchFile(
-                    FileType.ColorDepthMipMatch,
-                    relativizeURL(
-                        publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()).getURLFor("searchable_neurons", null)
-                    ));
+            PublishedURLs maskImageURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
+            if (maskImageURLs != null) {
+                target.setMatchFile(
+                        FileType.ColorDepthMipInput,
+                        relativizeURL(maskImageURLs.getURLFor("searchable_neurons", null)
+                ));
+            } else {
+                LOG.error("No published URLs for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+            }
+            PublishedURLs targetImageURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
+            if (targetImageURLs != null) {
+                target.setMatchFile(
+                        FileType.ColorDepthMipMatch,
+                        relativizeURL(targetImageURLs.getURLFor("searchable_neurons", null)
+                ));
+            } else {
+                LOG.error("No published URLs for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+            }
         });
     }
 }
