@@ -9,6 +9,8 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ComputeFileType;
+import org.janelia.colormipsearch.model.FileType;
 
 public class MatchResultsGrouping {
 
@@ -44,6 +46,9 @@ public class MatchResultsGrouping {
                         AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
                         // the target is set based on the original target
                         matchResult.setTargetImage((T) targetImage.metadata());
+                        // only set match files if the target is present as a "backup"
+                        matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                        matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     }
                     return new GroupingCriteria<R1, M>(
                             matchResult,
@@ -87,6 +92,9 @@ public class MatchResultsGrouping {
                     // in this case actual mask image will be set as target and the target image ID will be set to mask ID
                     matchResult.setMaskImageInternalId(targetImage.getEntityId());
                     matchResult.setTargetImage((M) maskImage.metadata());
+                    // set result match files as a backup
+                    matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     return new GroupingCriteria<R1, T>(
                             matchResult,
                             m -> (T) targetImage.metadata(), // group by target image
