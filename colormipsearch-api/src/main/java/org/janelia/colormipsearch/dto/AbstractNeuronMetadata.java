@@ -261,6 +261,7 @@ public abstract class AbstractNeuronMetadata {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .append("internalId", internalId)
                 .append("mipId", mipId)
                 .append("libraryName", libraryName)
                 .append("publishedName", publishedName)
