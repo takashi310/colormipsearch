@@ -121,8 +121,6 @@ public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeu
         m.setMirrored(isMirrored());
         m.setNormalizedScore(getNormalizedScore());
         m.setMatchingPixels(getMatchingPixels());
-        m.setMatchingPixelsRatio(getMatchingPixelsRatio());
-        m.setGradientAreaGap(getGradientAreaGap());
         return m;
     }
 }

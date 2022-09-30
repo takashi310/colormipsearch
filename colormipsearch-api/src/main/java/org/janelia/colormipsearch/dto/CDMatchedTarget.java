@@ -10,8 +10,6 @@ import javax.validation.constraints.NotNull;
 public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractMatchedTarget<T> {
     private Float normalizedScore;
     private Integer matchingPixels;
-    private Float matchingPixelsRatio;
-    private Long gradientAreaGap;
 
     @Override
     public String getTypeDiscriminator() {
@@ -34,21 +32,5 @@ public class CDMatchedTarget<T extends AbstractNeuronMetadata> extends AbstractM
 
     public void setMatchingPixels(Integer matchingPixels) {
         this.matchingPixels = matchingPixels;
-    }
-
-    public Float getMatchingPixelsRatio() {
-        return matchingPixelsRatio;
-    }
-
-    public void setMatchingPixelsRatio(Float matchingPixelsRatio) {
-        this.matchingPixelsRatio = matchingPixelsRatio;
-    }
-
-    public Long getGradientAreaGap() {
-        return gradientAreaGap;
-    }
-
-    public void setGradientAreaGap(Long gradientAreaGap) {
-        this.gradientAreaGap = gradientAreaGap;
     }
 }
