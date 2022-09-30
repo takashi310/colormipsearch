@@ -160,6 +160,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                 FileData.fromString(v2CDMatch.getVariant("zgap")));
 
                         cdMatch.setMatchedImage(lmNeuronMetadata);
+                        cdMatch.setMirrored(v2CDMatch.isMirrored());
 
                         // setup the scores
                         cdMatch.setNormalizedScore((float) v2CDMatch.getNormalizedScore());
