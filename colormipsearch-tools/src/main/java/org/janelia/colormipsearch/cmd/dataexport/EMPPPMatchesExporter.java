@@ -56,12 +56,13 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 Map<String, Set<String>> publishedAlignmentSpaceAliases,
                                 ScoresFilter scoresFilter,
                                 int relativesUrlsToComponent,
+                                ImageStoreMapping imageStoreMapping,
                                 Path outputDir,
                                 Executor executor,
                                 NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader,
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir, executor);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
         this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;

@@ -45,12 +45,13 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                         DataSourceParam dataSourceParam,
                                         ScoresFilter scoresFilter,
                                         int relativesUrlsToComponent,
+                                        ImageStoreMapping imageStoreMapping,
                                         Path outputDir,
                                         Executor executor,
                                         NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, outputDir, executor);
+        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;

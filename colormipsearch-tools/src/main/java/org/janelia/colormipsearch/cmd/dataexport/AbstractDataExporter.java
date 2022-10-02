@@ -20,18 +20,21 @@ public abstract class AbstractDataExporter implements DataExporter {
 
     final CachedJacsDataHelper jacsDataHelper;
     final DataSourceParam dataSourceParam;
-    final int relativesUrlsToComponent;
+    private final int relativesUrlsToComponent;
+    private final ImageStoreMapping imageStoreMapping;
     final Path outputDir;
     final Executor executor;
 
     protected AbstractDataExporter(CachedJacsDataHelper jacsDataHelper,
                                    DataSourceParam dataSourceParam,
                                    int relativesUrlsToComponent,
+                                   ImageStoreMapping imageStoreMapping,
                                    Path outputDir,
                                    Executor executor) {
         this.jacsDataHelper = jacsDataHelper;
         this.dataSourceParam = dataSourceParam;
         this.relativesUrlsToComponent = relativesUrlsToComponent;
+        this.imageStoreMapping = imageStoreMapping;
         this.outputDir = outputDir;
         this.executor = executor;
     }
@@ -43,6 +46,9 @@ public abstract class AbstractDataExporter implements DataExporter {
 
     void updateEMNeuron(EMNeuronMetadata emNeuron, PublishedURLs publishedURLs) {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(emNeuron.getMipId());
+        // the order matter here because the mapping should be defined on the internal library name
+        // so imageStore must be set before the library name was changed
+        emNeuron.setImageStore(imageStoreMapping.getImageStore(emNeuron.getLibraryName()));
         emNeuron.setLibraryName(jacsDataHelper.getLibraryName(emNeuron.getLibraryName()));
         if (mip != null) {
             mip.updateEMNeuron(emNeuron, publishedURLs);
@@ -53,6 +59,9 @@ public abstract class AbstractDataExporter implements DataExporter {
 
     void updateLMNeuron(LMNeuronMetadata lmNeuron, PublishedURLs publishedURLs) {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(lmNeuron.getMipId());
+        // the order matter here because the mapping should be defined on the internal library name
+        // so imageStore must be set before the library name was changed
+        lmNeuron.setImageStore(imageStoreMapping.getImageStore(lmNeuron.getLibraryName()));
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(lmNeuron.getLibraryName()));
         if (mip != null) {
             mip.updateLMNeuron(lmNeuron, publishedURLs);

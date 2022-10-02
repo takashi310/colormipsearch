@@ -47,6 +47,8 @@ public abstract class AbstractNeuronMetadata {
     private String anatomicalArea;
     private Gender gender;
     private boolean unpublished;
+    // imageStore identifies the imagery location on AWS
+    private String imageStore;
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
     @JsonIgnore
@@ -165,6 +167,15 @@ public abstract class AbstractNeuronMetadata {
     @JsonIgnore
     public boolean isPublished() {
         return !unpublished;
+    }
+
+    @JsonProperty("store")
+    public String getImageStore() {
+        return imageStore;
+    }
+
+    public void setImageStore(String imageStore) {
+        this.imageStore = imageStore;
     }
 
     /**

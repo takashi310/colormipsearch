@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.ImageStoreMapping;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.dataexport.ValidatingSerializerModifier;
@@ -105,6 +106,16 @@ class ExportData4NBCmd extends AbstractCmd {
 
         @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
         List<String> tags = new ArrayList<>();
+
+        @Parameter(names = {"--default-image-store"}, description = "Default image store", required = true)
+        String defaultImageStore;
+
+        @Parameter(names = {"--image-stores-by-library"},
+                description = "Image stores per library; the library mapping must be based on the internal library name, " +
+                        "e.g., flyem_hemibrain_1_2_1, flyem_vnc_0_6",
+                converter = NameValueArg.NameArgConverter.class, required = true,
+                variableArity = true)
+        List<NameValueArg> imageStoresPerLibrary = new ArrayList<>();
 
         ExportMatchesCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -196,6 +207,15 @@ class ExportData4NBCmd extends AbstractCmd {
                 .setOffset(args.offset)
                 .setSize(args.size);
         Executor exportsExecutor = CmdUtils.createCmdExecutor(args.commonArgs);
+        ImageStoreMapping imageStoreMapping = new ImageStoreMapping(
+                args.defaultImageStore,
+                args.imageStoresPerLibrary.stream().collect(Collectors.toMap(
+                        nv -> nv.argName,
+                        nv -> nv.argValues.get(0),
+                        (s1, s2) -> s2 // resolve the conflict by returning the last value
+                ))
+        );
+
         switch (args.exportedResultType) {
             case EM_CD_MATCHES:
                 return new EMCDMatchesExporter(
@@ -203,6 +223,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataSource,
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
+                        imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
                         new DBNeuronMatchesReader<>(
@@ -219,6 +240,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataSource,
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
+                        imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
                         new DBNeuronMatchesReader<>(
@@ -236,6 +258,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         publishedAlignmentSpaceAliases,
                         getPPPScoresFilter(),
                         args.relativesUrlsToComponent,
+                        imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
                         new DBNeuronMatchesReader<>(
@@ -251,6 +274,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         jacsDataHelper,
                         dataSource,
                         args.relativesUrlsToComponent,
+                        imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
                         daosProvider.getNeuronMetadataDao(),
@@ -263,6 +287,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         jacsDataHelper,
                         dataSource,
                         args.relativesUrlsToComponent,
+                        imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
                         daosProvider.getNeuronMetadataDao(),
