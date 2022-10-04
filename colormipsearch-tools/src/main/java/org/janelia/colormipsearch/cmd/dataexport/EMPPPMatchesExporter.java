@@ -172,6 +172,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         } else {
             lmNeuron = new LMPPPNeuronMetadata(pppMatch.getTargetImage());
         }
+        String emImageFileStore = emNeuron.getNeuronFile(FileType.store);
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
         CDMIPSample sample = jacsDataHelper.getLMSample(pppMatch.getSourceLmName());
         if (sample != null) {
@@ -185,6 +186,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setGender(Gender.fromVal(sample.gender));
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
             lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(lm3DStackURL));
+            updateFileStore(lmNeuron);
             // collect updated match files
             Map<FileType, String> updatedMatchFiles = new LinkedHashMap<>();
             pppMatch.getMatchFiles()
@@ -198,6 +200,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                     });
             // then replace them just to be safe that we are not updating what we're reading
             updatedMatchFiles.forEach((ft, fn) -> pppMatch.setMatchFile(ft, relativizeURL(fn)));
+            pppMatch.setMatchFile(FileType.store, emImageFileStore); // use the same image store that was used for EM image
         } else {
             LOG.error("No sample found for {}", pppMatch.getSourceLmName());
         }

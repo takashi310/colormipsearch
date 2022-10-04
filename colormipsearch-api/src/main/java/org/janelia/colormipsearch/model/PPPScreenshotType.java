@@ -7,8 +7,8 @@ public enum PPPScreenshotType {
     RAW(FileType.SignalMip),
     MASKED_RAW(FileType.SignalMipMasked),
     SKEL(FileType.SignalMipMaskedSkel),
-    CH(FileType.ColorDepthMipBest, FileType.ColorDepthMipBestThumbnail), // for a CH file we generate a reference to the MIP and a reference to the thumbnail
-    CH_SKEL(FileType.ColorDepthMipSkel);
+    CH(FileType.CDMBest, FileType.CDMBestThumbnail), // for a CH file we generate a reference to the MIP and a reference to the thumbnail
+    CH_SKEL(FileType.CDMSkel);
 
     private final List<FileType> fileTypes;
 

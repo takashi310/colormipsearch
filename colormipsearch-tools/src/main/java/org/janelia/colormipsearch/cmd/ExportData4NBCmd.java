@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -26,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.dataexport.DataExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.EMPPPMatchesExporter;
+import org.janelia.colormipsearch.cmd.dataexport.ImageStoreKey;
 import org.janelia.colormipsearch.cmd.dataexport.ImageStoreMapping;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
@@ -110,12 +110,12 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--default-image-store"}, description = "Default image store", required = true)
         String defaultImageStore;
 
-        @Parameter(names = {"--image-stores-by-library"},
-                description = "Image stores per library; the library mapping must be based on the internal library name, " +
-                        "e.g., flyem_hemibrain_1_2_1, flyem_vnc_0_6",
-                converter = NameValueArg.NameArgConverter.class, required = true,
+        @Parameter(names = {"--image-stores-per-neuron-meta"},
+                description = "Image stores per neuron metadata; the mapping must be based on the internal alignmentSpace and optionally library name, " +
+                        "e.g., JRC2018_Unisex_20x_HR,flyem_hemibrain_1_2_1:brain-store JRC2018_VNC_Unisex_40x_DS:vnc-store",
+                converter = MultiKeyValueArg.MultiKeyValueArgConverter.class,
                 variableArity = true)
-        List<NameValueArg> imageStoresPerLibrary = new ArrayList<>();
+        List<MultiKeyValueArg> imageStoresPerMetadata = new ArrayList<>();
 
         ExportMatchesCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -209,9 +209,9 @@ class ExportData4NBCmd extends AbstractCmd {
         Executor exportsExecutor = CmdUtils.createCmdExecutor(args.commonArgs);
         ImageStoreMapping imageStoreMapping = new ImageStoreMapping(
                 args.defaultImageStore,
-                args.imageStoresPerLibrary.stream().collect(Collectors.toMap(
-                        nv -> nv.argName,
-                        nv -> nv.argValues.get(0),
+                args.imageStoresPerMetadata.stream().collect(Collectors.toMap(
+                        nv -> ImageStoreKey.fromList(nv.multiKey),
+                        nv -> nv.value,
                         (s1, s2) -> s2 // resolve the conflict by returning the last value
                 ))
         );

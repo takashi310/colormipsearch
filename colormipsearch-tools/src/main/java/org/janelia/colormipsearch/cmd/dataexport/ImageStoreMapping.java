@@ -2,19 +2,25 @@ package org.janelia.colormipsearch.cmd.dataexport;
 
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 
 public class ImageStoreMapping {
     private final String defaultImageStore;
-    private final Map<String, String> imageStoreByLibrary;
+    private final Map<ImageStoreKey, String> imageStoreByMetadataFields;
 
-    public ImageStoreMapping(String defaultImageStore, Map<String, String> imageStoreByLibrary) {
+    public ImageStoreMapping(String defaultImageStore, Map<ImageStoreKey, String> imageStoreByMetadataFields) {
         this.defaultImageStore = defaultImageStore;
-        this.imageStoreByLibrary = imageStoreByLibrary;
+        this.imageStoreByMetadataFields = imageStoreByMetadataFields;
     }
 
-    String getImageStore(String libraryName) {
-        String imageStore = imageStoreByLibrary.get(libraryName);
-        return StringUtils.defaultIfBlank(imageStore, defaultImageStore);
+    String getImageStore(AbstractNeuronMetadata neuronMetadata) {
+        // key check a match by alignmentSpace and libraryName
+        ImageStoreKey asWithLibraryKey = new ImageStoreKey(neuronMetadata.getAlignmentSpace(), neuronMetadata.getLibraryName());
+        // key to check a match by alignmentSpace
+        ImageStoreKey asKey = new ImageStoreKey(neuronMetadata.getAlignmentSpace());
+        return imageStoreByMetadataFields.getOrDefault(
+                asWithLibraryKey,
+                imageStoreByMetadataFields.getOrDefault(asKey, defaultImageStore)
+        );
     }
 }

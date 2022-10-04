@@ -47,8 +47,6 @@ public abstract class AbstractNeuronMetadata {
     private String anatomicalArea;
     private Gender gender;
     private boolean unpublished;
-    // imageStore identifies the imagery location on AWS
-    private String imageStore;
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
     @JsonIgnore
@@ -169,15 +167,6 @@ public abstract class AbstractNeuronMetadata {
         return !unpublished;
     }
 
-    @JsonProperty("store")
-    public String getImageStore() {
-        return imageStore;
-    }
-
-    public void setImageStore(String imageStore) {
-        this.imageStore = imageStore;
-    }
-
     /**
      * NeuronFiles attribute is validated only within the @WithAllRequiredAttrs group
      * because PPPM target may have been generated for not yet published lines so
@@ -255,8 +244,8 @@ public abstract class AbstractNeuronMetadata {
 
         return new EqualsBuilder()
                 .append(mipId, that.mipId)
-                .append(getNeuronFile(FileType.ColorDepthMip), that.getNeuronFile(FileType.ColorDepthMip))
-                .append(getNeuronFile(FileType.ColorDepthMipInput), that.getNeuronFile(FileType.ColorDepthMipInput))
+                .append(getNeuronFile(FileType.CDM), that.getNeuronFile(FileType.CDM))
+                .append(getNeuronFile(FileType.CDMInput), that.getNeuronFile(FileType.CDMInput))
                 .isEquals();
     }
 
@@ -264,8 +253,8 @@ public abstract class AbstractNeuronMetadata {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
                 .append(mipId)
-                .append(getNeuronFile(FileType.ColorDepthMip))
-                .append(getNeuronFile(FileType.ColorDepthMipInput))
+                .append(getNeuronFile(FileType.CDM))
+                .append(getNeuronFile(FileType.CDMInput))
                 .toHashCode();
     }
 

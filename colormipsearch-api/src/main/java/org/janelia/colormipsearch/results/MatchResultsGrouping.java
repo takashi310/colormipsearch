@@ -47,8 +47,8 @@ public class MatchResultsGrouping {
                         // the target is set based on the original target
                         matchResult.setTargetImage((T) targetImage.metadata());
                         // only set match files if the target is present as a "backup"
-                        matchResult.setMatchFile(FileType.ColorDepthMipMatch, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
-                        matchResult.setMatchFile(FileType.ColorDepthMipInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                        matchResult.setMatchFile(FileType.CDMMatch, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                        matchResult.setMatchFile(FileType.CDMInput, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     }
                     return new GroupingCriteria<R1, M>(
                             matchResult,
@@ -93,8 +93,8 @@ public class MatchResultsGrouping {
                     matchResult.setMaskImageInternalId(targetImage.getEntityId());
                     matchResult.setTargetImage((M) maskImage.metadata());
                     // set result match files as a backup
-                    matchResult.setMatchFile(FileType.ColorDepthMipInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
-                    matchResult.setMatchFile(FileType.ColorDepthMipMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                    matchResult.setMatchFile(FileType.CDMInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                    matchResult.setMatchFile(FileType.CDMMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
                     return new GroupingCriteria<R1, T>(
                             matchResult,
                             m -> (T) targetImage.metadata(), // group by target image

@@ -107,7 +107,7 @@ public class MIPsExporter extends AbstractDataExporter {
             Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                     .peek(n -> updateNeuronMethod.accept(n, indexedNeuronURLs))
                     .filter(AbstractNeuronMetadata::isPublished)
-                    .peek(n -> n.setNeuronFile(FileType.ColorDepthMipInput, null)) // reset mip input
+                    .peek(n -> n.setNeuronFile(FileType.CDMInput, null)) // reset mip input
                     .peek(n -> n.transformAllNeuronFiles(this::relativizeURL))
                     .collect(Collectors.toSet());
             if (publishedNeuronMips.isEmpty()) {

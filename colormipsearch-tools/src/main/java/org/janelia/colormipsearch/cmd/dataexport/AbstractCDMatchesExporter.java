@@ -99,8 +99,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                  Map<Number, PublishedURLs> publisheURLsByNeuronId) {
         updateKeyMethod.accept(resultMatches.getKey(), publisheURLsByNeuronId.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
+        String maskImageStore = resultMatches.getKey().getNeuronFile(FileType.store);
         String maskSourceImageName = resultMatches.getKey().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-        String maskMipImageName = resultMatches.getKey().getNeuronFile(FileType.ColorDepthMip);
+        String maskMipImageName = resultMatches.getKey().getNeuronFile(FileType.CDM);
         resultMatches.getItems().forEach(target -> {
             updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
             target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
@@ -110,7 +111,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             String maskImageURL = getSearchableNeuronURL(maskPublishedURLs);
             if (maskImageURL == null) {
                 LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                String maskInputImageName = target.getMatchFile(FileType.ColorDepthMipInput);
+                String maskInputImageName = target.getMatchFile(FileType.CDMInput);
                 String imageName = getMIPFileName(maskInputImageName, maskSourceImageName, maskMipImageName);
                 String searchableNeuronPath = String.format(DEFAULT_SEARCHABLE_NEURON_PATH,
                         resultMatches.getKey().getAlignmentSpace(),
@@ -118,20 +119,21 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                         imageName);
                 if (StringUtils.isNotBlank(searchableNeuronPath)) {
                     LOG.warn("Use default - {} - searchable neuron set for match mask {}:{} -> {}", searchableNeuronPath, target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                    target.setMatchFile(FileType.ColorDepthMipInput, searchableNeuronPath);
+                    target.setMatchFile(FileType.CDMInput, searchableNeuronPath);
                 } else {
                     LOG.error("No default searchable neuron set for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
                 }
             } else {
-                target.setMatchFile(FileType.ColorDepthMipInput, relativizeURL(maskImageURL));
+                target.setMatchFile(FileType.CDMInput, relativizeURL(maskImageURL));
             }
             PublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
+            String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
             String tagetImageURL = getSearchableNeuronURL(targetPublishedURLs);
             if (tagetImageURL == null) {
                 LOG.error("No published URLs or no searchable neuron URL for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                String targetInputImageName = target.getMatchFile(FileType.ColorDepthMipMatch);
+                String targetInputImageName = target.getMatchFile(FileType.CDMMatch);
                 String targetSourceImageName = target.getTargetImage().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-                String targetMipImageName = target.getTargetImage().getNeuronFile(FileType.ColorDepthMip);
+                String targetMipImageName = target.getTargetImage().getNeuronFile(FileType.CDM);
                 String imageName = getMIPFileName(targetInputImageName, targetSourceImageName, targetMipImageName);
                 if (StringUtils.isNotBlank(imageName)) {
                     String searchableNeuronPath = String.format(DEFAULT_SEARCHABLE_NEURON_PATH,
@@ -139,12 +141,18 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                             target.getTargetImage().getLibraryName(),
                             imageName);
                     LOG.warn("Use default - {} - searchable neuron set for match target {}:{} -> {}", searchableNeuronPath, target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                    target.setMatchFile(FileType.ColorDepthMipMatch, searchableNeuronPath);
+                    target.setMatchFile(FileType.CDMMatch, searchableNeuronPath);
                 } else {
                     LOG.error("No default searchable neuron set for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
                 }
             } else {
-                target.setMatchFile(FileType.ColorDepthMipMatch, relativizeURL(tagetImageURL));
+                target.setMatchFile(FileType.CDMMatch, relativizeURL(tagetImageURL));
+            }
+            if (!StringUtils.equals(maskImageStore, targetImageStore)) {
+                LOG.error("Image stores for mask {} and target {} do not match - this will become a problem when viewing this match",
+                        maskImageStore, targetImageStore);
+            } else {
+                target.setMatchFile(FileType.store, targetImageStore);
             }
         });
     }

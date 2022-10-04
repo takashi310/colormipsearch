@@ -3,13 +3,14 @@ package org.janelia.colormipsearch.model;
 import org.apache.commons.lang3.StringUtils;
 
 public enum FileType {
-    ColorDepthMip, // The CDM of the image.
-    ColorDepthMipThumbnail, // The thumbnail sized version of the ColorDepthMip, if available.
-    ColorDepthMipInput, // CDM-only. The actual color depth image that was input. 'Matched CDM' in the NeuronBridge GUI.
-    ColorDepthMipMatch, // CDM-only. The actual color depth image that was matched. 'Matched CDM' in the NeuronBridge GUI.
-    ColorDepthMipBest("_5_ch.png"), // For PPPM, this is the best matching channel of the matching LM stack and called 'Best Channel CDM' in the NeuronBridge GUI.
-    ColorDepthMipBestThumbnail("_5_ch.jpg"), // Thumbnail of the best PPP matching channel
-    ColorDepthMipSkel("_6_ch_skel.png"), // PPPM-only. The CDM of the best matching channel with the matching LM segmentation fragments overlaid. 'LM - Best Channel CDM with EM overlay' in the NeuronBridge GUI.
+    store, // special type for holding the image store value;
+    CDM, // The CDM of the image.
+    CDMThumbnail, // The thumbnail sized version of the ColorDepthMip, if available.
+    CDMInput, // CDM-only. The actual color depth image that was input. 'Matched CDM' in the NeuronBridge GUI.
+    CDMMatch, // CDM-only. The actual color depth image that was matched. 'Matched CDM' in the NeuronBridge GUI.
+    CDMBest("_5_ch.png"), // For PPPM, this is the best matching channel of the matching LM stack and called 'Best Channel CDM' in the NeuronBridge GUI.
+    CDMBestThumbnail("_5_ch.jpg"), // Thumbnail of the best PPP matching channel
+    CDMSkel("_6_ch_skel.png"), // PPPM-only. The CDM of the best matching channel with the matching LM segmentation fragments overlaid. 'LM - Best Channel CDM with EM overlay' in the NeuronBridge GUI.
     SignalMip("_1_raw.png"), // PPPM-only. The full MIP of all channels of the matching sample. 'LM - Sample All-Channel MIP' in the NeuronBridge GUI.
     SignalMipMasked("_2_masked_raw.png"), // PPPM-only. LM signal content masked with the matching LM segmentation fragments. 'PPPM Mask' in the NeuronBridge GUI.
     SignalMipMaskedSkel("_3_skel.png"), // PPPM-only. LM signal content masked with the matching LM segmentation fragments, overlaid with the EM skeleton. 'PPPM Mask with EM Overlay' in the NeuronBridge GUI.

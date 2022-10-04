@@ -164,8 +164,8 @@ public class ColorDepthMIP implements Serializable {
         lmNeuron.setObjective(lmObjective());
         lmNeuron.setChannel(channelNumber());
         // set neuron files
-        lmNeuron.setNeuronFile(FileType.ColorDepthMip, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
-        lmNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
+        lmNeuron.setNeuronFile(FileType.CDM, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
+        lmNeuron.setNeuronFile(FileType.CDMThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
         lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, sample3DImageStack);
         lmNeuron.setNeuronFile(FileType.Gal4Expression, sampleGen1Gal4ExpressionImage);
         updateCDSResultsFiles(lmNeuron);
@@ -183,8 +183,8 @@ public class ColorDepthMIP implements Serializable {
         emNeuron.setNeuronType(neuronType);
         emNeuron.setGender(Gender.fromVal(emGender()));
         // set neuron files
-        emNeuron.setNeuronFile(FileType.ColorDepthMip, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
-        emNeuron.setNeuronFile(FileType.ColorDepthMipThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
+        emNeuron.setNeuronFile(FileType.CDM, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_KEY, publicImageUrl));
+        emNeuron.setNeuronFile(FileType.CDMThumbnail, getNeuronURL(neuronURLs, UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY, publicThumbnailUrl));
         emNeuron.setNeuronFile(FileType.AlignedBodySWC, getNeuronURL(neuronURLs, UPLOADED_SWC_KEY, null));
         emNeuron.setNeuronFile(FileType.AlignedBodyOBJ, getNeuronURL(neuronURLs, UPLOADED_OBJ_KEY, null));
         updateCDSResultsFiles(emNeuron);

@@ -9,8 +9,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
+import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +50,7 @@ public abstract class AbstractDataExporter implements DataExporter {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(emNeuron.getMipId());
         // the order matter here because the mapping should be defined on the internal library name
         // so imageStore must be set before the library name was changed
-        emNeuron.setImageStore(imageStoreMapping.getImageStore(emNeuron.getLibraryName()));
+        updateFileStore(emNeuron);
         emNeuron.setLibraryName(jacsDataHelper.getLibraryName(emNeuron.getLibraryName()));
         if (mip != null) {
             mip.updateEMNeuron(emNeuron, publishedURLs);
@@ -61,13 +63,17 @@ public abstract class AbstractDataExporter implements DataExporter {
         ColorDepthMIP mip = jacsDataHelper.getColorDepthMIP(lmNeuron.getMipId());
         // the order matter here because the mapping should be defined on the internal library name
         // so imageStore must be set before the library name was changed
-        lmNeuron.setImageStore(imageStoreMapping.getImageStore(lmNeuron.getLibraryName()));
+        updateFileStore(lmNeuron);
         lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(lmNeuron.getLibraryName()));
         if (mip != null) {
             mip.updateLMNeuron(lmNeuron, publishedURLs);
         } else {
             LOG.error("No color depth MIP found for LM MIP {}", lmNeuron);
         }
+    }
+
+    void updateFileStore(AbstractNeuronMetadata neuronMetadata) {
+        neuronMetadata.setNeuronFile(FileType.store, imageStoreMapping.getImageStore(neuronMetadata));
     }
 
     String relativizeURL(String aUrl) {
