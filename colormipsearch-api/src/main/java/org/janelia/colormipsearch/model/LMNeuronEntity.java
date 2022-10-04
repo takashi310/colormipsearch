@@ -9,6 +9,7 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
 
     // LM slide code is required for selecting the top ranked matches during gradient scoring
     private String slideCode;
+    // anatomicalArea, gender and objective required for uploading the imagery
     private String anatomicalArea;
     private Gender gender;
     private String objective;
