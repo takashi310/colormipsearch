@@ -64,7 +64,7 @@ uploadConfig() {
 }
 
 uploadSchemas() {
-    $AWSCP ${LOCAL_DATA_DIR}/schemas s3://${S3_BUCKET}/${S3_DATA_VERSION} --recursive
+    $AWSCP ${LOCAL_DATA_DIR}/schemas s3://${S3_BUCKET}/${S3_DATA_VERSION}/schemas --recursive
 }
 
 uploadVersion() {
@@ -82,7 +82,3 @@ uploadMatches brain pppm ${PER_EM_DIR}
 uploadMatches vnc cds ${PER_EM_DIR}
 uploadMatches vnc cds ${PER_LM_DIR}
 uploadMatches vnc pppm ${PER_EM_DIR}
-
-uploadConfig
-uploadSchemas
-uploadVersion
