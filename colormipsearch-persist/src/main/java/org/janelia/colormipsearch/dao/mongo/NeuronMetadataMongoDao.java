@@ -60,6 +60,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         mongoCollection.createIndex(Indexes.hashed("publishedName"));
         mongoCollection.createIndex(Indexes.hashed("mipId"));
         mongoCollection.createIndex(Indexes.ascending("tags"));
+        mongoCollection.createIndex(Indexes.hashed("neuronType"));
+        mongoCollection.createIndex(Indexes.hashed("neuronInstance"));
     }
 
     @Override
