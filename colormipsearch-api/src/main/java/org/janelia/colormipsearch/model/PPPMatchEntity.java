@@ -27,6 +27,10 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
     private Double coverageScore;
     private Double aggregateCoverage;
     private Double rank;
+    private String lmPublishedName;
+    private String lmSlideCode;
+    private String lmObjective;
+    private String inputAlignmentSpace = UNKNOWN_ALIGNMENT_SPACE;
     private Map<PPPScreenshotType, String> sourceImageFiles;
     private List<PPPSkeletonMatch> skeletonMatches;
 
@@ -84,6 +88,38 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
 
     public void setRank(Double rank) {
         this.rank = rank;
+    }
+
+    public String getLmPublishedName() {
+        return lmPublishedName;
+    }
+
+    public void setLmPublishedName(String lmPublishedName) {
+        this.lmPublishedName = lmPublishedName;
+    }
+
+    public String getLmSlideCode() {
+        return lmSlideCode;
+    }
+
+    public void setLmSlideCode(String lmSlideCode) {
+        this.lmSlideCode = lmSlideCode;
+    }
+
+    public String getLmObjective() {
+        return lmObjective;
+    }
+
+    public void setLmObjective(String lmObjective) {
+        this.lmObjective = lmObjective;
+    }
+
+    public String getInputAlignmentSpace() {
+        return inputAlignmentSpace;
+    }
+
+    public void setInputAlignmentSpace(String inputAlignmentSpace) {
+        this.inputAlignmentSpace = inputAlignmentSpace;
     }
 
     public Map<PPPScreenshotType, String> getSourceImageFiles() {
@@ -194,7 +230,7 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         } else if (getMatchedImage() != null && getMatchedImage().hasAlignmentSpace()) {
             return getMatchedImage().getAlignmentSpace();
         } else {
-            return UNKNOWN_ALIGNMENT_SPACE;
+            return getInputAlignmentSpace();
         }
     }
 

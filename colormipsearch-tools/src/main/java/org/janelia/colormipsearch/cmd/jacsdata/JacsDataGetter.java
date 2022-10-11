@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd.jacsdata;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,50 +13,31 @@ import javax.ws.rs.client.Client;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.HttpHelper;
-import org.janelia.colormipsearch.dao.PublishedLMImageDao;
-import org.janelia.colormipsearch.dao.PublishedURLsDao;
-import org.janelia.colormipsearch.model.AbstractBaseEntity;
-import org.janelia.colormipsearch.model.PublishedLMImage;
-import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JacsDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(JacsDataGetter.class);
 
-    private final PublishedLMImageDao publishedLMImageDao;
-    private final PublishedURLsDao publishedURLsDao;
     private final String dataServiceURL;
     private final String configURL;
     private final String authorization;
     private final int readBatchSize;
-    private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
 
-    public JacsDataGetter(PublishedLMImageDao publishedLMImageDao,
-                          PublishedURLsDao publishedURLsDao,
-                          String dataServiceURL,
+    public JacsDataGetter(String dataServiceURL,
                           String configURL,
                           String authorization,
-                          int readBatchSize,
-                          Map<String, Set<String>> publishedAlignmentSpaceAliases) {
-        this.publishedLMImageDao = publishedLMImageDao;
-        this.publishedURLsDao = publishedURLsDao;
+                          int readBatchSize) {
         this.dataServiceURL = dataServiceURL;
         this.configURL = configURL;
         this.authorization = authorization;
         this.readBatchSize = readBatchSize;
-        this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
     }
 
-    public Map<String, CDMIPSample> retrieveLMSamplesByName(Set<String> sampleNames) {
-        if (CollectionUtils.isEmpty(sampleNames)) {
-            return Collections.emptyMap();
-        } else {
-            return CDMIPSample.indexBySampleName(
-                    httpRetrieveLMSamplesByName(HttpHelper.createClient(), sampleNames));
-        }
+    Map<String, CDMIPSample> retrieveLMSamplesByName(Set<String> sampleNames) {
+        return CDMIPSample.indexBySampleName(
+                httpRetrieveLMSamplesByName(HttpHelper.createClient(), sampleNames));
     }
 
     private List<CDMIPSample> httpRetrieveLMSamplesByName(Client httpClient, Set<String> sampleNames) {
@@ -92,39 +72,7 @@ public class JacsDataGetter {
                 .collect(Collectors.toList());
     }
 
-    private PublishedLMImage findPublishedImage(ColorDepthMIP colorDepthMIP, List<PublishedLMImage> publishedLMImages) {
-        if (CollectionUtils.isEmpty(publishedLMImages)) {
-            LOG.warn("No published images provided to lookup {}:sample={}:as={}",
-                    colorDepthMIP, colorDepthMIP.sampleRef, colorDepthMIP.alignmentSpace);
-            return new PublishedLMImage();
-        } else {
-            Set<String> aliasesForAlignmentSpace = publishedAlignmentSpaceAliases.getOrDefault(
-                    colorDepthMIP.alignmentSpace,
-                    Collections.emptySet());
-            // we lookup published images in the same alignment space
-            return publishedLMImages.stream()
-                    .filter(pi -> pi.getAlignmentSpace().equals(colorDepthMIP.alignmentSpace) ||
-                            (CollectionUtils.isNotEmpty(aliasesForAlignmentSpace) && aliasesForAlignmentSpace.contains(pi.getAlignmentSpace())))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        LOG.warn("No published image found for {}:sample={}:as={}",
-                                colorDepthMIP, colorDepthMIP.sampleRef, colorDepthMIP.alignmentSpace);
-                        return new PublishedLMImage();
-                    });
-        }
-    }
 
-    private void update3DStack(ColorDepthMIP colorDepthMIP,
-                               Map<String, List<PublishedLMImage>> publishedImagesBySampleRefs) {
-        if (colorDepthMIP.sample != null) {
-            PublishedLMImage publishedLMImage = findPublishedImage(colorDepthMIP, publishedImagesBySampleRefs.get(colorDepthMIP.sampleRef));
-            colorDepthMIP.sample3DImageStack = publishedLMImage.getFile("VisuallyLosslessStack");
-            colorDepthMIP.sampleGen1Gal4ExpressionImage = publishedLMImage.getGal4Expression4Image(colorDepthMIP.anatomicalArea);
-        } else if (colorDepthMIP.emBody != null && colorDepthMIP.emBody.files != null) {
-            colorDepthMIP.emSWCFile = colorDepthMIP.emBody.files.get("SkeletonSWC");
-            colorDepthMIP.emOBJFile = colorDepthMIP.emBody.files.get("SkeletonOBJ");
-        }
-    }
 
     private List<CDMIPBody> httpRetrieveEMNeuronsByDatasetAndBodyIds(Client httpClient,
                                                                      String emDataset,
@@ -163,31 +111,21 @@ public class JacsDataGetter {
         }
     }
 
-    public Map<String, ColorDepthMIP> retrieveCDMIPs(Set<String> mipIds) {
+    /**
+     * Retrieve color depth mips indexed by MIP IDs. The retrieved MIPs should have the corresponding
+     * LM Sample or EM Body set
+     *
+     * @param mipIds MIP IDs that need to be retrieved from JACS
+     * @return the retrieved Color Depth MIPs indexed by MIP ID
+     */
+    Map<String, ColorDepthMIP> retrieveCDMIPs(Set<String> mipIds) {
         if (CollectionUtils.isEmpty(mipIds)) {
             return Collections.emptyMap();
         } else {
-            List<ColorDepthMIP> colorDepthMIPS = httpRetrieveCDMIPs(HttpHelper.createClient(), mipIds);
+            Client httpClient = HttpHelper.createClient();
+            List<ColorDepthMIP> colorDepthMIPS = httpRetrieveCDMIPs(httpClient, mipIds);
             Set<String> lmSamplesToRetrieve = new HashSet<>();
             Set<String> emBodiesToRetrieve = new HashSet<>();
-            Map<String, List<ColorDepthMIP>> mipsGroupedByAlignmentSpace = colorDepthMIPS.stream()
-                    .filter(cdmip -> StringUtils.isNotBlank(cdmip.sampleRef))
-                    .collect(Collectors.groupingBy(
-                            cdmip -> cdmip.alignmentSpace,
-                            Collectors.toList())
-                    );
-            Map<String, List<PublishedLMImage>> publishedImagesBySampleRefsForAllAlignmentSpaces = mipsGroupedByAlignmentSpace.entrySet().stream()
-                            .flatMap(e -> {
-                                LOG.info("Retrieve {} published images for alignment space {}",
-                                        mipIds.size(),
-                                        e.getKey()); // alignment space
-                                return publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(
-                                        null,
-                                        e.getValue().stream().map(cdmip -> cdmip.sampleRef).collect(Collectors.toSet()),
-                                        null
-                                ).values().stream().flatMap(Collection::stream);
-                            })
-                    .collect(Collectors.groupingBy(PublishedLMImage::getSampleRef, Collectors.toList()));
             colorDepthMIPS.forEach(cdmip -> {
                 if (cdmip.needsEMBody()) {
                     emBodiesToRetrieve.add(cdmip.emBodyRef);
@@ -195,7 +133,6 @@ public class JacsDataGetter {
                     lmSamplesToRetrieve.add(cdmip.sampleRef);
                 }
             });
-            Client httpClient = HttpHelper.createClient();
             LOG.info("Retrieve {} LM samples", lmSamplesToRetrieve.size());
             Map<String, CDMIPSample> lmSamples = CDMIPSample.indexByRef(
                     httpRetrieveLMSamplesByRefs(httpClient, lmSamplesToRetrieve));
@@ -210,23 +147,9 @@ public class JacsDataGetter {
                         } else if (cdmip.needsLMSample()) {
                             cdmip.sample = lmSamples.get(cdmip.sampleRef);
                         }
-                        update3DStack(cdmip, publishedImagesBySampleRefsForAllAlignmentSpaces);
                     })
                     .collect(Collectors.toMap(n -> n.id, n -> n));
         }
-    }
-
-    public Map<String, List<PublishedLMImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
-        return publishedLMImageDao.getPublishedImagesWithGal4BySampleObjectives(
-                alignmentSpace,
-                sampleRefs,
-                null
-        );
-    }
-
-    public Map<Number, PublishedURLs> retrievePublishedURLs(Set<Number> neuronIds) {
-        return publishedURLsDao.findByEntityIds(neuronIds).stream()
-                .collect(Collectors.toMap(AbstractBaseEntity::getEntityId, urls -> urls));
     }
 
     private List<ColorDepthMIP> httpRetrieveCDMIPs(Client httpClient, Set<String> mipIds) {
@@ -241,7 +164,7 @@ public class JacsDataGetter {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, String> retrieveLibraryNameMapping() {
+    Map<String, String> retrieveLibraryNameMapping() {
         Map<String, Object> configJSON = HttpHelper.retrieveData(
                 HttpHelper.createClient().target(configURL).path("/cdm_library"),
                 null, // this does not require any authorization

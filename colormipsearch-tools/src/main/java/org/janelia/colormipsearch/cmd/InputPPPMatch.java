@@ -19,6 +19,10 @@ class InputPPPMatch {
 
     private final PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch;
     private String emNeuronName;
+    private String lmSampleName;
+    private String lmPublishedName;
+    private String lmSlideCode;
+    private String lmObjective;
 
     InputPPPMatch(@Nonnull PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch) {
         this.pppMatch = pppMatch;
@@ -34,5 +38,37 @@ class InputPPPMatch {
 
     void setEmNeuronName(String emNeuronName) {
         this.emNeuronName = emNeuronName;
+    }
+
+    public String getLmSampleName() {
+        return lmSampleName;
+    }
+
+    public void setLmSampleName(String lmSampleName) {
+        this.lmSampleName = lmSampleName;
+    }
+
+    public String getLmPublishedName() {
+        return lmPublishedName;
+    }
+
+    public void setLmPublishedName(String lmPublishedName) {
+        this.lmPublishedName = lmPublishedName;
+    }
+
+    public String getLmSlideCode() {
+        return lmSlideCode;
+    }
+
+    public void setLmSlideCode(String lmSlideCode) {
+        this.lmSlideCode = lmSlideCode;
+    }
+
+    public String getLmObjective() {
+        return lmObjective;
+    }
+
+    public void setLmObjective(String lmObjective) {
+        this.lmObjective = lmObjective;
     }
 }

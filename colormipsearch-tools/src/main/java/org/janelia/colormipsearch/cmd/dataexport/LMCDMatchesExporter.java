@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
 
-    public LMCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+    public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                ScoresFilter scoresFilter,
                                int relativesUrlsToComponent,
@@ -96,7 +96,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
-        Map<Number, PublishedURLs> indexedNeuronURLs = jacsDataHelper.retrievePublishedURLs(
+        Map<Number, PublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(
                 matches.stream()
                         .flatMap(m -> Stream.of(m.getMaskImage(), m.getMatchedImage()))
                         .collect(Collectors.toSet())

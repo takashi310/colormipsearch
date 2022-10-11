@@ -27,10 +27,15 @@ import javax.annotation.Nullable;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.dataio.CDMIPsReader;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -61,6 +66,9 @@ class ImportPPPResultsCmd extends AbstractCmd {
 
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space", required = true)
         String alignmentSpace;
+
+        @Parameter(names = {"--anatomical-area", "-area"}, description = "Anatomical area", required = true)
+        String anatomicalArea;
 
         @Parameter(names = {"--em-library"}, description = "EM library name", required = true)
         String emLibrary;
@@ -103,8 +111,21 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 description = "Tag to assign to the imported PPP matches as well as with the MIPs that will PPP matches once the import is completed")
         String processingTag;
 
+        @Parameter(names = {"--jacs-url", "--data-url"}, description = "JACS data service base URL")
+        String dataServiceURL;
+
+        @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
+        String dataServiceAuthorization;
+
+        @Parameter(names = {"--jacs-read-batch-size"}, description = "Batch size for getting data from JACS")
+        int dataReadBatchSize = 10000;
+
         CreatePPPResultsArgs(CommonArgs commonArgs) {
             super(commonArgs);
+        }
+
+        boolean hasDataServiceURL() {
+            return StringUtils.isNotBlank(dataServiceURL);
         }
     }
 
@@ -146,12 +167,20 @@ class ImportPPPResultsCmd extends AbstractCmd {
             }
             filesToProcess = dirsToProcess.flatMap(d -> getPPPResultsFromDir(d).stream()).collect(Collectors.toList());
         }
+        CachedDataHelper dataHelper = new CachedDataHelper(
+                new JacsDataGetter(
+                        args.dataServiceURL,
+                        null, // don't care about this here
+                        args.dataServiceAuthorization,
+                        args.dataReadBatchSize),
+                null // don't care about this
+        );
         ItemsHandling.partitionCollection(filesToProcess, args.processingPartitionSize)
                         .entrySet().stream().parallel()
                         .forEach(indexedPartition -> {
                             long startPartition = System.currentTimeMillis();
                             LOG.info("Start processing {} files from partition {}", indexedPartition.getValue().size(), indexedPartition.getKey());
-                            this.processPPPFiles(indexedPartition.getValue());
+                            this.processPPPFiles(dataHelper, indexedPartition.getValue());
                             LOG.info("Finished processing {} files from partition {} in {}s",
                                     indexedPartition.getValue().size(),
                                     indexedPartition.getKey(),
@@ -160,10 +189,10 @@ class ImportPPPResultsCmd extends AbstractCmd {
         LOG.info("Processed all files in {}s", (System.currentTimeMillis() - startTime) / 1000.);
     }
 
-    private void processPPPFiles(List<Path> listOfPPPResults) {
+    private void processPPPFiles(CachedDataHelper dataHelper, List<Path> listOfPPPResults) {
         CDMIPsReader cdmiPsReader = getCDMipsReader();
         NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter = getPPPMatchesWriter();
-        listOfPPPResults.forEach(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader, pppMatchesWriter));
+        listOfPPPResults.forEach(fp -> this.importPPPRResultsFromFile(fp, cdmiPsReader, dataHelper, pppMatchesWriter));
     }
 
     private Stream<Path> streamDirsWithPPPResults(Path startPath) {
@@ -236,6 +265,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
      */
     private List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> importPPPRResultsFromFile(Path pppResultsFile,
                                                                                            @Nullable CDMIPsReader cdmipsReader,
+                                                                                           CachedDataHelper dataHelper,
                                                                                            NeuronMatchesWriter<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatchesWriter) {
         LOG.info("Start processing {}", pppResultsFile);
         long start = System.currentTimeMillis();
@@ -250,6 +280,12 @@ class ImportPPPResultsCmd extends AbstractCmd {
                 .collect(Collectors.toSet());
         // retrieve EM neurons info in order to create the proper mask reference for the PPP match
         Map<String, EMNeuronEntity> registeredEMNeurons = retrieveEMNeurons(cdmipsReader, emNeuronNames);
+
+        Set<String> matchedLMSampleNames = inputPPPMatches.stream()
+                .map(InputPPPMatch::getLmSampleName)
+                .collect(Collectors.toSet());
+        Map<String, CDMIPSample> lmSamples = dataHelper.retrieveLMSamplesByName(matchedLMSampleNames);
+
         // fill in the rest of the information
         List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> pppMatches = inputPPPMatches.stream()
                 .map(inputPPPMatch -> {
@@ -259,6 +295,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
                         lookupScreenshots(screenshotsPath, inputPPPMatch);
                     }
                     pppMatch.setMaskImage(registeredEMNeurons.get(inputPPPMatch.getEmNeuronName()));
+                    updateLMSampleInfo(inputPPPMatch, lmSamples.get(inputPPPMatch.getLmSampleName()));
                     if (pppMatch.getMaskImage() != null) {
                         pppMatch.getMaskImage().addProcessedTags(ProcessingType.PPPMatch, Collections.singleton(args.processingTag));
                     }
@@ -317,7 +354,7 @@ class ImportPPPResultsCmd extends AbstractCmd {
         // from EM we only need the neuron body ID so that
         // we can retrieve currently registered neurons in order to set the mask image reference
         updateEMMetadata(pppMatch.getSourceEmName(), inputPPPMatch);
-        // there's no need to update anything from LM data - the only thing that we need from there is the source LM name
+        updateLMMetadata(pppMatch.getSourceLmName(), inputPPPMatch);
         return inputPPPMatch;
     }
 
@@ -326,6 +363,25 @@ class ImportPPPResultsCmd extends AbstractCmd {
         Matcher matcher = emRegExPattern.matcher(emFullName);
         if (matcher.find()) {
             inputPPPMatch.setEmNeuronName(matcher.group(1));
+        }
+    }
+
+    private void updateLMMetadata(String lmFullName, InputPPPMatch inputPPPMatch) {
+        Pattern lmRegExPattern = Pattern.compile("(.+)_REG_UNISEX_(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = lmRegExPattern.matcher(lmFullName);
+        if (matcher.find()) {
+            inputPPPMatch.setLmSampleName(matcher.group(1));
+            String objectiveCandidate = matcher.group(2);
+            if (!StringUtils.equalsIgnoreCase(args.anatomicalArea, objectiveCandidate)) {
+                inputPPPMatch.setLmObjective(objectiveCandidate);
+            }
+        }
+    }
+
+    private void updateLMSampleInfo(InputPPPMatch inputPPPMatch, CDMIPSample cdmipSample) {
+        if (cdmipSample != null) {
+            inputPPPMatch.setLmPublishedName(cdmipSample.publishingName);
+            inputPPPMatch.setLmSlideCode(cdmipSample.slideCode);
         }
     }
 
@@ -345,6 +401,10 @@ class ImportPPPResultsCmd extends AbstractCmd {
         PPPMatchEntity<EMNeuronEntity, LMNeuronEntity> pppMatch = inputPPPMatch.getPPPMatch();
         pppMatch.setSourceEmLibrary(args.emLibrary);
         pppMatch.setSourceLmLibrary(args.lmLibrary);
+        pppMatch.setLmPublishedName(inputPPPMatch.getLmPublishedName());
+        pppMatch.setLmSlideCode(inputPPPMatch.getLmSlideCode());
+        pppMatch.setLmObjective(inputPPPMatch.getLmObjective());
+        pppMatch.setInputAlignmentSpace(args.alignmentSpace);
         pppMatch.addTag(args.processingTag);
         return pppMatch;
     }
@@ -378,5 +438,4 @@ class ImportPPPResultsCmd extends AbstractCmd {
     private <N extends AbstractNeuronEntity> List<N> filterProcessedNeurons(Collection<N> neurons) {
         return neurons.stream().filter(n -> n.hasProcessedTag(ProcessingType.PPPMatch, args.processingTag)).collect(Collectors.toList());
     }
-
 }

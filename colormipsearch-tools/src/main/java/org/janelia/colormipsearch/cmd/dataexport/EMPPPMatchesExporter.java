@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
-import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -51,7 +51,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     private final ItemsWriterToJSONFile resultMatchesWriter;
     private final int processingPartitionSize;
 
-    public EMPPPMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+    public EMPPPMatchesExporter(CachedDataHelper jacsDataHelper,
                                 DataSourceParam dataSourceParam,
                                 Map<String, Set<String>> publishedAlignmentSpaceAliases,
                                 ScoresFilter scoresFilter,
@@ -124,7 +124,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
         // retrieve source data
         Map<String, List<PublishedLMImage>> lmPublishedImages = retrieveEMAndLMSourceData(matches);
-        Map<Number, PublishedURLs> indexedPublishedURLs = jacsDataHelper.retrievePublishedURLs(
+        Map<Number, PublishedURLs> indexedPublishedURLs = dataHelper.retrievePublishedURLs(
                 matches.stream().map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet())
         );
         // update grouped matches
@@ -140,12 +140,12 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
      * @return LM published images indexed by Sample reference.
      */
     private Map<String, List<PublishedLMImage>> retrieveEMAndLMSourceData(List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matches) {
-        jacsDataHelper.retrieveCDMIPs(matches.stream()
+        dataHelper.cacheCDMIPs(matches.stream()
                 .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet()));
-        Map<String, CDMIPSample> retrievedSamples = jacsDataHelper.retrieveLMSamples(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
-        return jacsDataHelper.retrievePublishedImages(
+        Map<String, CDMIPSample> retrievedSamples = dataHelper.retrieveLMSamplesByName(matches.stream().map(PPPMatchEntity::extractLMSampleName).collect(Collectors.toSet()));
+        return dataHelper.retrievePublishedImages(
                 null,
                 retrievedSamples.values().stream().map(CDMIPSample::sampleRef).collect(Collectors.toSet()));
     }
@@ -173,8 +173,8 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron = new LMPPPNeuronMetadata(pppMatch.getTargetImage());
         }
         String emImageFileStore = emNeuron.getNeuronFile(FileType.store);
-        lmNeuron.setLibraryName(jacsDataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
-        CDMIPSample sample = jacsDataHelper.getLMSample(pppMatch.getSourceLmName());
+        lmNeuron.setLibraryName(dataHelper.getLibraryName(pppMatch.getSourceLmLibrary()));
+        CDMIPSample sample = dataHelper.getLMSample(pppMatch.getSourceLmName());
         if (sample != null) {
             String lm3DStackURL = findPublishedLM3DStack(
                     sample.sampleRef(),

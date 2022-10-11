@@ -16,8 +16,8 @@ import org.janelia.colormipsearch.model.PublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CachedJacsDataHelper {
-    private static final Logger LOG = LoggerFactory.getLogger(CachedJacsDataHelper.class);
+public class CachedDataHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(CachedDataHelper.class);
     /**
      * Both color depth mips cache and LM sample "cache" must be thread safe as they
      * can be updated from multiple threads.
@@ -26,17 +26,22 @@ public class CachedJacsDataHelper {
     private static final Map<String, CDMIPSample> LM_SAMPLES_CACHE = new ConcurrentHashMap<>();
 
     private final JacsDataGetter jacsDataGetter;
+    private final PublishedDataGetter publishedDataGetter;
     private Map<String, String> libraryNameMapping;
 
-    public CachedJacsDataHelper(JacsDataGetter jacsDataGetter) {
+    public CachedDataHelper(JacsDataGetter jacsDataGetter,
+                            PublishedDataGetter publishedDataGetter) {
         this.jacsDataGetter = jacsDataGetter;
+        this.publishedDataGetter = publishedDataGetter;
     }
 
-    public void retrieveCDMIPs(Set<String> mipIds) {
+    public void cacheCDMIPs(Set<String> mipIds) {
         if (CollectionUtils.isNotEmpty(mipIds)) {
-            Set<String> toRetrieve = mipIds.stream().filter(mipId -> !CD_MIPS_CACHE.containsKey(mipId)).collect(Collectors.toSet());
-            LOG.info("Retrieve {} MIPs to populate missing information", toRetrieve.size());
-            CD_MIPS_CACHE.putAll(jacsDataGetter.retrieveCDMIPs(toRetrieve));
+            Set<String> missingMipIDs = mipIds.stream().filter(mipId -> !CD_MIPS_CACHE.containsKey(mipId)).collect(Collectors.toSet());
+            LOG.info("Retrieve {} MIPs to populate missing information", missingMipIDs.size());
+            Map<String, ColorDepthMIP> missingCDMIPs = jacsDataGetter.retrieveCDMIPs(missingMipIDs);
+            publishedDataGetter.update3DStacksForAllMips(missingCDMIPs.values());
+            CD_MIPS_CACHE.putAll(missingCDMIPs);
         }
     }
 
@@ -52,7 +57,7 @@ public class CachedJacsDataHelper {
     }
 
 
-    public Map<String, CDMIPSample> retrieveLMSamples(Set<String> lmSampleNames) {
+    public Map<String, CDMIPSample> retrieveLMSamplesByName(Set<String> lmSampleNames) {
         if (CollectionUtils.isNotEmpty(lmSampleNames)) {
             Set<String> toRetrieve = lmSampleNames.stream().filter(n -> !LM_SAMPLES_CACHE.containsKey(n)).collect(Collectors.toSet());
             LOG.info("Retrieve {} samples to populate missing information", toRetrieve.size());
@@ -67,11 +72,11 @@ public class CachedJacsDataHelper {
     }
 
     public Map<String, List<PublishedLMImage>> retrievePublishedImages(String alignmentSpace, Set<String> sampleRefs) {
-        return jacsDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
+        return publishedDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
     }
 
     public Map<Number, PublishedURLs> retrievePublishedURLs(Collection<AbstractNeuronEntity> neurons) {
-        return jacsDataGetter.retrievePublishedURLs(neurons.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toSet()));
+        return publishedDataGetter.retrievePublishedURLs(neurons.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toSet()));
     }
 
     public CDMIPSample getLMSample(String lmName) {

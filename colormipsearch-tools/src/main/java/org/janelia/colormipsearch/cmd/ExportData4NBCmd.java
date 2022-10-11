@@ -30,8 +30,9 @@ import org.janelia.colormipsearch.cmd.dataexport.ImageStoreMapping;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
 import org.janelia.colormipsearch.cmd.dataexport.ValidatingSerializerModifier;
-import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
+import org.janelia.colormipsearch.cmd.jacsdata.PublishedDataGetter;
 import org.janelia.colormipsearch.dao.DaosProvider;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.db.DBNeuronMatchesReader;
@@ -191,15 +192,17 @@ class ExportData4NBCmd extends AbstractCmd {
                         nv -> nv.argName,
                         nv -> ImmutableSet.copyOf(nv.argValues),
                         (v1s, v2s) -> ImmutableSet.<String>builder().addAll(v1s).addAll(v2s).build()));
-        CachedJacsDataHelper jacsDataHelper = new CachedJacsDataHelper(
+        CachedDataHelper dataHelper = new CachedDataHelper(
                 new JacsDataGetter(
-                        daosProvider.getPublishedImageDao(),
-                        daosProvider.getPublishesUrlsDao(),
                         args.dataServiceURL,
                         args.configURL,
                         args.authorization,
-                        args.readBatchSize,
-                        publishedAlignmentSpaceAliases)
+                        args.readBatchSize),
+                new PublishedDataGetter(
+                        daosProvider.getPublishedImageDao(),
+                        daosProvider.getPublishesUrlsDao(),
+                        publishedAlignmentSpaceAliases
+                )
         );
         DataSourceParam dataSource = new DataSourceParam()
                 .setAlignmentSpace(args.alignmentSpace)
@@ -221,7 +224,7 @@ class ExportData4NBCmd extends AbstractCmd {
         switch (args.exportedResultType) {
             case EM_CD_MATCHES:
                 return new EMCDMatchesExporter(
-                        jacsDataHelper,
+                        dataHelper,
                         dataSource,
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
@@ -238,7 +241,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 );
             case LM_CD_MATCHES:
                 return new LMCDMatchesExporter(
-                        jacsDataHelper,
+                        dataHelper,
                         dataSource,
                         getCDScoresFilter(),
                         args.relativesUrlsToComponent,
@@ -255,7 +258,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 );
             case EM_PPP_MATCHES:
                 return new EMPPPMatchesExporter(
-                        jacsDataHelper,
+                        dataHelper,
                         dataSource,
                         publishedAlignmentSpaceAliases,
                         getPPPScoresFilter(),
@@ -273,7 +276,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 );
             case EM_MIPS:
                 return new MIPsExporter(
-                        jacsDataHelper,
+                        dataHelper,
                         dataSource,
                         args.relativesUrlsToComponent,
                         imageStoreMapping,
@@ -286,7 +289,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 );
             case LM_MIPS:
                 return new MIPsExporter(
-                        jacsDataHelper,
+                        dataHelper,
                         dataSource,
                         args.relativesUrlsToComponent,
                         imageStoreMapping,

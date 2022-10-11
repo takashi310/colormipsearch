@@ -11,7 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
@@ -37,7 +37,7 @@ public class MIPsExporter extends AbstractDataExporter {
     private final int processingPartitionSize;
     private final Class<? extends AbstractNeuronMetadata> exportedClasstype;
 
-    public MIPsExporter(CachedJacsDataHelper jacsDataHelper,
+    public MIPsExporter(CachedDataHelper jacsDataHelper,
                         DataSourceParam dataSourceParam,
                         int relativesUrlsToComponent,
                         ImageStoreMapping imageStoreMapping,
@@ -96,13 +96,13 @@ public class MIPsExporter extends AbstractDataExporter {
                     .map(AbstractNeuronEntity::getMipId)
                     .collect(Collectors.toSet());
             // retrieve color depth mips info from JACS
-            jacsDataHelper.retrieveCDMIPs(mipIds);
+            dataHelper.cacheCDMIPs(mipIds);
             List<AbstractNeuronMetadata> neuronMips = neuronMipEntities.stream()
                     .filter(this::hasNotBeenArtificiallyCreated) // filter out MIPs artificially generated at import
                     .map(AbstractNeuronEntity::metadata)
                     .collect(Collectors.toList());
             // retrieve URLs associated with current neurons
-            Map<Number, PublishedURLs> indexedNeuronURLs = jacsDataHelper.retrievePublishedURLs(neuronMipEntities);
+            Map<Number, PublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(neuronMipEntities);
             // update neurons info and filter out unpublished ones
             Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                     .peek(n -> updateNeuronMethod.accept(n, indexedNeuronURLs))

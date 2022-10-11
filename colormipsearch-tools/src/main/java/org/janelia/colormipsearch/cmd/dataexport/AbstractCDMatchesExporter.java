@@ -16,7 +16,7 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.janelia.colormipsearch.cmd.jacsdata.CachedJacsDataHelper;
+import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -41,7 +41,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     final ItemsWriterToJSONFile resultMatchesWriter;
     final int processingPartitionSize;
 
-    protected AbstractCDMatchesExporter(CachedJacsDataHelper jacsDataHelper,
+    protected AbstractCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                         DataSourceParam dataSourceParam,
                                         ScoresFilter scoresFilter,
                                         int relativesUrlsToComponent,
@@ -64,7 +64,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                 .flatMap(m -> Stream.of(m.getMaskMIPId(), m.getMatchedMIPId()))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet());
-        jacsDataHelper.retrieveCDMIPs(sourceMIPIds);
+        dataHelper.cacheCDMIPs(sourceMIPIds);
     }
 
     /**
