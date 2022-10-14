@@ -27,13 +27,14 @@ class TagNeuronMetadataCmd extends AbstractCmd {
         List<String> libraries = new ArrayList<>();
 
         @Parameter(names = {"--processing-tags"}, variableArity = true,
-                converter = NameValueArg.NameArgConverter.class, description = "Processing tags to select")
+                converter = NameValueArg.NameArgConverter.class,
+                description = "Processing tags to select")
         List<NameValueArg> processingTags = new ArrayList<>();
 
         @Parameter(names = {"--data-tags"}, variableArity = true, description = "Data tags to select")
         List<String> dataTags = new ArrayList<>();
 
-        @Parameter(names = {"--excluded-data-tags"}, description = "If any of these tags is present do not assign the new tag")
+        @Parameter(names = {"--excluded-data-tags"}, variableArity = true, description = "If any of these tags is present do not assign the new tag")
         List<String> excludedDataTags = new ArrayList<>();
 
         @Parameter(names = {"--tag"}, required = true, description = "Tag to assign")

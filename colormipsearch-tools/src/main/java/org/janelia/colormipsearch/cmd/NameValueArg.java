@@ -26,7 +26,7 @@ class NameValueArg {
             if (StringUtils.isBlank(name)) {
                 throw new IllegalArgumentException("Name part cannot be blank in " + value);
             }
-            List<String> argValues = Arrays.stream(StringUtils.split(separatedValues, ','))
+            List<String> argValues = Arrays.stream(StringUtils.split(separatedValues, ';'))
                     .map(String::trim)
                     .collect(Collectors.toList());
             return new NameValueArg(name, argValues);

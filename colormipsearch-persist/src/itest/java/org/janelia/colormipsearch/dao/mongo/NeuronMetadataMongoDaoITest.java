@@ -282,6 +282,15 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         neuronsUpdatedWithNewTag1.getResultList().forEach(n -> {
             assertFalse(n.getTags().contains("t3"));
         });
+        // update tags based on a single processed tag and excluded tag
+        assertEquals(0, // nothing should be updated because all "cd2" and "ppp2" have "t3"
+                testDao.updateAll(
+                        new NeuronSelector()
+                                .addProcessedTag("ColorDepthSearch", "cd2")
+                                .addProcessedTag("PPPMatch", "ppp2")
+                                .addExcludedTag("t3"),
+                        ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton("newTag2")))
+                ));
         // update tags based on a single processed tag
         long n2 = testDao.updateAll(
                 new NeuronSelector()
