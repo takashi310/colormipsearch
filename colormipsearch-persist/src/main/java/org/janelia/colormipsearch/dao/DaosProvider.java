@@ -8,14 +8,16 @@ import org.janelia.colormipsearch.dao.mongo.CDMatchesMongoDao;
 import org.janelia.colormipsearch.dao.mongo.MatchSessionMongoDao;
 import org.janelia.colormipsearch.dao.mongo.NeuronMetadataMongoDao;
 import org.janelia.colormipsearch.dao.mongo.PPPMatchesMongoDao;
+import org.janelia.colormipsearch.dao.mongo.PPPmURLsMongoDao;
 import org.janelia.colormipsearch.dao.mongo.PublishedLMImageMongoDao;
 import org.janelia.colormipsearch.dao.mongo.PublishedURLsMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.AbstractPublishedURLs;
 import org.janelia.colormipsearch.model.AbstractSessionEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
+import org.janelia.colormipsearch.model.PPPmURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 
 public class DaosProvider {
 
@@ -75,7 +77,12 @@ public class DaosProvider {
         return new PublishedLMImageMongoDao(mongoClient, mongoDatabase, idGenerator);
     }
 
-    public <T extends AbstractPublishedURLs> PublishedURLsDao<T> getPublishesUrlsDao() {
-        return new PublishedURLsMongoDao<>(mongoClient, mongoDatabase, idGenerator);
+    public PublishedURLsDao<NeuronPublishedURLs> getNeuronPublishedUrlsDao() {
+        return new PublishedURLsMongoDao(mongoClient, mongoDatabase, idGenerator);
     }
+
+    public PublishedURLsDao<PPPmURLs> getPPPmUrlsDao() {
+        return new PPPmURLsMongoDao(mongoClient, mongoDatabase, idGenerator);
+    }
+
 }

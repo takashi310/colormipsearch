@@ -14,7 +14,7 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.ProcessingType;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 
 /**
  * This is the representation of a JACS ColorDepthMIP image.
@@ -155,7 +155,7 @@ public class ColorDepthMIP implements Serializable {
         return StringUtils.isNotBlank(emBodyRef) && emBody == null;
     }
 
-    public void updateLMNeuron(LMNeuronMetadata lmNeuron, PublishedURLs neuronURLs) {
+    public void updateLMNeuron(LMNeuronMetadata lmNeuron, NeuronPublishedURLs neuronURLs) {
         lmNeuron.setPublishedName(lmLineName());
         lmNeuron.setGender(Gender.fromVal(gender()));
         lmNeuron.setSlideCode(lmSlideCode());
@@ -175,7 +175,7 @@ public class ColorDepthMIP implements Serializable {
         }
     }
 
-    public void updateEMNeuron(EMNeuronMetadata emNeuron, PublishedURLs neuronURLs) {
+    public void updateEMNeuron(EMNeuronMetadata emNeuron, NeuronPublishedURLs neuronURLs) {
         emNeuron.setPublishedName(emBodyId());
         emNeuron.setFullPublishedName(emPublishedName());
         emNeuron.setAnatomicalArea(emAnatomicalArea());
@@ -195,7 +195,7 @@ public class ColorDepthMIP implements Serializable {
         }
     }
 
-    private String getNeuronURL(PublishedURLs neuronURLs, String fileType, String defaultValue) {
+    private String getNeuronURL(NeuronPublishedURLs neuronURLs, String fileType, String defaultValue) {
         if (neuronURLs == null) {
             return defaultValue;
         } else {

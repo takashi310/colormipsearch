@@ -1,12 +1,10 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -16,8 +14,7 @@ import com.google.common.collect.ImmutableMap;
 
 import org.janelia.colormipsearch.dao.PublishedURLsDao;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
-import org.janelia.colormipsearch.model.PublishedLMImage;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,10 +24,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
+public class NeuronPublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-    static class TestPublishedURLs extends PublishedURLs {
+    static class TestNeuronPublishedURLs extends NeuronPublishedURLs {
         private String sampleRef;
 
         @Override
@@ -60,13 +57,13 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
         }
     }
 
-    private Map<Number, PublishedURLs> testData = new HashMap<>();
+    private Map<Number, NeuronPublishedURLs> testData = new HashMap<>();
 
-    private PublishedURLsDao publishedURLsDao;
+    private PublishedURLsDao<NeuronPublishedURLs> publishedURLsDao;
 
     @Before
     public void setUp() {
-        publishedURLsDao = daosProvider.getPublishesUrlsDao();
+        publishedURLsDao = daosProvider.getNeuronPublishedUrlsDao();
         testData.putAll(createTestData());
     }
 
@@ -75,10 +72,10 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
         testData.forEach((id, entry) -> publishedURLsDao.delete(entry));
     }
 
-    private Map<Number, PublishedURLs> createTestData() {
-        List<PublishedURLs> data = new ArrayList<>();
+    private Map<Number, NeuronPublishedURLs> createTestData() {
+        List<NeuronPublishedURLs> data = new ArrayList<>();
 
-        TestPublishedURLs d1 = new TestPublishedURLs();
+        TestNeuronPublishedURLs d1 = new TestNeuronPublishedURLs();
         d1.getUrls().putAll(ImmutableMap.of(
                 "cdm", "cdm_URL_1",
                 "cdm_thumbnail", "cdm_thumnail_URL_1",
@@ -89,7 +86,7 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
         d1.setSampleRef("s1");
         data.add(d1);
 
-        TestPublishedURLs d2 = new TestPublishedURLs();
+        TestNeuronPublishedURLs d2 = new TestNeuronPublishedURLs();
         d2.getUrls().putAll(ImmutableMap.of(
                 "cdm", "cdm_URL_2",
                 "cdm_thumbnail", "cdm_thumnail_URL_2",
@@ -100,7 +97,7 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
         d2.setSampleRef("s2");
         data.add(d2);
 
-        TestPublishedURLs d3 = new TestPublishedURLs();
+        TestNeuronPublishedURLs d3 = new TestNeuronPublishedURLs();
         d3.getUrls().putAll(ImmutableMap.of(
                 "cdm", "cdm_URL_3",
                 "cdm_thumbnail", "cdm_thumnail_URL_3",
@@ -111,7 +108,7 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
         d3.setSampleRef("s3");
         data.add(d3);
 
-        TestPublishedURLs d4 = new TestPublishedURLs();
+        TestNeuronPublishedURLs d4 = new TestNeuronPublishedURLs();
         d4.getUrls().putAll(ImmutableMap.of(
                 "cdm", "cdm_URL_4",
                 "cdm_thumbnail", "cdm_thumnail_URL_4",
@@ -128,7 +125,7 @@ public class PublishedURLsMongoDaoITest extends AbstractMongoDaoITest {
 
     @Test
     public void testGetURLs() {
-        List<PublishedURLs> persistedData = publishedURLsDao.findByEntityIds(testData.keySet());
+        List<NeuronPublishedURLs> persistedData = publishedURLsDao.findByEntityIds(testData.keySet());
         assertEquals(testData.size(), persistedData.size());
         persistedData.forEach(d -> {
             assertNotNull(testData.get(d.getEntityId()));

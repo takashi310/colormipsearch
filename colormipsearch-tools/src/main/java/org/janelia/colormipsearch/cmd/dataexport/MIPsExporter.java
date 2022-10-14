@@ -22,7 +22,7 @@ import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.janelia.colormipsearch.results.GroupedItems;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
@@ -82,7 +82,7 @@ public class MIPsExporter extends AbstractDataExporter {
     private void runExportForPublishedNames(int jobId, List<String> publishedNames) {
         long startProcessingTime = System.currentTimeMillis();
         LOG.info("Start processing {} publishedNames from partition {}", publishedNames.size(), jobId);
-        BiConsumer<AbstractNeuronMetadata, Map<Number, PublishedURLs>> updateNeuronMethod = getUpdateMethod();
+        BiConsumer<AbstractNeuronMetadata, Map<Number, NeuronPublishedURLs>> updateNeuronMethod = getUpdateMethod();
         publishedNames.forEach(publishedName -> {
             LOG.info("Read mips for {}", publishedName);
             List<AbstractNeuronEntity> neuronMipEntities = neuronMetadataDao.findNeurons(
@@ -102,7 +102,7 @@ public class MIPsExporter extends AbstractDataExporter {
                     .map(AbstractNeuronEntity::metadata)
                     .collect(Collectors.toList());
             // retrieve URLs associated with current neurons
-            Map<Number, PublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(neuronMipEntities);
+            Map<Number, NeuronPublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(neuronMipEntities);
             // update neurons info and filter out unpublished ones
             Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                     .peek(n -> updateNeuronMethod.accept(n, indexedNeuronURLs))
@@ -121,7 +121,7 @@ public class MIPsExporter extends AbstractDataExporter {
         LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
-    private BiConsumer<AbstractNeuronMetadata, Map<Number, PublishedURLs>> getUpdateMethod() {
+    private BiConsumer<AbstractNeuronMetadata, Map<Number, NeuronPublishedURLs>> getUpdateMethod() {
         if (EMNeuronMetadata.class.getName().equals(exportedClasstype.getName())) {
             return (n, publishedURLsMap) -> this.updateEMNeuron((EMNeuronMetadata) n, publishedURLsMap.get(n.getInternalId()));
         } else if (LMNeuronMetadata.class.getName().equals(exportedClasstype.getName())) {

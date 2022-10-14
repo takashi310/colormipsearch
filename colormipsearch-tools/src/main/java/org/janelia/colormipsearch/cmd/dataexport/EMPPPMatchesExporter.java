@@ -3,7 +3,6 @@ package org.janelia.colormipsearch.cmd.dataexport;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +39,7 @@ import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.model.PPPmURLs;
 import org.janelia.colormipsearch.model.PublishedLMImage;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
@@ -131,7 +130,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
         // retrieve source data
         Map<String, List<PublishedLMImage>> lmPublishedImages = retrieveEMAndLMSourceData(matches);
-        Map<Number, PublishedURLs> indexedPublishedURLs = dataHelper.retrievePublishedURLs(
+        Map<Number, NeuronPublishedURLs> indexedPublishedURLs = dataHelper.retrievePublishedURLs(
                 matches.stream().map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet())
         );
         // update grouped matches
@@ -159,7 +158,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
 
     private void updateMatchedResultsMetadata(ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>> resultMatches,
                                               Map<String, List<PublishedLMImage>> lmPublishedImages,
-                                              Map<Number, PublishedURLs> publishedURLsMap) {
+                                              Map<Number, NeuronPublishedURLs> publishedURLsMap) {
         updateEMNeuron(resultMatches.getKey(), publishedURLsMap.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
         Map<Number, PPPmURLs> publishedURLs = publishedURLsDao.findByEntityIds(

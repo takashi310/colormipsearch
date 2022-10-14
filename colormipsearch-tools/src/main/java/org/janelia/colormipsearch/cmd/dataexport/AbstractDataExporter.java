@@ -13,7 +13,7 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,27 +46,27 @@ public abstract class AbstractDataExporter implements DataExporter {
         return dataSourceParam;
     }
 
-    void updateEMNeuron(EMNeuronMetadata emNeuron, PublishedURLs publishedURLs) {
+    void updateEMNeuron(EMNeuronMetadata emNeuron, NeuronPublishedURLs neuronPublishedURLs) {
         ColorDepthMIP mip = dataHelper.getColorDepthMIP(emNeuron.getMipId());
         // the order matter here because the mapping should be defined on the internal library name
         // so imageStore must be set before the library name was changed
         updateFileStore(emNeuron);
         emNeuron.setLibraryName(dataHelper.getLibraryName(emNeuron.getLibraryName()));
         if (mip != null) {
-            mip.updateEMNeuron(emNeuron, publishedURLs);
+            mip.updateEMNeuron(emNeuron, neuronPublishedURLs);
         } else {
             LOG.error("No color depth MIP found for EM MIP {}", emNeuron);
         }
     }
 
-    void updateLMNeuron(LMNeuronMetadata lmNeuron, PublishedURLs publishedURLs) {
+    void updateLMNeuron(LMNeuronMetadata lmNeuron, NeuronPublishedURLs neuronPublishedURLs) {
         ColorDepthMIP mip = dataHelper.getColorDepthMIP(lmNeuron.getMipId());
         // the order matter here because the mapping should be defined on the internal library name
         // so imageStore must be set before the library name was changed
         updateFileStore(lmNeuron);
         lmNeuron.setLibraryName(dataHelper.getLibraryName(lmNeuron.getLibraryName()));
         if (mip != null) {
-            mip.updateLMNeuron(lmNeuron, publishedURLs);
+            mip.updateLMNeuron(lmNeuron, neuronPublishedURLs);
         } else {
             LOG.error("No color depth MIP found for LM MIP {}", lmNeuron);
         }

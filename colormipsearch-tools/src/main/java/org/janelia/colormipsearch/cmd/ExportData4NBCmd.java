@@ -200,7 +200,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.readBatchSize),
                 new PublishedDataGetter(
                         daosProvider.getPublishedImageDao(),
-                        daosProvider.getPublishesUrlsDao(),
+                        daosProvider.getNeuronPublishedUrlsDao(),
                         publishedAlignmentSpaceAliases
                 )
         );
@@ -271,7 +271,7 @@ class ExportData4NBCmd extends AbstractCmd {
                                 daosProvider.getPPPMatchesDao(),
                                 "mipId"
                         ),
-                        daosProvider.getPublishesUrlsDao(),
+                        daosProvider.getPPPmUrlsDao(),
                         itemsWriter,
                         args.processingPartitionSize
                 );

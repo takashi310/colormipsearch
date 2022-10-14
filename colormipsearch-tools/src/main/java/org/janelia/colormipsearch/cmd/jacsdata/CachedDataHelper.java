@@ -12,7 +12,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.PublishedLMImage;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ public class CachedDataHelper {
         return publishedDataGetter.retrievePublishedImages(alignmentSpace, sampleRefs);
     }
 
-    public Map<Number, PublishedURLs> retrievePublishedURLs(Collection<AbstractNeuronEntity> neurons) {
+    public Map<Number, NeuronPublishedURLs> retrievePublishedURLs(Collection<AbstractNeuronEntity> neurons) {
         return publishedDataGetter.retrievePublishedURLs(neurons.stream().map(AbstractBaseEntity::getEntityId).collect(Collectors.toSet()));
     }
 

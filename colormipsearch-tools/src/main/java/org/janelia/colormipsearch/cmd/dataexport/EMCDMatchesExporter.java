@@ -23,7 +23,7 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
-        Map<Number, PublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(
+        Map<Number, NeuronPublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(
                 matches.stream()
                         .flatMap(m -> Stream.of(m.getMaskImage(), m.getMatchedImage()))
                         .collect(Collectors.toSet())

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="publishedURL")
-public class PublishedURLs extends AbstractPublishedURLs {
+public class NeuronPublishedURLs extends AbstractPublishedURLs {
     @JsonProperty("uploaded")
     protected Map<String, String> getUrls() {
         return super.getUrls();

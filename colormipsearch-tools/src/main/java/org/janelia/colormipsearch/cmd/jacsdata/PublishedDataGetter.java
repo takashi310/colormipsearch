@@ -12,7 +12,7 @@ import org.janelia.colormipsearch.dao.PublishedLMImageDao;
 import org.janelia.colormipsearch.dao.PublishedURLsDao;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.PublishedLMImage;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +20,11 @@ public class PublishedDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(PublishedDataGetter.class);
 
     private final PublishedLMImageDao publishedLMImageDao;
-    private final PublishedURLsDao<PublishedURLs> publishedURLsDao;
+    private final PublishedURLsDao<NeuronPublishedURLs> publishedURLsDao;
     private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
 
     public PublishedDataGetter(PublishedLMImageDao publishedLMImageDao,
-                               PublishedURLsDao<PublishedURLs> publishedURLsDao,
+                               PublishedURLsDao<NeuronPublishedURLs> publishedURLsDao,
                                Map<String, Set<String>> publishedAlignmentSpaceAliases) {
         this.publishedLMImageDao = publishedLMImageDao;
         this.publishedURLsDao = publishedURLsDao;
@@ -39,7 +39,7 @@ public class PublishedDataGetter {
         );
     }
 
-    Map<Number, PublishedURLs> retrievePublishedURLs(Set<Number> neuronIds) {
+    Map<Number, NeuronPublishedURLs> retrievePublishedURLs(Set<Number> neuronIds) {
         return publishedURLsDao.findByEntityIds(neuronIds).stream()
                 .collect(Collectors.toMap(AbstractBaseEntity::getEntityId, urls -> urls));
     }

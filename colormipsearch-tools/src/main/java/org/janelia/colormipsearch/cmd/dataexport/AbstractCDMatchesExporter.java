@@ -28,7 +28,7 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,9 +94,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
 
     <M extends AbstractNeuronMetadata, T extends AbstractNeuronMetadata> void
     updateMatchedResultsMetadata(ResultMatches<M, CDMatchedTarget<T>> resultMatches,
-                                 BiConsumer<M, PublishedURLs> updateKeyMethod,
-                                 BiConsumer<T, PublishedURLs> updateTargetMatchMethod,
-                                 Map<Number, PublishedURLs> publisheURLsByNeuronId) {
+                                 BiConsumer<M, NeuronPublishedURLs> updateKeyMethod,
+                                 BiConsumer<T, NeuronPublishedURLs> updateTargetMatchMethod,
+                                 Map<Number, NeuronPublishedURLs> publisheURLsByNeuronId) {
         updateKeyMethod.accept(resultMatches.getKey(), publisheURLsByNeuronId.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
         String maskImageStore = resultMatches.getKey().getNeuronFile(FileType.store);
@@ -107,7 +107,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
             // update match files - ideally we get these from PublishedURLs but
             // if they are not there we try to create the searchable URL based on the input name and ColorDepthMIP name
-            PublishedURLs maskPublishedURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
+            NeuronPublishedURLs maskPublishedURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
             String maskImageURL = getSearchableNeuronURL(maskPublishedURLs);
             if (maskImageURL == null) {
                 LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
@@ -126,7 +126,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             } else {
                 target.setMatchFile(FileType.CDMInput, relativizeURL(maskImageURL));
             }
-            PublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
+            NeuronPublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
             String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
             String tagetImageURL = getSearchableNeuronURL(targetPublishedURLs);
             if (tagetImageURL == null) {
@@ -157,7 +157,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
         });
     }
 
-    private String getSearchableNeuronURL(PublishedURLs publishedURLs) {
+    private String getSearchableNeuronURL(NeuronPublishedURLs publishedURLs) {
         if (publishedURLs != null) {
             return publishedURLs.getURLFor("searchable_neurons", null);
         } else {
