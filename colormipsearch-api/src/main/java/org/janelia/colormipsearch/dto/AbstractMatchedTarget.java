@@ -22,10 +22,20 @@ import org.janelia.colormipsearch.model.FileType;
 public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
 
     // Keep the mask internal ID a little longer because we'll need it to retrieve the corresponding image URLs
+    private Number matchInternalId;
     private Number maskImageInternalId;
     private T targetImage;
     private boolean mirrored;
     private final Map<FileType, String> matchFiles = new HashMap<>(); // match specific files
+
+    @JsonIgnore
+    public Number getMatchInternalId() {
+        return matchInternalId;
+    }
+
+    public void setMatchInternalId(Number matchInternalId) {
+        this.matchInternalId = matchInternalId;
+    }
 
     @JsonProperty("type")
     public abstract String getTypeDiscriminator();

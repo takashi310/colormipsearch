@@ -271,6 +271,7 @@ class ExportData4NBCmd extends AbstractCmd {
                                 daosProvider.getPPPMatchesDao(),
                                 "mipId"
                         ),
+                        daosProvider.getPublishesUrlsDao(),
                         itemsWriter,
                         args.processingPartitionSize
                 );

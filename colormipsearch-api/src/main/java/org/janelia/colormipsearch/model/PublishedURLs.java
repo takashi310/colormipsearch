@@ -1,33 +1,15 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
 @PersistenceInfo(storeName ="publishedURL")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class PublishedURLs extends AbstractBaseEntity {
-
-    private Map<String, String> urls = new HashMap<>();
-
+public class PublishedURLs extends AbstractPublishedURLs {
     @JsonProperty("uploaded")
     protected Map<String, String> getUrls() {
-        return urls;
-    }
-
-    protected void setUrls(Map<String, String> urls) {
-        this.urls = urls;
-    }
-
-    public String getURLFor(String fileType, String defaultValue) {
-        return urls.getOrDefault(fileType, defaultValue);
+        return super.getUrls();
     }
 }

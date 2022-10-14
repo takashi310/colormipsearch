@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.dao.PublishedLMImageDao;
 import org.janelia.colormipsearch.dao.PublishedURLsDao;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
@@ -21,11 +20,11 @@ public class PublishedDataGetter {
     private static final Logger LOG = LoggerFactory.getLogger(PublishedDataGetter.class);
 
     private final PublishedLMImageDao publishedLMImageDao;
-    private final PublishedURLsDao publishedURLsDao;
+    private final PublishedURLsDao<PublishedURLs> publishedURLsDao;
     private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
 
     public PublishedDataGetter(PublishedLMImageDao publishedLMImageDao,
-                               PublishedURLsDao publishedURLsDao,
+                               PublishedURLsDao<PublishedURLs> publishedURLsDao,
                                Map<String, Set<String>> publishedAlignmentSpaceAliases) {
         this.publishedLMImageDao = publishedLMImageDao;
         this.publishedURLsDao = publishedURLsDao;

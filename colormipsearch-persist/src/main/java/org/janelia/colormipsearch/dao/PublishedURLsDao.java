@@ -1,6 +1,6 @@
 package org.janelia.colormipsearch.dao;
 
-import org.janelia.colormipsearch.model.PublishedURLs;
+import org.janelia.colormipsearch.model.AbstractPublishedURLs;
 
-public interface PublishedURLsDao extends Dao<PublishedURLs> {
+public interface PublishedURLsDao<T extends AbstractPublishedURLs> extends Dao<T> {
 }

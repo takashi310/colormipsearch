@@ -177,13 +177,14 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
     @Override
     public PPPMatchedTarget<? extends AbstractNeuronMetadata> metadata() {
         PPPMatchedTarget<AbstractNeuronMetadata> m = new PPPMatchedTarget<>();
+        m.setMatchInternalId(getEntityId());
         T matchedImage = getMatchedImage();
         if (matchedImage != null) {
             AbstractNeuronMetadata n = getMatchedImage().metadata();
             m.setTargetImage(n);
         }
         updateLMSampleInfo(m);
-        generateMatchFiles(m);
+        if (hasSourceImageFiles()) m.addSourceImageFileTypes(sourceImageFiles.keySet());
         m.setMirrored(isMirrored());
         m.setRank(getRank());
         m.setScore((int)Math.abs(coverageScore));
@@ -197,55 +198,6 @@ public class PPPMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNe
         } else {
             return getSourceLmName();
         }
-    }
-
-    private String extractEMBodyID() {
-        Matcher matcher = EM_REG_EX_PATTERN.matcher(getSourceEmName());
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return getSourceEmName();
-        }
-    }
-
-    private void generateMatchFiles(PPPMatchedTarget<AbstractNeuronMetadata> m) {
-        if (hasSourceImageFiles()) {
-            sourceImageFiles.keySet().stream()
-                    .flatMap(k -> k.getFileTypes().stream())
-                    .forEach(ft -> m.setMatchFile(
-                            ft,
-                            buildImageRelativePath(
-                                    getAlignmentSpace(),
-                                    extractEMBodyID(),
-                                    m.getSourceObjective(),
-                                    ft.getDisplayPPPSuffix()
-                            )
-                    ));
-        }
-    }
-
-    private String getAlignmentSpace() {
-        if (getMaskImage() != null && getMaskImage().hasAlignmentSpace()) {
-            return getMaskImage().getAlignmentSpace();
-        } else if (getMatchedImage() != null && getMatchedImage().hasAlignmentSpace()) {
-            return getMatchedImage().getAlignmentSpace();
-        } else {
-            return getInputAlignmentSpace();
-        }
-    }
-
-    private String buildImageRelativePath(String alignmentSpace,
-                                          String emNeuronName,
-                                          String objective,
-                                          String suffix) {
-        return emNeuronName.substring(0, 2) + '/' +
-                emNeuronName + '/' +
-                emNeuronName + '-' +
-                "{lmLine}" + "-" + // placeholder for LM line
-                "{lmSlideCode}" + "-" + // placeholder for LM slide code
-                objective + "-" +
-                alignmentSpace + '-' +
-                suffix;
     }
 
     private void updateLMSampleInfo(PPPMatchedTarget<AbstractNeuronMetadata> m) {

@@ -1,9 +1,14 @@
 package org.janelia.colormipsearch.dto;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.janelia.colormipsearch.model.PPPScreenshotType;
 
 /**
  * Metadata about a PPP matched target.
@@ -16,6 +21,7 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
     private String sourceLmLibrary;
     private Double rank;
     private int score;
+    private Set<PPPScreenshotType> sourceImageFilesTypes = new HashSet<>();
 
     @Override
     public String getTypeDiscriminator() {
@@ -66,5 +72,18 @@ public class PPPMatchedTarget<T extends AbstractNeuronMetadata> extends Abstract
 
     public void setSourceLmLibrary(String sourceLmLibrary) {
         this.sourceLmLibrary = sourceLmLibrary;
+    }
+
+    public boolean hasSourceImageFiles() {
+        return !sourceImageFilesTypes.isEmpty();
+    }
+
+    @JsonIgnore
+    public Set<PPPScreenshotType> getSourceImageFilesTypes() {
+        return sourceImageFilesTypes;
+    }
+
+    public void addSourceImageFileTypes(Set<PPPScreenshotType> pppScreenshotTypes) {
+        this.sourceImageFilesTypes.addAll(pppScreenshotTypes);
     }
 }

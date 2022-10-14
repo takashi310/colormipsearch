@@ -12,6 +12,7 @@ import org.janelia.colormipsearch.dao.mongo.PublishedLMImageMongoDao;
 import org.janelia.colormipsearch.dao.mongo.PublishedURLsMongoDao;
 import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.AbstractPublishedURLs;
 import org.janelia.colormipsearch.model.AbstractSessionEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
@@ -74,7 +75,7 @@ public class DaosProvider {
         return new PublishedLMImageMongoDao(mongoClient, mongoDatabase, idGenerator);
     }
 
-    public PublishedURLsDao getPublishesUrlsDao() {
-        return new PublishedURLsMongoDao(mongoClient, mongoDatabase, idGenerator);
+    public <T extends AbstractPublishedURLs> PublishedURLsDao<T> getPublishesUrlsDao() {
+        return new PublishedURLsMongoDao<>(mongoClient, mongoDatabase, idGenerator);
     }
 }

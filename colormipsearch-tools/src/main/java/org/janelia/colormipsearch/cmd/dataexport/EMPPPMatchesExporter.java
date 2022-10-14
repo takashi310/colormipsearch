@@ -17,24 +17,28 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CDMIPSample;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
+import org.janelia.colormipsearch.dao.PublishedURLsDao;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
+import org.janelia.colormipsearch.dto.AbstractMatchedTarget;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMPPPNeuronMetadata;
 import org.janelia.colormipsearch.dto.PPPMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
+import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.Gender;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
+import org.janelia.colormipsearch.model.PPPmURLs;
 import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.janelia.colormipsearch.model.PublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -48,6 +52,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
     private final ScoresFilter scoresFilter;
     private final NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader;
+    private final PublishedURLsDao<PPPmURLs> publishedURLsDao;
     private final ItemsWriterToJSONFile resultMatchesWriter;
     private final int processingPartitionSize;
 
@@ -60,12 +65,14 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 Path outputDir,
                                 Executor executor,
                                 NeuronMatchesReader<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesReader,
+                                PublishedURLsDao<PPPmURLs> publishedURLsDao,
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
         this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
+        this.publishedURLsDao = publishedURLsDao;
         this.resultMatchesWriter = resultMatchesWriter;
         this.processingPartitionSize = processingPartitionSize;
     }
@@ -155,12 +162,17 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                               Map<Number, PublishedURLs> publishedURLsMap) {
         updateEMNeuron(resultMatches.getKey(), publishedURLsMap.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
-        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages));
+        Map<Number, PPPmURLs> publishedURLs = publishedURLsDao.findByEntityIds(
+                resultMatches.getItems().stream().map(AbstractMatchedTarget::getMatchInternalId).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(AbstractBaseEntity::getEntityId, u -> u));
+        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages, publishedURLs));
     }
 
     private void updateTargetFromLMSample(EMNeuronMetadata emNeuron,
                                           PPPMatchedTarget<LMNeuronMetadata> pppMatch,
-                                          Map<String, List<PublishedLMImage>> lmPublishedImages) {
+                                          Map<String, List<PublishedLMImage>> lmPublishedImages,
+                                          Map<Number, PPPmURLs> publishedURLs) {
         LMPPPNeuronMetadata lmNeuron;
         if (pppMatch.getTargetImage() == null) {
             lmNeuron = new LMPPPNeuronMetadata();
@@ -187,20 +199,22 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
             lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(lm3DStackURL));
             updateFileStore(lmNeuron);
-            // collect updated match files
-            Map<FileType, String> updatedMatchFiles = new LinkedHashMap<>();
-            pppMatch.getMatchFiles()
-                    .forEach((ft, fn) -> {
-                        String updatedFN = fn.replace("{lmLine}", sample.lmLineName())
-                                .replace("{lmSlideCode}", sample.slideCode);
-                        updatedMatchFiles.put(
-                                ft,
-                                emNeuron.getAlignmentSpace() + "/" + emNeuron.getLibraryName() + "/" + updatedFN
+            if (pppMatch.hasSourceImageFiles() && publishedURLs.containsKey(pppMatch.getMatchInternalId())) {
+                pppMatch.getSourceImageFilesTypes().forEach(screenshotType -> {
+                    PPPmURLs urls = publishedURLs.get(pppMatch.getMatchInternalId());
+                    pppMatch.setMatchFile(
+                            screenshotType.getFileType(),
+                            relativizeURL(urls.getURLFor(screenshotType.name(), null))
+                    );
+                    if (screenshotType.hasThumnail()) {
+                        pppMatch.setMatchFile(
+                                screenshotType.getThumbnailFileType(),
+                                relativizeURL(urls.getThumbnailURLFor(screenshotType.name()))
                         );
-                    });
-            // then replace them just to be safe that we are not updating what we're reading
-            updatedMatchFiles.forEach((ft, fn) -> pppMatch.setMatchFile(ft, relativizeURL(fn)));
-            pppMatch.setMatchFile(FileType.store, emImageFileStore); // use the same image store that was used for EM image
+                    }
+                });
+                pppMatch.setMatchFile(FileType.store, emImageFileStore); // use the same image store that was used for EM image
+            }
         } else {
             LOG.error("No sample found for {}", pppMatch.getSourceLmName());
         }

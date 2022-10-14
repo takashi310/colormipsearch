@@ -5,9 +5,10 @@ import com.mongodb.client.MongoDatabase;
 
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.PublishedURLsDao;
+import org.janelia.colormipsearch.model.AbstractPublishedURLs;
 import org.janelia.colormipsearch.model.PublishedURLs;
 
-public class PublishedURLsMongoDao extends AbstractMongoDao<PublishedURLs> implements PublishedURLsDao {
+public class PublishedURLsMongoDao<T extends AbstractPublishedURLs> extends AbstractMongoDao<T> implements PublishedURLsDao<T> {
 
     public PublishedURLsMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
