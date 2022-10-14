@@ -28,7 +28,8 @@ public class Main {
                 new CalculateGradientScoresCmd("gradientScores", commonArgs, () -> mainArgs.cacheSize),
                 new ImportPPPResultsCmd("importPPPResults", commonArgs),
                 new ExportData4NBCmd("exportData", commonArgs),
-                new ImportV2CDMatchesCmd("legacyImport", commonArgs)
+                new ImportV2CDMatchesCmd("legacyImport", commonArgs),
+                new TagNeuronMetadataCmd("tag", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);

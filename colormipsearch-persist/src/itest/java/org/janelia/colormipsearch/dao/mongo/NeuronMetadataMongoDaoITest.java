@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,8 +10,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
@@ -26,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -236,12 +240,87 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         }
     }
 
+    @Test
+    public void updateTags() {
+        AbstractNeuronEntity[] testNeurons = new AbstractNeuronEntity[] {
+                createTestNeuron(new TestNeuronEntityBuilder<>(EMNeuronEntity::new)
+                        .library("l1")
+                        .addTags(Arrays.asList("t1", "t2"))
+                        .addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cd1"))
+                        .addProcessedTags(ProcessingType.PPPMatch, Collections.singleton("ppp1"))
+                ),
+                createTestNeuron(new TestNeuronEntityBuilder<>(EMNeuronEntity::new)
+                        .library("l1")
+                        .addTags(Arrays.asList("t1", "t2", "t3"))
+                        .addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cd2"))
+                        .addProcessedTags(ProcessingType.PPPMatch, Collections.singleton("ppp2"))
+                ),
+                createTestNeuron(new TestNeuronEntityBuilder<>(LMNeuronEntity::new)
+                        .library("l2")
+                        .addTags(Arrays.asList("t1", "t2"))
+                        .addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cd1"))
+                        .addProcessedTags(ProcessingType.PPPMatch, Collections.singleton("ppp1"))
+                ),
+                createTestNeuron(new TestNeuronEntityBuilder<>(LMNeuronEntity::new)
+                        .library("l2")
+                        .addTags(Arrays.asList("t1", "t2", "t3"))
+                        .addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cd2"))
+                        .addProcessedTags(ProcessingType.PPPMatch, Collections.singleton("ppp2"))
+                )
+        };
+        testDao.saveAll(Arrays.asList(testNeurons));
+        // update tags based on data tags
+        long n1 = testDao.updateAll(
+                new NeuronSelector()
+                        .addTags(Arrays.asList("t1", "t2"))
+                        .addExcludedTag("t3"),
+                ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton("newTag1")))
+        );
+        assertEquals(2, n1);
+        PagedResult<? extends AbstractNeuronEntity> neuronsUpdatedWithNewTag1 = testDao.findNeurons(new NeuronSelector().addTag("newTag1"), new PagedRequest());
+        assertEquals(2, neuronsUpdatedWithNewTag1.getResultList().size());
+        neuronsUpdatedWithNewTag1.getResultList().forEach(n -> {
+            assertFalse(n.getTags().contains("t3"));
+        });
+        // update tags based on a single processed tag
+        long n2 = testDao.updateAll(
+                new NeuronSelector()
+                        .addProcessedTag("ColorDepthSearch", "cd2")
+                        .addProcessedTag("PPPMatch", "ppp2"),
+                ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton("newTag2")))
+        );
+        assertEquals(2, n2);
+        PagedResult<? extends AbstractNeuronEntity> neuronsUpdatedWithNewTag2 = testDao.findNeurons(new NeuronSelector().addTag("newTag2"), new PagedRequest());
+        assertEquals(2, neuronsUpdatedWithNewTag2.getResultList().size());
+        neuronsUpdatedWithNewTag2.getResultList().forEach(n -> {
+            assertTrue(n.hasProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cd2")));
+        });
+        // update tags based on a multiple processed conflicting tags
+        long n3 = testDao.updateAll(
+                new NeuronSelector()
+                        .addProcessedTag("ColorDepthSearch", "cd1")
+                        .addProcessedTag("PPPMatch", "ppp2"),
+                ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton("newTag3")))
+        );
+        assertEquals(0, n3);
+
+        // update tags based on a multiple processed tags selections
+        long n4 = testDao.updateAll(
+                new NeuronSelector()
+                        .addProcessedTag("ColorDepthSearch", "cd1")
+                        .addNewProcessedTagSelection("PPPMatch", "ppp2")
+                        .addProcessedTag("ColorDepthSearch", "cd2"),
+                ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton("newTag3")))
+        );
+        assertEquals(4, n4);
+    }
+
     private <N extends AbstractNeuronEntity> N createTestNeuron(Supplier<N> neuronGenerator,
                                                                 String libraryName,
                                                                 String name,
                                                                 String mipId,
                                                                 Collection<String> tags) {
-        N testNeuron = new TestNeuronEntityBuilder<>(neuronGenerator)
+        return createTestNeuron(new TestNeuronEntityBuilder<>(neuronGenerator)
                 .library(libraryName)
                 .publishedName(name)
                 .mipId(mipId)
@@ -250,8 +329,13 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
                 .computeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString("sourceMip"))
                 .addProcessedTags(ProcessingType.ColorDepthSearch, Collections.singleton("cds"))
                 .addProcessedTags(ProcessingType.PPPMatch, Collections.singleton("pppm"))
-                .get();
+        );
+    }
+
+    private <N extends AbstractNeuronEntity> N createTestNeuron(TestNeuronEntityBuilder<N> neuronGenerator) {
+        N testNeuron = neuronGenerator.get();
         testData.add(testNeuron);
         return testNeuron;
     }
+
 }

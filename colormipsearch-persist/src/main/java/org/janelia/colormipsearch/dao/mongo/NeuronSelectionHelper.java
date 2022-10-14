@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dao.mongo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.mongodb.client.model.Filters;
 
@@ -50,6 +51,24 @@ class NeuronSelectionHelper {
         }
         if (neuronSelector.hasTags()) {
             filter.add(Filters.in(qualifier + "tags", neuronSelector.getTags()));
+        }
+        if (neuronSelector.hasExcludedTags()) {
+            filter.add(Filters.nin(qualifier + "tags", neuronSelector.getExcludedTags()));
+        }
+        if (neuronSelector.hasProcessedTags()) {
+            // all filters from a selection are "and"-ed
+            // and all selections are "or"-ed
+            filter.add(
+                    Filters.or(
+                            neuronSelector.getProcessedTagsSelections().stream()
+                                    .map(processedTagsSelection -> Filters.and(
+                                            processedTagsSelection.entrySet().stream()
+                                                    .map(pte -> Filters.in(qualifier + "processedTags" + "." + pte.getKey(), pte.getValue()))
+                                                    .collect(Collectors.toList())
+                                    ))
+                                    .collect(Collectors.toList())
+                    )
+            );
         }
         if (filter.isEmpty()) {
             return NO_FILTER;

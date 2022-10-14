@@ -23,6 +23,7 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.result.UpdateResult;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
@@ -199,5 +200,16 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 MongoDaoHelper.createInFilter("mipId", neuronMIPIds),
                 getUpdates(toUpdate)
         );
+    }
+
+    @Override
+    public long updateAll(NeuronSelector neuronSelector, Map<String, EntityFieldValueHandler<?>> fieldsToUpdate) {
+        if (neuronSelector.isNotEmpty()) {
+            UpdateResult result = mongoCollection.updateMany(
+                    NeuronSelectionHelper.getNeuronFilter(null, neuronSelector),
+                    getUpdates(fieldsToUpdate)
+            );
+            return result.getModifiedCount();
+        } return 0L;
     }
 }

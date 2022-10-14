@@ -97,13 +97,13 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     }
 
     private List<Number> getNeuronEntityIds(NeuronSelector neuronSelector) {
-        if (neuronSelector.isEmpty()) {
-            return Collections.emptyList();
-        } else {
+        if (neuronSelector.isNotEmpty()) {
             return neuronMetadataDao.findNeurons(neuronSelector, new PagedRequest())
                     .getResultList().stream()
                     .map(AbstractNeuronEntity::getEntityId)
                     .collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
         }
     }
 

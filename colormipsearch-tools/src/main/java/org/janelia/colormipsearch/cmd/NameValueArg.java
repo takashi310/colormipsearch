@@ -33,7 +33,7 @@ class NameValueArg {
         }
     }
 
-    NameValueArg(String argName, List<String> argValues) {
+    private NameValueArg(String argName, List<String> argValues) {
         this.argName = argName;
         this.argValues = argValues;
     }

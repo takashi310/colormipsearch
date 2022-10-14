@@ -2,9 +2,12 @@ package org.janelia.colormipsearch.dao;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +21,8 @@ public class NeuronSelector {
     private final Set<String> mipIDs = new HashSet<>(); // matching MIP IDs
     private final Set<Number> entityIds = new HashSet<>(); // matching internal entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
+    private final Set<String> excludedTags = new HashSet<>();
+    private final List<Map<String, Set<String>>> processedTagsSelections = new ArrayList<>();
     public String getNeuronClassname() {
         return neuronClassname;
     }
@@ -143,12 +148,97 @@ public class NeuronSelector {
         return CollectionUtils.isNotEmpty(tags);
     }
 
+    public Set<String> getExcludedTags() {
+        return excludedTags;
+    }
+
+    public NeuronSelector addExcludedTag(String tag) {
+        if (StringUtils.isNotBlank(tag)) this.excludedTags.add(tag);
+        return this;
+    }
+
+    public NeuronSelector addExcludedTags(Collection<String> tags) {
+        if (tags != null) tags.forEach(this::addExcludedTag);
+        return this;
+    }
+
+    public boolean hasExcludedTags() {
+        return CollectionUtils.isNotEmpty(excludedTags);
+    }
+
+    public List<Map<String, Set<String>>> getProcessedTagsSelections() {
+        return processedTagsSelections;
+    }
+
+    public NeuronSelector addNewProcessedTagSelection(String processingType, String tag) {
+        if (StringUtils.isNotBlank(processingType) && StringUtils.isNotBlank(tag)) {
+            processedTagsSelections.add(new HashMap<>());
+            addProcessedTag(processingType, tag);
+        }
+        return this;
+    }
+
+    public NeuronSelector addProcessedTag(String processingType, String tag) {
+        if (StringUtils.isNotBlank(processingType) && StringUtils.isNotBlank(tag)) {
+            if (processedTagsSelections.isEmpty()) {
+                processedTagsSelections.add(new HashMap<>());
+            }
+            Map<String, Set<String>> currentProcessedTagsSelection = processedTagsSelections.get(processedTagsSelections.size()-1);
+            Set<String> processingTags;
+            if (CollectionUtils.isEmpty(currentProcessedTagsSelection.get(processingType))) {
+                processingTags = new HashSet<>();
+                currentProcessedTagsSelection.put(processingType, processingTags);
+            } else {
+                processingTags = currentProcessedTagsSelection.get(processingType);
+            }
+            processingTags.add(tag);
+        }
+        return this;
+    }
+
+    public NeuronSelector addNewProcessedTagsSelection(String processingType, Collection<String> tags) {
+        Set<String> nonEmptyTags = tags.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        if (StringUtils.isNotBlank(processingType) && CollectionUtils.isNotEmpty(nonEmptyTags)) {
+            processedTagsSelections.add(new HashMap<>());
+            addProcessedTags(processingType, nonEmptyTags);
+        }
+        return this;
+    }
+
+    public NeuronSelector addProcessedTags(String processingType, Collection<String> tags) {
+        Set<String> nonEmptyTags = tags.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        if (StringUtils.isNotBlank(processingType) && CollectionUtils.isNotEmpty(nonEmptyTags)) {
+            if (processedTagsSelections.isEmpty()) {
+                processedTagsSelections.add(new HashMap<>());
+            }
+            Map<String, Set<String>> currentProcessedTagsSelection = processedTagsSelections.get(processedTagsSelections.size()-1);
+            Set<String> processingTags;
+            if (CollectionUtils.isEmpty(currentProcessedTagsSelection.get(processingType))) {
+                processingTags = new HashSet<>();
+                currentProcessedTagsSelection.put(processingType, processingTags);
+            } else {
+                processingTags = currentProcessedTagsSelection.get(processingType);
+            }
+            processingTags.addAll(nonEmptyTags);
+        }
+        return this;
+    }
+
+    public boolean hasProcessedTags() {
+        return !processedTagsSelections.isEmpty();
+    }
+
     public boolean isEmpty() {
         return !hasLibraries()
                 && !hasNames()
                 && !hasMipIDs()
                 && !hasEntityIds()
-                && !hasTags();
+                && !hasTags()
+                && !hasExcludedTags()
+                && !hasProcessedTags();
     }
 
+    public boolean isNotEmpty() {
+        return !isEmpty();
+    }
 }
