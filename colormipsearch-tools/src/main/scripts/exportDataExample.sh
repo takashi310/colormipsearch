@@ -22,6 +22,7 @@ ANNOTATOR_MCFO_LIB=flylight_annotator_gen1_mcfo_published
 LM_LIBS="${SGAL4_LIB} ${MCFO_LIB} ${ANNOTATOR_MCFO_LIB}"
 EM_LIBS="${EM_HEMIBRAIN_LIB} ${EM_VNC_0_5_LIB} ${EM_VNC_0_6_LIB}"
 
+URL_TRANSFORM_PARAMS=""
 case $EXPORT_TYPE in
   EM_CD_MATCHES)
     LIBNAME="${EM_LIBS}"
@@ -34,6 +35,13 @@ case $EXPORT_TYPE in
   EM_PPP_MATCHES)
     LIBNAME="${EM_LIBS}"
     SUBDIR=pppmatches/em-vs-lm
+    URL_TRANSFORM_PARAMS="--relative-url-indexes-by-filetype \
+      SignalMipMaskedSkel:2;true \
+      CDMBestThumbnail:2;true \
+      SignalMip:2;true \
+      SignalMipMasked:2;true \
+      CDMSkel:2;true \
+      CDMBest:2;true"
     ;;
   EM_MIPS)
     LIBNAME="${EM_LIBS}"
@@ -78,7 +86,8 @@ $RUNNER java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 
     -l ${LIBNAME} \
     --read-batch-size 2000 \
     -ps 50 \
-    --relativize-urls-to-component 1 \
+    --default-relative-url-index 1 \
+    ${URL_TRANSFORM_PARAMS} \
     -od ${OUTPUT_DIR} \
     --cdsConcurrency 40 \
     --subdir ${SUBDIR} \
