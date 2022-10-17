@@ -59,7 +59,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 DataSourceParam dataSourceParam,
                                 Map<String, Set<String>> publishedAlignmentSpaceAliases,
                                 ScoresFilter scoresFilter,
-                                int relativesUrlsToComponent,
+                                URLTransformer urlTransformer,
                                 ImageStoreMapping imageStoreMapping,
                                 Path outputDir,
                                 Executor executor,
@@ -67,7 +67,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                                 PublishedURLsDao<PPPmURLs> publishedURLsDao,
                                 ItemsWriterToJSONFile resultMatchesWriter,
                                 int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
+        super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
         this.publishedAlignmentSpaceAliases = publishedAlignmentSpaceAliases;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
@@ -196,19 +196,19 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setSlideCode(sample.slideCode);
             lmNeuron.setGender(Gender.fromVal(sample.gender));
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
-            lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(lm3DStackURL));
+            lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(FileType.VisuallyLosslessStack, lm3DStackURL));
             updateFileStore(lmNeuron);
             if (pppMatch.hasSourceImageFiles() && publishedURLs.containsKey(pppMatch.getMatchInternalId())) {
                 pppMatch.getSourceImageFilesTypes().forEach(screenshotType -> {
                     PPPmURLs urls = publishedURLs.get(pppMatch.getMatchInternalId());
                     pppMatch.setMatchFile(
                             screenshotType.getFileType(),
-                            relativizeURL(urls.getURLFor(screenshotType.name(), null))
+                            relativizeURL(screenshotType.getFileType(), urls.getURLFor(screenshotType.name(), null))
                     );
                     if (screenshotType.hasThumnail()) {
                         pppMatch.setMatchFile(
                                 screenshotType.getThumbnailFileType(),
-                                relativizeURL(urls.getThumbnailURLFor(screenshotType.name()))
+                                relativizeURL(screenshotType.getThumbnailFileType(), urls.getThumbnailURLFor(screenshotType.name()))
                         );
                     }
                 });

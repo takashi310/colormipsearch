@@ -35,14 +35,14 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                ScoresFilter scoresFilter,
-                               int relativesUrlsToComponent,
+                               URLTransformer urlTransformer,
                                ImageStoreMapping imageStoreMapping,
                                Path outputDir,
                                Executor executor,
                                NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, relativesUrlsToComponent, imageStoreMapping, outputDir, executor, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override

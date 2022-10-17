@@ -29,6 +29,7 @@ import org.janelia.colormipsearch.cmd.dataexport.ImageStoreKey;
 import org.janelia.colormipsearch.cmd.dataexport.ImageStoreMapping;
 import org.janelia.colormipsearch.cmd.dataexport.LMCDMatchesExporter;
 import org.janelia.colormipsearch.cmd.dataexport.MIPsExporter;
+import org.janelia.colormipsearch.cmd.dataexport.URLTransformer;
 import org.janelia.colormipsearch.cmd.dataexport.ValidatingSerializerModifier;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
@@ -41,6 +42,7 @@ import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 
 /**
@@ -96,8 +98,15 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--read-batch-size"}, description = "JACS read chunk size")
         int readBatchSize = 1000;
 
-        @Parameter(names = {"--relativize-urls-to-component"}, description = "URLs are relative to the specified component")
-        int relativesUrlsToComponent = -1;
+        @Parameter(names = {"--default-relative-url-index"},
+                description = "default index value used to create the relative URLs")
+        int defaultRelativeURLIndex = -1;
+
+        @Parameter(names = {"--relative-url-indexes-by-filetype"},
+                converter = NameValueArg.NameArgConverter.class,
+                variableArity = true,
+                description = "index values used to create the relative URLs for specific filetypes")
+        List<NameValueArg> relativeURLIndexesByFileType = new ArrayList<>();
 
         @Parameter(names = {"--offset"}, description = "Offset of the exported data")
         long offset = 0;
@@ -115,7 +124,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 description = "Image stores per neuron metadata; the mapping must be based on the internal alignmentSpace and optionally library name;" +
                         "to define the store name based on the alignment space and library set the argument use both values separated by a comma like this: " +
                         "<as>,<libraryName>:<storeName>; to define the store based on alignment space use: <as>:<storeName>, " +
-                        "e.g., JRC2018_Unisex_20x_HR,flyem_hemibrain_1_2_1:brain-store JRC2018_VNC_Unisex_40x_DS:vnc-store",
+                        "e.g., JRC2018_Unisex_20x_HR;flyem_hemibrain_1_2_1:brain-store JRC2018_VNC_Unisex_40x_DS:vnc-store",
                 converter = MultiKeyValueArg.MultiKeyValueArgConverter.class,
                 variableArity = true)
         List<MultiKeyValueArg> imageStoresPerMetadata = new ArrayList<>();
@@ -220,14 +229,14 @@ class ExportData4NBCmd extends AbstractCmd {
                         (s1, s2) -> s2 // resolve the conflict by returning the last value
                 ))
         );
-
+        URLTransformer urlTransformer = createURLTransformer();
         switch (args.exportedResultType) {
             case EM_CD_MATCHES:
                 return new EMCDMatchesExporter(
                         dataHelper,
                         dataSource,
                         getCDScoresFilter(),
-                        args.relativesUrlsToComponent,
+                        urlTransformer,
                         imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
@@ -244,7 +253,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataHelper,
                         dataSource,
                         getCDScoresFilter(),
-                        args.relativesUrlsToComponent,
+                        urlTransformer,
                         imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
@@ -262,7 +271,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataSource,
                         publishedAlignmentSpaceAliases,
                         getPPPScoresFilter(),
-                        args.relativesUrlsToComponent,
+                        urlTransformer,
                         imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
@@ -279,7 +288,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new MIPsExporter(
                         dataHelper,
                         dataSource,
-                        args.relativesUrlsToComponent,
+                        urlTransformer,
                         imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
@@ -292,7 +301,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new MIPsExporter(
                         dataHelper,
                         dataSource,
-                        args.relativesUrlsToComponent,
+                        urlTransformer,
                         imageStoreMapping,
                         args.getOutputResultsDir(),
                         exportsExecutor,
@@ -306,4 +315,27 @@ class ExportData4NBCmd extends AbstractCmd {
         }
     }
 
+    private URLTransformer createURLTransformer() {
+        Map<FileType, URLTransformer.URLTransformerParams> urlTransformParamsByFileType =
+                args.relativeURLIndexesByFileType
+                        .stream()
+                        .collect(Collectors.toMap(
+                            nv -> FileType.valueOf(nv.getArgName()),
+                            nv -> {
+                                int urlStartPos = Integer.parseInt(nv.getArgValues().get(0));
+                                boolean changeNonHttpURIs;
+                                if (nv.getArgValues().size() > 1) {
+                                    changeNonHttpURIs = Boolean.parseBoolean(nv.getArgValues().get(1));
+                                } else {
+                                    changeNonHttpURIs = false;
+                                }
+                                return new URLTransformer.URLTransformerParams(urlStartPos, changeNonHttpURIs);
+                            },
+                            (v1, v2) -> v2
+                        ));
+        return new URLTransformer(
+            args.defaultRelativeURLIndex,
+            urlTransformParamsByFileType
+        );
+    }
 }

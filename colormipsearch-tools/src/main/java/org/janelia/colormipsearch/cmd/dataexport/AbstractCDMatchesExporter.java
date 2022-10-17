@@ -44,14 +44,14 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     protected AbstractCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                         DataSourceParam dataSourceParam,
                                         ScoresFilter scoresFilter,
-                                        int relativesUrlsToComponent,
+                                        URLTransformer urlTransformer,
                                         ImageStoreMapping imageStoreMapping,
                                         Path outputDir,
                                         Executor executor,
                                         NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
+        super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.resultMatchesWriter = resultMatchesWriter;
@@ -124,7 +124,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                     LOG.error("No default searchable neuron set for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
                 }
             } else {
-                target.setMatchFile(FileType.CDMInput, relativizeURL(maskImageURL));
+                target.setMatchFile(FileType.CDMInput, relativizeURL(FileType.CDMInput, maskImageURL));
             }
             NeuronPublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
             String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
@@ -146,7 +146,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                     LOG.error("No default searchable neuron set for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
                 }
             } else {
-                target.setMatchFile(FileType.CDMMatch, relativizeURL(tagetImageURL));
+                target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
             }
             if (!StringUtils.equals(maskImageStore, targetImageStore)) {
                 LOG.error("Image stores for mask {} and target {} do not match - this will become a problem when viewing this match",

@@ -39,7 +39,7 @@ public class MIPsExporter extends AbstractDataExporter {
 
     public MIPsExporter(CachedDataHelper jacsDataHelper,
                         DataSourceParam dataSourceParam,
-                        int relativesUrlsToComponent,
+                        URLTransformer urlTransformer,
                         ImageStoreMapping imageStoreMapping,
                         Path outputDir,
                         Executor executor,
@@ -47,7 +47,7 @@ public class MIPsExporter extends AbstractDataExporter {
                         ItemsWriterToJSONFile mipsWriter,
                         int processingPartitionSize,
                         Class<? extends AbstractNeuronMetadata> exportedClasstype) {
-        super(jacsDataHelper, dataSourceParam, relativesUrlsToComponent, imageStoreMapping, outputDir, executor);
+        super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
         this.neuronMetadataDao = neuronMetadataDao;
         this.mipsWriter = mipsWriter;
         this.processingPartitionSize = processingPartitionSize;

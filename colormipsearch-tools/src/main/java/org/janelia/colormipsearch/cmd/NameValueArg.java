@@ -8,7 +8,7 @@ import com.beust.jcommander.IStringConverter;
 
 import org.apache.commons.lang3.StringUtils;
 
-class NameValueArg {
+public class NameValueArg {
 
     static class NameArgConverter implements IStringConverter<NameValueArg> {
         @Override
@@ -38,8 +38,17 @@ class NameValueArg {
         this.argValues = argValues;
     }
 
-    String argName;
-    List<String> argValues;
+    final String argName;
+    final List<String> argValues;
+
+
+    public String getArgName() {
+        return argName;
+    }
+
+    public List<String> getArgValues() {
+        return argValues;
+    }
 
     @Override
     public String toString() {

@@ -22,20 +22,20 @@ public abstract class AbstractDataExporter implements DataExporter {
 
     final CachedDataHelper dataHelper;
     final DataSourceParam dataSourceParam;
-    private final int relativesUrlsToComponent;
+    private final URLTransformer urlTransformer;
     private final ImageStoreMapping imageStoreMapping;
     final Path outputDir;
     final Executor executor;
 
     protected AbstractDataExporter(CachedDataHelper dataHelper,
                                    DataSourceParam dataSourceParam,
-                                   int relativesUrlsToComponent,
+                                   URLTransformer urlTransformer,
                                    ImageStoreMapping imageStoreMapping,
                                    Path outputDir,
                                    Executor executor) {
         this.dataHelper = dataHelper;
         this.dataSourceParam = dataSourceParam;
-        this.relativesUrlsToComponent = relativesUrlsToComponent;
+        this.urlTransformer = urlTransformer;
         this.imageStoreMapping = imageStoreMapping;
         this.outputDir = outputDir;
         this.executor = executor;
@@ -76,21 +76,8 @@ public abstract class AbstractDataExporter implements DataExporter {
         neuronMetadata.setNeuronFile(FileType.store, imageStoreMapping.getImageStore(neuronMetadata));
     }
 
-    String relativizeURL(String aUrl) {
-        if (StringUtils.isBlank(aUrl)) {
-            return "";
-        } else if (StringUtils.startsWithIgnoreCase(aUrl, "https://") ||
-                StringUtils.startsWithIgnoreCase(aUrl, "http://")) {
-            if (relativesUrlsToComponent >= 0) {
-                URI uri = URI.create(aUrl.replace(' ', '+'));
-                Path uriPath = Paths.get(uri.getPath());
-                return uriPath.subpath(relativesUrlsToComponent,  uriPath.getNameCount()).toString();
-            } else {
-                return aUrl;
-            }
-        } else {
-            return aUrl;
-        }
+    String relativizeURL(FileType ft, String aUrl) {
+        return urlTransformer.relativizeURL(ft, aUrl);
     }
 
 }

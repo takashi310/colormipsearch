@@ -22,7 +22,7 @@ public enum FileType {
     PPPMResults // the name of the results file containing PPP matches
     ;
 
-    private String optionalFileSuffix; // optional suffix used only by the PPP image files
+    private final String optionalFileSuffix; // optional suffix used only by the PPP image files
 
     FileType() {
         this(null);

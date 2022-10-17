@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.dto;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import javax.validation.GroupSequence;
@@ -201,10 +202,10 @@ public abstract class AbstractNeuronMetadata {
         }
     }
 
-    public void transformAllNeuronFiles(Function<String, String> fileNameMap) {
+    public void transformAllNeuronFiles(BiFunction<FileType, String, String> fileNameMap) {
         Set<FileType> neuronFileTypes = neuronFiles.keySet();
         neuronFileTypes.forEach(
-                ft -> setNeuronFile(ft, fileNameMap.apply(getNeuronFile(ft)))
+                ft -> setNeuronFile(ft, fileNameMap.apply(ft, getNeuronFile(ft)))
         );
     }
 
