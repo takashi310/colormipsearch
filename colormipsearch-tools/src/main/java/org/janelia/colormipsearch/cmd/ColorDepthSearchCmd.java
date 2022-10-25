@@ -68,7 +68,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
         @Parameter(names = {"--masks", "-m"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Image file(s) to use as the search masks")
-        List<ListArg> masksInputs;
+        List<ListArg> masksLibraries;
 
         @Parameter(names = {"--masks-index"}, description = "Mask file(s) start index")
         long masksStartIndex;
@@ -78,7 +78,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
         @Parameter(names = {"--targets", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
                 description = "Comma-delimited list of JSON configs containing images to search")
-        List<ListArg> targetsInputs;
+        List<ListArg> targetsLibraries;
 
         @Parameter(names = {"--targets-index"}, description = "Input image file(s) start index")
         long targetsStartIndex;
@@ -158,14 +158,14 @@ class ColorDepthSearchCmd extends AbstractCmd {
         ColorMIPSearch colorMIPSearch = new ColorMIPSearch(args.pctPositivePixels, args.maskThreshold, cdsAlgorithmProvider);
         @SuppressWarnings("unchecked")
         List<M> maskMips = (List<M>) readMIPs(cdmipsReader,
-                args.masksInputs,
+                args.masksLibraries,
                 args.masksPublishedNames,
                 args.masksTags,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
         List<T> targetMips = (List<T>) readMIPs(cdmipsReader,
-                args.targetsInputs,
+                args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsTags,
                 args.targetsStartIndex, args.targetsLength,
@@ -177,7 +177,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
         Set<String> processingTags = Collections.singleton(args.getProcessingTag());
         // save CDS parameters
         Number cdsRunId = getCDSSessionWriter().createSession(
-                args.masksInputs.stream()
+                args.masksLibraries.stream()
                         .map(larg -> new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(larg.input)
@@ -185,7 +185,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
                         .collect(Collectors.toList()),
-                args.targetsInputs.stream()
+                args.targetsLibraries.stream()
                         .map(larg -> new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(larg.input)
@@ -287,13 +287,13 @@ class ColorDepthSearchCmd extends AbstractCmd {
     }
 
     private List<? extends AbstractNeuronEntity> readMIPs(CDMIPsReader mipsReader,
-                                                          List<ListArg> mipsArg,
+                                                          List<ListArg> mipsLibraries,
                                                           List<String> mipsPublishedNames,
                                                           List<String> mipsTags,
                                                           long startIndexArg, int length,
                                                           Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
-        List<? extends AbstractNeuronEntity> allMips = mipsArg.stream()
+        List<? extends AbstractNeuronEntity> allMips = mipsLibraries.stream()
                 .flatMap(libraryInput -> mipsReader.readMIPs(
                         new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
