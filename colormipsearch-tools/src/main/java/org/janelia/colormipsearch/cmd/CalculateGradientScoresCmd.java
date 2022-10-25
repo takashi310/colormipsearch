@@ -68,13 +68,18 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
         String alignmentSpace;
 
-        @Parameter(names = {"--matchesDir", "-md"}, required = true, variableArity = true,
+        @Parameter(names = {"--masks-matches-dir", "-md"}, required = true, variableArity = true,
                 converter = ListArg.ListArgConverter.class,
                 description = "Argument containing matches resulted from a color depth search process. " +
-                        "This can be a directory of JSON files, a list of specific JSON files or some `DB selector`")
-        List<ListArg> matches;
+                        "This can be a directory of JSON files, a list of specific JSON files or the masks libraries")
+        List<ListArg> masksMatches;
 
-        @Parameter(names = {"--mask-tags"}, description = "Tags associated with the mask of the match to be scored", variableArity = true)
+        @Parameter(names = {"--masks-published-names"}, description = "Masks published names to be selected for gradient scoring",
+                variableArity = true)
+        List<String> masksPublishedNames = new ArrayList<>();
+
+        @Parameter(names = {"--mask-tags"}, description = "Tags associated with the mask of the match to be scored",
+                variableArity = true)
         List<String> maskTags = new ArrayList<>();
 
         @Parameter(names = {"--match-tags"}, description = "Match tags to be scored", variableArity = true)
@@ -138,13 +143,14 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(
-                args.matches.stream()
+                args.masksMatches.stream()
                         .map(larg -> new DataSourceParam()
-                                        .setAlignmentSpace(args.alignmentSpace)
-                                        .addLibrary(larg.input)
-                                        .addTags(args.maskTags)
-                                        .setOffset(larg.offset)
-                                        .setSize(larg.length))
+                                .setAlignmentSpace(args.alignmentSpace)
+                                .addLibrary(larg.input)
+                                .addNames(args.masksPublishedNames)
+                                .addTags(args.maskTags)
+                                .setOffset(larg.offset)
+                                .setSize(larg.length))
                 .collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);

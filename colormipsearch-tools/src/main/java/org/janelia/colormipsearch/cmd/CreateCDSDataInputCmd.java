@@ -134,6 +134,10 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
         int segmentedImageChannelBase = 1;
 
+        @Parameter(names = {"--included-published-names"}, variableArity = true,
+                description = "Comma-delimited list of published names to be processed")
+        List<String> includedPublishedNames;
+
         @Parameter(names = {"--excluded-neurons"}, variableArity = true,
                 description = "Comma-delimited list of LM slide codes or EM body ids to be excluded from the requested list")
         List<String> excludedNeurons;
@@ -194,7 +198,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
     @Override
     void execute() {
         Map<String, List<LibraryVariantArg>> libraryVariants = getLibraryVariants();
-        Set<String> excludedNeurons = getExcludedNeurons();
 
         LibraryPathsArgs lpaths = new LibraryPathsArgs();
         lpaths.library = args.library;
@@ -207,7 +210,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     serverEndpoint,
                     lpaths,
                     getAllVariantsForColorDepthInput(),
-                    excludedNeurons
+                    getAsSet(args.includedPublishedNames),
+                    getAsSet(args.excludedNeurons)
             );
         } else {
             // offline mode is not supported yet in this version
@@ -225,17 +229,18 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         return libraryVariants;
     }
 
-    private Set<String> getExcludedNeurons() {
-        if (CollectionUtils.isEmpty(args.excludedNeurons)) {
+    private Set<String> getAsSet(List<String> aList) {
+        if (CollectionUtils.isEmpty(aList)) {
             return Collections.emptySet();
         } else {
-            return new HashSet<>(args.excludedNeurons);
+            return new HashSet<>(aList);
         }
     }
 
     private void createColorDepthSearchInputData(WebTarget serverEndpoint,
                                                  LibraryPathsArgs libraryPaths,
                                                  Set<String> computationInputVariantTypes,
+                                                 Set<String> includedPublishedNames,
                                                  Set<String> excludedNeurons) {
 
         int cdmsCount = countColorDepthMips(
@@ -296,6 +301,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                             .stream()
                             .map(n -> new InputCDMipNeuron<>(cdmip.getSourceMIP(), n))
                     )
+                    .filter(cdmip -> CollectionUtils.isEmpty(includedPublishedNames) || CollectionUtils.containsAny(includedPublishedNames, cdmip.getNeuronMetadata().getPublishedName()))
                     .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip.getNeuronMetadata().getNeuronId()))
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip,

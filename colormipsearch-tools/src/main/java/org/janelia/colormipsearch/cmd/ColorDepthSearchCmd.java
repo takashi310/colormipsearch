@@ -181,6 +181,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         .map(larg -> new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(larg.input)
+                                .addNames(args.masksPublishedNames)
                                 .addTags(args.masksTags)
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
@@ -189,6 +190,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         .map(larg -> new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(larg.input)
+                                .addNames(args.targetsPublishedNames)
                                 .addTags(args.targetsTags)
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
@@ -218,6 +220,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
             NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
             cdsResultsWriter.write(cdsResults);
         } finally {
+            LOG.info("Set processing tags to {}:{}", ProcessingType.ColorDepthSearch, processingTags);
             // update the mips processing tags
             getCDMipsWriter().ifPresent(cdmiPsWriter -> {
                 cdmiPsWriter.addProcessingTags(
