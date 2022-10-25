@@ -162,8 +162,12 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                     indexedPartition.getValue().forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
+                        long nPublishedLines = cdMatchesForMask.stream()
+                                .map(cdm -> cdm.getMatchedImage().getPublishedName())
+                                .distinct()
+                                .count();
                         // calculate the grad scores
-                        LOG.info("Calculate grad scores for {} matches of {}", cdMatchesForMask.size(), maskIdToProcess);
+                        LOG.info("Calculate grad scores for {} ({} lines) matches of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWithGradScores = calculateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesForMask,
