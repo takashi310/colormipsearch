@@ -92,6 +92,12 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--targets-tags"}, description = "Targets MIPs tags to be selected for CDS", variableArity = true)
         List<String> targetsTags;
 
+        @Parameter(names = {"--masks-published-names"}, description = "Masks MIPs published names to be selected for CDS", variableArity = true)
+        List<String> masksPublishedNames;
+
+        @Parameter(names = {"--targets-published-names"}, description = "Targets MIPs published names to be selected for CDS", variableArity = true)
+        List<String> targetsPublishedNames;
+
         @Parameter(names = {"--processing-tag"}, required = true,
                 description = "Associate this tag with the run. Also all MIPs that are color depth searched will be stamped with this processing tag")
         String processingTag;
@@ -153,12 +159,14 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @SuppressWarnings("unchecked")
         List<M> maskMips = (List<M>) readMIPs(cdmipsReader,
                 args.masksInputs,
+                args.masksPublishedNames,
                 args.masksTags,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
         List<T> targetMips = (List<T>) readMIPs(cdmipsReader,
                 args.targetsInputs,
+                args.targetsPublishedNames,
                 args.targetsTags,
                 args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
@@ -280,6 +288,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
     private List<? extends AbstractNeuronEntity> readMIPs(CDMIPsReader mipsReader,
                                                           List<ListArg> mipsArg,
+                                                          List<String> mipsPublishedNames,
                                                           List<String> mipsTags,
                                                           long startIndexArg, int length,
                                                           Set<String> filter) {
@@ -289,6 +298,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(libraryInput.input)
+                                .addNames(mipsPublishedNames)
                                 .addTags(mipsTags)
                                 .setOffset(libraryInput.offset)
                                 .setSize(libraryInput.length)).stream())
