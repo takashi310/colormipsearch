@@ -167,7 +167,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 .distinct()
                                 .count();
                         // calculate the grad scores
-                        LOG.info("Calculate grad scores for {} MIP matches (belonging to {} lines) of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
+                        LOG.info("Calculate grad scores for {} MIP ({} line) matches of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWithGradScores = calculateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesForMask,
