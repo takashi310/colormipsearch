@@ -68,19 +68,30 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
         String alignmentSpace;
 
-        @Parameter(names = {"--masks-matches-dir", "-md"}, required = true, variableArity = true,
+        @Parameter(names = {"--masks-libraries", "-md"}, required = true, variableArity = true,
                 converter = ListArg.ListArgConverter.class,
-                description = "Argument containing matches resulted from a color depth search process. " +
-                        "This can be a directory of JSON files, a list of specific JSON files or the masks libraries")
-        List<ListArg> masksMatches;
+                description = "Masks libraries; for JSON results this is interpreted as the location of the match files")
+        List<ListArg> masksLibraries;
 
         @Parameter(names = {"--masks-published-names"}, description = "Masks published names to be selected for gradient scoring",
                 variableArity = true)
         List<String> masksPublishedNames = new ArrayList<>();
 
+        @Parameter(names = {"--masks-mips"}, description = "Selected mask MIPs", variableArity = true)
+        List<String> masksMIPIDs;
+
         @Parameter(names = {"--mask-tags"}, description = "Tags associated with the mask of the match to be scored",
                 variableArity = true)
         List<String> maskTags = new ArrayList<>();
+
+        @Parameter(names = {"--targets-libraries"}, description = "Target libraries for the selected matches", variableArity = true)
+        List<String> targetsLibraries;
+
+        @Parameter(names = {"--targets-published-names"}, description = "Selected target names", variableArity = true)
+        List<String> targetsPublishedNames;
+
+        @Parameter(names = {"--targets-mips"}, description = "Selected target MIPs", variableArity = true)
+        List<String> targetsMIPIDs;
 
         @Parameter(names = {"--match-tags"}, description = "Match tags to be scored", variableArity = true)
         List<String> matchTags = new ArrayList<>();
@@ -143,11 +154,12 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(
-                args.masksMatches.stream()
+                args.masksLibraries.stream()
                         .map(larg -> new DataSourceParam()
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(larg.input)
                                 .addNames(args.masksPublishedNames)
+                                .addMipIDs(args.masksMIPIDs)
                                 .addTags(args.maskTags)
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
@@ -299,6 +311,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 null,
                 Collections.singletonList(maskCDMipId),
                 neuronsMatchScoresFilter,
+                args.targetsLibraries,
+                args.targetsPublishedNames,
+                args.targetsMIPIDs,
                 args.matchTags,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)

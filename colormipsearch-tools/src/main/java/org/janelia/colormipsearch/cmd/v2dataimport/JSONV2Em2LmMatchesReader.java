@@ -100,6 +100,9 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                                                                    Collection<String> maskLibraries,
                                                                                    Collection<String> maskMipIds,
                                                                                    ScoresFilter matchScoresFilter,
+                                                                                   Collection<String> targetLibraries,
+                                                                                   Collection<String> targetPublishedNames,
+                                                                                   Collection<String> targetMipIds,
                                                                                    Collection<String> matchTags,
                                                                                    List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()

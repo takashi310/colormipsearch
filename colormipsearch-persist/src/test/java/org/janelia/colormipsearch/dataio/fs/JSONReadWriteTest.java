@@ -91,12 +91,15 @@ public class JSONReadWriteTest {
                 .forEach(f -> {
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
                             em2lmMatchesReader.readMatchesForMasks(
-                                    null,
-                                    null,
+                                    null /* alignmentSpace */,
+                                    null /* maskLibraries */,
                                     Collections.singletonList(f),
-                                    null,
-                                    null,
-                                    null);
+                                    null /* matchScoresFilter */,
+                                    null /* targetLibraries */,
+                                    null /* targetPublishedNames */,
+                                    null /* targetMIPIDs */,
+                                    null /* matchTags */,
+                                    null /* sortCriteria */);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testMatchesWithSameMask = cdMatches.stream()

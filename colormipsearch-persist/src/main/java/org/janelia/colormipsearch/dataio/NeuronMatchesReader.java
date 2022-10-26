@@ -27,7 +27,10 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param maskLibraries masks libraries
      * @param maskMipIds mask MIPs
      * @param matchScoresFilter additional matches scores filter
-     * @param matchTags
+     * @param targetLibraries filter for the target libraries
+     * @param targetPublishedNames filter for the target published names
+     * @param targetMipIds filter for the target MIPs
+     * @param matchTags filter for the match tags
      * @param sortCriteriaList
      * @return
      */
@@ -35,6 +38,9 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                                 Collection<String> maskLibraries,
                                 Collection<String> maskMipIds,
                                 ScoresFilter matchScoresFilter,
+                                Collection<String> targetLibraries,
+                                Collection<String> targetPublishedNames,
+                                Collection<String> targetMipIds,
                                 Collection<String> matchTags,
                                 List<SortCriteria> sortCriteriaList);
 

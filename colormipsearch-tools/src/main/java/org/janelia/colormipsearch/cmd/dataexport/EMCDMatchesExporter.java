@@ -70,6 +70,9 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     null, // no mask library specified - we use mask MIP
                     Collections.singletonList(maskId),
                     scoresFilter,
+                    null /* targetLibraries */,
+                    null /* targetPublishedNames */,
+                    null /* targetMIPIDs */,
                     null, // use the tags for selecting the masks but not for selecting the matches
                     null // no sorting because it uses too much memory on the server
             );

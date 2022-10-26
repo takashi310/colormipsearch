@@ -67,10 +67,17 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                        Collection<String> maskLibraries,
                                        Collection<String> maskMipIds,
                                        ScoresFilter matchScoresFilter,
+                                       Collection<String> targetLibraries,
+                                       Collection<String> targetPublishedNames,
+                                       Collection<String> targetMipIds,
                                        Collection<String> matchTags,
                                        List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace).addLibraries(maskLibraries).addMipIDs(maskMipIds);
-        NeuronSelector targetSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
+        NeuronSelector targetSelector = new NeuronSelector()
+                .setAlignmentSpace(alignmentSpace)
+                .addLibraries(targetLibraries)
+                .addNames(targetPublishedNames)
+                .addMipIDs(targetMipIds);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setMaskEntityIds(getNeuronEntityIds(maskSelector))
