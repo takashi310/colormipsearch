@@ -262,8 +262,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
         }
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesWriter<CDMatchEntity<M, T>>
-    getCDSMatchesWriter() {
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
+    NeuronMatchesWriter<CDMatchEntity<M, T>> getCDSMatchesWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             DaosProvider daosProvider = getDaosProvider();
             if (args.updateExistingMatches) {
