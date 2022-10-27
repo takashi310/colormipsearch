@@ -29,6 +29,7 @@ public class DBCDScoresOnlyWriter<R extends CDMatchEntity<? extends AbstractNeur
     private final NeuronMatchesDao<R> neuronMatchesDao;
     private final List<Function<R, Pair<String, ?>>> fieldsToUpdate =
             Arrays.asList(
+                    m -> ImmutablePair.of("mirrored", m.isMirrored()),
                     m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
                     m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
                     m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
