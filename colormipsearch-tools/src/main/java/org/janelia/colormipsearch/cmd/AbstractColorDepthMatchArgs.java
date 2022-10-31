@@ -33,7 +33,7 @@ class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = {"--negativeRadius"}, description = "Radius for gradient based score adjustment (negative radius)")
     int negativeRadius = 20;
 
-    @Parameter(names = {"--mirrorMask"}, description = "Should the mask be mirrored across the Y axis?")
+    @Parameter(names = {"--mirrorMask"}, description = "Should the mask be mirrored across the Y axis?", arity = 0)
     boolean mirrorMask = false;
 
     @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
