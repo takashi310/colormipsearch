@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dao.mongo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -12,10 +13,12 @@ import java.util.stream.Stream;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
-import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UnwindOptions;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.WriteModel;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -100,13 +103,52 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
 
     @Override
     public void createOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+        List<WriteModel<R>> toWrite = new ArrayList<>();
+
         matches.forEach(m -> {
-            if (isIdentifiable(m)) {
-                findAndUpdate(m, fieldsToUpdateSelectors);
+            if (!m.hasEntityId() && !hasBothImageRefs(m)) {
+                m.setEntityId(idGenerator.generateId());
+                m.setCreatedDate(new Date());
+                toWrite.add(new InsertOneModel<>(m));
             } else {
-                save(m);
+                Bson selectCriteria;
+                Stream<EntityFieldNameValueHandler<?>> onCreateSetters;
+
+                UpdateOptions updateOptions = new UpdateOptions();
+                if (m.hasEntityId()) {
+                    // select by entity ID
+                    selectCriteria = MongoDaoHelper.createFilterById(m);
+                    onCreateSetters = Stream.of();
+                } else {
+                    m.setEntityId(idGenerator.generateId());
+                    m.setCreatedDate(new Date());
+                    updateOptions.upsert(true);
+                    // select by Image Ref IDs
+                    selectCriteria = MongoDaoHelper.createBsonFilterCriteria(
+                            Arrays.asList(
+                                    MongoDaoHelper.createEqFilter("maskImageRefId", m.getMaskImageRefId()),
+                                    MongoDaoHelper.createEqFilter("matchedImageRefId", m.getMatchedImageRefId())
+                            )
+                    );
+                    onCreateSetters = Stream.of(
+                            new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(m.getEntityId())),
+                            new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(m.getCreatedDate()))
+                    );
+                }
+                Bson updates = getUpdates(
+                        Stream.concat(
+                                onCreateSetters,
+                                fieldsToUpdateSelectors.stream()
+                                        .map(fieldSelector -> fieldSelector.apply(m))
+                                        .map(p -> new EntityFieldNameValueHandler<>(p.getLeft(), new SetFieldValueHandler<>(p.getRight())))
+                        ).collect(Collectors.toMap(
+                                EntityFieldNameValueHandler::getFieldName,
+                                EntityFieldNameValueHandler::getValueHandler))
+                );
+                toWrite.add(new UpdateOneModel<R>(selectCriteria, updates, updateOptions));
             }
         });
+        mongoCollection.bulkWrite(toWrite);
     }
 
     @Override
@@ -175,49 +217,8 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         return pipeline;
     }
 
-    private void findAndUpdate(R match, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
-        FindOneAndUpdateOptions updateOptions = new FindOneAndUpdateOptions();
-        updateOptions.upsert(true);
-        updateOptions.returnDocument(ReturnDocument.AFTER);
-        List<Bson> selectFilters = new ArrayList<>();
-        Stream<EntityFieldNameValueHandler<?>> createSetters;
-        if (!match.hasEntityId()) {
-            // set entity ID just in case we need to insert it
-            match.setEntityId(idGenerator.generateId());
-            match.setCreatedDate(new Date());
-            createSetters = Stream.of(
-                    new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(match.getEntityId())),
-                    new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(match.getCreatedDate()))
-            );
-            selectFilters.add(MongoDaoHelper.createFilterByClass(match.getClass()));
-        } else {
-            createSetters = Stream.of();
-            selectFilters.add(MongoDaoHelper.createFilterById(match.getEntityId()));
-        }
-        if (match.hasMaskImageRefId() && match.hasMatchedImageRefId()) {
-            selectFilters.add(MongoDaoHelper.createEqFilter("maskImageRefId", match.getMaskImageRefId()));
-            selectFilters.add(MongoDaoHelper.createEqFilter("matchedImageRefId", match.getMatchedImageRefId()));
-        }
-
-        mongoCollection.findOneAndUpdate(
-                MongoDaoHelper.createBsonFilterCriteria(selectFilters),
-                getUpdates(
-                        Stream.concat(
-                                createSetters,
-                                fieldsToUpdateSelectors.stream()
-                                        .map(fieldSelector -> fieldSelector.apply(match))
-                                        .map(p -> new EntityFieldNameValueHandler<>(p.getLeft(), new SetFieldValueHandler<>(p.getRight())))
-                                )
-                                .collect(Collectors.toMap(
-                                        EntityFieldNameValueHandler::getFieldName,
-                                        EntityFieldNameValueHandler::getValueHandler))
-                ),
-                updateOptions
-        );
-    }
-
-    private boolean isIdentifiable(R match) {
-        return match.hasEntityId() || (match.hasMaskImageRefId() && match.hasMatchedImageRefId());
+    private boolean hasBothImageRefs(R match) {
+        return match.hasMaskImageRefId() && match.hasMatchedImageRefId();
     }
 
 }
