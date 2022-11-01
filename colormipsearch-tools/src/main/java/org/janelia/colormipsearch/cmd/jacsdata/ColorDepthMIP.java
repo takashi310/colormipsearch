@@ -22,7 +22,6 @@ import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 public class ColorDepthMIP implements Serializable {
     private static final String UPLOADED_COLOR_DEPTH_MIP_KEY = "cdm";
     private static final String UPLOADED_COLOR_DEPTH_MIP_THUMBNAIL_KEY = "cdm_thumbnail";
-    private static final String UPLOADED_COLOR_DEPTH_INPUT_KEY = "searchable_neurons";
     private static final String UPLOADED_SWC_KEY = "skeletonswc";
     private static final String UPLOADED_OBJ_KEY = "skeletonobj";
 

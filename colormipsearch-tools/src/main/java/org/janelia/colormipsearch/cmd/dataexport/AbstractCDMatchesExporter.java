@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractCDMatchesExporter.class);
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
-    private static final String DEFAULT_SEARCHABLE_NEURON_PATH = "%s/%s/searchable_neurons/pngs/%s";
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
     final ItemsWriterToJSONFile resultMatchesWriter;
@@ -110,19 +109,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             NeuronPublishedURLs maskPublishedURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
             String maskImageURL = getSearchableNeuronURL(maskPublishedURLs);
             if (maskImageURL == null) {
+                // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
+                // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
                 LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                String maskInputImageName = target.getMatchFile(FileType.CDMInput);
-                String imageName = getMIPFileName(maskInputImageName, maskSourceImageName, maskMipImageName);
-                String searchableNeuronPath = String.format(DEFAULT_SEARCHABLE_NEURON_PATH,
-                        resultMatches.getKey().getAlignmentSpace(),
-                        resultMatches.getKey().getLibraryName(),
-                        imageName);
-                if (StringUtils.isNotBlank(searchableNeuronPath)) {
-                    LOG.warn("Use default - {} - searchable neuron set for match mask {}:{} -> {}", searchableNeuronPath, target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                    target.setMatchFile(FileType.CDMInput, searchableNeuronPath);
-                } else {
-                    LOG.error("No default searchable neuron set for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                }
             } else {
                 target.setMatchFile(FileType.CDMInput, relativizeURL(FileType.CDMInput, maskImageURL));
             }
@@ -130,21 +119,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
             String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
             String tagetImageURL = getSearchableNeuronURL(targetPublishedURLs);
             if (tagetImageURL == null) {
+                // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
+                // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
                 LOG.error("No published URLs or no searchable neuron URL for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                String targetInputImageName = target.getMatchFile(FileType.CDMMatch);
-                String targetSourceImageName = target.getTargetImage().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-                String targetMipImageName = target.getTargetImage().getNeuronFile(FileType.CDM);
-                String imageName = getMIPFileName(targetInputImageName, targetSourceImageName, targetMipImageName);
-                if (StringUtils.isNotBlank(imageName)) {
-                    String searchableNeuronPath = String.format(DEFAULT_SEARCHABLE_NEURON_PATH,
-                            target.getTargetImage().getAlignmentSpace(),
-                            target.getTargetImage().getLibraryName(),
-                            imageName);
-                    LOG.warn("Use default - {} - searchable neuron set for match target {}:{} -> {}", searchableNeuronPath, target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                    target.setMatchFile(FileType.CDMMatch, searchableNeuronPath);
-                } else {
-                    LOG.error("No default searchable neuron set for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-                }
             } else {
                 target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
             }
