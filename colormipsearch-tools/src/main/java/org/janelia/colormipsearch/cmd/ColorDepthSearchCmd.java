@@ -267,13 +267,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
             DaosProvider daosProvider = getDaosProvider();
             if (args.updateExistingMatches) {
-                // if a match exists update the scoress
-                // since this writes items one at a time - partition and process partitions in parallel
-                return new PartitionedNeuronMatchesWriter<>(
-                        new DBCDScoresOnlyWriter<>(daosProvider.getCDMatchesDao()),
-                        args.processingPartitionSize,
-                        true
-                );
+                // if a match exists update the scores
+                return new DBCDScoresOnlyWriter<>(daosProvider.getCDMatchesDao());
             } else {
                 // always create new matches
                 return new DBNeuronMatchesWriter<>(daosProvider.getCDMatchesDao());

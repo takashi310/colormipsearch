@@ -103,8 +103,9 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
                                 .map(targetImage -> findPixelMatch(queryColorDepthSearch, queryImage, targetImage))
                                 .filter(m -> m.isMatchFound() && m.hasNoErrors())
                                 .collect(Collectors.toList());
-                        LOG.info("Found {} matches comparing mask# {} - {} with target partition {} of {} items in {}ms",
-                                srs.size(), mIndex, queryMIP, indexedTargetMIPsPartition.getKey(), indexedTargetMIPsPartition.getValue().size(), System.currentTimeMillis() - startTime);
+                        LOG.info("Found {} matches comparing mask# {} - {} with target partition {} of {} items in {}s",
+                                srs.size(), mIndex, queryMIP, indexedTargetMIPsPartition.getKey(), indexedTargetMIPsPartition.getValue().size(),
+                                (System.currentTimeMillis() - startTime) / 1000.);
                         return srs;
                     };
                     return CompletableFuture.supplyAsync(searchResultSupplier, cdsExecutor);
