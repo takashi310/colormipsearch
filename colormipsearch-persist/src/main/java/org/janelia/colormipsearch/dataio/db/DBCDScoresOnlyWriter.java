@@ -27,6 +27,7 @@ import org.janelia.colormipsearch.model.CDMatchEntity;
 public class DBCDScoresOnlyWriter<R extends CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> implements NeuronMatchesWriter<R> {
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
+
     private final List<Function<R, Pair<String, ?>>> fieldsToUpdate =
             Arrays.asList(
                     m -> ImmutablePair.of("mirrored", m.isMirrored()),

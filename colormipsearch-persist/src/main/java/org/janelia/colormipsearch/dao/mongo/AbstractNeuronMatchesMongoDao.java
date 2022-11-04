@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UnwindOptions;
@@ -47,9 +48,9 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
 
     @Override
     protected void createDocumentIndexes() {
-        mongoCollection.createIndex(Indexes.hashed("class"));
-        mongoCollection.createIndex(Indexes.hashed("maskImageRefId"));
-        mongoCollection.createIndex(Indexes.hashed("matchedImageRefId"));
+        mongoCollection.createIndex(Indexes.ascending("class"));
+        mongoCollection.createIndex(Indexes.ascending("maskImageRefId"));
+        mongoCollection.createIndex(Indexes.ascending("matchedImageRefId"));
         mongoCollection.createIndex(Indexes.ascending("tags"));
     }
 
@@ -123,6 +124,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                     m.setEntityId(idGenerator.generateId());
                     m.setCreatedDate(new Date());
                     updateOptions.upsert(true);
+                    updateOptions.bypassDocumentValidation(true);
                     // select by Image Ref IDs
                     selectCriteria = MongoDaoHelper.createBsonFilterCriteria(
                             Arrays.asList(
@@ -148,7 +150,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 toWrite.add(new UpdateOneModel<R>(selectCriteria, updates, updateOptions));
             }
         });
-        mongoCollection.bulkWrite(toWrite);
+        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(true).ordered(false));
     }
 
     @Override
