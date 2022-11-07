@@ -28,14 +28,14 @@ public class DBCDScoresOnlyWriter<R extends CDMatchEntity<? extends AbstractNeur
 
     private final NeuronMatchesDao<R> neuronMatchesDao;
 
-    private final List<Function<R, Pair<String, ?>>> fieldsToUpdate =
+    private final List<Function<R, NeuronMatchesDao.NeuronField<?>>> fieldsToUpdate =
             Arrays.asList(
-                    m -> ImmutablePair.of("mirrored", m.isMirrored()),
-                    m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
-                    m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
-                    m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
-                    m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
-                    m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+                    m -> new NeuronMatchesDao.NeuronField<>("sessionRefId", false, m.getSessionRefId()),
+                    m -> new NeuronMatchesDao.NeuronField<>("mirrored", false, m.isMirrored()),
+                    m -> new NeuronMatchesDao.NeuronField<>("matchingPixels", false, m.getMatchingPixels()),
+                    m -> new NeuronMatchesDao.NeuronField<>("matchingPixelsRatio", false, m.getMatchingPixelsRatio()),
+                    m -> new NeuronMatchesDao.NeuronField<>("normalizedScore", false, m.getNormalizedScore()),
+                    m -> new NeuronMatchesDao.NeuronField<>("tags", true, m.getTags())
             );
 
     public DBCDScoresOnlyWriter(NeuronMatchesDao<R> neuronMatchesDao) {

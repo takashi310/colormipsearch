@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -212,16 +213,18 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
                     daosProvider.getCDMatchesDao();
 
             CDMatchEntity<EMNeuronEntity, LMNeuronEntity> testCDMatch =
-                    createTestCDMatch(neuronImages.getLeft(), neuronImages.getRight(), 113, 0.76);
+                    createTestCDMatch(neuronImages.getLeft(), neuronImages.getRight(), 113, 0.76,
+                            "1.0", "1.1");
 
             List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testCDMatches = Collections.singletonList(testCDMatch);
 
-            List<Function<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
-                    m -> ImmutablePair.of("matchingPixels", m.getMatchingPixels()),
-                    m -> ImmutablePair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
-                    m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
-                    m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
-                    m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+            List<Function<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>, NeuronMatchesDao.NeuronField<?>>> fieldsToUpdate = Arrays.asList(
+                    m -> new NeuronMatchesDao.NeuronField<>("matchingPixels", false, m.getMatchingPixels()),
+                    m -> new NeuronMatchesDao.NeuronField<>("matchingPixelsRatio", false, m.getMatchingPixelsRatio()),
+                    m -> new NeuronMatchesDao.NeuronField<>("gradientAreaGap", false, m.getGradientAreaGap()),
+                    m -> new NeuronMatchesDao.NeuronField<>("highExpressionArea", false ,m.getHighExpressionArea()),
+                    m -> new NeuronMatchesDao.NeuronField<>("normalizedScore", false, m.getNormalizedScore()),
+                    m -> new NeuronMatchesDao.NeuronField<>("tags", true, m.getTags())
             );
 
             // save the matches multiple times and check the count is still 1
@@ -243,7 +246,7 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
     private void verifyMultipleCDMatcheshWithImages(int nTestMatches,
                                                     NeuronMatchesDao<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesDao,
                                                     Function<List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>,
-                                                            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>> dataRetriever) {
+                                                    List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>> dataRetriever) {
         NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao =
                 daosProvider.getNeuronMetadataDao();
         Pair<EMNeuronEntity, LMNeuronEntity> neuronImages = createMatchingImages(neuronMetadataDao);
@@ -308,12 +311,13 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
-    CDMatchEntity<M, T> createTestCDMatch(M maskNeuron, T targetNeuron, int pixelMatch, double pixelMatchRatio) {
+    CDMatchEntity<M, T> createTestCDMatch(M maskNeuron, T targetNeuron, int pixelMatch, double pixelMatchRatio, String... tags) {
         CDMatchEntity<M, T> testMatch = new CDMatchEntity<>();
         testMatch.setMaskImage(maskNeuron);
         testMatch.setMatchedImage(targetNeuron);
         testMatch.setMatchingPixels(pixelMatch);
         testMatch.setMatchingPixelsRatio((float) pixelMatchRatio);
+        testMatch.addAllTags(Arrays.asList(tags));
         addTestData(testMatch);
         return testMatch;
     }

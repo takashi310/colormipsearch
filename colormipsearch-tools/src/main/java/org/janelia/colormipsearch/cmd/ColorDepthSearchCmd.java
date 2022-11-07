@@ -218,7 +218,9 @@ class ColorDepthSearchCmd extends AbstractCmd {
             // start the pairwise color depth search
             List<CDMatchEntity<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
             NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+            LOG.info("Start writing {} color depth search results", cdsResults.size());
             cdsResultsWriter.write(cdsResults);
+            LOG.info("Finished writing {} color depth search results", cdsResults.size());
         } finally {
             LOG.info("Set processing tags to {}:{}", ProcessingType.ColorDepthSearch, processingTags);
             // update the mips processing tags

@@ -22,8 +22,8 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
+import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
@@ -102,7 +102,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
     }
 
     @Override
-    public void createOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+    public void createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors) {
         List<WriteModel<R>> toWrite = new ArrayList<>();
 
         matches.forEach(m -> {
@@ -141,7 +141,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                                 onCreateSetters,
                                 fieldsToUpdateSelectors.stream()
                                         .map(fieldSelector -> fieldSelector.apply(m))
-                                        .map(p -> new EntityFieldNameValueHandler<>(p.getLeft(), new SetFieldValueHandler<>(p.getRight())))
+                                        .map(this::toEntityFieldValueHandler)
                         ).collect(Collectors.toMap(
                                 EntityFieldNameValueHandler::getFieldName,
                                 EntityFieldNameValueHandler::getValueHandler))
@@ -150,6 +150,14 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
             }
         });
         mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(true).ordered(false));
+    }
+
+    private <V> EntityFieldNameValueHandler<V> toEntityFieldValueHandler(NeuronField<V> nf) {
+        return new EntityFieldNameValueHandler<>(
+                nf.getFieldName(),
+                nf.isToBeAppended()
+                    ? new AppendFieldValueHandler<>(nf.getValue())
+                    : new SetFieldValueHandler<>(nf.getValue()));
     }
 
     @Override

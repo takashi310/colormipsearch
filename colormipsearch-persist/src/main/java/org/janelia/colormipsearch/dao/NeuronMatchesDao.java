@@ -10,13 +10,36 @@ import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> extends Dao<R> {
+    class NeuronField<V> {
+        private final String fieldName;
+        private final boolean toBeAppended;
+        private final V value;
+
+        public NeuronField(String fieldName, boolean toBeAppended, V value) {
+            this.fieldName = fieldName;
+            this.toBeAppended = toBeAppended;
+            this.value = value;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public boolean isToBeAppended() {
+            return toBeAppended;
+        }
+
+        public V getValue() {
+            return value;
+        }
+    }
     /**
      * Create or update matches. If a matcb, for the given mask entity ID and target entity ID, exists then update the fields
      * otherwise create it.
      * @param matches to create or update
      * @param fieldsToUpdateSelectors fields to update if the record exists
      */
-    void createOrUpdateAll(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
+    void createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors);
 
     /**
      * Count neuron matches filtered by the type and scores specified by neuronsMatchFilter and/or by the specified
