@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd.dataexport;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,13 +104,26 @@ public class MIPsExporter extends AbstractDataExporter {
                     .collect(Collectors.toList());
             // retrieve URLs associated with current neurons
             Map<Number, NeuronPublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(neuronMipEntities);
+            // create a comparator for sorting mips
+            Comparator<AbstractNeuronMetadata> compareByPublishedName = Comparator.comparing(AbstractNeuronMetadata::getPublishedName);
+            Comparator<AbstractNeuronMetadata> compareByDataset = Comparator.comparing(AbstractNeuronMetadata::getFullPublishedName);
+            Comparator<AbstractNeuronMetadata> neuronMetadataComparator = (n1, n2) -> {
+                int sortByPublisheName = compareByPublishedName.compare(n1, n2);
+                if (sortByPublisheName == 0) {
+                    return -compareByDataset.compare(n1, n2); // use reverse order for dataset
+                } else {
+                    return sortByPublisheName;
+                }
+            };
             // update neurons info and filter out unpublished ones
-            Set<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
+            List<AbstractNeuronMetadata> publishedNeuronMips = neuronMips.stream()
                     .peek(n -> updateNeuronMethod.accept(n, indexedNeuronURLs))
                     .filter(AbstractNeuronMetadata::isPublished)
                     .peek(n -> n.setNeuronFile(FileType.CDMInput, null)) // reset mip input
                     .peek(n -> n.transformAllNeuronFiles(this::relativizeURL))
-                    .collect(Collectors.toSet());
+                    .distinct()
+                    .sorted(neuronMetadataComparator)
+                    .collect(Collectors.toList());
             if (publishedNeuronMips.isEmpty()) {
                 // skip export - simply log
                 LOG.warn("No published MIPs for {}", publishedName);
