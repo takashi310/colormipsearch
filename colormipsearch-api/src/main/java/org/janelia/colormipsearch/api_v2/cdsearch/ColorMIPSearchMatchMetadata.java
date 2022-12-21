@@ -49,6 +49,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageURL(cdsm.getSourceImageURL());
         mip.setSearchablePNG(cdsm.getSourceSearchablePNG());
         mip.setImageStack(cdsm.getSourceImageStack());
+        mip.setScreenImage(cdsm.getSourceScreenImage());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -64,6 +65,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         mip.setImageURL(cdsm.getImageURL());
         mip.setSearchablePNG(cdsm.getSearchablePNG());
         mip.setImageStack(cdsm.getImageStack());
+        mip.setScreenImage(cdsm.getScreenImage());
         mip.copyVariantsFrom(cdsm);
         return mip;
     }
@@ -80,6 +82,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
     private String sourceImageURL;
     private String sourceSearchablePNG;
     private String sourceImageStack;
+    private String sourceScreenImage;
     private int matchingPixels;
     private double matchingRatio;
     private boolean mirrored;
@@ -212,6 +215,13 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         this.sourceImageStack = sourceImageStack;
     }
 
+    public String getSourceScreenImage() {
+        return sourceScreenImage;
+    }
+
+    public void setSourceScreenImage(String sourceScreenImage) {
+        this.sourceScreenImage = sourceScreenImage;
+    }
 
     public int getMatchingPixels() {
         return matchingPixels;
@@ -332,6 +342,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setSourceImageArchivePath(this.sourceImageArchivePath);
         that.setSourceSearchablePNG(this.sourceSearchablePNG);
         that.setSourceImageStack(this.sourceImageStack);
+        that.setSourceScreenImage(this.sourceScreenImage);
         // copy score attributes
         that.setMatchingPixels(this.getMatchingPixels());
         that.setMatchingRatio(this.getMatchingRatio());
@@ -341,6 +352,7 @@ public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
         that.setNormalizedGapScore(this.getNormalizedGapScore());
         that.setSearchablePNG(this.getSearchablePNG());
         that.setImageStack(this.getImageStack());
+        that.setScreenImage(this.getScreenImage());
     }
 
     @Override

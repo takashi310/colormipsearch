@@ -22,6 +22,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
             null,
             null,
             null,
+            null,
+            null,
             Collections.emptyList());
 
     public static List<CDSMatches> fromResultsOfColorMIPSearchMatches(List<ColorMIPSearchMatchMetadata> listOfCDSMatches) {
@@ -36,7 +38,10 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                                     csr.getSourceRelatedImageRefId(),
                                     csr.getSourceImagePath(),
                                     csr.getSourceCdmPath(),
-                                    csr.getSourceImageURL()),
+                                    csr.getSourceImageURL(),
+                                    csr.getSourceImageStack(),
+                                    csr.getSourceScreenImage()
+                                    ),
                             Collectors.toList()))
                     .entrySet().stream().map(e -> new CDSMatches(
                             e.getKey().getId(),
@@ -45,6 +50,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                             e.getKey().getSampleRef(),
                             e.getKey().getRelatedImageRefId(),
                             e.getKey().getImageURL(),
+                            e.getKey().getImageStack(),
+                            e.getKey().getScreenImage(),
                             e.getValue()))
                     .collect(Collectors.toList());
         } else {
@@ -66,6 +73,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
     private final String maskPublishedName;
     private final String maskLibraryName;
     private final String maskImageURL;
+    private final String maskImageStack;
+    private final String maskScreenImage;
     private final String maskSampleRef;
     private final String maskRelatedImageRefId;
 
@@ -76,6 +85,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                                               @JsonProperty("maskSampleRef") String maskSampleRef,
                                               @JsonProperty("maskRelatedImageRefId") String maskRelatedImageRefId,
                                               @JsonProperty("maskImageURL") String maskImageURL,
+                                              @JsonProperty("maskImageStack") String maskImageStack,
+                                              @JsonProperty("maskScreenImage") String maskScreenImage,
                                               @JsonProperty("results") List<ColorMIPSearchMatchMetadata> results) {
         if (StringUtils.isNotBlank(maskId)) {
             results.forEach(csr -> {
@@ -83,6 +94,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                 csr.setSourcePublishedName(maskPublishedName);
                 csr.setSourceLibraryName(maskLibraryName);
                 csr.setSourceImageURL(maskImageURL);
+                csr.setSourceImageStack(maskImageStack);
+                csr.setSourceScreenImage(maskScreenImage);
                 csr.setSourceRelatedImageRefId(maskRelatedImageRefId);
                 csr.setSourceSampleRef(maskSampleRef);
             });
@@ -94,6 +107,8 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                 maskSampleRef,
                 maskRelatedImageRefId,
                 maskImageURL,
+                maskImageStack,
+                maskScreenImage,
                 results);
     }
 
@@ -103,12 +118,16 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
                String maskSampleRef,
                String maskRelatedImageRefId,
                String maskImageURL,
+               String maskImageStack,
+               String maskScreenImage,
                List<ColorMIPSearchMatchMetadata> results) {
         super(results);
         this.maskId = maskId;
         this.maskPublishedName = maskPublishedName;
         this.maskLibraryName = maskLibraryName;
         this.maskImageURL = maskImageURL;
+        this.maskImageStack = maskImageStack;
+        this.maskScreenImage = maskScreenImage;
         this.maskSampleRef = maskSampleRef;
         this.maskRelatedImageRefId = maskRelatedImageRefId;
     }
@@ -141,6 +160,16 @@ public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
     @JsonProperty
     public String getMaskSampleRef() {
         return maskSampleRef;
+    }
+
+    @JsonProperty
+    public String getMaskImageStack() {
+        return maskImageStack;
+    }
+
+    @JsonProperty
+    public String getMaskScreenImage() {
+        return maskScreenImage;
     }
 
     @JsonProperty

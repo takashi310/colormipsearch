@@ -50,7 +50,9 @@ public class ColorMIPSearchResultUtils {
                                 csr.getSourceRelatedImageRefId(),
                                 csr.getSourceImagePath(),
                                 csr.getSourceCdmPath(),
-                                csr.getSourceImageURL()
+                                csr.getSourceImageURL(),
+                                csr.getSourceImageStack(),
+                                csr.getSourceScreenImage()
                         ),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
@@ -68,6 +70,8 @@ public class ColorMIPSearchResultUtils {
                         e.getKey().getSampleRef(),
                         e.getKey().getRelatedImageRefId(),
                         e.getKey().getImageURL(),
+                        e.getKey().getImageStack(),
+                        e.getKey().getScreenImage(),
                         e.getValue()))
                 .collect(Collectors.toList());
     }

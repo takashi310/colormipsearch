@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import org.janelia.colormipsearch.api.JsonRequired;
+
 /**
  * These are the source PPP matches as they are imported from the original matches.
  * This object contains all fields currently read from the original result file.
@@ -21,18 +23,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class EmPPPMatch extends AbstractPPPMatch {
 
+    @JsonRequired
     @JsonProperty("id")
     @Override
     public String getSampleId() {
         return super.getSampleId();
     }
 
+    @JsonRequired
     @JsonProperty("publishedName")
     @Override
     public String getLineName() {
         return super.getLineName();
     }
 
+    @JsonRequired
     @JsonProperty("libraryName")
     @Override
     public String getSourceLmDataset() {

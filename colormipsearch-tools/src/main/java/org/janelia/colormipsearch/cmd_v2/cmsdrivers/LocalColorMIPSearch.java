@@ -21,10 +21,10 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorDepthSearchAlgorithm;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
+import org.janelia.colormipsearch.cmd_v2.CachedMIPsUtils;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.MappingFunction;
 import org.janelia.colormipsearch.results.ItemsHandling;
-import org.janelia.colormipsearch.cmd_v2.CachedMIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

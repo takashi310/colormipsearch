@@ -673,7 +673,8 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
                     "/" + cdmip.getSlideCode());
 
             Response response = createRequestWithCredentials(endpoint.request(MediaType.APPLICATION_JSON), credentials).get();
-            PublishedImage image;
+            PublishedImage image1;
+            PublishedImage image2;
             if (response.getStatus() != Response.Status.OK.getStatusCode()) {
                 // leave imageStack unset, but log it
                 LOG.warn("setPublishedImageURLs: failed call to URI = {}", endpoint.getUri());
@@ -682,12 +683,18 @@ public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
             List<PublishedImage> images = response.readEntity(new GenericType<>(new TypeReference<List<PublishedImage>>() {
             }.getType()));
-            // api guarantees exactly one element in list:
-            image = images.get(0);
+            // api guarantees exactly two elements in list:
+            image1 = images.size() > 0 ? images.get(0) : null;
+            image2 = images.size() > 1 ? images.get(1) : null;
 
-            // for now, there is only one URL to set
-            // we don't have jacs-model, so I'm hard-coding the name of the element in the enum, which is kind of icky
-            cdmip.setImageStack(image.files.get("VisuallyLosslessStack"));
+            // we don't have jacs-model available, so we don't have access to the enum holding
+            //    these attribute names; I'm hard-coding them instead, which is kind of icky
+            if (image1 != null) {
+                cdmip.setImageStack(image1.files.get("VisuallyLosslessStack"));
+            }
+            if (image2 != null && image2.files.get("ColorDepthMip1") != null) {
+                cdmip.setScreenImage(image2.files.get("ColorDepthMip1"));
+            }
         }
     }
 

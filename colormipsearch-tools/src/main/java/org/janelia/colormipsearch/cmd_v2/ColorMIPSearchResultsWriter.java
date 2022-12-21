@@ -194,6 +194,12 @@ class ColorMIPSearchResultsWriter {
         gen.writeStringField("maskId", cdsMatches.getMaskId());
         gen.writeStringField("maskPublishedName", cdsMatches.getMaskPublishedName());
         gen.writeStringField("maskLibraryName", cdsMatches.getMaskLibraryName());
+        if (cdsMatches.getMaskImageStack() != null) {
+            gen.writeStringField("maskImageStack", cdsMatches.getMaskImageStack());
+        }
+        if (cdsMatches.getMaskScreenImage() != null) {
+            gen.writeStringField("maskScreenImage", cdsMatches.getMaskScreenImage());
+        }
         gen.writeArrayFieldStart("results");
         writeColorSearchMatchesArray(gen, cdsMatches.results);
         gen.writeEndArray();
