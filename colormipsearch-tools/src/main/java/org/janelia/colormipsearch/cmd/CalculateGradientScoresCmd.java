@@ -169,6 +169,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         // partition matches and process all partitions concurrently
         ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize).entrySet().stream().parallel()
                 .forEach(indexedPartition -> {
+                    LOG.info("Start processing partition {} ({} items)",
+                            indexedPartition.getKey(),
+                            indexedPartition.getValue().size());
                     long startProcessingPartitionTime = System.currentTimeMillis();
                     // process each item from the current partition sequentially 
                     indexedPartition.getValue().forEach(maskIdToProcess -> {
@@ -179,14 +182,14 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 .distinct()
                                 .count();
                         // calculate the grad scores
-                        LOG.info("Calculate grad scores for {} MIP ({} line) matches of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
+                        LOG.info("Calculate grad scores for {} matches ({} lines) of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWithGradScores = calculateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesForMask,
                                 executor);
                         updateCDMatches(cdMatchesWithGradScores);
                     });
-                    LOG.info("Finished partition {} of {} items in {}s - memory usage {}M out of {}M",
+                    LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             indexedPartition.getKey(),
                             indexedPartition.getValue().size(),
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
