@@ -143,6 +143,7 @@ class CopyToMIPsStore extends AbstractCmd {
                                 Integer mipIndex = indexedNeuronEntity.getLeft();
                                 AbstractNeuronEntity neuronEntity = indexedNeuronEntity.getRight();
                                 String sourceCDMName = neuronEntity.getComputeFileData(ComputeFileType.SourceColorDepthImage).getNameCompOnly();
+                                // handle surjective variants
                                 args.surjectiveVariantMapping.forEach((variantType, targetFolderName) -> {
                                     ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
                                     if (neuronEntity.hasComputeFile(ft)) {
@@ -151,6 +152,17 @@ class CopyToMIPsStore extends AbstractCmd {
                                                 fd,
                                                 targetDir.resolve(targetFolderName)
                                                         .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd, mipIndex)));
+                                    }
+                                });
+                                // handle injective variants
+                                args.injectiveVariantMapping.forEach((variantType, targetFolderName) -> {
+                                    ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
+                                    if (neuronEntity.hasComputeFile(ft)) {
+                                        FileData fd = neuronEntity.getComputeFileData(ft);
+                                        copyMIPVariantAction.accept(
+                                                fd,
+                                                targetDir.resolve(targetFolderName)
+                                                        .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd, -1)));
                                     }
                                 });
                             });
