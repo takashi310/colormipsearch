@@ -56,7 +56,7 @@ class CopyToMIPsStore extends AbstractCmd {
             "grad", ComputeFileType.GradientImage,
             "zgap", ComputeFileType.ZGapImage
     );
-    private static Pattern FILENAME_EXT_PATTERN = Pattern.compile(".+(\\..*)$");
+    private static final Pattern FILENAME_EXT_PATTERN = Pattern.compile(".+(\\..*)$");
 
     @Parameters(commandDescription = "Create JACS variant library")
     static class CopyToMIPSStoreArgs extends AbstractCmdArgs {
@@ -74,15 +74,12 @@ class CopyToMIPsStore extends AbstractCmd {
         @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
         boolean simulateFlag;
 
-        // surjective variants typically have an object index in their name,
+        // surjective variants may have more than one image (segmentation, or flipped) associated with the original MIP
+        // there may also be cases when the variant library must be one-to-one correspondence - injectiveVariants
+        // but the injectiveVariants are left out until needed, they were present in commit: 2c2a80cc
         @DynamicParameter(names = {"--surjective-variants-mapping"},
                 description = "Destination mapping for surjective variants - variants that may have one or more corresponding mip images")
         Map<String, String> surjectiveVariantMapping = new HashMap<>();
-
-        // An example of an injective variant is a gamma variant that changes the gamma of the original mip for better display
-        @DynamicParameter(names = "--injective-variants-mapping",
-                description = "Destination mapping for injective variants - variants that have one to more corresponding mip images")
-        Map<String, String> injectiveVariantMapping = new HashMap<>();
 
         CopyToMIPSStoreArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -152,17 +149,6 @@ class CopyToMIPsStore extends AbstractCmd {
                                                 fd,
                                                 targetDir.resolve(targetFolderName)
                                                         .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd, mipIndex)));
-                                    }
-                                });
-                                // handle injective variants
-                                args.injectiveVariantMapping.forEach((variantType, targetFolderName) -> {
-                                    ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
-                                    if (neuronEntity.hasComputeFile(ft)) {
-                                        FileData fd = neuronEntity.getComputeFileData(ft);
-                                        copyMIPVariantAction.accept(
-                                                fd,
-                                                targetDir.resolve(targetFolderName)
-                                                        .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd, -1)));
                                     }
                                 });
                             });
