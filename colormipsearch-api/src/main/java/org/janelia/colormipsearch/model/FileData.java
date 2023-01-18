@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.model;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -78,6 +79,12 @@ public class FileData {
     @JsonIgnore
     public String getName() {
         return StringUtils.isNotBlank(entryName) ? entryName : fileName;
+    }
+
+    @JsonIgnore
+    public String getNameCompOnly() {
+        Path p = Paths.get(getName());
+        return p.getFileName().toString();
     }
 
     @Override
