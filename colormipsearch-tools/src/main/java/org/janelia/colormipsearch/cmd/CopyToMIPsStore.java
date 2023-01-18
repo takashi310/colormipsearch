@@ -119,11 +119,10 @@ class CopyToMIPsStore extends AbstractCmd {
     @Override
     void execute() {
         BiConsumer<FileData, Path> copyFileDataAction;
-        if (!args.simulateFlag) {
-            FSUtils.createDirs(args.getOutputDir());
-            copyFileDataAction = this::copyFileData;
-        } else {
+        if (args.simulateFlag) {
             copyFileDataAction = (fd, target) -> LOG.info("cp {} {}", fd, target);
+        } else {
+            copyFileDataAction = this::copyFileData;
         }
         copyMIPs(copyFileDataAction, args.getOutputDir());
     }
@@ -235,6 +234,7 @@ class CopyToMIPsStore extends AbstractCmd {
     private void copyFileData(FileData fileData, Path dest) {
         InputStream fdStream;
         try {
+            FSUtils.createDirs(dest.getParent());
             fdStream = NeuronMIPUtils.openInputStream(fileData);
             if (fdStream == null) {
                 LOG.warn("{} data not found", fileData);
