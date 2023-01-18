@@ -38,7 +38,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
 
     @Parameters(commandDescription = "Copy MIPs variants")
     static class CopyColorDepthMIPVariantsArgs extends AbstractCmdArgs {
-        @Parameter(names = {"--input", "-i"}, required = true, variableArity = true, converter = ListArg.ListArgConverter.class,
+        @Parameter(names = {"--input", "-i"}, required = true, converter = ListArg.ListArgConverter.class,
                 description = "JSON input MIPs")
         ListArg inputMIPs;
 
@@ -51,8 +51,9 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
         @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
         boolean simulateFlag;
 
-        @Parameter(names = {"--not-countable-variants"}, variableArity = true, description = "Not countable variants")
-        Set<String> notCountableVariants = new HashSet<>();
+        @Parameter(names = {"--injective-variants"}, variableArity = true,
+                description = "These are variant types that only have at most one image for each MIP ID")
+        Set<String> injectiveVariants = new HashSet<>();
 
         @DynamicParameter(names = "-variantMapping", description = "Variants mapping")
         Map<String, String> variantMapping = new HashMap<>();
@@ -132,12 +133,13 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                     ImmutablePair::getLeft,
                                     Collectors.mapping(ImmutablePair::getRight, Collectors.collectingAndThen(Collectors.toSet(), Set::size))));
 
-                    // handle uncounted variants - an uncounted variant must be specified by the user as non-countable and also
+                    // handle injective variants - an injective variant must be specified by the user as such and also
                     // there should not be more than 1 object per MIP ID for that variant type
-                    Map<String, MIPMetadata> uncountedVariants = mipsCountsByVariantType.entrySet().stream()
+                    // for example of such a variant is a gamma modified MIP for better visualization
+                    Map<String, MIPMetadata> injectiveVariants = mipsCountsByVariantType.entrySet().stream()
                             .filter(variantTypeCountEntry -> variantTypeCountEntry.getValue() == 1)
                             .map(Map.Entry::getKey)
-                            .filter(vt -> args.notCountableVariants.contains(vt))
+                            .filter(vt -> args.injectiveVariants.contains(vt))
                             .flatMap(vt -> me.getValue().stream().filter(mip -> mip.hasVariant(vt)).map(mip -> ImmutablePair.of(vt, mip.variantAsMIP(vt))))
                             .collect(Collectors.toMap(
                                     ImmutablePair::getLeft,
@@ -150,7 +152,7 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                         }
                                     }));
 
-                    uncountedVariants.forEach((variant, variantMIP) -> {
+                    injectiveVariants.forEach((variant, variantMIP) -> {
                                 String variantDestination = args.variantMapping.get(variant);
                                 copyMIPVariantAction.accept(
                                         variantMIP,
@@ -159,14 +161,14 @@ class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
                                 );
                             });
 
-                    // counted variants
-                    Set<String> countedVariantTypes = mipsCountsByVariantType.entrySet().stream()
-                            .filter(variantTypeCountEntry -> !uncountedVariants.containsKey(variantTypeCountEntry.getKey()))
+                    // surjective variants
+                    Set<String> surjectiveVariantTypes = mipsCountsByVariantType.entrySet().stream()
+                            .filter(variantTypeCountEntry -> !injectiveVariants.containsKey(variantTypeCountEntry.getKey()))
                             .map(Map.Entry::getKey)
                             .collect(Collectors.toSet());
                     int mipIndex = 1;
                     for (MIPMetadata mip : me.getValue()) {
-                        copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, countedVariantTypes, copyMIPVariantAction);
+                        copyMIPVariants(mipIndex, mip, outputPath, args.variantMapping, surjectiveVariantTypes, copyMIPVariantAction);
                         mipIndex++;
                     }
                 });

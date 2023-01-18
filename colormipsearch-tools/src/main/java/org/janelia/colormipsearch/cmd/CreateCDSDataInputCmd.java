@@ -131,7 +131,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 arity = 0)
         boolean includeOriginalWithSegmentation = false;
 
-        @Parameter(names = "--segmentation-channel-base", description = "Segmentation channel base (0 or 1)", validateValueWith = ChannelBaseValidator.class)
+        @Parameter(names = "--segmentation-channel-base", validateValueWith = ChannelBaseValidator.class,
+                description = "Segmentation channel base (0 or 1)")
         int segmentedImageChannelBase = 1;
 
         @Parameter(names = {"--included-published-names"}, variableArity = true,
