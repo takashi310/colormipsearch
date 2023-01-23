@@ -1,8 +1,5 @@
 package org.janelia.colormipsearch.model;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.annotation.Nullable;
 
 public enum PPPScreenshotType {
@@ -37,7 +34,7 @@ public enum PPPScreenshotType {
         return thumbnailFileType;
     }
 
-    public boolean hasThumnail() {
+    public boolean hasThumbnail() {
         return thumbnailFileType != null;
     }
 }

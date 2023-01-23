@@ -201,21 +201,26 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
             lmNeuron.setMountingProtocol(sample.mountingProtocol);
             lmNeuron.setNeuronFile(FileType.VisuallyLosslessStack, relativizeURL(FileType.VisuallyLosslessStack, lm3DStackURL));
             updateFileStore(lmNeuron);
-            if (pppMatch.hasSourceImageFiles() && publishedURLs.containsKey(pppMatch.getMatchInternalId())) {
-                pppMatch.getSourceImageFilesTypes().forEach(screenshotType -> {
-                    PPPmURLs urls = publishedURLs.get(pppMatch.getMatchInternalId());
-                    pppMatch.setMatchFile(
-                            screenshotType.getFileType(),
-                            relativizeURL(screenshotType.getFileType(), urls.getURLFor(screenshotType.name(), null))
-                    );
-                    if (screenshotType.hasThumnail()) {
+            if (pppMatch.hasSourceImageFiles()) {
+                if (publishedURLs.containsKey(pppMatch.getMatchInternalId())) {
+                    pppMatch.getSourceImageFilesTypes().forEach(screenshotType -> {
+                        PPPmURLs urls = publishedURLs.get(pppMatch.getMatchInternalId());
                         pppMatch.setMatchFile(
-                                screenshotType.getThumbnailFileType(),
-                                relativizeURL(screenshotType.getThumbnailFileType(), urls.getThumbnailURLFor(screenshotType.name()))
+                                screenshotType.getFileType(),
+                                relativizeURL(screenshotType.getFileType(), urls.getURLFor(screenshotType.name(), null))
                         );
-                    }
-                });
-                pppMatch.setMatchFile(FileType.store, emImageFileStore); // use the same image store that was used for EM image
+                        if (screenshotType.hasThumbnail()) {
+                            pppMatch.setMatchFile(
+                                    screenshotType.getThumbnailFileType(),
+                                    relativizeURL(screenshotType.getThumbnailFileType(), urls.getThumbnailURLFor(screenshotType.name()))
+                            );
+                        }
+                    });
+                    pppMatch.setMatchFile(FileType.store, emImageFileStore); // use the same image store that was used for EM image
+                } else {
+                    LOG.error("PPP match {} has screenshots but no published URL was found for {}",
+                            pppMatch, pppMatch.getMatchInternalId());
+                }
             }
         } else {
             LOG.error("No sample found for {}", pppMatch.getSourceLmName());
