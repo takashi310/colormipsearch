@@ -168,7 +168,12 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                 resultMatches.getItems().stream().map(AbstractMatchedTarget::getMatchInternalId).collect(Collectors.toSet()))
                 .stream()
                 .collect(Collectors.toMap(AbstractBaseEntity::getEntityId, u -> u));
-        resultMatches.getItems().forEach(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages, publishedURLs));
+        resultMatches.setItems(
+            resultMatches.getItems().stream()
+                    .peek(m -> updateTargetFromLMSample(resultMatches.getKey(), m, lmPublishedImages, publishedURLs))
+                    .filter(AbstractMatchedTarget::hasMatchFiles)
+                    .collect(Collectors.toList())
+        );
     }
 
     private void updateTargetFromLMSample(EMNeuronMetadata emNeuron,

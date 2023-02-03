@@ -100,6 +100,10 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
         }
     }
 
+    public boolean hasMatchFiles() {
+        return !matchFiles.isEmpty();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
