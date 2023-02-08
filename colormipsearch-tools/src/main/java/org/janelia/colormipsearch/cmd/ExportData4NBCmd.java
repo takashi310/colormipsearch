@@ -63,7 +63,8 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
         String configURL = "http://config.int.janelia.org/config";
 
-        @Parameter(names = {"--authorization"}, description = "JACS authorization - this is the value of the authorization header")
+        @Parameter(names = {"--authorization"},
+                description = "JACS authorization - this is the value of the authorization header")
         String authorization;
 
         @Parameter(names = {"--pctPositivePixels"}, description = "% of Positive PX Threshold (0-100%)")
