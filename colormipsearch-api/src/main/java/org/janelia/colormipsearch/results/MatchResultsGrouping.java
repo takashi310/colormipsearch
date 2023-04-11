@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.results;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.janelia.colormipsearch.dto.AbstractMatchedTarget;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
@@ -19,6 +20,7 @@ public class MatchResultsGrouping {
      *
      * @param matches persisted matches that need to be grouped by mask.
      * @param maskFieldSelectors mask fields used for grouping
+     * @param filter filter for grouped elements
      * @param ranking comparator used for ranking results
      * @param <R> persisted matches type
      * @param <M> metadata type corresponding to the original mask type which will be used for grouping
@@ -33,6 +35,7 @@ public class MatchResultsGrouping {
                    R1 extends AbstractMatchedTarget<T>>
     List<ResultMatches<M, R1>> groupByMask(List<R> matches,
                                            List<Function<M, ?>> maskFieldSelectors,
+                                           Predicate<R1> filter,
                                            Comparator<R1> ranking) {
         // the group invocation must set match files otherwise the actual match info may be lost
         return ItemsHandling.groupItems(
@@ -57,6 +60,7 @@ public class MatchResultsGrouping {
                     );
                 },
                 GroupingCriteria::getItem,
+                filter,
                 ranking,
                 ResultMatches::new
         );
@@ -67,6 +71,7 @@ public class MatchResultsGrouping {
      *
      * @param matches persisted matches that need to be grouped by mask.
      * @param targetFieldSelectors mask fields used for grouping
+     * @param filter filter for grouped elements
      * @param ranking comparator used for ranking results
      * @param <R> persisted matches type
      * @param <M> metadata type corresponding to the original mask type which now will be used as target type
@@ -81,6 +86,7 @@ public class MatchResultsGrouping {
                    R1 extends AbstractMatchedTarget<M>>
     List<ResultMatches<T, R1>> groupByTarget(List<R> matches,
                                              List<Function<T, ?>> targetFieldSelectors,
+                                             Predicate<R1> filter,
                                              Comparator<R1> ranking) {
         // the group invocation must set match files otherwise the actual match info may be lost
         return ItemsHandling.groupItems(
@@ -104,6 +110,7 @@ public class MatchResultsGrouping {
                     );
                 },
                 GroupingCriteria::getItem,
+                filter,
                 ranking,
                 ResultMatches::new
         );

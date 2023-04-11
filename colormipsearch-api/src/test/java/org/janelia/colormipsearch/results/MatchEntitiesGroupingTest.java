@@ -38,6 +38,7 @@ public class MatchEntitiesGroupingTest {
                         Collections.singletonList(
                                 AbstractNeuronEntity::getMipId
                         ),
+                        m -> m.getMatchedImage() != null,
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 TestEMNeuronEntity.class,
                 TestLMNeuronEntity.class
@@ -53,6 +54,7 @@ public class MatchEntitiesGroupingTest {
                         Collections.singletonList(
                                 AbstractNeuronEntity::getMipId
                         ),
+                        m -> m.getMatchedImage() != null,
                         Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore()))),
                 TestLMNeuronEntity.class,
                 TestEMNeuronEntity.class
@@ -83,6 +85,7 @@ public class MatchEntitiesGroupingTest {
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId
                 ),
+                m -> m.getMatchedImage() != null,
                 Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore())));
         Comparator<CDMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> ordering =
                 Comparator.comparing(m -> m.getMaskImage().getMipId() + m.getMatchedImage().getMipId() + m.getMatchingPixels());
@@ -108,6 +111,7 @@ public class MatchEntitiesGroupingTest {
                 Collections.singletonList(
                         AbstractNeuronEntity::getMipId
                 ),
+                m -> m.getMatchedImage() != null,
                 Comparator.comparingDouble(aCDSMatch -> Math.abs(aCDSMatch.getNormalizedScore())));
         Comparator<AbstractMatchEntity<TestEMNeuronEntity, TestLMNeuronEntity>> ordering =
                 Comparator.comparing(m -> m.getMaskImage().getMipId() + m.getMatchedImage().getMipId() + ((CDMatchEntity<?,?>) m).getMatchingPixels());

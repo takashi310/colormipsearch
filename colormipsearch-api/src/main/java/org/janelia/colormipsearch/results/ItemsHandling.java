@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ public class ItemsHandling {
      * @param items                to be grouped by a certain criteria specified by @groupingCriteria@
      * @param toGroupingCriteria   criteria used for grouping @items@
      * @param fromGroupingCriteria extract element from grouping criteria
+     * @param filter               filter for grouped elements
      * @param finalRankComparator  comparator used for ranking grouped items
      * @param groupFactory         factory for creating an object to hold items from a group
      * @param <E1>                 type of the input elements that need to be grouped together
@@ -34,6 +36,7 @@ public class ItemsHandling {
     List<G> groupItems(List<E1> items,
                        Function<E1, GroupingCriteria<E2, K>> toGroupingCriteria,
                        Function<GroupingCriteria<E2, K>, E2> fromGroupingCriteria,
+                       Predicate<E2> filter,
                        @Nullable Comparator<E2> finalRankComparator,
                        Supplier<G> groupFactory) {
         if (CollectionUtils.isEmpty(items)) {
@@ -53,6 +56,7 @@ public class ItemsHandling {
                                                 groupedItems.setKey(sameKeyItems.get(0).getKey());
                                                 List<E2> groupElements = sameKeyItems.stream()
                                                         .map(fromGroupingCriteria)
+                                                        .filter(filter)
                                                         .collect(Collectors.toList());
                                                 if (finalRankComparator != null) {
                                                     groupElements.sort(finalRankComparator);

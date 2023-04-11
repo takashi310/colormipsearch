@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
@@ -35,6 +36,7 @@ public class MatchEntitiesGrouping {
                         maskKeyFieldSelectors
                 ),
                 GroupingCriteria::getItem,
+                m -> m.getMatchedImage() != null,
                 null, // no ranking
                 GroupedMatchedEntities::new
         );
@@ -44,6 +46,7 @@ public class MatchEntitiesGrouping {
      * Group matches by mask.
      *
      * @param matches to be grouped
+     * @param filter filter fort grouped elements
      * @param ranking matches sort criteria
      * @param <M>     mask type
      * @param <T>     target type
@@ -55,6 +58,7 @@ public class MatchEntitiesGrouping {
                    T extends AbstractNeuronEntity,
                    R extends AbstractMatchEntity<M, T>> List<GroupedMatchedEntities<M, T, R>> groupByMaskFields(List<R> matches,
                                                                                                                 List<Function<M, ?>> maskFieldSelectors,
+                                                                                                                Predicate<R> filter,
                                                                                                                 Comparator<R> ranking) {
         return ItemsHandling.groupItems(
                 matches,
@@ -86,6 +90,7 @@ public class MatchEntitiesGrouping {
                     aMatch.resetMaskImage();
                     return aMatch;
                 },
+                filter,
                 ranking,
                 GroupedMatchedEntities::new
         );
@@ -95,6 +100,7 @@ public class MatchEntitiesGrouping {
      * Group matches by matched image.
      *
      * @param matches to be grouped
+     * @param filter filter for grouped elements
      * @param ranking sorting criteria
      * @param <M>     mask neuron type
      * @param <T>     target neuron type
@@ -108,6 +114,7 @@ public class MatchEntitiesGrouping {
                    R extends AbstractMatchEntity<M, T>,
                    R1 extends AbstractMatchEntity<T, M>> List<GroupedMatchedEntities<T, M, R1>> groupByTargetFields(List<R> matches,
                                                                                                                     List<Function<T, ?>> matchedFieldSelectors,
+                                                                                                                    Predicate<R1> filter,
                                                                                                                     Comparator<R1> ranking) {
         return ItemsHandling.groupItems(
                 matches,
@@ -139,6 +146,7 @@ public class MatchEntitiesGrouping {
                     aMatch.resetMaskImage();
                     return aMatch;
                 },
+                filter,
                 ranking,
                 GroupedMatchedEntities::new
         );

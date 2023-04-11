@@ -129,6 +129,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         List<ResultMatches<EMNeuronMetadata, PPPMatchedTarget<LMNeuronMetadata>>> groupedMatches = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
+                m -> true, // no filtering
                 ordering);
 
         // retrieve source data

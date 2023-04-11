@@ -113,6 +113,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         List<ResultMatches<T, CDMatchedTarget<M>>> groupedMatches = MatchResultsGrouping.groupByTarget(
                 matches,
                 grouping,
+                m -> m.getTargetImage() != null,
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);

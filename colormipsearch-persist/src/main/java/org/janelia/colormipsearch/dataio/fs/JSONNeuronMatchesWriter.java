@@ -60,6 +60,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
         List<GroupedMatchedEntities<M, T, R>> resultMatches = MatchEntitiesGrouping.groupByMaskFields(
                 matches,
                 Collections.singletonList(grouping),
+                m -> m.getMatchedImage() != null,
                 ordering
         );
         resultMatchesWriter.writeGroupedItemsList(resultMatches, grouping, perMasksOutputDir);
@@ -72,6 +73,7 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
         List<GroupedMatchedEntities<T, M, AbstractMatchEntity<T, M>>> resultMatches = MatchEntitiesGrouping.groupByTargetFields(
                 matches,
                 Collections.singletonList(grouping),
+                m -> m.getMatchedImage() != null,
                 ordering
         );
         resultMatchesWriter.writeGroupedItemsList(resultMatches, grouping, perMatchesOutputDir);
