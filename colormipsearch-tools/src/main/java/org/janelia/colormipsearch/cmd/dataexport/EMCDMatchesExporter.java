@@ -114,7 +114,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
         List<ResultMatches<M, CDMatchedTarget<T>>> groupedMatches = MatchResultsGrouping.groupByMask(
                 matches,
                 grouping,
-                m -> m.getTargetImage() != null,
+                m -> m.getTargetImage() != null && m.getTargetImage().isPublished(), // filter out missing or unpublished LMs
                 ordering);
         // retrieve source ColorDepth MIPs
         retrieveAllCDMIPs(matches);
@@ -133,9 +133,6 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                         indexedNeuronURLs
                 ))
                 .filter(resultMatches -> resultMatches.getKey().isPublished()) // filter out unpublished EMs
-                .peek(resultMatches -> resultMatches.setItems(resultMatches.getItems().stream()
-                        .filter(m -> m.getTargetImage().isPublished()) // filter out unpublished LMs
-                        .collect(Collectors.toList())))
                 .collect(Collectors.toList());
         // write results by mask MIP ID
         resultMatchesWriter.writeGroupedItemsList(publishedMatches, AbstractNeuronMetadata::getMipId, outputDir);
