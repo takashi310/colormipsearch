@@ -1,11 +1,8 @@
 package org.janelia.colormipsearch.cmd.dataexport;
 
-import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.Executor;
 
-import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.dataio.DataSourceParam;

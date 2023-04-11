@@ -34,12 +34,12 @@
     </dependencies>
 
     <build>
+        <finalName>${project.parent.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.4.2</version>
                 <configuration>
-                    <finalName>${project.parent.artifactId}-${project.version}</finalName>
                     <outputDirectory>${project.parent.build.directory}</outputDirectory>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>

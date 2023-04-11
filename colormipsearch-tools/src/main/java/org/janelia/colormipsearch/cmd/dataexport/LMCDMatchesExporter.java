@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -12,9 +13,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
+import org.janelia.colormipsearch.dao.NeuronMetadataDao;
+import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
@@ -40,9 +45,10 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                Path outputDir,
                                Executor executor,
                                NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
+                               NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override
@@ -73,9 +79,23 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     null, // use the tags for selecting the masks but not for selecting the matches
                     null // no sorting yet because it uses too much memory on the server
             );
-            LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
-            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget =
-                    selectBestMatchPerMIPPair(allMatchesForTarget);
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
+            if (allMatchesForTarget.isEmpty()) {
+                // this can happen even when there are EM - LM matches but the match is low ranked and it has no gradient score
+                // therefore no LM - EM match is found
+                // in this case we need to retrieve the LM MIP info and create an empty result set
+                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(targetId), new PagedRequest());
+                if (neurons.isEmpty()) {
+                    LOG.warn("No target neuron found for {} - this should not have happened!", targetId);
+                    return;
+                }
+                CDMatchEntity<? extends AbstractNeuronEntity, AbstractNeuronEntity> fakeMatch = new CDMatchEntity<>();
+                fakeMatch.setMatchedImage(neurons.getResultList().get(0));
+                selectedMatchesForTarget = Collections.singletonList(fakeMatch);
+            } else {
+                LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
+                selectedMatchesForTarget = selectBestMatchPerMIPPair(allMatchesForTarget);
+            }
             LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);
             writeResults(selectedMatchesForTarget);
         });
@@ -99,6 +119,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         Map<Number, NeuronPublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(
                 matches.stream()
                         .flatMap(m -> Stream.of(m.getMaskImage(), m.getMatchedImage()))
+                        .filter(Objects::nonNull) // this is possible for fake matches
                         .collect(Collectors.toSet())
         );
         LOG.info("Fill in missing info for {} matches", matches.size());

@@ -61,7 +61,7 @@ class ExportData4NBCmd extends AbstractCmd {
         String dataServiceURL;
 
         @Parameter(names = {"--config-url"}, description = "Config URL that contains the library name mapping")
-        String configURL = "http://config.int.janelia.org/config";
+        String configURL = "https://config.int.janelia.org/config";
 
         @Parameter(names = {"--authorization"},
                 description = "JACS authorization - this is the value of the authorization header")
@@ -246,6 +246,7 @@ class ExportData4NBCmd extends AbstractCmd {
                                 daosProvider.getCDMatchesDao(),
                                 "mipId"
                         ),
+                        daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize
                 );
@@ -263,6 +264,7 @@ class ExportData4NBCmd extends AbstractCmd {
                                 daosProvider.getCDMatchesDao(),
                                 "mipId"
                         ),
+                        daosProvider.getNeuronMetadataDao(),
                         itemsWriter,
                         args.processingPartitionSize
                 );

@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
+import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
@@ -37,6 +39,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
+    final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
     final ItemsWriterToJSONFile resultMatchesWriter;
     final int processingPartitionSize;
 
@@ -48,11 +51,13 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                         Path outputDir,
                                         Executor executor,
                                         NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
+                                        NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
+        this.neuronMetadataDao = neuronMetadataDao;
         this.resultMatchesWriter = resultMatchesWriter;
         this.processingPartitionSize = processingPartitionSize;
     }
@@ -99,39 +104,41 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
         updateKeyMethod.accept(resultMatches.getKey(), publisheURLsByNeuronId.get(resultMatches.getKey().getInternalId()));
         resultMatches.getKey().transformAllNeuronFiles(this::relativizeURL);
         String maskImageStore = resultMatches.getKey().getNeuronFile(FileType.store);
-        String maskSourceImageName = resultMatches.getKey().getNeuronComputeFile(ComputeFileType.SourceColorDepthImage);
-        String maskMipImageName = resultMatches.getKey().getNeuronFile(FileType.CDM);
-        resultMatches.getItems().forEach(target -> {
-            updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
-            target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
-            // update match files - ideally we get these from PublishedURLs but
-            // if they are not there we try to create the searchable URL based on the input name and ColorDepthMIP name
-            NeuronPublishedURLs maskPublishedURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
-            String maskImageURL = getSearchableNeuronURL(maskPublishedURLs);
-            if (maskImageURL == null) {
-                // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
-                // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
-                LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-            } else {
-                target.setMatchFile(FileType.CDMInput, relativizeURL(FileType.CDMInput, maskImageURL));
-            }
-            NeuronPublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
-            String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
-            String tagetImageURL = getSearchableNeuronURL(targetPublishedURLs);
-            if (tagetImageURL == null) {
-                // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
-                // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
-                LOG.error("No published URLs or no searchable neuron URL for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
-            } else {
-                target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
-            }
-            if (!StringUtils.equals(maskImageStore, targetImageStore)) {
-                LOG.error("Image stores for mask {} and target {} do not match - this will become a problem when viewing this match",
-                        maskImageStore, targetImageStore);
-            } else {
-                target.setMatchFile(FileType.store, targetImageStore);
-            }
-        });
+        List<CDMatchedTarget<T>> updatedTargets = resultMatches.getItems().stream()
+                .filter(target -> target.getTargetImage() != null)
+                .peek(target -> {
+                    updateTargetMatchMethod.accept(target.getTargetImage(), publisheURLsByNeuronId.get(target.getTargetImage().getInternalId()));
+                    target.getTargetImage().transformAllNeuronFiles(this::relativizeURL);
+                    // update match files - ideally we get these from PublishedURLs but
+                    // if they are not there we try to create the searchable URL based on the input name and ColorDepthMIP name
+                    NeuronPublishedURLs maskPublishedURLs = publisheURLsByNeuronId.get(target.getMaskImageInternalId());
+                    String maskImageURL = getSearchableNeuronURL(maskPublishedURLs);
+                    if (maskImageURL == null) {
+                        // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
+                        // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
+                        LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+                    } else {
+                        target.setMatchFile(FileType.CDMInput, relativizeURL(FileType.CDMInput, maskImageURL));
+                    }
+                    NeuronPublishedURLs targetPublishedURLs = publisheURLsByNeuronId.get(target.getTargetImage().getInternalId());
+                    String targetImageStore = target.getTargetImage().getNeuronFile(FileType.store);
+                    String tagetImageURL = getSearchableNeuronURL(targetPublishedURLs);
+                    if (tagetImageURL == null) {
+                        // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
+                        // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
+                        LOG.error("No published URLs or no searchable neuron URL for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+                    } else {
+                        target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
+                    }
+                    if (!StringUtils.equals(maskImageStore, targetImageStore)) {
+                        LOG.error("Image stores for mask {} and target {} do not match - this will become a problem when viewing this match",
+                                maskImageStore, targetImageStore);
+                    } else {
+                        target.setMatchFile(FileType.store, targetImageStore);
+                    }
+                })
+                .collect(Collectors.toList());
+        resultMatches.setItems(updatedTargets);
     }
 
     private String getSearchableNeuronURL(NeuronPublishedURLs publishedURLs) {

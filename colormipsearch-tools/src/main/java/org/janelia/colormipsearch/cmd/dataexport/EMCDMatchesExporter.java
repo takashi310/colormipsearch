@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -12,9 +13,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
+import org.janelia.colormipsearch.dao.NeuronMetadataDao;
+import org.janelia.colormipsearch.dao.NeuronSelector;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesReader;
 import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
+import org.janelia.colormipsearch.datarequests.PagedRequest;
+import org.janelia.colormipsearch.datarequests.PagedResult;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
@@ -40,9 +45,10 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                Path outputDir,
                                Executor executor,
                                NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader,
+                               NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
     }
 
     @Override
@@ -76,9 +82,21 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     null, // use the tags for selecting the masks but not for selecting the matches
                     null // no sorting because it uses too much memory on the server
             );
-            LOG.info("Select best EM matches for {} out of {} matches", maskId, allMatchesForMask.size());
-            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask =
-                    selectBestMatchPerMIPPair(allMatchesForMask);
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask;
+            if (allMatchesForMask.isEmpty()) {
+                // this occurs only when there really aren't any matches between the EM MIP and any of the LM MIPs
+                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(maskId), new PagedRequest());
+                if (neurons.isEmpty()) {
+                    LOG.warn("No mask neuron found for {} - this should not have happened!", maskId);
+                    return;
+                }
+                CDMatchEntity<AbstractNeuronEntity, ? extends AbstractNeuronEntity> fakeMatch = new CDMatchEntity<>();
+                fakeMatch.setMaskImage(neurons.getResultList().get(0));
+                selectedMatchesForMask = Collections.singletonList(fakeMatch);
+            } else {
+                LOG.info("Select best EM matches for {} out of {} matches", maskId, allMatchesForMask.size());
+                selectedMatchesForMask = selectBestMatchPerMIPPair(allMatchesForMask);
+            }
             LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskId);
             writeResults(selectedMatchesForMask);
         });
@@ -102,6 +120,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
         Map<Number, NeuronPublishedURLs> indexedNeuronURLs = dataHelper.retrievePublishedURLs(
                 matches.stream()
                         .flatMap(m -> Stream.of(m.getMaskImage(), m.getMatchedImage()))
+                        .filter(Objects::nonNull) // this is possible for fake matches
                         .collect(Collectors.toSet())
         );
         LOG.info("Fill in missing info for {} matches", matches.size());

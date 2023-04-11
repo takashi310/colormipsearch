@@ -87,14 +87,16 @@ public class MatchResultsGrouping {
                 matches,
                 aMatch -> {
                     R1 matchResult = (R1) aMatch.metadata();
-                    AbstractNeuronEntity maskImage = aMatch.getMaskImage();
                     AbstractNeuronEntity targetImage = aMatch.getMatchedImage();
                     // in this case actual mask image will be set as target and the target image ID will be set to mask ID
                     matchResult.setMaskImageInternalId(targetImage.getEntityId());
-                    matchResult.setTargetImage((M) maskImage.metadata());
-                    // set result match files as a backup
-                    matchResult.setMatchFile(FileType.CDMInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
-                    matchResult.setMatchFile(FileType.CDMMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                    if (aMatch.getMaskImage() != null) {
+                        AbstractNeuronEntity maskImage = aMatch.getMaskImage();
+                        matchResult.setTargetImage((M) maskImage.metadata());
+                        // set result match files as a backup
+                        matchResult.setMatchFile(FileType.CDMMatch, maskImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                        matchResult.setMatchFile(FileType.CDMInput, targetImage.getComputeFileName(ComputeFileType.InputColorDepthImage));
+                    }
                     return new GroupingCriteria<R1, T>(
                             matchResult,
                             m -> (T) targetImage.metadata(), // group by target image
