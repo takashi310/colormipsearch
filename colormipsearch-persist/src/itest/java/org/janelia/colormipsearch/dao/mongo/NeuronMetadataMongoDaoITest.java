@@ -53,12 +53,13 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
     @Test
     public void createOrUpdateEmNeuron() {
+        String testTag = "createOrUpdateEmNeuron";
         EMNeuronEntity testEmNeuron = createTestNeuron(
                 EMNeuronEntity::new,
                 "flyem",
                 "123445",
                 "mip123",
-                Collections.singleton("createOrUpdateEmNeuron"));
+                Collections.singleton(testTag));
         AbstractNeuronEntity createdEmNeuron = testDao.createOrUpdate(testEmNeuron);
         assertEquals(testEmNeuron, createdEmNeuron);
 
@@ -68,6 +69,7 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
         AbstractNeuronEntity persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
         assertEquals(testEmNeuron, persistedEmNeuron);
         assertNotSame(testEmNeuron, persistedEmNeuron);
+        assertTrue(persistedEmNeuron.getTags().contains(testTag));
     }
 
     @Test
@@ -123,6 +125,34 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
     }
 
     @Test
+    public void tagsAreNoUpdated() {
+        String testTag = "tagsAreNoUpdated";
+        EMNeuronEntity testEmNeuron = createTestNeuron(
+                EMNeuronEntity::new,
+                "flyem",
+                "123445",
+                "mip123",
+                Collections.singleton(testTag));
+        testDao.save(testEmNeuron);
+        Number testEmId = testEmNeuron.getEntityId();
+
+        testEmNeuron.setEntityId(null); // reset ID.
+        testEmNeuron.setComputeFileData(ComputeFileType.GradientImage, FileData.fromString("GradientImage"));
+        String newTestTag = "newTagWhenUpdate";
+        testEmNeuron.addTag(newTestTag);
+        AbstractNeuronEntity updatedEmNeuron = testDao.createOrUpdate(testEmNeuron);
+        assertEquals(testEmId, updatedEmNeuron.getEntityId());
+
+        AbstractNeuronEntity persistedEmNeuron = testDao.findByEntityId(testEmNeuron.getEntityId());
+        assertEquals(testEmId, persistedEmNeuron.getEntityId());
+        assertEquals(testEmNeuron, persistedEmNeuron);
+        assertNotSame(testEmNeuron, persistedEmNeuron);
+        // check tags
+        assertTrue(persistedEmNeuron.getTags().contains(testTag)); // tag added on create should be present
+        assertFalse(persistedEmNeuron.getTags().contains(newTestTag)); // tag added on update should not be set
+    }
+
+    @Test
     public void persistEmNeuron() {
         EMNeuronEntity testEmNeuron = createTestNeuron(
                 EMNeuronEntity::new,
@@ -138,15 +168,17 @@ public class NeuronMetadataMongoDaoITest extends AbstractMongoDaoITest {
 
     @Test
     public void persistLmNeuron() {
+        String testTag = "persistLmNeuron";
         LMNeuronEntity testLmNeuron = createTestNeuron(
                 LMNeuronEntity::new,
                 "flylight_mcfo",
                 "123445",
                 "mip123",
-                Collections.singleton("persistLmNeuron"));
+                Collections.singleton(testTag));
         testDao.save(testLmNeuron);
         AbstractNeuronEntity persistedLmNeuron = testDao.findByEntityId(testLmNeuron.getEntityId());
         assertEquals(testLmNeuron, persistedLmNeuron);
+        assertTrue(persistedLmNeuron.getTags().contains(testTag));
         assertNotSame(testLmNeuron, persistedLmNeuron);
     }
 

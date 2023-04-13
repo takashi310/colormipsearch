@@ -196,6 +196,12 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         dict.put("sourceRefId", sourceRefId);
         computeFiles.forEach((ft, fd) -> dict.put("computeFiles." + ft.name(), fd));
         processedTags.forEach((pt, t) -> dict.put("processedTags." + pt.name(), t));
+        return dict;
+    }
+
+    public Map<String, Object> updateableFieldsOnInsert() {
+        Map<String, Object> dict = new HashMap<>();
+        dict.put("mipId", getMipId());
         dict.put("tags", getTags());
         return dict;
     }

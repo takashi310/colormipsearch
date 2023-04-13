@@ -92,7 +92,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         }
         if (neuron.hasMipID()) {
             selectFilters.add(MongoDaoHelper.createEqFilter("mipId", neuron.getMipId()));
-            updates.add(MongoDaoHelper.getFieldUpdate("mipId", new SetOnCreateValueHandler<>(neuron.getMipId())));
         }
         selectFilters.add(MongoDaoHelper.createEqFilter(
                 "computeFiles.InputColorDepthImage",
@@ -108,6 +107,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
             } else {
                 updates.add(MongoDaoHelper.getFieldUpdate(fn, new SetFieldValueHandler<>(fv)));
             }
+        });
+        neuron.updateableFieldsOnInsert().forEach((fn, fv) -> {
+            updates.add(MongoDaoHelper.getFieldUpdate(fn, new SetOnCreateValueHandler<>(fv)));
         });
         for (int i = 0; ; i++) {
             try {
@@ -210,6 +212,7 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                     getUpdates(fieldsToUpdate)
             );
             return result.getModifiedCount();
-        } return 0L;
+        }
+        return 0L;
     }
 }
