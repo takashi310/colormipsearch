@@ -7,9 +7,13 @@ import java.util.stream.Collectors;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.ProcessingType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DBCheckedCDMIPsWriter implements CDMIPsWriter {
+    private static final Logger LOG = LoggerFactory.getLogger(DBCheckedCDMIPsWriter.class);
 
     private final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
 
@@ -24,7 +28,12 @@ public class DBCheckedCDMIPsWriter implements CDMIPsWriter {
 
     @Override
     public void write(List<? extends AbstractNeuronEntity> neuronEntities) {
-        neuronEntities.forEach(neuronMetadataDao::createOrUpdate);
+        neuronEntities.forEach(n -> {
+            AbstractNeuronEntity neuronEntity = neuronMetadataDao.createOrUpdate(n);
+            if (neuronEntity.isNotNewEntity()) {
+                LOG.info("MIP {}:{} had already been imported", n.getMipId(), n.getComputeFileData(ComputeFileType.InputColorDepthImage));
+            }
+        });
     }
 
     @Override

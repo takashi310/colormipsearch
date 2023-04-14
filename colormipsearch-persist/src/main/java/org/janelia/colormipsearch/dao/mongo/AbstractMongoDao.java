@@ -91,6 +91,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
     public void save(T entity) {
         if (!entity.hasEntityId()) {
             entity.setEntityId(idGenerator.generateId());
+            entity.setNewEntity(true);
             try {
                 mongoCollection.insertOne(entity);
             } catch (MongoWriteException e) {
@@ -107,6 +108,7 @@ public abstract class AbstractMongoDao<T extends BaseEntity> extends AbstractDao
         entities.forEach(e -> {
             if (!e.hasEntityId()) {
                 e.setEntityId(idIterator.next());
+                e.setNewEntity(true);
                 toInsert.add(e);
             }
         });
