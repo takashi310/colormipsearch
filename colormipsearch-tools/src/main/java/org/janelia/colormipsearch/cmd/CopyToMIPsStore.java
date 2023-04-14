@@ -181,18 +181,45 @@ class CopyToMIPsStore extends AbstractCmd {
 
     private String createLMMIPName(LMNeuronEntity lmNeuronEntity, String cdmName, String variantName, int segmentIndex) {
         String baseCDMName = RegExUtils.replacePattern(cdmName, "(_CDM)?\\..*$", "");
-        List<String> nameComponents = Splitter.on('-').splitToList(baseCDMName);
-        String prefix = nameComponents.get(0); // there should always be at least one component even if there is no hyphen delim
         String alignmentSpace = lmNeuronEntity.getAlignmentSpace();
         String slideCode = lmNeuronEntity.getSlideCode();
         String objective = lmNeuronEntity.getObjective();
         String anatomicalArea = lmNeuronEntity.getAnatomicalArea();
         String sampleRef = StringUtils.removeStartIgnoreCase(lmNeuronEntity.getSourceRefId(), "Sample#");
-        String channel = getComponent(nameComponents, 6, "",
-                s -> StringUtils.removeStartIgnoreCase(StringUtils.removeStartIgnoreCase(s, "c"), "h")
-        );
+        String prefix;
+        int slideCodeIndex = baseCDMName.indexOf(slideCode);
+        // the logic to build the name is more complicated because using '-' as a separator does not always work
+        // I found a case where the prefix actually contains hyphen in it:
+        // GMR_SS02232-IVS-myr-FLAG_Syt-HA_3_0055-A01-20141118_31_G3-20x-Brain-JRC2018_Unisex_20x_HR-2087123930354548834-CH1_CDM.png
+        if (slideCodeIndex == -1) {
+            LOG.error("CDM name: {} does not contain the slide code ({}) and it does not match the naming convention",
+                    cdmName, slideCode);
+            prefix = "";
+        } else {
+            prefix = cdmName.substring(0, slideCodeIndex);
+        }
+        int sampleRefIndex = baseCDMName.indexOf(sampleRef);
+        String channelComponent;
+        if (sampleRefIndex == -1) {
+            LOG.error("CDM name: {} does not contain the sample ID ({}) and it does not match the naming convention",
+                    cdmName, sampleRef);
+            // default to separating the name using '-' and use the last component as the channel component
+            List<String> nameComponents = Splitter.on('-').splitToList(baseCDMName);
+            channelComponent = nameComponents.get(nameComponents.size()-1);
+        } else {
+            int channelComponentIndex = sampleRefIndex + sampleRef.length() + 1;
+            if (channelComponentIndex < baseCDMName.length()) {
+                channelComponent = baseCDMName.substring(channelComponentIndex);
+            } else {
+                // default to separating the name using '-' and use the last component as the channel component
+                List<String> nameComponents = Splitter.on('-').splitToList(baseCDMName);
+                channelComponent = nameComponents.get(nameComponents.size()-1);
+            }
+        }
+        String channel = StringUtils.removeStartIgnoreCase(StringUtils.removeStartIgnoreCase(channelComponent, "c"), "h");
+        LOG.debug("Used {} to extract channel info from {} -> {}", channelComponent, cdmName, channel);
         return formatSimpleSegmentName(
-                prefix + '-' +
+                prefix +
                         slideCode + '-' +
                         objective + '-' +
                         anatomicalArea + '-' +
@@ -202,14 +229,6 @@ class CopyToMIPsStore extends AbstractCmd {
                 segmentIndex,
                 getNameExt(variantName)
         );
-    }
-
-    private String getComponent(List<String> comps, int index, String defaultValue, Function<String, String> compTransform) {
-        if (index < comps.size()) {
-            return compTransform.apply(comps.get(index));
-        } else {
-            return defaultValue;
-        }
     }
 
     private String getNameExt(String name) {
