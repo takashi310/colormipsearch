@@ -121,6 +121,12 @@ class MIPsHandlingUtils {
                         neuronMetadata.getComputeFileData(ComputeFileType.SourceColorDepthImage), channelFromMip, fn, channelFromFN);
                 String objectiveFromMip = cmip.objective;
                 String objectiveFromFN = extractObjectiveFromImageName(fn.replace(neuronIndexing, ""));
+                if (channelFromMip == -1) {
+                    LOG.info("No channel info '{}' found in mip {}:{}", cmip.channelNumber, cmip.id, cmip.filepath);
+                }
+                if (channelFromFN == -1) {
+                    LOG.info("No channel info found in segmentation MIP name: {}", fn);
+                }
                 return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
                         matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
             };
@@ -174,10 +180,8 @@ class MIPsHandlingUtils {
         if (mipChannel == -1 && segmentImageChannel == -1) {
             return true;
         } else if (mipChannel == -1)  {
-            LOG.warn("No channel info found in the mip");
             return true;
         } else if (segmentImageChannel == -1) {
-            LOG.warn("No channel info found in the segmented image");
             return true;
         } else {
             return mipChannel == segmentImageChannel;
