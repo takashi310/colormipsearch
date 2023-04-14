@@ -83,14 +83,12 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         List<Bson> selectFilters = new ArrayList<>();
         List<Bson> updates = new ArrayList<>();
 
-        Number newId;
         if (!neuron.hasEntityId()) {
-            newId = idGenerator.generateId();
+            Number newId = idGenerator.generateId();
             selectFilters.add(MongoDaoHelper.createFilterByClass(neuron.getClass()));
             updates.add(MongoDaoHelper.getFieldUpdate("_id", new SetOnCreateValueHandler<>(newId)));
             updates.add(MongoDaoHelper.getFieldUpdate("createdDate", new SetOnCreateValueHandler<>(new Date())));
         } else {
-            newId = null;
             selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
         }
         if (neuron.hasMipID()) {
@@ -126,10 +124,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
                         );
-                if (newId != null && newId.equals(updatedNeuron.getEntityId())) {
-                    neuron.setNewEntity(true);
-                    updatedNeuron.setNewEntity(true);
-                }
                 neuron.setEntityId(updatedNeuron.getEntityId());
                 neuron.setCreatedDate(updatedNeuron.getCreatedDate());
                 return updatedNeuron;

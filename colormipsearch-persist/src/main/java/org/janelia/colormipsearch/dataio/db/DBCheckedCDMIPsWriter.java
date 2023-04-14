@@ -28,12 +28,7 @@ public class DBCheckedCDMIPsWriter implements CDMIPsWriter {
 
     @Override
     public void write(List<? extends AbstractNeuronEntity> neuronEntities) {
-        neuronEntities.forEach(n -> {
-            AbstractNeuronEntity neuronEntity = neuronMetadataDao.createOrUpdate(n);
-            if (neuronEntity.isNotNewEntity()) {
-                LOG.info("MIP {}:{} had already been imported", n.getMipId(), n.getComputeFileData(ComputeFileType.InputColorDepthImage));
-            }
-        });
+        neuronEntities.forEach(neuronMetadataDao::createOrUpdate);
     }
 
     @Override

@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -32,14 +31,5 @@ public interface BaseEntity {
      */
     default void setEntityClass(String entityClass) {
         // nothing to do here
-    }
-
-    @JsonIgnore
-    boolean isNewEntity();
-
-    void setNewEntity(boolean newEntity);
-
-    default boolean isNotNewEntity() {
-        return !isNewEntity();
     }
 }

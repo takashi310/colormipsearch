@@ -24,8 +24,6 @@ public abstract class AbstractBaseEntity implements BaseEntity {
     private Date createdDate = new Date();
     // tags associated with the current entity. These are mainly used for versioning the data.
     private Set<String> tags = new HashSet<>();
-    @JsonIgnore
-    private boolean newEntity;
 
     @Override
     public Number getEntityId() {
@@ -71,16 +69,6 @@ public abstract class AbstractBaseEntity implements BaseEntity {
 
     public boolean hasTag(String tag) {
         return tags.contains(tag);
-    }
-
-    @Override
-    public boolean isNewEntity() {
-        return newEntity;
-    }
-
-    @Override
-    public void setNewEntity(boolean newEntity) {
-        this.newEntity = newEntity;
     }
 
     @Override
