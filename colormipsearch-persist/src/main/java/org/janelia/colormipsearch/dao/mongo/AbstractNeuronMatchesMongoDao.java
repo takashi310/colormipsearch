@@ -125,7 +125,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                     m.setEntityId(idGenerator.generateId());
                     m.setCreatedDate(new Date());
                     updateOptions.upsert(true);
-                    updateOptions.bypassDocumentValidation(true);
+                    updateOptions.bypassDocumentValidation(false);
                     // select by Image Ref IDs
                     selectCriteria = MongoDaoHelper.createBsonFilterCriteria(
                             Arrays.asList(
@@ -151,7 +151,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 toWrite.add(new UpdateOneModel<R>(selectCriteria, updates, updateOptions));
             }
         });
-        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(true).ordered(false));
+        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
     }
 
     private <V> EntityFieldNameValueHandler<V> toEntityFieldValueHandler(NeuronField<V> nf) {
