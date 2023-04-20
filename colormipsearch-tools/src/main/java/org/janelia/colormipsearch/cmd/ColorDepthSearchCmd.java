@@ -197,6 +197,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         .collect(Collectors.toList()),
                 colorMIPSearch.getCDSParameters(),
                 processingTags);
+        LOG.info("Created CDS session {} for processing tags {}", cdsRunId, processingTags);
         if (useSpark) {
             colorMIPSearchProcessor = new SparkColorMIPSearchProcessor<>(
                     cdsRunId,
