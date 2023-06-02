@@ -4,9 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
+import org.janelia.colormipsearch.model.annotations.DoNotPersist;
 
 public class LMNeuronEntity extends AbstractNeuronEntity {
 
+    // LM internal line name - this could be useful when importing the mips into a JSON file
+    // which later is used to copy the MIPs to the filestore.
+    // Having the internal name in there can be helpful in generating the proper MIP name
+    // for the JACS filestore.
+    private String internalLineName;
     // LM slide code is required for selecting the top ranked matches during gradient scoring
     private String slideCode;
     // anatomicalArea, gender and objective required for uploading the imagery
@@ -17,6 +23,15 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
     @Override
     public String getNeuronId() {
         return getSlideCode();
+    }
+
+    @DoNotPersist
+    public String getInternalLineName() {
+        return internalLineName;
+    }
+
+    public void setInternalLineName(String internalLineName) {
+        this.internalLineName = internalLineName;
     }
 
     public String getSlideCode() {
@@ -65,6 +80,7 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
     public LMNeuronEntity duplicate() {
         LMNeuronEntity n = new LMNeuronEntity();
         n.copyFrom(this);
+        n.internalLineName = this.getInternalLineName();
         n.slideCode = this.getSlideCode();
         n.anatomicalArea = this.getAnatomicalArea();
         n.gender = this.getGender();

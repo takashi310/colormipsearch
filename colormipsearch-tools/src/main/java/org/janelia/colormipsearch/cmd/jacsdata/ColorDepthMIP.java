@@ -80,6 +80,10 @@ public class ColorDepthMIP implements Serializable {
         return StringUtils.isNotBlank(channelNumber) ? Integer.parseInt(channelNumber) : -1;
     }
 
+    public String lmInternalLineName() {
+        return sample != null ? sample.line : null;
+    }
+
     public String lmLineName() {
         return sample != null ? sample.publishingName : null;
     }

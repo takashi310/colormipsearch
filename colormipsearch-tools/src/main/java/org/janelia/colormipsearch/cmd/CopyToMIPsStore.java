@@ -181,6 +181,7 @@ class CopyToMIPsStore extends AbstractCmd {
 
     private String createLMMIPName(LMNeuronEntity lmNeuronEntity, String cdmName, String variantName, int segmentIndex) {
         String baseCDMName = RegExUtils.replacePattern(cdmName, "(_CDM)?\\..*$", "");
+        String internalLineName = lmNeuronEntity.getInternalLineName();
         String alignmentSpace = lmNeuronEntity.getAlignmentSpace();
         String slideCode = lmNeuronEntity.getSlideCode();
         String objective = lmNeuronEntity.getObjective();
@@ -192,11 +193,21 @@ class CopyToMIPsStore extends AbstractCmd {
         // I found a case where the prefix actually contains hyphen in it:
         // GMR_SS02232-IVS-myr-FLAG_Syt-HA_3_0055-A01-20141118_31_G3-20x-Brain-JRC2018_Unisex_20x_HR-2087123930354548834-CH1_CDM.png
         if (slideCodeIndex == -1) {
-            LOG.error("CDM name: {} does not contain the slide code ({}) and it does not match the naming convention",
-                    cdmName, slideCode);
+            LOG.error("CDM name: {} does not contain the slide code ({}) in {} and it does not match the naming convention",
+                    cdmName, slideCode, baseCDMName);
             prefix = "";
         } else {
             prefix = cdmName.substring(0, slideCodeIndex);
+        }
+        if (StringUtils.isNotBlank(internalLineName)) {
+            if (StringUtils.isNotBlank(prefix) && !StringUtils.startsWith(prefix, internalLineName)) {
+                LOG.info("Internal line name '{}' and found prefix '{}' do not match in {}",
+                         internalLineName, prefix, cdmName);
+                prefix = internalLineName + '-';
+            } else if (StringUtils.isBlank(prefix)) {
+                LOG.info("Use'{}' as prefix for {}", internalLineName, cdmName);
+                prefix = internalLineName + '-';
+            }
         }
         int sampleRefIndex = baseCDMName.indexOf(sampleRef);
         String channelComponent;
@@ -218,7 +229,7 @@ class CopyToMIPsStore extends AbstractCmd {
         }
         String channel = StringUtils.removeStartIgnoreCase(StringUtils.removeStartIgnoreCase(channelComponent, "c"), "h");
         LOG.debug("Used {} to extract channel info from {} -> {}", channelComponent, cdmName, channel);
-        return formatSimpleSegmentName(
+        String mipName = formatSimpleSegmentName(
                 prefix +
                         slideCode + '-' +
                         objective + '-' +
@@ -229,6 +240,11 @@ class CopyToMIPsStore extends AbstractCmd {
                 segmentIndex,
                 getNameExt(variantName)
         );
+        if (slideCodeIndex == -1) {
+            // log the final name in case an error was found
+            LOG.info("Final name for {} -> {}", cdmName, mipName);
+        }
+        return mipName;
     }
 
     private String getNameExt(String name) {

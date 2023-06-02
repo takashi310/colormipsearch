@@ -106,7 +106,7 @@ public class FileDataUtils {
                 .filter(en -> variantArchiveEntries.containsKey(en))
                 .flatMap(en -> variantArchiveEntries.get(en).stream())
                 .findFirst()
-                .map(en -> FileData.fromComponents(FileData.FileDataType.zipEntry, variantPath.toString(), en))
+                .map(en -> FileData.fromComponents(FileData.FileDataType.zipEntry, variantPath.toString(), en, true))
                 .orElse(null);
     }
 

@@ -141,7 +141,7 @@ class MIPsHandlingUtils {
                         int scIndex = sifn.indexOf(neuronIndexing);
                         Preconditions.checkArgument(scIndex != -1);
                         N segmentedNeuron = (N) neuronMetadata.duplicate();
-                        segmentedNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, FileData.fromComponents(fileDataType, inputDataBasePath, p));
+                        segmentedNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, FileData.fromComponents(fileDataType, inputDataBasePath, p, true));
                         return segmentedNeuron;
                     })
                     .collect(Collectors.toList());

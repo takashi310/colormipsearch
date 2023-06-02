@@ -25,7 +25,8 @@ public class FileDataDeserializer extends JsonDeserializer<FileData> {
             return FileData.fromComponents(
                     dataTypeNode != null ? FileData.FileDataType.valueOf(dataTypeNode.asText()) : FileData.FileDataType.file,
                     fileNameNode != null ? fileNameNode.asText() : null,
-                    entryNameNode != null ? entryNameNode.asText() : null
+                    entryNameNode != null ? entryNameNode.asText() : null,
+                    true
             );
         } else {
             return null;

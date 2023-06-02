@@ -404,6 +404,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronMetadata.setAlignmentSpace(cdmip.alignmentSpace);
         neuronMetadata.setLibraryName(libraryName);
         neuronMetadata.setSourceRefId(cdmip.sampleRef);
+        neuronMetadata.setInternalLineName(cdmip.lmInternalLineName());
         neuronMetadata.setPublishedName(cdmip.lmLineName());
         neuronMetadata.setSlideCode(cdmip.lmSlideCode());
         neuronMetadata.setAnatomicalArea(cdmip.anatomicalArea);

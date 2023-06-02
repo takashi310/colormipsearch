@@ -33,17 +33,18 @@ public class FileData {
         }
     }
 
-    public static FileData fromComponents(FileDataType fileDataType, String parent, String name) {
+    public static FileData fromComponents(FileDataType fileDataType, String parent, String name, boolean normalize) {
+        Path parentFilePath = Paths.get(parent).toAbsolutePath().normalize();
         if (fileDataType == FileDataType.zipEntry) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.zipEntry);
-            fd.setFileName(parent);
+            fd.setFileName(parentFilePath.toString());
             fd.setEntryName(name);
             return fd;
         } else {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.file);
-            fd.setFileName(Paths.get(parent).resolve(name).toString());
+            fd.setFileName(parentFilePath.resolve(name).toString());
             return fd;
         }
     }
