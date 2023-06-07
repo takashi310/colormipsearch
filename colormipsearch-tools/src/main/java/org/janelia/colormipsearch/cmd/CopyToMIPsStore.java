@@ -57,6 +57,7 @@ class CopyToMIPsStore extends AbstractCmd {
             "zgap", ComputeFileType.ZGapImage
     );
     private static final Pattern FILENAME_EXT_PATTERN = Pattern.compile(".+(\\..*)$");
+    private static final Pattern SEGMENT_INDEX_PATTERN = Pattern.compile(".+_ch?\\d+_(\\d+)\\..*$", Pattern.CASE_INSENSITIVE);
 
     @Parameters(commandDescription = "Create JACS variant library")
     static class CopyToMIPSStoreArgs extends AbstractCmdArgs {
@@ -127,31 +128,22 @@ class CopyToMIPsStore extends AbstractCmd {
     private void copyMIPs(BiConsumer<FileData, Path> copyMIPVariantAction, Path targetDir) {
         CDMIPsReader cdmipsReader = getCDMipsReader();
         List<? extends AbstractNeuronEntity> mips = readMIPs(cdmipsReader);
-        Map<String, List<AbstractNeuronEntity>> groupedMipsByMipID = mips.stream()
-                .collect(Collectors.groupingBy(AbstractNeuronEntity::getMipId, Collectors.toList()));
 
-        groupedMipsByMipID.entrySet().stream().parallel()
-                .forEach(mipIdEntries -> {
-                    Streams.zip(IntStream.rangeClosed(1, mipIdEntries.getValue().size()).boxed(),
-                                    mipIdEntries.getValue().stream(),
-                                    ImmutablePair::of)
-                            .filter(indexedNeuronEntity -> indexedNeuronEntity.getRight().hasComputeFile(ComputeFileType.SourceColorDepthImage))
-                            .forEach(indexedNeuronEntity -> {
-                                Integer mipIndex = indexedNeuronEntity.getLeft();
-                                AbstractNeuronEntity neuronEntity = indexedNeuronEntity.getRight();
-                                String sourceCDMName = neuronEntity.getComputeFileData(ComputeFileType.SourceColorDepthImage).getNameCompOnly();
-                                // handle surjective variants
-                                args.surjectiveVariantMapping.forEach((variantType, targetFolderName) -> {
-                                    ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
-                                    if (neuronEntity.hasComputeFile(ft)) {
-                                        FileData fd = neuronEntity.getComputeFileData(ft);
-                                        copyMIPVariantAction.accept(
-                                                fd,
-                                                targetDir.resolve(targetFolderName)
-                                                        .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd, mipIndex)));
-                                    }
-                                });
-                            });
+        mips.stream()
+                .filter(neuronEntity -> neuronEntity.hasComputeFile(ComputeFileType.SourceColorDepthImage))
+                .parallel()
+                .forEach(neuronEntity -> {
+                    String sourceCDMName = neuronEntity.getComputeFileData(ComputeFileType.SourceColorDepthImage).getNameCompOnly();
+                    args.surjectiveVariantMapping.forEach((variantType, targetFolderName) -> {
+                        ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
+                        if (neuronEntity.hasComputeFile(ft)) {
+                            FileData fd = neuronEntity.getComputeFileData(ft);
+                            copyMIPVariantAction.accept(
+                                    fd,
+                                    targetDir.resolve(targetFolderName)
+                                            .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd)));
+                        }
+                    });
                 });
     }
 
@@ -170,16 +162,16 @@ class CopyToMIPsStore extends AbstractCmd {
                 .collect(Collectors.toList());
     }
 
-    private String createMIPVariantName(AbstractNeuronEntity neuronEntity, String cdmName, FileData fd, int mipIndex) {
+    private String createMIPVariantName(AbstractNeuronEntity neuronEntity, String cdmName, FileData fd) {
         if (MIPsHandlingUtils.isEmLibrary(neuronEntity.getLibraryName())) {
             return fd.getNameCompOnly();
         } else {
             LMNeuronEntity lmNeuronEntity = (LMNeuronEntity) neuronEntity;
-            return createLMMIPName(lmNeuronEntity, cdmName, fd.getNameCompOnly(), mipIndex);
+            return createLMMIPName(lmNeuronEntity, cdmName, fd.getNameCompOnly());
         }
     }
 
-    private String createLMMIPName(LMNeuronEntity lmNeuronEntity, String cdmName, String variantName, int segmentIndex) {
+    private String createLMMIPName(LMNeuronEntity lmNeuronEntity, String cdmName, String variantName) {
         String baseCDMName = RegExUtils.replacePattern(cdmName, "(_CDM)?\\..*$", "");
         String internalLineName = lmNeuronEntity.getInternalLineName();
         String alignmentSpace = lmNeuronEntity.getAlignmentSpace();
@@ -237,7 +229,7 @@ class CopyToMIPsStore extends AbstractCmd {
                         alignmentSpace + '-' +
                         sampleRef + '-' +
                         "CH" + channel,
-                segmentIndex,
+                getSegmentIndex(variantName),
                 getNameExt(variantName)
         );
         if (slideCodeIndex == -1) {
@@ -245,6 +237,16 @@ class CopyToMIPsStore extends AbstractCmd {
             LOG.info("Final name for {} -> {}", cdmName, mipName);
         }
         return mipName;
+    }
+
+    private String getSegmentIndex(String name) {
+        Matcher segmentIndexMatcher = SEGMENT_INDEX_PATTERN.matcher(name);
+        if (segmentIndexMatcher.find()) {
+            return segmentIndexMatcher.group(1);
+        } else {
+            return "";
+        }
+
     }
 
     private String getNameExt(String name) {
@@ -256,9 +258,9 @@ class CopyToMIPsStore extends AbstractCmd {
         }
     }
 
-    private String formatSimpleSegmentName(String segmentName, int segmentIndex, String imageExt) {
-        if (segmentIndex > 0) {
-            return String.format("%s-%02d_CDM%s", segmentName, segmentIndex, imageExt);
+    private String formatSimpleSegmentName(String segmentName, String segmentIndex, String imageExt) {
+        if (StringUtils.isNotBlank(segmentIndex)) {
+            return String.format("%s-%s_CDM%s", segmentName, segmentIndex, imageExt);
         } else {
             return String.format("%s_CDM%s", segmentName, imageExt);
         }
