@@ -237,7 +237,7 @@ class CopyToMIPsStore extends AbstractCmd {
         );
         if (slideCodeIndex == -1) {
             // log the final name in case an error was found
-            LOG.info("Final name for {} -> {}", cdmName, mipName);
+            LOG.info("Final targetName for {} -> {} (not entirely based on {})", variantName, mipName, cdmName);
         }
         return mipName;
     }
