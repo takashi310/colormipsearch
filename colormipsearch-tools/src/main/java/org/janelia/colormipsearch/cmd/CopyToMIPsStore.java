@@ -75,6 +75,9 @@ class CopyToMIPsStore extends AbstractCmd {
         @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
         boolean simulateFlag;
 
+        @Parameter(names = {"--lmIgnoreMissingSegmentation"}, description = "If set do not error for LM variants that do not have segment index")
+        boolean ignoreMissedSegmentation = false;
+
         // surjective variants may have more than one image (segmentation, or flipped) associated with the original MIP
         // there may also be cases when the variant library must be one-to-one correspondence - injectiveVariants
         // but the injectiveVariants are left out until needed, they were present in commit: 2c2a80cc
@@ -241,12 +244,19 @@ class CopyToMIPsStore extends AbstractCmd {
 
     private String getSegmentIndex(String name) {
         Matcher segmentIndexMatcher = SEGMENT_INDEX_PATTERN.matcher(name);
+        String segmentIndex;
         if (segmentIndexMatcher.find()) {
-            return segmentIndexMatcher.group(1);
+            segmentIndex = segmentIndexMatcher.group(1);
         } else {
-            return "";
+            segmentIndex = "";
         }
-
+        if (StringUtils.isBlank(segmentIndex)) {
+            if (args.ignoreMissedSegmentation) {
+                return "";
+            } else {
+                throw new IllegalArgumentException("Segment index not found or empty in " + name);
+            }
+        } else return segmentIndex;
     }
 
     private String getNameExt(String name) {
