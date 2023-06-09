@@ -135,19 +135,25 @@ class CopyToMIPsStore extends AbstractCmd {
         mips.stream()
                 .filter(neuronEntity -> neuronEntity.hasComputeFile(ComputeFileType.SourceColorDepthImage))
                 .parallel()
-                .forEach(neuronEntity -> {
+                .flatMap(neuronEntity -> {
                     String sourceCDMName = neuronEntity.getComputeFileData(ComputeFileType.SourceColorDepthImage).getNameCompOnly();
-                    args.surjectiveVariantMapping.forEach((variantType, targetFolderName) -> {
-                        ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
-                        if (neuronEntity.hasComputeFile(ft)) {
-                            FileData fd = neuronEntity.getComputeFileData(ft);
-                            copyMIPVariantAction.accept(
-                                    fd,
-                                    targetDir.resolve(targetFolderName)
-                                            .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd)));
-                        }
-                    });
-                });
+                    return args.surjectiveVariantMapping.entrySet().stream()
+                            .map(variantEntry -> {
+                                String variantType = variantEntry.getKey();
+                                ComputeFileType ft = VARIANT_FILE_TYPE_MAPPING.get(variantType);
+                                return ImmutablePair.of(ft, variantEntry.getValue());
+                            })
+                            .filter(fileTypeAndTargetFolder -> neuronEntity.hasComputeFile(fileTypeAndTargetFolder.getLeft()))
+                            .map(fileTypeAndTargetFolder -> {
+                                FileData fd = neuronEntity.getComputeFileData(fileTypeAndTargetFolder.getLeft());
+                                return ImmutablePair.of(
+                                        fd,
+                                        targetDir.resolve(fileTypeAndTargetFolder.getRight())
+                                                .resolve(createMIPVariantName(neuronEntity, sourceCDMName, fd)));
+                            });
+                })
+                .distinct()
+                .forEach(fdAndTarget -> copyMIPVariantAction.accept(fdAndTarget.getLeft(), fdAndTarget.getRight()));
     }
 
     private CDMIPsReader getCDMipsReader() {
