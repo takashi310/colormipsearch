@@ -149,6 +149,11 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         @Parameter(names = {"--output-filename"}, description = "Output file name")
         String outputFileName;
 
+        @Parameter(names = {"--match-neuron-state"},
+                description = "Match neuron state",
+                arity = 0)
+        boolean matchNeuronState = false;
+
         @Parameter(names = {"--for-update"},
                 description = "If entry (or file exists when persisting to the filesystem) update the entry",
                 arity = 0)
@@ -314,6 +319,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     .map(cdmip -> MIPsHandlingUtils.isEmLibrary(libraryName)
                             ? asEMNeuron(cdmip, libraryNameExtractor)
                             : asLMNeuron(cdmip, libraryNameExtractor))
+                    .filter(cdmip -> CollectionUtils.isEmpty(includedPublishedNames) || CollectionUtils.containsAny(includedPublishedNames, cdmip.getNeuronMetadata().getPublishedName()))
+                    .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip.getNeuronMetadata().getNeuronId()))
                     .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(
                                     cdmip.getNeuronMetadata(),
                                     cdmip.getSourceMIP().objective,
@@ -321,12 +328,11 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                     searchableLibraryVariant.variantPath,
                                     inputImages,
                                     args.includeOriginalWithSegmentation,
+                                    args.matchNeuronState,
                                     args.segmentedImageChannelBase)
                             .stream()
                             .map(n -> new InputCDMipNeuron<>(cdmip.getSourceMIP(), n))
                     )
-                    .filter(cdmip -> CollectionUtils.isEmpty(includedPublishedNames) || CollectionUtils.containsAny(includedPublishedNames, cdmip.getNeuronMetadata().getPublishedName()))
-                    .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip.getNeuronMetadata().getNeuronId()))
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip.getNeuronMetadata(),
                             EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
@@ -535,6 +541,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                 sourceLibraryEntriesType,
                                 sourceLibraryPath,
                                 cdmipImageName))
+                .filter(cdmip -> CollectionUtils.isEmpty(includedPublishedNames) || CollectionUtils.containsAny(includedPublishedNames, cdmip.getNeuronMetadata().getPublishedName()))
+                .filter(cdmip -> CollectionUtils.isEmpty(excludedNeurons) || !CollectionUtils.containsAny(excludedNeurons, cdmip.getNeuronMetadata().getNeuronId()))
                 .flatMap(cdmip -> MIPsHandlingUtils.findNeuronMIPs(
                                         cdmip.getNeuronMetadata(),
                                         null,
@@ -542,6 +550,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                         searchableLibraryVariant.variantPath,
                                         inputImages,
                                         args.includeOriginalWithSegmentation,
+                                        args.matchNeuronState,
                                         args.segmentedImageChannelBase)
                                     .stream()
                                     .map(n -> new InputCDMipNeuron<>(cdmip.getSourceMIP(), n)))

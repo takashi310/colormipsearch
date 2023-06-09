@@ -85,6 +85,7 @@ class MIPsHandlingUtils {
                                                                    String neuronImagesBasePath,
                                                                    Pair<FileData.FileDataType, Map<String, List<String>>> neuronImages,
                                                                    boolean includeOriginal,
+                                                                   boolean matchNeuronState,
                                                                    int neuronImageChannelBase) {
         if (StringUtils.isBlank(neuronImagesBasePath)) {
             return Collections.singletonList(originalAsInput(neuronMetadata));
@@ -94,7 +95,10 @@ class MIPsHandlingUtils {
                     sourceObjective,
                     sourceChannel,
                     neuronImagesBasePath,
-                    neuronImages.getLeft(), neuronImages.getRight(), neuronImageChannelBase);
+                    neuronImages.getLeft(),
+                    neuronImages.getRight(),
+                    matchNeuronState,
+                    neuronImageChannelBase);
             return Stream.concat(
                             includeOriginal
                                 ? Stream.of(originalAsInput(neuronMetadata)) // return both the segmentation and the original
@@ -120,19 +124,24 @@ class MIPsHandlingUtils {
                                                                                   String inputDataBasePath,
                                                                                   FileData.FileDataType fileDataType,
                                                                                   Map<String, List<String>> computeInputImages,
+                                                                                  boolean matchNeuronState,
                                                                                   int inputImageChannelBase) {
         Predicate<String> segmentedImageMatcher;
         String neuronIndexing = neuronMetadata.getNeuronId();
         if (isEmLibrary(neuronMetadata.getLibraryName())) {
             Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+[_-]([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
             segmentedImageMatcher = p -> {
-                String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
-                Preconditions.checkArgument(fn.contains(neuronIndexing));
-                String cmFN = RegExUtils.replacePattern(Paths.get(neuronMetadata.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(), "\\.\\D*$", "");
-                String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
-                String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
-                return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||
-                        StringUtils.isNotBlank(cmFNState) && fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
+                if (matchNeuronState) {
+                    String fn = RegExUtils.replacePattern(Paths.get(p).getFileName().toString(), "\\.\\D*$", "");
+                    Preconditions.checkArgument(fn.contains(neuronIndexing));
+                    String cmFN = RegExUtils.replacePattern(Paths.get(neuronMetadata.getComputeFileName(ComputeFileType.SourceColorDepthImage)).getFileName().toString(), "\\.\\D*$", "");
+                    String fnState = extractEMNeuronStateFromName(fn, emNeuronStateRegExPattern);
+                    String cmFNState = extractEMNeuronStateFromName(cmFN, emNeuronStateRegExPattern);
+                    return StringUtils.isBlank(fnState) && StringUtils.isBlank(cmFNState) ||
+                            StringUtils.isNotBlank(cmFNState) && fnState.startsWith(cmFNState); // fnState may be LV or TC which is actually the same as L or T respectivelly so for now this check should work
+                } else {
+                    return true;
+                }
             };
         } else {
             segmentedImageMatcher = p -> {
