@@ -539,7 +539,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             LOG.info("Include only {} published names", includedPublishedNames.size());
         }
         if (CollectionUtils.isNotEmpty(excludedNeurons)) {
-            LOG.info("Exclude {} neurons", excludedNeurons);
+            LOG.info("Exclude {} neurons", excludedNeurons.size());
         }
         List<AbstractNeuronEntity> cdNeurons = sourceLibraryMips.stream()
                 .map(cdmipImageName -> MIPsHandlingUtils.isEmLibrary(libraryName)
