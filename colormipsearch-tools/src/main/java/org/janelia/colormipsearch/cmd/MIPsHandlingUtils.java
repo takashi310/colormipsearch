@@ -45,6 +45,15 @@ class MIPsHandlingUtils {
         }
     }
 
+    static String extractEMBodyIdFromName(String name) {
+        Matcher matcher = emSkeletonRegexPattern().matcher(name);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
     static String extractObjectiveFromMIPName(String mipName) {
         Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
         Matcher objectiveMatcher = regExPattern.matcher(mipName);
@@ -67,12 +76,12 @@ class MIPsHandlingUtils {
     }
 
     static boolean isEmLibrary(String lname) {
-        return lname != null && StringUtils.containsIgnoreCase(lname, "flyem") &&
-                (StringUtils.containsIgnoreCase(lname, "hemibrain") || StringUtils.containsIgnoreCase(lname, "vnc"));
+        return lname != null && StringUtils.startsWithIgnoreCase(lname, "flyem");
     }
 
-    static <N extends AbstractNeuronEntity> List<N> findNeuronMIPs(ColorDepthMIP cmip,
-                                                                   N neuronMetadata,
+    static <N extends AbstractNeuronEntity> List<N> findNeuronMIPs(N neuronMetadata,
+                                                                   String sourceObjective,
+                                                                   int sourceChannel,
                                                                    String neuronImagesBasePath,
                                                                    Pair<FileData.FileDataType, Map<String, List<String>>> neuronImages,
                                                                    boolean includeOriginal,
@@ -80,7 +89,12 @@ class MIPsHandlingUtils {
         if (StringUtils.isBlank(neuronImagesBasePath)) {
             return Collections.singletonList(originalAsInput(neuronMetadata));
         } else {
-            List<N> segmentedCDMIPs = lookupSegmentedImages(cmip, neuronMetadata, neuronImagesBasePath, neuronImages.getLeft(), neuronImages.getRight(), neuronImageChannelBase);
+            List<N> segmentedCDMIPs = lookupSegmentedImages(
+                    neuronMetadata,
+                    sourceObjective,
+                    sourceChannel,
+                    neuronImagesBasePath,
+                    neuronImages.getLeft(), neuronImages.getRight(), neuronImageChannelBase);
             return Stream.concat(
                             includeOriginal
                                 ? Stream.of(originalAsInput(neuronMetadata)) // return both the segmentation and the original
@@ -90,9 +104,19 @@ class MIPsHandlingUtils {
         }
     }
 
+    static int getColorChannel(ColorDepthMIP cmip) {
+        int channel = cmip.channelNumber();
+        if (channel > 0) {
+            return channel - 1; // mip channels are 1 based so make it 0 based
+        } else {
+            return -1;
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private static <N extends AbstractNeuronEntity> List<N> lookupSegmentedImages(ColorDepthMIP cmip,
-                                                                                  N neuronMetadata,
+    private static <N extends AbstractNeuronEntity> List<N> lookupSegmentedImages(N neuronMetadata,
+                                                                                  String sourceObjective,
+                                                                                  int sourceChannel,
                                                                                   String inputDataBasePath,
                                                                                   FileData.FileDataType fileDataType,
                                                                                   Map<String, List<String>> computeInputImages,
@@ -114,21 +138,15 @@ class MIPsHandlingUtils {
             segmentedImageMatcher = p -> {
                 String fn = Paths.get(p).getFileName().toString();
                 Preconditions.checkArgument(fn.contains(neuronIndexing));
-                LMNeuronEntity lmNeuronMetadata = (LMNeuronEntity) neuronMetadata;
-                int channelFromMip = getColorChannel(cmip);
                 int channelFromFN = extractColorChannelFromMIPName(fn.replace(neuronIndexing, ""), inputImageChannelBase);
                 LOG.debug("Compare channel from {} ({}) with channel from {} ({})",
-                        neuronMetadata.getComputeFileData(ComputeFileType.SourceColorDepthImage), channelFromMip, fn, channelFromFN);
-                String objectiveFromMip = cmip.objective;
+                        neuronMetadata.getComputeFileData(ComputeFileType.SourceColorDepthImage), sourceChannel, fn, channelFromFN);
                 String objectiveFromFN = extractObjectiveFromImageName(fn.replace(neuronIndexing, ""));
-                if (channelFromMip == -1) {
-                    LOG.info("No channel info '{}' found in mip {}:{}", cmip.channelNumber, cmip.id, cmip.filepath);
-                }
                 if (channelFromFN == -1) {
                     LOG.info("No channel info found in segmentation MIP name: {}", fn);
                 }
-                return matchMIPChannelWithSegmentedImageChannel(channelFromMip, channelFromFN) &&
-                        matchMIPObjectiveWithSegmentedImageObjective(objectiveFromMip, objectiveFromFN);
+                return matchMIPChannelWithSegmentedImageChannel(sourceChannel, channelFromFN) &&
+                        matchMIPObjectiveWithSegmentedImageObjective(sourceObjective, objectiveFromFN);
             };
         }
         if (computeInputImages.get(neuronIndexing) == null) {
@@ -167,15 +185,6 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static int getColorChannel(ColorDepthMIP cmip) {
-        int channel = cmip.channelNumber();
-        if (channel > 0) {
-            return channel - 1; // mip channels are 1 based so make it 0 based
-        } else {
-            return -1;
-        }
-    }
-
     private static boolean matchMIPChannelWithSegmentedImageChannel(int mipChannel, int segmentImageChannel) {
         if (mipChannel == -1 && segmentImageChannel == -1) {
             return true;
@@ -211,11 +220,30 @@ class MIPsHandlingUtils {
         return segmentedNeuron;
     }
 
-    static Pair<FileData.FileDataType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath, String nameSuffixFilter) {
+    static Pair<FileData.FileDataType, Map<String, List<String>>> getLibraryImageFiles(String library, String libraryPath, String ignorePattern, String nameSuffixFilter) {
         if (isEmLibrary(library)) {
-            return getImageFiles(emSkeletonRegexPattern(), libraryPath, nameSuffixFilter);
+            return getImageFiles(emSkeletonRegexPattern(), libraryPath, ignorePattern, nameSuffixFilter);
         } else {
-            return getImageFiles(lmSlideCodeRegexPattern(), libraryPath, nameSuffixFilter);
+            return getImageFiles(lmSlideCodeRegexPattern(), libraryPath, ignorePattern, nameSuffixFilter);
+        }
+    }
+
+    static Pair<FileData.FileDataType, List<String>> listLibraryImageFiles(String libraryPath, String ignorePattern, String nameSuffixFilter) {
+        if (StringUtils.isBlank(libraryPath)) {
+            return Pair.of(FileData.FileDataType.file, Collections.emptyList());
+        } else {
+            Path imagesBasePath = Paths.get(libraryPath);
+            if (Files.isDirectory(imagesBasePath)) {
+                return Pair.of(
+                        FileData.FileDataType.file,
+                        listImageFilesFromDir(imagesBasePath, ignorePattern, nameSuffixFilter));
+            } else if (Files.isRegularFile(imagesBasePath)) {
+                return Pair.of(
+                        FileData.FileDataType.zipEntry,
+                        listImageFilesFromZip(imagesBasePath.toFile(), ignorePattern, nameSuffixFilter));
+            } else {
+                return Pair.of(FileData.FileDataType.file, Collections.emptyList());
+            }
         }
     }
 
@@ -227,12 +255,16 @@ class MIPsHandlingUtils {
         return Pattern.compile("[-_](\\d\\d\\d\\d\\d\\d\\d\\d_[a-zA-Z0-9]+_[a-zA-Z0-9]+)([-_][mf])?[-_](.+[_-])ch?(\\d+)([_-]|(\\.))", Pattern.CASE_INSENSITIVE);
     }
 
-    private static Pair<FileData.FileDataType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern, String imagesBaseDir, String nameSuffixFilter) {
+    private static Pair<FileData.FileDataType, Map<String, List<String>>> getImageFiles(Pattern indexingFieldRegExPattern,
+                                                                                        String imagesBaseDir,
+                                                                                        String ignorePattern,
+                                                                                        String nameSuffixFilter) {
         if (StringUtils.isBlank(imagesBaseDir)) {
             return ImmutablePair.of(FileData.FileDataType.file, Collections.emptyMap());
         } else {
             Path imagesBasePath = Paths.get(imagesBaseDir);
-            Function<String, String> indexingFieldFromName = n -> {
+            Function<String, String> indexingFieldFromName = entryName -> {
+                String n = Paths.get(entryName).getFileName().toString();
                 Matcher m = indexingFieldRegExPattern.matcher(n);
                 if (m.find()) {
                     return m.group(1);
@@ -241,18 +273,17 @@ class MIPsHandlingUtils {
                     return null;
                 }
             };
-
             if (Files.isDirectory(imagesBasePath)) {
-                return ImmutablePair.of(FileData.FileDataType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath, nameSuffixFilter));
+                return ImmutablePair.of(FileData.FileDataType.file, getImageFilesFromDir(indexingFieldFromName, imagesBasePath, ignorePattern, nameSuffixFilter));
             } else if (Files.isRegularFile(imagesBasePath)) {
-                return ImmutablePair.of(FileData.FileDataType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile(), nameSuffixFilter));
+                return ImmutablePair.of(FileData.FileDataType.zipEntry, getImageFilesFromZip(indexingFieldFromName, imagesBasePath.toFile(), ignorePattern, nameSuffixFilter));
             } else {
                 return ImmutablePair.of(FileData.FileDataType.file, Collections.emptyMap());
             }
         }
     }
 
-    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir, String nameSuffixFilter) {
+    private static Map<String, List<String>> getImageFilesFromDir(Function<String, String> indexingFieldFromName, Path baseDir, String ignorePattern, String nameSuffixFilter) {
         try {
             return Files.find(baseDir, 1,
                             (p, fa) -> fa.isRegularFile())
@@ -266,6 +297,13 @@ class MIPsHandlingUtils {
                             return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
                         }
                     })
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(ignorePattern)) {
+                            return true;
+                        } else {
+                            return !StringUtils.containsIgnoreCase(entryName, ignorePattern);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
         } catch (IOException e) {
             LOG.warn("Error scanning {} for image files", baseDir, e);
@@ -273,7 +311,7 @@ class MIPsHandlingUtils {
         }
     }
 
-    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive, String nameSuffixFilter) {
+    private static Map<String, List<String>> getImageFilesFromZip(Function<String, String> indexingFieldFromName, File imagesFileArchive, String ignorePattern, String nameSuffixFilter) {
         ZipFile imagesZipFile;
         try {
             imagesZipFile = new ZipFile(imagesFileArchive);
@@ -294,7 +332,77 @@ class MIPsHandlingUtils {
                             return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
                         }
                     })
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(ignorePattern)) {
+                            return true;
+                        } else {
+                            return !StringUtils.containsIgnoreCase(entryName, ignorePattern);
+                        }
+                    })
                     .collect(Collectors.groupingBy(indexingFieldFromName));
+        } finally {
+            try {
+                imagesZipFile.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
+    private static List<String> listImageFilesFromDir(Path baseDir, String ignorePattern, String nameSuffixFilter) {
+        try {
+            return Files.find(baseDir, 1,
+                            (p, fa) -> fa.isRegularFile())
+                    .map(p -> p.getFileName().toString())
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(ignorePattern)) {
+                            return true;
+                        } else {
+                            return !StringUtils.containsIgnoreCase(entryName, ignorePattern);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.warn("Error scanning {} for image files", baseDir, e);
+            return Collections.emptyList();
+        }
+    }
+
+    private static List<String> listImageFilesFromZip(File imagesFileArchive, String ignorePattern, String nameSuffixFilter) {
+        ZipFile imagesZipFile;
+        try {
+            imagesZipFile = new ZipFile(imagesFileArchive);
+        } catch (Exception e) {
+            LOG.warn("Error opening image archive {}", imagesFileArchive, e);
+            return Collections.emptyList();
+        }
+        try {
+            return imagesZipFile.stream()
+                    .filter(ze -> !ze.isDirectory())
+                    .map(ZipEntry::getName)
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(nameSuffixFilter)) {
+                            return true;
+                        } else {
+                            String entryNameWithNoExt = RegExUtils.replacePattern(entryName, "\\.\\D*$", "");
+                            return StringUtils.endsWithIgnoreCase(entryNameWithNoExt, nameSuffixFilter);
+                        }
+                    })
+                    .filter(entryName -> {
+                        if (StringUtils.isBlank(ignorePattern)) {
+                            return true;
+                        } else {
+                            return !StringUtils.containsIgnoreCase(entryName, ignorePattern);
+                        }
+                    })
+                    .collect(Collectors.toList());
         } finally {
             try {
                 imagesZipFile.close();

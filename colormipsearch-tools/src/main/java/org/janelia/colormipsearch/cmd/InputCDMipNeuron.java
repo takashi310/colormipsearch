@@ -11,19 +11,19 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
  *
  * @param <N> neuron entity type
  */
-class InputCDMipNeuron<N extends AbstractNeuronEntity> {
+class InputCDMipNeuron<S, N extends AbstractNeuronEntity> {
 
     // source color depth MIP metadata
-    private final ColorDepthMIP sourceMIP;
+    private final S sourceMIP;
     // neuron metadata generated from source color depth MIP
     private final N neuronMetadata;
 
-    InputCDMipNeuron(@Nonnull ColorDepthMIP sourceMIP, @Nonnull N neuronMetadata) {
+    InputCDMipNeuron(@Nonnull S sourceMIP, @Nonnull N neuronMetadata) {
         this.sourceMIP = sourceMIP;
         this.neuronMetadata = neuronMetadata;
     }
 
-    ColorDepthMIP getSourceMIP() {
+    S getSourceMIP() {
         return sourceMIP;
     }
 

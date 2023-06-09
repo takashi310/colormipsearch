@@ -59,10 +59,13 @@ class LibraryVariantArg {
                 arg.variantPath = argComponents.get(2);
             }
             if (argComponents.size() > 3 && StringUtils.isNotBlank(argComponents.get(3))) {
-                arg.variantTypeSuffix = argComponents.get(3);
+                arg.variantIgnoredPattern = argComponents.get(3);
             }
             if (argComponents.size() > 4 && StringUtils.isNotBlank(argComponents.get(4))) {
-                arg.variantNameSuffix = argComponents.get(4);
+                arg.variantTypeSuffix = argComponents.get(4);
+            }
+            if (argComponents.size() > 5 && StringUtils.isNotBlank(argComponents.get(5))) {
+                arg.variantNameSuffix = argComponents.get(5);
             }
             return arg;
         }
@@ -71,6 +74,7 @@ class LibraryVariantArg {
     String libraryName;
     String variantType;
     String variantPath;
+    String variantIgnoredPattern;
     String variantTypeSuffix; // this is typically the suffix appended to a foldername such as _gradient or _RGB20x
     String variantNameSuffix; // this is a suffix that ends the filename itself such as _FL
 
