@@ -297,6 +297,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 args.includedMIPs);
         LOG.info("Found {} entities in library {} with alignment space {}{}",
                 cdmsCount, libraryName, args.alignmentSpace, CollectionUtils.isNotEmpty(args.datasets) ? " for datasets " + args.datasets : "");
+        if (CollectionUtils.isNotEmpty(includedPublishedNames)) {
+            LOG.info("Include only {} published names", includedPublishedNames.size());
+        }
+        if (CollectionUtils.isNotEmpty(excludedNeurons)) {
+            LOG.info("Exclude {} neurons", excludedNeurons);
+        }
 
         Function<ColorDepthMIP, String> libraryNameExtractor = cmip -> cmip.findLibrary(libraryName);
 
@@ -529,6 +535,12 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             return; // nothing to do
         }
         LOG.info("Process {} mips from {}", sourceLibraryMips.size(), sourceLibraryPath);
+        if (CollectionUtils.isNotEmpty(includedPublishedNames)) {
+            LOG.info("Include only {} published names", includedPublishedNames.size());
+        }
+        if (CollectionUtils.isNotEmpty(excludedNeurons)) {
+            LOG.info("Exclude {} neurons", excludedNeurons);
+        }
         List<AbstractNeuronEntity> cdNeurons = sourceLibraryMips.stream()
                 .map(cdmipImageName -> MIPsHandlingUtils.isEmLibrary(libraryName)
                         ? asEMNeuronFromName(
