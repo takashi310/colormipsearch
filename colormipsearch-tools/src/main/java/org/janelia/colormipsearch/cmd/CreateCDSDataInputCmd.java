@@ -108,6 +108,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             put("source", ComputeFileType.SourceColorDepthImage.name());
             put("source_cdm", ComputeFileType.SourceColorDepthImage.name());
             put("cdm", ComputeFileType.InputColorDepthImage.name());
+            put("searchable", ComputeFileType.InputColorDepthImage.name());
             put("searchable_neurons", ComputeFileType.InputColorDepthImage.name());
             put("segmentation", ComputeFileType.InputColorDepthImage.name());
             put("fl", ComputeFileType.InputColorDepthImage.name());
