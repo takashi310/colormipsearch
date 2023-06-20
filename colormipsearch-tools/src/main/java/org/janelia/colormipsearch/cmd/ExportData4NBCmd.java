@@ -174,7 +174,6 @@ class ExportData4NBCmd extends AbstractCmd {
 
     private ScoresFilter getCDScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
-        neuronsMatchScoresFilter.setEntityType(CDMatchEntity.class.getName());
         if (args.pctPositivePixels > 0) {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
@@ -186,7 +185,6 @@ class ExportData4NBCmd extends AbstractCmd {
 
     private ScoresFilter getPPPScoresFilter() {
         ScoresFilter neuronsMatchScoresFilter = new ScoresFilter();
-        neuronsMatchScoresFilter.setEntityType(PPPMatchEntity.class.getName());
         neuronsMatchScoresFilter.addSScore("rank", 0);
         return neuronsMatchScoresFilter;
     }

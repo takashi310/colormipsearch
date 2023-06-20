@@ -24,21 +24,7 @@ public class ScoresFilter {
         }
     }
 
-    private String entityType; // scored entity type
     private final List<ScoreField> scoreSelectors = new ArrayList<>();
-
-    public String getEntityType() {
-        return entityType;
-    }
-
-    public ScoresFilter setEntityType(String entityType) {
-        this.entityType = entityType;
-        return this;
-    }
-
-    public boolean hasEntityType() {
-        return StringUtils.isNotBlank(entityType);
-    }
 
     public List<ScoreField> getScoreSelectors() {
         return scoreSelectors;
@@ -50,8 +36,7 @@ public class ScoresFilter {
     }
 
     public boolean isEmpty() {
-        return StringUtils.isBlank(entityType)
-            && scoreSelectors.isEmpty();
+        return scoreSelectors.isEmpty();
     }
 
 }

@@ -201,6 +201,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
 
     public Map<String, Object> updateableFieldsOnInsert() {
         Map<String, Object> dict = new HashMap<>();
+        dict.put("class", getEntityClass());
         dict.put("mipId", getMipId());
         dict.put("tags", getTags());
         return dict;

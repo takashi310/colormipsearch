@@ -95,9 +95,6 @@ class NeuronSelectionHelper {
         if ((neuronsMatchScoresFilter == null || neuronsMatchScoresFilter.isEmpty())) {
             return;
         }
-        if (neuronsMatchScoresFilter.hasEntityType()) {
-            filter.add(MongoDaoHelper.createFilterByClass(neuronsMatchScoresFilter.getEntityType()));
-        }
         neuronsMatchScoresFilter.getScoreSelectors().forEach(s -> filter.add(Filters.gte(s.getFieldName(), s.getMinScore())));
     }
 
