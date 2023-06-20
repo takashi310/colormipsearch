@@ -28,7 +28,6 @@ import org.janelia.colormipsearch.dataio.CDMIPsWriter;
 import org.janelia.colormipsearch.dataio.CDSSessionWriter;
 import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.NeuronMatchesWriter;
-import org.janelia.colormipsearch.dataio.PartitionedNeuronMatchesWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDMIPsReader;
 import org.janelia.colormipsearch.dataio.db.DBCDSSessionWriter;
 import org.janelia.colormipsearch.dataio.db.DBCDScoresOnlyWriter;
