@@ -33,6 +33,7 @@ public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends Abstra
             return value;
         }
     }
+
     /**
      * Create or update matches. If a matcb, for the given mask entity ID and target entity ID, exists then update the fields
      * otherwise create it.
@@ -68,4 +69,12 @@ public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends Abstra
                                      NeuronSelector maskSelector,
                                      NeuronSelector targetSelector,
                                      PagedRequest pageRequest);
+
+    /**
+     * Update existing matches. The match must have a valid id otherwise an exceptio is thrown.
+     * @param matches to create or update
+     * @param fieldsToUpdateSelectors fields to update if the record exists
+     * @throws IllegalArgumentException if any of the matches from the list does not have a valid entity ID.
+     */
+    void updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
 }

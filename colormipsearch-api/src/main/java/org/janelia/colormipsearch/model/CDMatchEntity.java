@@ -1,7 +1,6 @@
 package org.janelia.colormipsearch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.cds.GradientAreaGapUtils;
@@ -9,7 +8,6 @@ import org.janelia.colormipsearch.dto.AbstractNeuronMetadata;
 import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.model.annotations.PersistenceInfo;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @PersistenceInfo(storeName ="cdMatches")
 public class CDMatchEntity<M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> extends AbstractMatchEntity<M, T> {
     private Float normalizedScore;

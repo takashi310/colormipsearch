@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.base.Preconditions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -22,6 +23,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
@@ -154,12 +156,43 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
     }
 
+    @Override
+    public void updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+        List<WriteModel<R>> toWrite = new ArrayList<>();
+
+        matches.forEach(m -> {
+            Preconditions.checkArgument(m.hasEntityId());
+            UpdateOptions updateOptions = new UpdateOptions();
+            updateOptions.upsert(false);
+            Bson updates = getUpdates(
+                fieldsToUpdateSelectors.stream()
+                        .map(fieldSelector -> fieldSelector.apply(m))
+                        .map(this::fieldValueToEntityFieldValueHandler)
+                        .collect(Collectors.toMap(
+                            EntityFieldNameValueHandler::getFieldName,
+                            EntityFieldNameValueHandler::getValueHandler))
+            );
+            toWrite.add(new UpdateOneModel<R>(
+                MongoDaoHelper.createFilterById(m),
+                updates,
+                updateOptions
+            ));
+        });
+        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+    }
+
     private <V> EntityFieldNameValueHandler<V> toEntityFieldValueHandler(NeuronField<V> nf) {
         return new EntityFieldNameValueHandler<>(
                 nf.getFieldName(),
                 nf.isToBeAppended()
                     ? new AppendFieldValueHandler<>(nf.getValue())
                     : new SetFieldValueHandler<>(nf.getValue()));
+    }
+
+    private <V> EntityFieldNameValueHandler<V> fieldValueToEntityFieldValueHandler(Pair<String, V> nf) {
+        return new EntityFieldNameValueHandler<>(
+                nf.getLeft(),
+                new SetFieldValueHandler<>(nf.getRight()));
     }
 
     @Override

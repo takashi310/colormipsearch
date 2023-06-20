@@ -31,14 +31,7 @@ public class DBNeuronMatchesWriter<R extends AbstractMatchEntity<? extends Abstr
 
     @Override
     public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
-        for (R match : matches) {
-            Map<String, EntityFieldValueHandler<?>> fieldValueHandlerMap =
-                    fieldSelectors
-                            .stream()
-                            .map(fieldSelector -> fieldSelector.apply(match))
-                            .collect(Collectors.toMap(Pair::getLeft, fld -> new SetFieldValueHandler<>(fld.getRight())));
-            neuronMatchesDao.update(match.getEntityId(), fieldValueHandlerMap);
-        }
+        neuronMatchesDao.updateExistingMatches(matches, fieldSelectors);
     }
 
 }
