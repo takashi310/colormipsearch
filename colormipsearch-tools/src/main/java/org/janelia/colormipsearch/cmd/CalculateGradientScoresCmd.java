@@ -186,7 +186,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 gradScoreAlgorithmProvider,
                                 cdMatchesForMask,
                                 executor);
-                        LOG.info("Finished calculating grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
+                        LOG.info("Completed grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
                         updateCDMatches(cdMatchesWithGradScores);
                         LOG.info("Updated grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
                     });
