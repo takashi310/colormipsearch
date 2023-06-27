@@ -28,6 +28,9 @@ class NeuronSelectionHelper {
         String qualifier = StringUtils.isNotBlank(fieldQualifier) ? fieldQualifier + "." : "";
 
         List<Bson> filter = new ArrayList<>();
+        if (neuronSelector.hasEntityIds()) {
+            filter.add(Filters.in(qualifier + "_id", neuronSelector.getEntityIds()));
+        }
         if (neuronSelector.hasNeuronClassname()) {
             filter.add(Filters.eq(qualifier + "class", neuronSelector.getNeuronClassname()));
         }
