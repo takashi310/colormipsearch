@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
-import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.janelia.colormipsearch.model.NeuronPublishedURLs;
+import org.janelia.colormipsearch.model.PublishedLMImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,6 @@ public class CachedDataHelper {
         }
         return libraryNameMapping.getOrDefault(libname, libname);
     }
-
 
     public Map<String, CDMIPSample> retrieveLMSamplesByName(Set<String> lmSampleNames) {
         if (CollectionUtils.isNotEmpty(lmSampleNames)) {
