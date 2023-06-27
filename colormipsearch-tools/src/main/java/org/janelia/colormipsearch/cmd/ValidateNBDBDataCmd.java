@@ -131,18 +131,21 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 new PagedRequest()
                         .setFirstPageOffset(args.offset)
                         .setPageSize(args.size)).getResultList();
-        List<CompletableFuture<Void>> allValidationJobs =
+        List<CompletableFuture<Long>> allValidationJobs =
                 ItemsHandling.partitionCollection(neuronEntities, args.processingPartitionSize).entrySet().stream().parallel()
-                        .map(indexedPartition -> CompletableFuture.<Void>supplyAsync(() -> {
-                            runValidationForNeuronEntities(indexedPartition.getKey(), indexedPartition.getValue(), dataHelper);
-                            return null;
+                        .map(indexedPartition -> CompletableFuture.supplyAsync(() -> {
+                            return runValidationForNeuronEntities(indexedPartition.getKey(), indexedPartition.getValue(), dataHelper);
                         }, validationExecutor))
                         .collect(Collectors.toList());
-        CompletableFuture.allOf(allValidationJobs.toArray(new CompletableFuture<?>[0])).join();
-        LOG.info("Finished all validations in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
+        Long validatedEntities = CompletableFuture.allOf(allValidationJobs.toArray(new CompletableFuture<?>[0]))
+                .thenApply(voidResult -> allValidationJobs.stream().map(job -> job.join()).reduce(0L, (c1, c2) -> c1+c2))
+                .join();
+        LOG.info("Finished validating {} neuron entities in {}s",
+                validatedEntities,
+                (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
-    private void runValidationForNeuronEntities(int jobId, List<AbstractNeuronEntity> neuronEntities, CachedDataHelper dataHelper) {
+    private long runValidationForNeuronEntities(int jobId, List<AbstractNeuronEntity> neuronEntities, CachedDataHelper dataHelper) {
         long startProcessingTime = System.currentTimeMillis();
         LOG.info("Start validating {} neuron entities from partition {}", neuronEntities.size(), jobId);
         // retrieve color depth from JACS
@@ -156,7 +159,8 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 LOG.error("Errors found for {} -> {}", ne, errors);
             }
         });
-        LOG.info("Finished validating partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
+        LOG.info("Finished validating {} neuron entities from partition {} in {}s", neuronEntities.size(), jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
+        return neuronEntities.size();
     }
 
     private List<String> validateNeuronEntity(AbstractNeuronEntity ne, CachedDataHelper dataHelper) {
