@@ -12,6 +12,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
@@ -90,6 +91,18 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         }
     }
 
+    private static class ErrorReport {
+        long nEntities;
+        final long nEntitiesWithErrors;
+        final long nErrors;
+
+        ErrorReport(long nEntities, long nEntitiesWithErrors, long nErrors) {
+            this.nEntities = nEntities;
+            this.nEntitiesWithErrors = nEntitiesWithErrors;
+            this.nErrors = nErrors;
+        }
+    }
+
     private final ValidateCmdArgs args;
 
     ValidateNBDBDataCmd(String commandName, CommonArgs commonArgs) {
@@ -131,21 +144,22 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 new PagedRequest()
                         .setFirstPageOffset(args.offset)
                         .setPageSize(args.size)).getResultList();
-        List<CompletableFuture<Long>> allValidationJobs =
+        List<CompletableFuture<ErrorReport>> allValidationJobs =
                 ItemsHandling.partitionCollection(neuronEntities, args.processingPartitionSize).entrySet().stream().parallel()
-                        .map(indexedPartition -> CompletableFuture.supplyAsync(() -> {
-                            return runValidationForNeuronEntities(indexedPartition.getKey(), indexedPartition.getValue(), dataHelper);
-                        }, validationExecutor))
+                        .map(indexedPartition -> CompletableFuture.supplyAsync(() -> runValidationForNeuronEntities(
+                                indexedPartition.getKey(), indexedPartition.getValue(), dataHelper), validationExecutor))
                         .collect(Collectors.toList());
-        Long validatedEntities = CompletableFuture.allOf(allValidationJobs.toArray(new CompletableFuture<?>[0]))
-                .thenApply(voidResult -> allValidationJobs.stream().map(job -> job.join()).reduce(0L, (c1, c2) -> c1+c2))
+        ErrorReport report = CompletableFuture.allOf(allValidationJobs.toArray(new CompletableFuture<?>[0]))
+                .thenApply(voidResult -> allValidationJobs.stream().map(job -> job.join()).reduce(new ErrorReport(0L, 0L, 0L), this::combineErrorReport))
                 .join();
-        LOG.info("Finished validating {} neuron entities in {}s",
-                validatedEntities,
+        LOG.info("Finished validating {} neuron entities - found {} errors for {} entities in {}s",
+                report.nEntities, report.nErrors, report.nEntitiesWithErrors,
                 (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
-    private long runValidationForNeuronEntities(int jobId, List<AbstractNeuronEntity> neuronEntities, CachedDataHelper dataHelper) {
+    private ErrorReport runValidationForNeuronEntities(int jobId,
+                                                       List<AbstractNeuronEntity> neuronEntities,
+                                                       CachedDataHelper dataHelper) {
         long startProcessingTime = System.currentTimeMillis();
         LOG.info("Start validating {} neuron entities from partition {}", neuronEntities.size(), jobId);
         // retrieve color depth from JACS
@@ -153,14 +167,27 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 .map(AbstractNeuronEntity::getMipId)
                 .collect(Collectors.toSet());
         dataHelper.cacheCDMIPs(mipIds);
-        neuronEntities.forEach(ne -> {
-            List<String> errors = validateNeuronEntity(ne, dataHelper);
-            if (CollectionUtils.isNotEmpty(errors)) {
-                LOG.error("Errors found for {} -> {}", ne, errors);
-            }
-        });
-        LOG.info("Finished validating {} neuron entities from partition {} in {}s", neuronEntities.size(), jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
-        return neuronEntities.size();
+        ErrorReport errorsReport = neuronEntities.stream()
+                .map(ne -> {
+                    List<String> errors = validateNeuronEntity(ne, dataHelper);
+                    if (CollectionUtils.isNotEmpty(errors)) {
+                        LOG.error("Errors found for {} -> {}", ne, errors);
+                    }
+                    return new ErrorReport(0, 1, errors.size());
+                })
+                .reduce(new ErrorReport(0, 0, 0), this::combineErrorReport);
+        errorsReport.nEntities = neuronEntities.size();
+        LOG.info("Finished validating {} neuron entities from partition {} - found {} errors for {} entities in {}s",
+                errorsReport.nEntities, jobId, errorsReport.nErrors, errorsReport.nErrors,
+                (System.currentTimeMillis()-startProcessingTime)/1000.);
+        return errorsReport;
+    }
+
+    private ErrorReport combineErrorReport(ErrorReport r1, ErrorReport r2) {
+        return new ErrorReport(
+                r1.nEntities + r2.nEntities,
+                r1.nEntitiesWithErrors + r2.nEntitiesWithErrors,
+                r1.nErrors + r2.nErrors);
     }
 
     private List<String> validateNeuronEntity(AbstractNeuronEntity ne, CachedDataHelper dataHelper) {
