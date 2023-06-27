@@ -139,7 +139,7 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                         }, validationExecutor))
                         .collect(Collectors.toList());
         CompletableFuture.allOf(allValidationJobs.toArray(new CompletableFuture<?>[0])).join();
-        LOG.info("Finished all exports in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
+        LOG.info("Finished all validations in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
     private void runValidationForNeuronEntities(int jobId, List<AbstractNeuronEntity> neuronEntities, CachedDataHelper dataHelper) {

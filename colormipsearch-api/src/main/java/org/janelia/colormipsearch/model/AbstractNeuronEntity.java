@@ -237,6 +237,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .append("entityId", getEntityId())
                 .append("mipId", mipId)
                 .append("libraryName", libraryName)
                 .append("inputImage", getComputeFileName(ComputeFileType.InputColorDepthImage))
