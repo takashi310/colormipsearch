@@ -170,10 +170,14 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         ErrorReport errorsReport = neuronEntities.stream()
                 .map(ne -> {
                     List<String> errors = validateNeuronEntity(ne, dataHelper);
+                    int nEntitiesWithErrors;
                     if (CollectionUtils.isNotEmpty(errors)) {
                         LOG.error("Errors found for {} -> {}", ne, errors);
+                        nEntitiesWithErrors = 1;
+                    } else {
+                        nEntitiesWithErrors = 0;
                     }
-                    return new ErrorReport(0, 1, errors.size());
+                    return new ErrorReport(0, nEntitiesWithErrors, errors.size());
                 })
                 .reduce(new ErrorReport(0, 0, 0), this::combineErrorReport);
         errorsReport.nEntities = neuronEntities.size();
