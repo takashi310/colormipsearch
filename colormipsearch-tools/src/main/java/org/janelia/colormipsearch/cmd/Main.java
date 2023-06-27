@@ -30,7 +30,8 @@ public class Main {
                 new ExportData4NBCmd("exportData", commonArgs),
                 new ImportV2CDMatchesCmd("legacyImport", commonArgs),
                 new TagNeuronMetadataCmd("tag", commonArgs),
-                new CopyToMIPsStore("copyToMipsStore", commonArgs)
+                new CopyToMIPsStore("copyToMipsStore", commonArgs),
+                new ValidateNBDBDataCmd("validateDBData", commonArgs)
         };
         JCommander.Builder cmdlineBuilder = JCommander.newBuilder()
                 .addObject(mainArgs);
