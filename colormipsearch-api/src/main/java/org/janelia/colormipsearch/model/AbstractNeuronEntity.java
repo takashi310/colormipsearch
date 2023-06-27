@@ -194,6 +194,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         dict.put("libraryName", libraryName);
         dict.put("publishedName", publishedName);
         dict.put("sourceRefId", sourceRefId);
+        dict.put("updatedDate", getUpdatedDate());
         computeFiles.forEach((ft, fd) -> dict.put("computeFiles." + ft.name(), fd));
         processedTags.forEach((pt, t) -> dict.put("processedTags." + pt.name(), t));
         return dict;

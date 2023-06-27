@@ -22,6 +22,7 @@ public abstract class AbstractBaseEntity implements BaseEntity {
     @EntityId
     private Number entityId;
     private Date createdDate = new Date();
+    private Date updatedDate = new Date();
     // tags associated with the current entity. These are mainly used for versioning the data.
     private Set<String> tags = new HashSet<>();
 
@@ -46,6 +47,14 @@ public abstract class AbstractBaseEntity implements BaseEntity {
 
     public void setCreatedDate(Date createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public Date getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(Date updatedDate) {
+        this.updatedDate = updatedDate;
     }
 
     public Set<String> getTags() {
