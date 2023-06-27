@@ -263,14 +263,15 @@ class ValidateNBDBDataCmd extends AbstractCmd {
 
     private void processEntitiesWithErrors(List<Number> badEntityIds, NeuronMetadataDao<?> neuronMetadataDao) {
         if (StringUtils.isNotBlank(args.errorTag) && !badEntityIds.isEmpty()) {
-            long nUpdates = badEntityIds.size();
-//            long nUpdates = neuronMetadataDao.updateAll(
-//                    new NeuronSelector()
-//                            .setAlignmentSpace(args.alignmentSpace)
-//                            .addLibraries(args.libraries)
-//                            .addEntityIds(badEntityIds),
-//                    ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton(args.errorTag))));
+            long nUpdates = neuronMetadataDao.updateAll(
+                    new NeuronSelector()
+                            .setAlignmentSpace(args.alignmentSpace)
+                            .addLibraries(args.libraries)
+                            .addEntityIds(badEntityIds),
+                    ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton(args.errorTag))));
             LOG.info("Marked {} entities as bad", nUpdates);
+        } else if (badEntityIds.isEmpty()) {
+            LOG.info("No bad entity to process");
         }
     }
 }
