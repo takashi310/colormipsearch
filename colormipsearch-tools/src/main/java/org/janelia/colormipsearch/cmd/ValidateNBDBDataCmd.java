@@ -178,7 +178,7 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 .reduce(new ErrorReport(0, 0, 0), this::combineErrorReport);
         errorsReport.nEntities = neuronEntities.size();
         LOG.info("Finished validating {} neuron entities from partition {} - found {} errors for {} entities in {}s",
-                errorsReport.nEntities, jobId, errorsReport.nErrors, errorsReport.nErrors,
+                errorsReport.nEntities, jobId, errorsReport.nErrors, errorsReport.nEntitiesWithErrors,
                 (System.currentTimeMillis()-startProcessingTime)/1000.);
         return errorsReport;
     }
