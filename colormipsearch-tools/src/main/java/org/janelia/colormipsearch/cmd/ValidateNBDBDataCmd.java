@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.janelia.colormipsearch.cmd.jacsdata.CachedDataHelper;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
