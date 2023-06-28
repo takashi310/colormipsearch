@@ -173,7 +173,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                             EntityFieldNameValueHandler::getValueHandler))
             );
             toWrite.add(new UpdateOneModel<R>(
-                MongoDaoHelper.createFilterById(m),
+                MongoDaoHelper.createFilterById(m.getEntityId()),
                 updates,
                 updateOptions
             ));

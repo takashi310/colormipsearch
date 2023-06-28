@@ -375,16 +375,16 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 .collect(Collectors.toList());
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void updateNormalizedScores(List<CDMatchEntity<M, T>> CDMatches) {
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void updateNormalizedScores(List<CDMatchEntity<M, T>> cdMatches) {
         // get max scores for normalization
-        CombinedMatchScore maxScores = CDMatches.stream()
+        CombinedMatchScore maxScores = cdMatches.stream()
                 .map(m -> new CombinedMatchScore(m.getMatchingPixels(), m.getGradScore()))
                 .reduce(new CombinedMatchScore(-1, -1L),
                         (s1, s2) -> new CombinedMatchScore(
                                 Math.max(s1.getPixelMatches(), s2.getPixelMatches()),
                                 Math.max(s1.getGradScore(), s2.getGradScore())));
         // update normalized score
-        CDMatches.forEach(m -> m.setNormalizedScore((float) GradientAreaGapUtils.calculateNormalizedScore(
+        cdMatches.forEach(m -> m.setNormalizedScore((float) GradientAreaGapUtils.calculateNormalizedScore(
                 m.getMatchingPixels(),
                 m.getGradientAreaGap(),
                 m.getHighExpressionArea(),
