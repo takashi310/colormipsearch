@@ -39,8 +39,9 @@ public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends Abstra
      * otherwise create it.
      * @param matches to create or update
      * @param fieldsToUpdateSelectors fields to update if the record exists
+     * @return the number of records that should have been updated.
      */
-    void createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors);
+    long createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors);
 
     /**
      * Count neuron matches filtered by the type and scores specified by neuronsMatchFilter and/or by the specified
@@ -74,7 +75,8 @@ public interface NeuronMatchesDao<R extends AbstractMatchEntity<? extends Abstra
      * Update existing matches. The match must have a valid id otherwise an exceptio is thrown.
      * @param matches to create or update
      * @param fieldsToUpdateSelectors fields to update if the record exists
+     * @return the number of records that should have been updated
      * @throws IllegalArgumentException if any of the matches from the list does not have a valid entity ID.
      */
-    void updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
+    long updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors);
 }

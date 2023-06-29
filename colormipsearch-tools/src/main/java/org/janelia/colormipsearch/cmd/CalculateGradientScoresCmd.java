@@ -187,8 +187,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 cdMatchesForMask,
                                 executor);
                         LOG.info("Completed grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
-                        updateCDMatches(cdMatchesWithGradScores);
-                        LOG.info("Updated grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
+                        long writtenUpdates = updateCDMatches(cdMatchesWithGradScores);
+                        LOG.info("Updated {} grad scores for {} matches of {}", writtenUpdates, cdMatchesWithGradScores.size(), maskIdToProcess);
                     });
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             indexedPartition.getKey(),
@@ -287,9 +287,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         return matchesWithGradScores;
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void updateCDMatches(List<CDMatchEntity<M, T>> cdMatches) {
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long updateCDMatches(List<CDMatchEntity<M, T>> cdMatches) {
         NeuronMatchesWriter<CDMatchEntity<M, T>> matchesWriter = getCDMatchesWriter();
-        matchesWriter.writeUpdates(
+        return matchesWriter.writeUpdates(
                 cdMatches,
                 Arrays.asList(
                         m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),

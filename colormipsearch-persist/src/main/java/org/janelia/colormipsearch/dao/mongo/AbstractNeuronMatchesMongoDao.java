@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.base.Preconditions;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -40,8 +41,8 @@ import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 
 abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? extends AbstractNeuronEntity,
-                                                                          ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
-                                                                                                           implements NeuronMatchesDao<R> {
+                                                                           ? extends AbstractNeuronEntity>> extends AbstractMongoDao<R>
+                                                                                                            implements NeuronMatchesDao<R> {
 
     protected AbstractNeuronMatchesMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
@@ -106,7 +107,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
     }
 
     @Override
-    public void createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors) {
+    public long createOrUpdateAll(List<R> matches, List<Function<R, NeuronField<?>>> fieldsToUpdateSelectors) {
         List<WriteModel<R>> toWrite = new ArrayList<>();
 
         matches.forEach(m -> {
@@ -153,11 +154,12 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 toWrite.add(new UpdateOneModel<R>(selectCriteria, updates, updateOptions));
             }
         });
-        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        BulkWriteResult result = mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        return result.getInsertedCount() + result.getMatchedCount() ;
     }
 
     @Override
-    public void updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
+    public long updateExistingMatches(List<R> matches, List<Function<R, Pair<String, ?>>> fieldsToUpdateSelectors) {
         List<WriteModel<R>> toWrite = new ArrayList<>();
 
         matches.forEach(m -> {
@@ -178,7 +180,8 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 updateOptions
             ));
         });
-        mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        BulkWriteResult result = mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        return result.getMatchedCount();
     }
 
     private <V> EntityFieldNameValueHandler<V> toEntityFieldValueHandler(NeuronField<V> nf) {

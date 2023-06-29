@@ -42,19 +42,12 @@ public class DBCDScoresOnlyWriter<R extends CDMatchEntity<? extends AbstractNeur
         this.neuronMatchesDao = neuronMatchesDao;
     }
 
-    public void write(List<R> matches) {
-        neuronMatchesDao.createOrUpdateAll(matches, fieldsToUpdate);
+    public long write(List<R> matches) {
+        return neuronMatchesDao.createOrUpdateAll(matches, fieldsToUpdate);
     }
 
     @Override
-    public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
-        for (R match : matches) {
-            Map<String, EntityFieldValueHandler<?>> fieldValueHandlerMap =
-                    fieldSelectors
-                            .stream()
-                            .map(fieldSelector -> fieldSelector.apply(match))
-                            .collect(Collectors.toMap(Pair::getLeft, fld -> new SetFieldValueHandler<>(fld.getRight())));
-            neuronMatchesDao.update(match.getEntityId(), fieldValueHandlerMap);
-        }
+    public long writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
+        return neuronMatchesDao.updateExistingMatches(matches, fieldSelectors);
     }
 }

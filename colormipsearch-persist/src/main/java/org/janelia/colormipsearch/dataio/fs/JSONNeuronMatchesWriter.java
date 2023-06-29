@@ -39,21 +39,23 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
     }
 
     @Override
-    public void write(List<R> matches) {
+    public long write(List<R> matches) {
+        long nresults = 0;
         if (perMasksOutputDir != null) {
-            writeMatchesByMask(matches);
+            nresults += writeMatchesByMask(matches);
         }
         if (perMatchesOutputDir != null) {
-            writeMatchesByTarget(matches);
+            nresults += writeMatchesByTarget(matches);
         }
+        return nresults;
     }
 
     @Override
-    public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
-        writeMatchesByMask(matches);
+    public long writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
+        return writeMatchesByMask(matches);
     }
 
-    private void writeMatchesByMask(List<R> matches) {
+    private int writeMatchesByMask(List<R> matches) {
         // write results by mask ID
         Function<M, String> grouping = resultsGrouping::apply;
         Comparator<R> ordering = matchOrdering::compare;
@@ -64,9 +66,10 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
                 ordering
         );
         resultMatchesWriter.writeGroupedItemsList(resultMatches, grouping, perMasksOutputDir);
+        return resultMatches.size();
     }
 
-    private void writeMatchesByTarget(List<R> matches) {
+    private int writeMatchesByTarget(List<R> matches) {
         // write results by matched ID
         Function<T, String> grouping = resultsGrouping::apply;
         Comparator<AbstractMatchEntity<T, M>> ordering = matchOrdering::compare;
@@ -77,5 +80,6 @@ public class JSONNeuronMatchesWriter<M extends AbstractNeuronEntity, T extends A
                 ordering
         );
         resultMatchesWriter.writeGroupedItemsList(resultMatches, grouping, perMatchesOutputDir);
+        return resultMatches.size();
     }
 }

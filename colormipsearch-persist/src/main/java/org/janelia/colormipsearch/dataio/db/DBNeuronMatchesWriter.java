@@ -25,13 +25,16 @@ public class DBNeuronMatchesWriter<R extends AbstractMatchEntity<? extends Abstr
     }
 
     @Override
-    public void write(List<R> matches) {
+    public long write(List<R> matches) {
         neuronMatchesDao.saveAll(matches);
+        // since save actually only inserts records we can simply
+        // return the size of the input if there's no exception
+        return matches.size();
     }
 
     @Override
-    public void writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
-        neuronMatchesDao.updateExistingMatches(matches, fieldSelectors);
+    public long writeUpdates(List<R> matches, List<Function<R, Pair<String, ?>>> fieldSelectors) {
+        return neuronMatchesDao.updateExistingMatches(matches, fieldSelectors);
     }
 
 }
