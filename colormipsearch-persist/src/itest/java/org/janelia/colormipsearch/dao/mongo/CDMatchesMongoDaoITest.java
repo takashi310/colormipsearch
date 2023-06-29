@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
 
@@ -208,15 +209,12 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
         NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
         Pair<EMNeuronEntity, LMNeuronEntity> neuronImages = createMatchingImages(neuronMetadataDao);
         try {
-
             NeuronMatchesDao<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesDao =
                     daosProvider.getCDMatchesDao();
 
             CDMatchEntity<EMNeuronEntity, LMNeuronEntity> testCDMatch =
                     createTestCDMatch(neuronImages.getLeft(), neuronImages.getRight(), 113, 0.76,
                             "1.0", "1.1");
-
-            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testCDMatches = Collections.singletonList(testCDMatch);
 
             List<Function<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>, NeuronMatchesDao.NeuronField<?>>> fieldsToUpdate = Arrays.asList(
                     m -> new NeuronMatchesDao.NeuronField<>("matchingPixels", false, m.getMatchingPixels()),
@@ -227,6 +225,14 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
                     m -> new NeuronMatchesDao.NeuronField<>("tags", true, m.getTags())
             );
 
+            assertEquals(
+                    0, // nothing was created yet
+                    neuronMatchesDao.countNeuronMatches(
+                            new NeuronsMatchFilter<>(),
+                            null,
+                            null)
+            );
+            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testCDMatches = Collections.singletonList(testCDMatch);
             // save the matches multiple times and check the count is still 1
             for (int i = 0; i < 3; i++) {
                 testCDMatch.setMatchingPixels(testCDMatch.getMatchingPixels() + i);
@@ -235,9 +241,64 @@ public class CDMatchesMongoDaoITest extends AbstractMongoDaoITest {
                 // check that it was saved
                 assertEquals(
                         1,
-                        neuronMatchesDao.countNeuronMatches(null, null, null)
+                        neuronMatchesDao.countNeuronMatches(
+                                new NeuronsMatchFilter<>(),
+                                null,
+                                null)
                 );
+                List<?> retrievedMatches = neuronMatchesDao.findNeuronMatches(
+                        new NeuronsMatchFilter<>(),
+                        new NeuronSelector(),
+                        new NeuronSelector(),
+                        new PagedRequest()).getResultList();
+                assertEquals(1, retrievedMatches.size());
+                retrievedMatches.forEach(m -> assertTrue(m instanceof CDMatchEntity));
             }
+        } finally {
+            deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
+        }
+    }
+
+    @Test
+    public void updateExisting() {
+        NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao = daosProvider.getNeuronMetadataDao();
+        Pair<EMNeuronEntity, LMNeuronEntity> neuronImages = createMatchingImages(neuronMetadataDao);
+        try {
+            NeuronMatchesDao<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> neuronMatchesDao =
+                    daosProvider.getCDMatchesDao();
+
+            CDMatchEntity<EMNeuronEntity, LMNeuronEntity> testCDMatch =
+                    createTestCDMatch(neuronImages.getLeft(), neuronImages.getRight(), 113, 0.76,
+                            "1.0", "1.1");
+
+            assertEquals(
+                    0, // nothing was created yet
+                    neuronMatchesDao.countNeuronMatches(
+                            new NeuronsMatchFilter<>(),
+                            null,
+                            null)
+            );
+            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testCDMatches = Collections.singletonList(testCDMatch);
+            neuronMatchesDao.createOrUpdateAll(testCDMatches, Collections.emptyList());
+
+            List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> retrievedMatches = neuronMatchesDao.findNeuronMatches(
+                    new NeuronsMatchFilter<>(),
+                    new NeuronSelector(),
+                    new NeuronSelector(),
+                    new PagedRequest()).getResultList();
+
+            // check that it was saved
+            assertEquals(1, retrievedMatches.size());
+            List<Function<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>, Pair<String, ?>>> fieldsToUpdate = Arrays.asList(
+                    m -> Pair.of("matchingPixels", m.getMatchingPixels()),
+                    m -> Pair.of("matchingPixelsRatio", m.getMatchingPixelsRatio()),
+                    m -> Pair.of("gradientAreaGap", m.getGradientAreaGap()),
+                    m -> Pair.of("highExpressionArea", m.getHighExpressionArea()),
+                    m -> Pair.of("normalizedScore", m.getNormalizedScore())
+            );
+            long nUpdates = neuronMatchesDao.updateExistingMatches(retrievedMatches, fieldsToUpdate);
+            assertEquals(1, nUpdates);
+
         } finally {
             deleteAll(neuronMetadataDao, Arrays.asList(neuronImages.getLeft(), neuronImages.getRight()));
         }

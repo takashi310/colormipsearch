@@ -138,6 +138,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                     );
                     onCreateSetters = Stream.of(
                             new EntityFieldNameValueHandler<>("_id", new SetOnCreateValueHandler<>(m.getEntityId())),
+                            new EntityFieldNameValueHandler<>("class", new SetOnCreateValueHandler<>(m.getEntityClass())),
                             new EntityFieldNameValueHandler<>("createdDate", new SetOnCreateValueHandler<>(m.getCreatedDate()))
                     );
                 }
@@ -154,8 +155,10 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 toWrite.add(new UpdateOneModel<R>(selectCriteria, updates, updateOptions));
             }
         });
-        BulkWriteResult result = mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
-        return result.getInsertedCount() + result.getMatchedCount() ;
+        BulkWriteResult result = mongoCollection.bulkWrite(
+                toWrite,
+                new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        return result.getInsertedCount() + result.getMatchedCount();
     }
 
     @Override
@@ -180,7 +183,9 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 updateOptions
             ));
         });
-        BulkWriteResult result = mongoCollection.bulkWrite(toWrite, new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+        BulkWriteResult result = mongoCollection.bulkWrite(
+                toWrite,
+                new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
         return result.getMatchedCount();
     }
 
