@@ -36,9 +36,11 @@ import org.slf4j.LoggerFactory;
 
 public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
+    private final List<String> targetLibraries;
 
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
+                               List<String> targetLibraries,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
                                ImageStoreMapping imageStoreMapping,
@@ -49,6 +51,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
+        this.targetLibraries = targetLibraries;
     }
 
     @Override
@@ -73,7 +76,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Read LM color depth matches for {}", targetId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
                     dataSourceParam.getAlignmentSpace(),
-                    null, // no target library specified - we use target MIP
+                    targetLibraries,
                     Collections.singletonList(targetId),
                     scoresFilter,
                     null, // use the tags for selecting the masks but not for selecting the matches

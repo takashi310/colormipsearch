@@ -87,6 +87,10 @@ class ExportData4NBCmd extends AbstractCmd {
                 variableArity = true)
         List<String> libraries = new ArrayList<>();
 
+        @Parameter(names = {"--target-library"}, description = "Target library names from which mips or matches are selected for export",
+                variableArity = true)
+        List<String> targetLibraries = new ArrayList<>();
+
         @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
         List<String> exportedNames = new ArrayList<>();
 
@@ -252,6 +256,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new LMCDMatchesExporter(
                         dataHelper,
                         dataSource,
+                        args.targetLibraries,
                         getCDScoresFilter(),
                         urlTransformer,
                         imageStoreMapping,
