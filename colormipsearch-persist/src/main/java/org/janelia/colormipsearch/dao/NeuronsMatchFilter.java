@@ -14,6 +14,8 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> {
 
     private ScoresFilter scoresFilter; // score filter
+    private Class<?> matchEntityType;
+    private Collection<Number> matchEntityIds; // match entity IDs
     private List<Number> maskEntityIds; // mask entity IDs
     private List<Number> targetEntityIds; // target entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
@@ -24,6 +26,25 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
 
     public NeuronsMatchFilter<R> setScoresFilter(ScoresFilter scoresFilter) {
         this.scoresFilter = scoresFilter;
+        return this;
+    }
+
+
+    public Class<?> getMatchEntityType() {
+        return matchEntityType;
+    }
+
+    public NeuronsMatchFilter<R> setMatchEntityType(Class<?> matchEntityType) {
+        this.matchEntityType = matchEntityType;
+        return this;
+    }
+
+    public Collection<Number> getMatchEntityIds() {
+        return matchEntityIds;
+    }
+
+    public NeuronsMatchFilter<R> setMatchEntityIds(Collection<Number> matchEntityIds) {
+        this.matchEntityIds = matchEntityIds;
         return this;
     }
 

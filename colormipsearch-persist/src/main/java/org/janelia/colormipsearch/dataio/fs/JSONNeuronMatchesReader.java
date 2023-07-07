@@ -53,15 +53,16 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<R> readMatchesForMasks(String alignmentSpace,
-                                       Collection<String> maskLibraries,
-                                       Collection<String> maskMipIds,
-                                       ScoresFilter matchScoresFilter,
-                                       Collection<String> targetLibraries,
-                                       Collection<String> targetPublishedNames,
-                                       Collection<String> targetMipIds,
-                                       Collection<String> matchTags,
-                                       List<SortCriteria> sortCriteriaList) {
+    public List<R> readMatchesByMask(String alignmentSpace,
+                                     Collection<String> maskLibraries,
+                                     Collection<String> maskPublishedNames,
+                                     Collection<String> maskMipIds,
+                                     Collection<String> targetLibraries,
+                                     Collection<String> targetPublishedNames,
+                                     Collection<String> targetMipIds,
+                                     Collection<String> matchTags,
+                                     ScoresFilter matchScoresFilter,
+                                     List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
                 .flatMap(maskMipId -> CollectionUtils.isEmpty(maskLibraries)
                         ?  Stream.of(new File(maskMipId))
@@ -73,12 +74,16 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<R> readMatchesForTargets(String alignmentSpace,
-                                         Collection<String> targetLibraries,
-                                         Collection<String> targetMipIds,
-                                         ScoresFilter matchScoresFilter,
-                                         Collection<String> matchTags,
-                                         List<SortCriteria> sortCriteriaList) {
+    public List<R> readMatchesByTarget(String alignmentSpace,
+                                       Collection<String> maskLibraries,
+                                       Collection<String> maskPublishedNames,
+                                       Collection<String> maskMipIds,
+                                       Collection<String> targetLibraries,
+                                       Collection<String> targetPublishedNames,
+                                       Collection<String> targetMipIds,
+                                       Collection<String> matchTags,
+                                       ScoresFilter matchScoresFilter,
+                                       List<SortCriteria> sortCriteriaList) {
         return (List<R>) targetMipIds.stream()
                 .flatMap(targetMipId -> CollectionUtils.isEmpty(targetLibraries)
                         ?  Stream.of(new File(targetMipId))

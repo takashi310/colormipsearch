@@ -86,6 +86,10 @@ class NeuronSelectionHelper {
     Bson getNeuronsMatchFilter(NeuronsMatchFilter<R> neuronsMatchFilter) {
         List<Bson> filter = new ArrayList<>();
         if (neuronsMatchFilter != null) {
+            if (neuronsMatchFilter.getMatchEntityType() != null) {
+                filter.add(MongoDaoHelper.createFilterByClass(neuronsMatchFilter.getMatchEntityType()));
+            }
+            addInFilter("_id", neuronsMatchFilter.getMatchEntityIds(), filter);
             addNeuronsMatchScoresFilters(neuronsMatchFilter.getScoresFilter(), filter);
             addInFilter("maskImageRefId", neuronsMatchFilter.getMaskEntityIds(), filter);
             addInFilter("matchedImageRefId", neuronsMatchFilter.getTargetEntityIds(), filter);

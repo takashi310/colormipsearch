@@ -64,50 +64,63 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
     }
 
     @Override
-    public List<R> readMatchesForMasks(String alignmentSpace,
-                                       Collection<String> maskLibraries,
-                                       Collection<String> maskMipIds,
-                                       ScoresFilter matchScoresFilter,
-                                       Collection<String> targetLibraries,
-                                       Collection<String> targetPublishedNames,
-                                       Collection<String> targetMipIds,
-                                       Collection<String> matchTags,
-                                       List<SortCriteria> sortCriteriaList) {
+    public List<R> readMatchesByMask(String alignmentSpace,
+                                     Collection<String> maskLibraries,
+                                     Collection<String> maskPublishedNames,
+                                     Collection<String> maskMipIds,
+                                     Collection<String> targetLibraries,
+                                     Collection<String> targetPublishedNames,
+                                     Collection<String> targetMipIds,
+                                     Collection<String> matchTags,
+                                     ScoresFilter matchScoresFilter,
+                                     List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(maskLibraries)
+                .addNames(maskPublishedNames)
                 .addMipIDs(maskMipIds);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
                 .addNames(targetPublishedNames)
                 .addMipIDs(targetMipIds);
+        List<Number> maskEntityIds = getNeuronEntityIds(maskSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
-                .setMaskEntityIds(getNeuronEntityIds(maskSelector))
+                .setMaskEntityIds(maskEntityIds)
                 .addTags(matchTags);
 
-        return readMatches(neuronsMatchFilter, maskSelector, targetSelector, sortCriteriaList);
+        return readMatches(neuronsMatchFilter, null, targetSelector, sortCriteriaList);
     }
 
     @Override
-    public List<R> readMatchesForTargets(String alignmentSpace,
-                                         Collection<String> targetLibraries,
-                                         Collection<String> targetMipIds,
-                                         ScoresFilter matchScoresFilter,
-                                         Collection<String> matchTags,
-                                         List<SortCriteria> sortCriteriaList) {
-        NeuronSelector maskSelector = new NeuronSelector().setAlignmentSpace(alignmentSpace);
+    public List<R> readMatchesByTarget(String alignmentSpace,
+                                       Collection<String> maskLibraries,
+                                       Collection<String> maskPublishedNames,
+                                       Collection<String> maskMipIds,
+                                       Collection<String> targetLibraries,
+                                       Collection<String> targetPublishedNames,
+                                       Collection<String> targetMipIds,
+                                       Collection<String> matchTags,
+                                       ScoresFilter matchScoresFilter,
+                                       List<SortCriteria> sortCriteriaList) {
+        NeuronSelector maskSelector = new NeuronSelector()
+                .setAlignmentSpace(alignmentSpace)
+                .addLibraries(maskLibraries)
+                .addNames(maskPublishedNames)
+                .addMipIDs(maskMipIds);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
+                .addNames(targetPublishedNames)
                 .addMipIDs(targetMipIds);
+        List<Number> targetEntityIds = getNeuronEntityIds(targetSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
-                .setTargetEntityIds(getNeuronEntityIds(targetSelector))
+                .setTargetEntityIds(targetEntityIds)
                 .addTags(matchTags);
 
-        return readMatches(neuronsMatchFilter, maskSelector, targetSelector, sortCriteriaList);
+        return readMatches(neuronsMatchFilter, maskSelector, null, sortCriteriaList);
     }
 
     private List<Number> getNeuronEntityIds(NeuronSelector neuronSelector) {

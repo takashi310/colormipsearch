@@ -61,7 +61,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
     @Override
     public R findByEntityId(Number id) {
         List<R> results = findNeuronMatches(
-                MongoDaoHelper.createFilterById(id),
+                new NeuronsMatchFilter<R>().setMatchEntityIds(Collections.singletonList(id)),
                 null,
                 null,
                 null,
@@ -81,7 +81,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
             return Collections.emptyList();
         } else {
             return findNeuronMatches(
-                    MongoDaoHelper.createFilterByIds(ids),
+                    new NeuronsMatchFilter<R>().setMatchEntityIds(ids),
                     null,
                     null,
                     null,
@@ -96,7 +96,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        MongoDaoHelper.createFilterByClass(type),
+                        new NeuronsMatchFilter<R>().setMatchEntityType(type),
                         null,
                         null,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
@@ -209,7 +209,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                                    NeuronSelector targetSelector) {
         return MongoDaoHelper.countAggregate(
                 createQueryPipeline(
-                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
+                        neuronsMatchFilter,
                         maskSelector,
                         targetSelector),
                 mongoCollection);
@@ -223,7 +223,7 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         return new PagedResult<>(
                 pageRequest,
                 findNeuronMatches(
-                        NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
+                        neuronsMatchFilter,
                         maskSelector,
                         targetSelector,
                         MongoDaoHelper.createBsonSortCriteria(pageRequest.getSortCriteria()),
@@ -233,9 +233,13 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         );
     }
 
-    private List<R> findNeuronMatches(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter, Bson sortCriteria, long offset, int length) {
+    private List<R> findNeuronMatches(NeuronsMatchFilter<R> matchFilter,
+                                      NeuronSelector maskImageFilter,
+                                      NeuronSelector targetImageFilter,
+                                      Bson sortCriteria,
+                                      long offset, int length) {
         return MongoDaoHelper.aggregateAsList(
-                createQueryPipeline(matchFilter, maskImageFilter, matchedImageFilter),
+                createQueryPipeline(matchFilter, maskImageFilter, targetImageFilter),
                 sortCriteria,
                 offset,
                 length,
@@ -244,10 +248,12 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 true);
     }
 
-    protected List<Bson> createQueryPipeline(Bson matchFilter, NeuronSelector maskImageFilter, NeuronSelector matchedImageFilter) {
+    protected List<Bson> createQueryPipeline(NeuronsMatchFilter<R> matchFilter,
+                                             NeuronSelector maskImageFilter,
+                                             NeuronSelector targetImageFilter) {
         List<Bson> pipeline = new ArrayList<>();
 
-        pipeline.add(Aggregates.match(matchFilter));
+        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronsMatchFilter(matchFilter)));
         pipeline.add(Aggregates.lookup(
                 EntityUtils.getPersistenceInfo(AbstractNeuronEntity.class).storeName(),
                 "maskImageRefId",
@@ -263,9 +269,12 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
         UnwindOptions unwindOptions = new UnwindOptions().preserveNullAndEmptyArrays(true);
         pipeline.add(Aggregates.unwind("$maskImage", unwindOptions));
         pipeline.add(Aggregates.unwind("$image", unwindOptions));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("maskImage", maskImageFilter)));
-        pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("image", matchedImageFilter)));
-
+        if (maskImageFilter != null && !maskImageFilter.isEmpty()) {
+            pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("maskImage", maskImageFilter)));
+        }
+        if (targetImageFilter != null && !targetImageFilter.isEmpty()) {
+            pipeline.add(Aggregates.match(NeuronSelectionHelper.getNeuronFilter("image", targetImageFilter)));
+        }
         return pipeline;
     }
 

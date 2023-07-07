@@ -36,11 +36,11 @@ import org.slf4j.LoggerFactory;
 
 public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
-    private final List<String> targetLibraries;
+    private final List<String> maskLibraries;
 
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
-                               List<String> targetLibraries,
+                               List<String> maskLibraries,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
                                ImageStoreMapping imageStoreMapping,
@@ -51,7 +51,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
-        this.targetLibraries = targetLibraries;
+        this.maskLibraries = maskLibraries;
     }
 
     @Override
@@ -69,17 +69,21 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         LOG.info("Finished all exports in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
-    private void runExportForTargetIds(int jobId, List<String> targetIds) {
+    private void runExportForTargetIds(int jobId, List<String> targetMipIds) {
         long startProcessingTime = System.currentTimeMillis();
-        LOG.info("Start processing {} targets from partition {}", targetIds.size(), jobId);
-        targetIds.forEach(targetId -> {
-            LOG.info("Read LM color depth matches for {}", targetId);
-            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesForTargets(
+        LOG.info("Start processing {} targets from partition {}", targetMipIds.size(), jobId);
+        targetMipIds.forEach(targetMipId -> {
+            LOG.info("Read LM color depth matches for {}", targetMipId);
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesByTarget(
                     dataSourceParam.getAlignmentSpace(),
-                    targetLibraries,
-                    Collections.singletonList(targetId),
+                    maskLibraries,
+                    null, /* maskPublishedNames */
+                    null, /* maskMIPIds */
+                    null, /* targetLibraries */
+                    null, /* targetPublishedNames */
+                    Collections.singletonList(targetMipId), /* targetMIPIds */
+                    null, // use the tags for selecting the targets but not for selecting the matches
                     scoresFilter,
-                    null, // use the tags for selecting the masks but not for selecting the matches
                     null // no sorting yet because it uses too much memory on the server
             );
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
@@ -87,19 +91,19 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                 // this can happen even when there are EM - LM matches but the match is low ranked and it has no gradient score
                 // therefore no LM - EM match is found
                 // in this case we need to retrieve the LM MIP info and create an empty result set
-                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(targetId), new PagedRequest());
+                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(targetMipId), new PagedRequest());
                 if (neurons.isEmpty()) {
-                    LOG.warn("No target neuron found for {} - this should not have happened!", targetId);
+                    LOG.warn("No target neuron found for {} - this should not have happened!", targetMipId);
                     return;
                 }
                 CDMatchEntity<? extends AbstractNeuronEntity, AbstractNeuronEntity> fakeMatch = new CDMatchEntity<>();
                 fakeMatch.setMatchedImage(neurons.getResultList().get(0));
                 selectedMatchesForTarget = Collections.singletonList(fakeMatch);
             } else {
-                LOG.info("Select best LM matches for {} out of {} matches", targetId, allMatchesForTarget.size());
+                LOG.info("Select best LM matches for {} out of {} matches", targetMipId, allMatchesForTarget.size());
                 selectedMatchesForTarget = selectBestMatchPerMIPPair(allMatchesForTarget);
             }
-            LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetId);
+            LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetMipId);
             writeResults(selectedMatchesForTarget);
         });
         LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis() - startProcessingTime) / 1000.);

@@ -66,38 +66,39 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
         LOG.info("Finished all exports in {}s", (System.currentTimeMillis()-startProcessingTime)/1000.);
     }
 
-    private void runExportForMaskIds(int jobId, List<String> maskIds) {
+    private void runExportForMaskIds(int jobId, List<String> maskMipIds) {
         long startProcessingTime = System.currentTimeMillis();
-        LOG.info("Start processing {} masks from partition {}", maskIds.size(), jobId);
-        maskIds.forEach(maskId -> {
-            LOG.info("Read EM color depth matches for {}", maskId);
-            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
+        LOG.info("Start processing {} masks from partition {}", maskMipIds.size(), jobId);
+        maskMipIds.forEach(maskMipId -> {
+            LOG.info("Read EM color depth matches for {}", maskMipId);
+            List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesByMask(
                     dataSourceParam.getAlignmentSpace(),
-                    null, // no mask library specified - we use mask MIP
-                    Collections.singletonList(maskId),
-                    scoresFilter,
+                    null, /* maskLibraries */
+                    null, /* maskPublishedNames */
+                    Collections.singletonList(maskMipId), /* maskMIPIds */
                     null /* targetLibraries */,
                     null /* targetPublishedNames */,
                     null /* targetMIPIDs */,
                     null, // use the tags for selecting the masks but not for selecting the matches
+                    scoresFilter,
                     null // no sorting because it uses too much memory on the server
             );
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask;
             if (allMatchesForMask.isEmpty()) {
                 // this occurs only when there really aren't any matches between the EM MIP and any of the LM MIPs
-                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(maskId), new PagedRequest());
+                PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(maskMipId), new PagedRequest());
                 if (neurons.isEmpty()) {
-                    LOG.warn("No mask neuron found for {} - this should not have happened!", maskId);
+                    LOG.warn("No mask neuron found for {} - this should not have happened!", maskMipId);
                     return;
                 }
                 CDMatchEntity<AbstractNeuronEntity, ? extends AbstractNeuronEntity> fakeMatch = new CDMatchEntity<>();
                 fakeMatch.setMaskImage(neurons.getResultList().get(0));
                 selectedMatchesForMask = Collections.singletonList(fakeMatch);
             } else {
-                LOG.info("Select best EM matches for {} out of {} matches", maskId, allMatchesForMask.size());
+                LOG.info("Select best EM matches for {} out of {} matches", maskMipId, allMatchesForMask.size());
                 selectedMatchesForMask = selectBestMatchPerMIPPair(allMatchesForMask);
             }
-            LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskId);
+            LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskMipId);
             writeResults(selectedMatchesForMask);
         });
         LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);

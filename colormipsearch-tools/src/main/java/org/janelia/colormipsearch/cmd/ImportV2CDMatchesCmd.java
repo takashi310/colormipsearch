@@ -198,14 +198,15 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
     List<CDMatchEntity<M, T>> getCDMatchesForMask(NeuronMatchesReader<CDMatchEntity<M, T>> cdsMatchesReader, String maskCDMipId) {
         LOG.info("Read all color depth matches for {}", maskCDMipId);
-        return cdsMatchesReader.readMatchesForMasks(
+        return cdsMatchesReader.readMatchesByMask(
+                null,
                 null,
                 null,
                 Collections.singletonList(maskCDMipId),
-                null /* matchScoresFilter */,
                 null /* targetLibraries */,
                 null /* targetPublishedNames */,
                 null /* targetMIPIDs */,
+                null /* matchScoresFilter */,
                 null /* matchTags */, // it's not clear from the API but the reader is file based so tags are not important here
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)

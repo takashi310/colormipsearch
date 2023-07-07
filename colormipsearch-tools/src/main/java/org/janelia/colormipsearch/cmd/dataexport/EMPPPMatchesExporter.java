@@ -95,15 +95,16 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
         LOG.info("Start processing {} masks from partition {}", maskIds.size(), jobId);
         maskIds.forEach(maskId -> {
             LOG.info("Read PPP matches for {}", maskId);
-            List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesForMasks(
+            List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesByMask(
                     dataSourceParam.getAlignmentSpace(),
                     dataSourceParam.getLibraries(),
+                    dataSourceParam.getNames(),
                     Collections.singletonList(maskId),
-                    scoresFilter,
                     null /* targetLibraries */,
                     null /* targetPublishedNames */,
                     null /* targetMIPIDs */,
                     null /* matchTags */, // use the tags for selecting the masks but not for selecting the matches
+                    scoresFilter,
                     Collections.singletonList(
                             new SortCriteria("rank", SortDirection.ASC)
                     ));

@@ -96,15 +96,16 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
     }
 
     @Override
-    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForMasks(String alignmentSpace,
-                                                                                   Collection<String> maskLibraries,
-                                                                                   Collection<String> maskMipIds,
-                                                                                   ScoresFilter matchScoresFilter,
-                                                                                   Collection<String> targetLibraries,
-                                                                                   Collection<String> targetPublishedNames,
-                                                                                   Collection<String> targetMipIds,
-                                                                                   Collection<String> matchTags,
-                                                                                   List<SortCriteria> sortCriteriaList) {
+    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesByMask(String alignmentSpace,
+                                                                                 Collection<String> maskLibraries,
+                                                                                 Collection<String> maskPublishedNames,
+                                                                                 Collection<String> maskMipIds,
+                                                                                 Collection<String> targetLibraries,
+                                                                                 Collection<String> targetPublishedNames,
+                                                                                 Collection<String> targetMipIds,
+                                                                                 Collection<String> matchTags,
+                                                                                 ScoresFilter matchScoresFilter,
+                                                                                 List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
                 .flatMap(maskMipId -> CollectionUtils.isEmpty(maskLibraries)
                         ?  Stream.of(new File(maskMipId))
@@ -115,12 +116,16 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
     }
 
     @Override
-    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesForTargets(String alignmentSpace,
-                                                                                     Collection<String> targetLibraries,
-                                                                                     Collection<String> targetMipIds,
-                                                                                     ScoresFilter matchScoresFilter,
-                                                                                     Collection<String> matchTags,
-                                                                                     List<SortCriteria> sortCriteriaList) {
+    public List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> readMatchesByTarget(String alignmentSpace,
+                                                                                   Collection<String> maskLibraries,
+                                                                                   Collection<String> maskPublishedNames,
+                                                                                   Collection<String> maskMipIds,
+                                                                                   Collection<String> targetLibraries,
+                                                                                   Collection<String> targetPublishedNames,
+                                                                                   Collection<String> targetMipIds,
+                                                                                   Collection<String> matchTags,
+                                                                                   ScoresFilter matchScoresFilter,
+                                                                                   List<SortCriteria> sortCriteriaList) {
         throw new UnsupportedOperationException("This class has very limitted support and it is only intended for import EM to LM matches based on the EM MIP ID(s)");
     }
 

@@ -90,15 +90,16 @@ public class JSONReadWriteTest {
         FSUtils.getFiles(em2lmDir.toString(), 0, -1)
                 .forEach(f -> {
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
-                            em2lmMatchesReader.readMatchesForMasks(
+                            em2lmMatchesReader.readMatchesByMask(
                                     null /* alignmentSpace */,
                                     null /* maskLibraries */,
+                                    null, /* maskPublishedNames */
                                     Collections.singletonList(f),
-                                    null /* matchScoresFilter */,
                                     null /* targetLibraries */,
                                     null /* targetPublishedNames */,
                                     null /* targetMIPIDs */,
                                     null /* matchTags */,
+                                    null /* matchScoresFilter */,
                                     null /* sortCriteria */);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);

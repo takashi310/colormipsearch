@@ -21,44 +21,55 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
     List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource);
 
     /**
-     * Read matches for the specified masks library and mips. A null or empty list will ignore that filter.
+     * Read matches for the specified masks and targets - iterate by mask first. A null or empty list will ignore that filter.
      *
-     * @param alignmentSpace masks alignmentSpace
-     * @param maskLibraries masks libraries
-     * @param maskMipIds mask MIPs
-     * @param matchScoresFilter additional matches scores filter
-     * @param targetLibraries filter for the target libraries
-     * @param targetPublishedNames filter for the target published names
-     * @param targetMipIds filter for the target MIPs
-     * @param matchTags filter for the match tags
+     * @param alignmentSpace
+     * @param maskLibraries
+     * @param maskPublishedNames
+     * @param maskMipIds
+     * @param targetLibraries
+     * @param targetPublishedNames
+     * @param targetMipIds
+     * @param matchTags
+     * @param matchScoresFilter
      * @param sortCriteriaList
      * @return
      */
-    List<R> readMatchesForMasks(String alignmentSpace,
+    List<R> readMatchesByMask(String alignmentSpace,
+                              Collection<String> maskLibraries,
+                              Collection<String> maskPublishedNames,
+                              Collection<String> maskMipIds,
+                              Collection<String> targetLibraries,
+                              Collection<String> targetPublishedNames,
+                              Collection<String> targetMipIds,
+                              Collection<String> matchTags,
+                              ScoresFilter matchScoresFilter,
+                              List<SortCriteria> sortCriteriaList);
+
+    /**
+     * Read matches for the specified masks and targets - iterate by target first. A null or empty list will ignore that filter.
+     *
+     * @param alignmentSpace
+     * @param maskLibraries
+     * @param maskPublishedNames
+     * @param maskMipIds
+     * @param targetLibraries
+     * @param targetPublishedNames
+     * @param targetMipIds
+     * @param matchTags
+     * @param matchScoresFilter
+     * @param sortCriteriaList
+     * @return
+     */
+    List<R> readMatchesByTarget(String alignmentSpace,
                                 Collection<String> maskLibraries,
+                                Collection<String> maskPublishedNames,
                                 Collection<String> maskMipIds,
-                                ScoresFilter matchScoresFilter,
                                 Collection<String> targetLibraries,
                                 Collection<String> targetPublishedNames,
                                 Collection<String> targetMipIds,
                                 Collection<String> matchTags,
+                                ScoresFilter matchScoresFilter,
                                 List<SortCriteria> sortCriteriaList);
 
-    /**
-     * Read matches for the specified targets library and mips. A null or empty list will ignore that filter.
-     *
-     * @param alignmentSpace targets alignmentSpace
-     * @param targetLibraries masks libraries
-     * @param targetMipIds mask MIPs
-     * @param matchScoresFilter additional match scores filter
-     * @param matchTags
-     * @param sortCriteriaList
-     * @return
-     */
-    List<R> readMatchesForTargets(String alignmentSpace,
-                                  Collection<String> targetLibraries,
-                                  Collection<String> targetMipIds,
-                                  ScoresFilter matchScoresFilter,
-                                  Collection<String> matchTags,
-                                  List<SortCriteria> sortCriteriaList);
 }

@@ -305,15 +305,16 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         if (args.pctPositivePixels > 0) {
             neuronsMatchScoresFilter.addSScore("matchingPixelsRatio", args.pctPositivePixels / 100);
         }
-        List<CDMatchEntity<M, T>> allCDMatches = cdsMatchesReader.readMatchesForMasks(
+        List<CDMatchEntity<M, T>> allCDMatches = cdsMatchesReader.readMatchesByMask(
                 args.alignmentSpace,
-                null,
+                null, /* maskLibraries */
+                null, /* maskPublishedNames */
                 Collections.singletonList(maskCDMipId),
-                neuronsMatchScoresFilter,
                 args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
                 args.matchTags,
+                neuronsMatchScoresFilter,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));
