@@ -68,27 +68,32 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                      Collection<String> maskLibraries,
                                      Collection<String> maskPublishedNames,
                                      Collection<String> maskMipIds,
+                                     Collection<String> maskExcludedTags,
                                      Collection<String> targetLibraries,
                                      Collection<String> targetPublishedNames,
                                      Collection<String> targetMipIds,
+                                     Collection<String> targetExcludedTags,
                                      Collection<String> matchTags,
-                                     ScoresFilter matchScoresFilter,
+                                     Collection<String> matchExcludedTags, ScoresFilter matchScoresFilter,
                                      List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(maskLibraries)
                 .addNames(maskPublishedNames)
-                .addMipIDs(maskMipIds);
+                .addMipIDs(maskMipIds)
+                .addExcludedTags(maskExcludedTags);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
                 .addNames(targetPublishedNames)
-                .addMipIDs(targetMipIds);
+                .addMipIDs(targetMipIds)
+                .addExcludedTags(targetExcludedTags);
         List<Number> maskEntityIds = getNeuronEntityIds(maskSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setMaskEntityIds(maskEntityIds)
-                .addTags(matchTags);
+                .addTags(matchTags)
+                .addExcludedTags(matchExcludedTags);
 
         return readMatches(neuronsMatchFilter, null, targetSelector, sortCriteriaList);
     }
@@ -98,27 +103,33 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                        Collection<String> maskLibraries,
                                        Collection<String> maskPublishedNames,
                                        Collection<String> maskMipIds,
+                                       Collection<String> maskExcludedTags,
                                        Collection<String> targetLibraries,
                                        Collection<String> targetPublishedNames,
                                        Collection<String> targetMipIds,
+                                       Collection<String> targetExcludedTags,
                                        Collection<String> matchTags,
+                                       Collection<String> matchExcludedTags,
                                        ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(maskLibraries)
                 .addNames(maskPublishedNames)
-                .addMipIDs(maskMipIds);
+                .addMipIDs(maskMipIds)
+                .addExcludedTags(maskExcludedTags);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
                 .addNames(targetPublishedNames)
-                .addMipIDs(targetMipIds);
+                .addMipIDs(targetMipIds)
+                .addExcludedTags(targetExcludedTags);
         List<Number> targetEntityIds = getNeuronEntityIds(targetSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
                 .setTargetEntityIds(targetEntityIds)
-                .addTags(matchTags);
+                .addTags(matchTags)
+                .addExcludedTags(matchExcludedTags);
 
         return readMatches(neuronsMatchFilter, maskSelector, null, sortCriteriaList);
     }

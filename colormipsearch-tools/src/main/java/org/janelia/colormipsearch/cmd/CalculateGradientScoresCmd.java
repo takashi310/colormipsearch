@@ -310,11 +310,11 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 null, /* maskLibraries */
                 null, /* maskPublishedNames */
                 Collections.singletonList(maskCDMipId),
-                args.targetsLibraries,
+                null, args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
-                args.matchTags,
-                neuronsMatchScoresFilter,
+                null, args.matchTags,
+                null, neuronsMatchScoresFilter,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));

@@ -41,9 +41,7 @@ import org.janelia.colormipsearch.dataio.fileutils.ItemsWriterToJSONFile;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.dto.EMNeuronMetadata;
 import org.janelia.colormipsearch.dto.LMNeuronMetadata;
-import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.FileType;
-import org.janelia.colormipsearch.model.PPPMatchEntity;
 
 /**
  * This command is used to export data from the database to the file system in order to upload it to S3.
@@ -91,6 +89,10 @@ class ExportData4NBCmd extends AbstractCmd {
                 variableArity = true)
         List<String> targetLibraries = new ArrayList<>();
 
+        @Parameter(names = {"--excluded-target-tags"}, description = "Target neuron tags to be excluded from export",
+                variableArity = true)
+        List<String> excludedTargetNeuronTags = new ArrayList<>();
+
         @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
         List<String> exportedNames = new ArrayList<>();
 
@@ -119,11 +121,17 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--size"}, description = "Size of the exported data")
         int size = 0;
 
-        @Parameter(names = {"--tags"}, description = "Tags to be exported", variableArity = true)
-        List<String> tags = new ArrayList<>();
+        @Parameter(names = {"--neuron-tags"}, description = "Neuron tags to be exported", variableArity = true)
+        List<String> neuronTags = new ArrayList<>();
+
+        @Parameter(names = {"--excluded-neuron-tags"}, description = "Neuron tags to be excluded from export", variableArity = true)
+        List<String> excludedNeuronTags = new ArrayList<>();
 
         @Parameter(names = {"--default-image-store"}, description = "Default image store", required = true)
         String defaultImageStore;
+
+        @Parameter(names = {"--excluded-matches-tags"}, description = "Matches tags to be excluded from export", variableArity = true)
+        List<String> excludedMatchesTags = new ArrayList<>();
 
         @Parameter(names = {"--image-stores-per-neuron-meta"},
                 description = "Image stores per neuron metadata; the mapping must be based on the internal alignmentSpace and optionally library name;" +
@@ -219,7 +227,8 @@ class ExportData4NBCmd extends AbstractCmd {
         DataSourceParam dataSource = new DataSourceParam()
                 .setAlignmentSpace(args.alignmentSpace)
                 .addLibraries(args.libraries)
-                .addTags(args.tags)
+                .addTags(args.neuronTags)
+                .addExcludedTags(args.excludedNeuronTags)
                 .addNames(args.exportedNames)
                 .setOffset(args.offset)
                 .setSize(args.size);
@@ -238,6 +247,9 @@ class ExportData4NBCmd extends AbstractCmd {
                 return new EMCDMatchesExporter(
                         dataHelper,
                         dataSource,
+                        args.targetLibraries,
+                        args.excludedTargetNeuronTags,
+                        args.excludedMatchesTags,
                         getCDScoresFilter(),
                         urlTransformer,
                         imageStoreMapping,
@@ -257,6 +269,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataHelper,
                         dataSource,
                         args.targetLibraries,
+                        args.excludedTargetNeuronTags,
+                        args.excludedMatchesTags,
                         getCDScoresFilter(),
                         urlTransformer,
                         imageStoreMapping,

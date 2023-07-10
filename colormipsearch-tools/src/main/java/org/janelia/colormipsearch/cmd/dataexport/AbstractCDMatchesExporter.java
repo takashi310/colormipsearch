@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -28,7 +27,6 @@ import org.janelia.colormipsearch.dto.CDMatchedTarget;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
-import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.slf4j.Logger;
@@ -37,6 +35,9 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractCDMatchesExporter.class);
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
+    final List<String> targetLibraries;
+    final List<String> targetExcludedTags;
+    final List<String> matchesExcludedTags;
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
     final NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao;
@@ -45,6 +46,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
 
     protected AbstractCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                         DataSourceParam dataSourceParam,
+                                        List<String> targetLibraries,
+                                        List<String> targetExcludedTags,
+                                        List<String> matchesExcludedTags,
                                         ScoresFilter scoresFilter,
                                         URLTransformer urlTransformer,
                                         ImageStoreMapping imageStoreMapping,
@@ -55,6 +59,9 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                         ItemsWriterToJSONFile resultMatchesWriter,
                                         int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
+        this.targetLibraries = targetLibraries;
+        this.targetExcludedTags = targetExcludedTags;
+        this.matchesExcludedTags = matchesExcludedTags;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.neuronMetadataDao = neuronMetadataDao;

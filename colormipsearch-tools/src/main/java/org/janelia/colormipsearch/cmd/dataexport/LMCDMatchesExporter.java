@@ -36,11 +36,12 @@ import org.slf4j.LoggerFactory;
 
 public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
-    private final List<String> maskLibraries;
 
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                List<String> maskLibraries,
+                               List<String> maskExcludedTags,
+                               List<String> matchesExcludedTags,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
                                ImageStoreMapping imageStoreMapping,
@@ -50,8 +51,18 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
-        this.maskLibraries = maskLibraries;
+        super(jacsDataHelper,
+                dataSourceParam,
+                maskLibraries, maskExcludedTags,
+                matchesExcludedTags, scoresFilter,
+                urlTransformer,
+                imageStoreMapping,
+                outputDir,
+                executor,
+                neuronMatchesReader,
+                neuronMetadataDao,
+                resultMatchesWriter,
+                processingPartitionSize);
     }
 
     @Override
@@ -76,15 +87,18 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Read LM color depth matches for {}", targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesByTarget(
                     dataSourceParam.getAlignmentSpace(),
-                    maskLibraries,
-                    null, /* maskPublishedNames */
-                    null, /* maskMIPIds */
-                    null, /* targetLibraries */
-                    null, /* targetPublishedNames */
-                    Collections.singletonList(targetMipId), /* targetMIPIds */
-                    null, // use the tags for selecting the targets but not for selecting the matches
+                    /* maskLibraries */targetLibraries, // for LM -> EM targetLibraries should be EM libraries so they are mask libs
+                    /* maskPublishedNames */null,
+                    /* maskMIPIds */null,
+                    /* maskExcludedTags */targetExcludedTags,
+                    /* targetLibraries */null,
+                    /* targetPublishedNames */null,
+                    /* targetMIPIds */Collections.singletonList(targetMipId),
+                    /* targetExcludedTags */dataSourceParam.getExcludedTags(), // use the tags for selecting the targets but not for selecting the matches
+                    /* matchTags */null,
+                    /* matchExcludedTags */matchesExcludedTags,
                     scoresFilter,
-                    null // no sorting yet because it uses too much memory on the server
+                    /* no sorting yet because it uses too much memory on the server */null
             );
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
             if (allMatchesForTarget.isEmpty()) {

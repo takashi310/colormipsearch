@@ -36,9 +36,14 @@ import org.slf4j.LoggerFactory;
 
 public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
+    private final List<String> targetLibraries;
+    private final List<String> targetExcludedTags;
 
     public EMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
+                               List<String> targetLibraries,
+                               List<String> targetExcludedTags,
+                               List<String> matchesExcludedTags,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
                                ImageStoreMapping imageStoreMapping,
@@ -48,7 +53,20 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao,
                                ItemsWriterToJSONFile resultMatchesWriter,
                                int processingPartitionSize) {
-        super(jacsDataHelper, dataSourceParam, scoresFilter, urlTransformer, imageStoreMapping, outputDir, executor, neuronMatchesReader, neuronMetadataDao, resultMatchesWriter, processingPartitionSize);
+        super(jacsDataHelper,
+                dataSourceParam,
+                targetLibraries, targetExcludedTags,
+                matchesExcludedTags, scoresFilter,
+                urlTransformer,
+                imageStoreMapping,
+                outputDir,
+                executor,
+                neuronMatchesReader,
+                neuronMetadataDao,
+                resultMatchesWriter,
+                processingPartitionSize);
+        this.targetLibraries = targetLibraries;
+        this.targetExcludedTags = targetExcludedTags;
     }
 
     @Override
@@ -73,13 +91,16 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Read EM color depth matches for {}", maskMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesByMask(
                     dataSourceParam.getAlignmentSpace(),
-                    null, /* maskLibraries */
-                    null, /* maskPublishedNames */
+                    /* maskLibraries */null,
+                    /* maskPublishedNames */null,
                     Collections.singletonList(maskMipId), /* maskMIPIds */
-                    null /* targetLibraries */,
-                    null /* targetPublishedNames */,
-                    null /* targetMIPIDs */,
-                    null, // use the tags for selecting the masks but not for selecting the matches
+                    /* maskExcludedTags */dataSourceParam.getExcludedTags(), // use the tags for selecting the masks but not for selecting the matches
+                    /* targetLibraries */targetLibraries,
+                    /* targetPublishedNames */null,
+                    /* targetMIPIDs */null,
+                    /* targetExcludedTags */targetExcludedTags,
+                    /* matchTags */null,
+                    /* matchExcludedTags */matchesExcludedTags,
                     scoresFilter,
                     null // no sorting because it uses too much memory on the server
             );

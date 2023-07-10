@@ -100,10 +100,13 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                                                                  Collection<String> maskLibraries,
                                                                                  Collection<String> maskPublishedNames,
                                                                                  Collection<String> maskMipIds,
+                                                                                 Collection<String> maskExcludedTags,
                                                                                  Collection<String> targetLibraries,
                                                                                  Collection<String> targetPublishedNames,
                                                                                  Collection<String> targetMipIds,
+                                                                                 Collection<String> targetExcludedTags,
                                                                                  Collection<String> matchTags,
+                                                                                 Collection<String> matchExcludedTags,
                                                                                  ScoresFilter matchScoresFilter,
                                                                                  List<SortCriteria> sortCriteriaList) {
         return maskMipIds.stream()
@@ -120,10 +123,13 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
                                                                                    Collection<String> maskLibraries,
                                                                                    Collection<String> maskPublishedNames,
                                                                                    Collection<String> maskMipIds,
+                                                                                   Collection<String> maskExcludedTags,
                                                                                    Collection<String> targetLibraries,
                                                                                    Collection<String> targetPublishedNames,
                                                                                    Collection<String> targetMipIds,
+                                                                                   Collection<String> targetExcludedTags,
                                                                                    Collection<String> matchTags,
+                                                                                   Collection<String> matchExcludedTags,
                                                                                    ScoresFilter matchScoresFilter,
                                                                                    List<SortCriteria> sortCriteriaList) {
         throw new UnsupportedOperationException("This class has very limitted support and it is only intended for import EM to LM matches based on the EM MIP ID(s)");

@@ -57,11 +57,11 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                                      Collection<String> maskLibraries,
                                      Collection<String> maskPublishedNames,
                                      Collection<String> maskMipIds,
-                                     Collection<String> targetLibraries,
+                                     Collection<String> maskExcludedTags, Collection<String> targetLibraries,
                                      Collection<String> targetPublishedNames,
                                      Collection<String> targetMipIds,
-                                     Collection<String> matchTags,
-                                     ScoresFilter matchScoresFilter,
+                                     Collection<String> targetExcludedTags, Collection<String> matchTags,
+                                     Collection<String> matchExcludedTags, ScoresFilter matchScoresFilter,
                                      List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
                 .flatMap(maskMipId -> CollectionUtils.isEmpty(maskLibraries)
@@ -78,11 +78,11 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                                        Collection<String> maskLibraries,
                                        Collection<String> maskPublishedNames,
                                        Collection<String> maskMipIds,
-                                       Collection<String> targetLibraries,
+                                       Collection<String> maskExcludedTags, Collection<String> targetLibraries,
                                        Collection<String> targetPublishedNames,
                                        Collection<String> targetMipIds,
-                                       Collection<String> matchTags,
-                                       ScoresFilter matchScoresFilter,
+                                       Collection<String> targetExcludedTags, Collection<String> matchTags,
+                                       Collection<String> matchExcludedTags, ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         return (List<R>) targetMipIds.stream()
                 .flatMap(targetMipId -> CollectionUtils.isEmpty(targetLibraries)

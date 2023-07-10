@@ -95,10 +95,13 @@ public class JSONReadWriteTest {
                                     null /* maskLibraries */,
                                     null, /* maskPublishedNames */
                                     Collections.singletonList(f),
+                                    null,
                                     null /* targetLibraries */,
                                     null /* targetPublishedNames */,
                                     null /* targetMIPIDs */,
+                                    null,
                                     null /* matchTags */,
+                                    null,
                                     null /* matchScoresFilter */,
                                     null /* sortCriteria */);
                     assertTrue(matchesFromFile.size() > 0);

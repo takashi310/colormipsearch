@@ -94,6 +94,9 @@ class NeuronSelectionHelper {
             addInFilter("maskImageRefId", neuronsMatchFilter.getMaskEntityIds(), filter);
             addInFilter("matchedImageRefId", neuronsMatchFilter.getTargetEntityIds(), filter);
             addInFilter("tags", neuronsMatchFilter.getTags(), filter);
+            if (neuronsMatchFilter.hasExcludedTags()) {
+                filter.add(Filters.nin("tags", neuronsMatchFilter.getExcludedTags()));
+            }
         }
         return MongoDaoHelper.createBsonFilterCriteria(filter);
     }

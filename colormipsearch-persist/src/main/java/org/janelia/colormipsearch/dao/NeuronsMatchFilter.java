@@ -19,6 +19,7 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
     private List<Number> maskEntityIds; // mask entity IDs
     private List<Number> targetEntityIds; // target entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
+    private final Set<String> excludedTags = new HashSet<>(); // tags that should not exist
 
     public ScoresFilter getScoresFilter() {
         return scoresFilter;
@@ -82,6 +83,24 @@ public class NeuronsMatchFilter<R extends AbstractMatchEntity<? extends Abstract
 
     public boolean hasTags() {
         return CollectionUtils.isNotEmpty(tags);
+    }
+
+    public Set<String> getExcludedTags() {
+        return excludedTags;
+    }
+
+    public NeuronsMatchFilter<R> addExcludedTag(String tag) {
+        if (StringUtils.isNotBlank(tag)) this.excludedTags.add(tag);
+        return this;
+    }
+
+    public NeuronsMatchFilter<R> addExcludedTags(Collection<String> tags) {
+        if (tags != null) tags.forEach(this::addExcludedTag);
+        return this;
+    }
+
+    public boolean hasExcludedTags() {
+        return CollectionUtils.isNotEmpty(excludedTags);
     }
 
     public boolean isEmpty() {

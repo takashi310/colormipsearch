@@ -17,6 +17,7 @@ public class DataSourceParam {
     private Collection<String> mipIDs = new HashSet<>();
     private Collection<String> names = new HashSet<>();
     private Collection<String> tags = new HashSet<>();
+    private Collection<String> excludedTags = new HashSet<>();
     private long offset;
     private int size;
 
@@ -77,6 +78,15 @@ public class DataSourceParam {
 
     public DataSourceParam addTags(Collection<String> tags) {
         if (tags != null) tags.stream().filter(StringUtils::isNotBlank).forEach(t -> this.tags.add(t));
+        return this;
+    }
+
+    public Collection<String> getExcludedTags() {
+        return excludedTags;
+    }
+
+    public DataSourceParam addExcludedTags(Collection<String> excludedTags) {
+        if (excludedTags != null) excludedTags.stream().filter(StringUtils::isNotBlank).forEach(t -> this.excludedTags.add(t));
         return this;
     }
 
