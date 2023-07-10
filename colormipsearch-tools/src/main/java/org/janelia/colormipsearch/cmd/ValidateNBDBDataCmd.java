@@ -246,8 +246,11 @@ class ValidateNBDBDataCmd extends AbstractCmd {
             }
             if (CollectionUtils.isNotEmpty(args.excludedLibraries) &&
                 CollectionUtils.containsAny(colorDepthMIP.libraries, args.excludedLibraries)) {
-                errors.add(String.format("Entity %s is also in %s libraries and it should not be in %s",
-                        ne, colorDepthMIP.libraries, args.excludedLibraries));
+                // typically if excludedLibraries is specified we want it to be only in the one that is a subset of the other;
+                // for example in JACS mips from Annotator MCFO are both in MCFO and in Annotator MCFO
+                // but in NeuronBridge we want the Annotator MCFO ones to only be treated as Annotator MCFO
+                errors.add(String.format("Entity %s is also in %s libraries and should be both in %s and in %s",
+                        ne, colorDepthMIP.libraries, args.libraries, args.excludedLibraries));
             }
         }
         // check file types
