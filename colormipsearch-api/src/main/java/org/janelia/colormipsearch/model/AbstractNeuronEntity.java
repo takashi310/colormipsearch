@@ -241,6 +241,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
                 .append("mipId", mipId)
                 .append("publishedName", publishedName)
                 .append("libraryName", libraryName)
+                .append("alignmentSpace", alignmentSpace)
                 .append("inputImage", getComputeFileName(ComputeFileType.InputColorDepthImage))
                 .toString();
     }
