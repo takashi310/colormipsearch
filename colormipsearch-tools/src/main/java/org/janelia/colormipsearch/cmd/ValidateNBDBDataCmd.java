@@ -21,11 +21,14 @@ import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
 import org.janelia.colormipsearch.cmd.jacsdata.JacsDataGetter;
 import org.janelia.colormipsearch.cmd.jacsdata.PublishedDataGetter;
 import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
+import org.janelia.colormipsearch.dao.NeuronMatchesDao;
 import org.janelia.colormipsearch.dao.NeuronMetadataDao;
 import org.janelia.colormipsearch.dao.NeuronSelector;
+import org.janelia.colormipsearch.dao.NeuronsMatchFilter;
 import org.janelia.colormipsearch.datarequests.PagedRequest;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
+import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -90,6 +93,16 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         @Parameter(names = {"--error-tag"}, description = "Error tag")
         String errorTag;
 
+        @Parameter(names = {"--apply-error-tag-to-em-cdmatches"},
+                description = "This is meaningful only if error-tag is set to apply the error tag to the corresponding EM - LM matches as well",
+                arity = 0)
+        boolean applyTagToEMMatches;
+
+        @Parameter(names = {"--apply-error-tag-to-lm-cdmatches"},
+                description = "This is meaningful only if error-tag is set to apply the error tag to the corresponding LM - EM matches as well",
+                arity = 0)
+        boolean applyTagToLMMatches;
+
         ValidateCmdArgs(CommonArgs commonArgs) {
             super(commonArgs);
         }
@@ -129,6 +142,7 @@ class ValidateNBDBDataCmd extends AbstractCmd {
     private void runDataValidation() {
         Executor validationExecutor = CmdUtils.createCmdExecutor(args.commonArgs);
         NeuronMetadataDao<AbstractNeuronEntity> neuronMetadataDao = getDaosProvider().getNeuronMetadataDao();
+        NeuronMatchesDao<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesDao = getDaosProvider().getCDMatchesDao();
         CachedDataHelper dataHelper = new CachedDataHelper(
                 new JacsDataGetter(
                         args.dataServiceURL,
@@ -154,7 +168,7 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                         .map(indexedPartition -> CompletableFuture
                                 .supplyAsync(() -> runValidationForNeuronEntities(indexedPartition.getKey(), indexedPartition.getValue(), dataHelper), validationExecutor)
                                 .thenApply(errorReport -> {
-                                    processEntitiesWithErrors(errorReport.badEntities, neuronMetadataDao);
+                                    processEntitiesWithErrors(errorReport.badEntities, neuronMetadataDao, neuronMatchesDao);
                                     return new ErrorReport(
                                             errorReport.nEntities,
                                             errorReport.nEntitiesWithErrors,
@@ -261,7 +275,9 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         }
     }
 
-    private void processEntitiesWithErrors(List<Number> badEntityIds, NeuronMetadataDao<?> neuronMetadataDao) {
+    private void processEntitiesWithErrors(List<Number> badEntityIds,
+                                           NeuronMetadataDao<?> neuronMetadataDao,
+                                           NeuronMatchesDao<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesDao) {
         if (StringUtils.isNotBlank(args.errorTag) && !badEntityIds.isEmpty()) {
             long nUpdates = neuronMetadataDao.updateAll(
                     new NeuronSelector()
@@ -270,6 +286,22 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                             .addEntityIds(badEntityIds),
                     ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton(args.errorTag))));
             LOG.info("Marked {} entities as bad", nUpdates);
+            if (args.applyTagToEMMatches) {
+                long nMatchesUpdates = neuronMatchesDao.updateAll(
+                        new NeuronsMatchFilter<CDMatchEntity<?, ?>>()
+                                .setMaskEntityIds(badEntityIds),
+                        ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton(args.errorTag)))
+                );
+                LOG.info("Marked {} EM CD matches as bad", nMatchesUpdates);
+            }
+            if (args.applyTagToLMMatches) {
+                long nMatchesUpdates = neuronMatchesDao.updateAll(
+                        new NeuronsMatchFilter<CDMatchEntity<?, ?>>()
+                                .setTargetEntityIds(badEntityIds),
+                        ImmutableMap.of("tags", new AppendFieldValueHandler<>(Collections.singleton(args.errorTag)))
+                );
+                LOG.info("Marked {} LM CD matches as bad", nMatchesUpdates);
+            }
         } else if (badEntityIds.isEmpty()) {
             LOG.info("No bad entity to process");
         }

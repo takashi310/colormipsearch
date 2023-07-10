@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,6 +20,7 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UnwindOptions;
+import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
@@ -28,6 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bson.conversions.Bson;
 import org.janelia.colormipsearch.dao.AppendFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityFieldNameValueHandler;
+import org.janelia.colormipsearch.dao.EntityFieldValueHandler;
 import org.janelia.colormipsearch.dao.EntityUtils;
 import org.janelia.colormipsearch.dao.IdGenerator;
 import org.janelia.colormipsearch.dao.NeuronMatchesDao;
@@ -159,6 +162,27 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 toWrite,
                 new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
         return result.getInsertedCount() + result.getMatchedCount();
+    }
+
+    @Override
+    public long updateAll(NeuronsMatchFilter<R> neuronsMatchFilter,
+                          Map<String, EntityFieldValueHandler<?>> fieldsToUpdate) {
+        if (neuronsMatchFilter != null && !neuronsMatchFilter.isEmpty() && !fieldsToUpdate.isEmpty()) {
+            List<WriteModel<R>> toWrite = new ArrayList<>();
+            UpdateOptions updateOptions = new UpdateOptions();
+            toWrite.add(
+                    new UpdateManyModel<R>(
+                            NeuronSelectionHelper.getNeuronsMatchFilter(neuronsMatchFilter),
+                            getUpdates(fieldsToUpdate),
+                            updateOptions
+                    ));
+            BulkWriteResult result = mongoCollection.bulkWrite(
+                    toWrite,
+                    new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+            return result.getModifiedCount();
+        } else {
+            return -1; // do not apply the update across the board
+        }
     }
 
     @Override
