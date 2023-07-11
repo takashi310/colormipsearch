@@ -123,6 +123,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                     // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
                     // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
                     LOG.error("No published URLs or no searchable neuron URL for match mask {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+                    target.setMatchFile(FileType.CDMInput, null);
                 } else {
                     target.setMatchFile(FileType.CDMInput, relativizeURL(FileType.CDMInput, maskImageURL));
                 }
@@ -133,6 +134,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                     // we used to construct the path to the PNG of the input (searchable_png) from the corresponding input mip,
                     // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
                     LOG.error("No published URLs or no searchable neuron URL for match target {}:{} -> {}", target.getMaskImageInternalId(), resultMatches.getKey(), target);
+                    target.setMatchFile(FileType.CDMMatch, null);
                 } else {
                     target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
                 }
@@ -147,7 +149,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
 
     private String getSearchableNeuronURL(NeuronPublishedURLs publishedURLs) {
         if (publishedURLs != null) {
-            return publishedURLs.getURLFor("searchable_neurons", null);
+            return publishedURLs.getURLFor("searchable_neurons");
         } else {
             return null;
         }

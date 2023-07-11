@@ -21,7 +21,7 @@ public abstract class AbstractPublishedURLs extends AbstractBaseEntity {
         this.urls = urls;
     }
 
-    public String getURLFor(String fileType, String defaultValue) {
-        return urls.getOrDefault(fileType, defaultValue);
+    public String getURLFor(String fileType) {
+        return urls.get(fileType);
     }
 }

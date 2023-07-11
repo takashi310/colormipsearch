@@ -214,7 +214,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                         PPPmURLs urls = publishedURLs.get(pppMatch.getMatchInternalId());
                         pppMatch.setMatchFile(
                                 screenshotType.getFileType(),
-                                relativizeURL(screenshotType.getFileType(), urls.getURLFor(screenshotType.name(), null))
+                                relativizeURL(screenshotType.getFileType(), urls.getURLFor(screenshotType.name()))
                         );
                         if (screenshotType.hasThumbnail()) {
                             pppMatch.setMatchFile(

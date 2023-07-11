@@ -92,6 +92,10 @@ public abstract class AbstractMatchedTarget<T extends AbstractNeuronMetadata> {
         return matchFiles.get(t);
     }
 
+    public boolean hasMatchFile(FileType t) {
+        return matchFiles.containsKey(t);
+    }
+
     public void setMatchFile(FileType t, String fn) {
         if (StringUtils.isNotBlank(fn)) {
             matchFiles.put(t, fn);

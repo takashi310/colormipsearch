@@ -28,6 +28,7 @@ import org.janelia.colormipsearch.dto.LMNeuronMetadata;
 import org.janelia.colormipsearch.dto.ResultMatches;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.FileType;
 import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.janelia.colormipsearch.results.MatchResultsGrouping;
@@ -156,7 +157,10 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                 ))
                 .filter(resultMatches -> resultMatches.getKey().isPublished()) // filter out unpublished EMs
                 .peek(resultMatches -> resultMatches.setItems(resultMatches.getItems().stream()
-                        .filter(m -> m.getTargetImage().isPublished()) // filter out unpublished LMs
+                        // filter out unpublished LMs
+                        .filter(m -> m.getTargetImage().isPublished())
+                        // filter out matches that do not have uploaded files
+                        .filter(m -> m.hasMatchFile(FileType.CDMInput) && m.hasMatchFile(FileType.CDMMatch))
                         .collect(Collectors.toList())))
                 .collect(Collectors.toList());
         // write results by mask MIP ID
