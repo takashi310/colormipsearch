@@ -89,10 +89,6 @@ class ExportData4NBCmd extends AbstractCmd {
                 variableArity = true)
         List<String> targetLibraries = new ArrayList<>();
 
-        @Parameter(names = {"--excluded-target-tags"}, description = "Target neuron tags to be excluded from export",
-                variableArity = true)
-        List<String> excludedTargetNeuronTags = new ArrayList<>();
-
         @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
         List<String> exportedNames = new ArrayList<>();
 
@@ -127,11 +123,15 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-neuron-tags"}, description = "Neuron tags to be excluded from export", variableArity = true)
         List<String> excludedNeuronTags = new ArrayList<>();
 
-        @Parameter(names = {"--default-image-store"}, description = "Default image store", required = true)
-        String defaultImageStore;
+        @Parameter(names = {"--excluded-target-tags"}, description = "Target neuron tags to be excluded from export",
+                variableArity = true)
+        List<String> excludedTargetNeuronTags = new ArrayList<>();
 
         @Parameter(names = {"--excluded-matches-tags"}, description = "Matches tags to be excluded from export", variableArity = true)
         List<String> excludedMatchesTags = new ArrayList<>();
+
+        @Parameter(names = {"--default-image-store"}, description = "Default image store", required = true)
+        String defaultImageStore;
 
         @Parameter(names = {"--image-stores-per-neuron-meta"},
                 description = "Image stores per neuron metadata; the mapping must be based on the internal alignmentSpace and optionally library name;" +
