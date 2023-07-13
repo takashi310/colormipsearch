@@ -64,6 +64,7 @@ public class MIPsExporter extends AbstractDataExporter {
                         .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
                         .addLibraries(dataSourceParam.getLibraries())
                         .addTags(dataSourceParam.getTags())
+                        .addExcludedTags(dataSourceParam.getExcludedTags())
                         .addNames(dataSourceParam.getNames())
                         .withValidPubishingName(),
                 new PagedRequest()
