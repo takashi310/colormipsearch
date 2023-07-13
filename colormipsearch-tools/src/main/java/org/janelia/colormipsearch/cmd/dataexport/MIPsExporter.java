@@ -91,6 +91,8 @@ public class MIPsExporter extends AbstractDataExporter {
                     new NeuronSelector()
                             .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
                             .addLibraries(dataSourceParam.getLibraries())
+                            .addTags(dataSourceParam.getTags())
+                            .addExcludedTags(dataSourceParam.getExcludedTags())
                             .addName(publishedName),
                     new PagedRequest()).getResultList();
             // retrieve the rest of the data needed for all <publishedName>'s MIPs
