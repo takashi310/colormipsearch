@@ -207,10 +207,14 @@ abstract class AbstractNeuronMatchesMongoDao<R extends AbstractMatchEntity<? ext
                 updateOptions
             ));
         });
-        BulkWriteResult result = mongoCollection.bulkWrite(
-                toWrite,
-                new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
-        return result.getMatchedCount();
+        if (toWrite.size() > 0 ) {
+            BulkWriteResult result = mongoCollection.bulkWrite(
+                    toWrite,
+                    new BulkWriteOptions().bypassDocumentValidation(false).ordered(false));
+            return result.getMatchedCount();
+        } else {
+            return 0;
+        }
     }
 
     private <V> EntityFieldNameValueHandler<V> toEntityFieldValueHandler(NeuronField<V> nf) {

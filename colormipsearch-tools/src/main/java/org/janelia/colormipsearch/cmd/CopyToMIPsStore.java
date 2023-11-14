@@ -121,7 +121,7 @@ class CopyToMIPsStore extends AbstractCmd {
     void execute() {
         BiConsumer<FileData, Path> copyFileDataAction;
         if (args.simulateFlag) {
-            copyFileDataAction = (fd, target) -> LOG.info("cp {} {}", fd, target);
+            copyFileDataAction = this::simulateCopyFileData;
         } else {
             copyFileDataAction = this::copyFileData;
         }
@@ -306,4 +306,10 @@ class CopyToMIPsStore extends AbstractCmd {
         }
     }
 
+    private void simulateCopyFileData(FileData fileData, Path dest) {
+        LOG.info("cp {} {}", fileData, dest);
+        if (Files.exists(dest)) {
+            LOG.warn("Destination file: {} already exists");
+        }
+    }
 }
