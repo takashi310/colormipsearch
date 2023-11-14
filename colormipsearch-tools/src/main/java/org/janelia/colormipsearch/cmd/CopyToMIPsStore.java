@@ -75,6 +75,9 @@ class CopyToMIPsStore extends AbstractCmd {
         @Parameter(names = {"-n"}, description = "Only show what the command is supposed to do")
         boolean simulateFlag;
 
+        @Parameter(names = {"-f", "--force"}, description = "Force copying the mip to the destination")
+        boolean forceFlag;
+
         @Parameter(names = {"--lmIgnoreMissingSegmentation"}, description = "If set do not error for LM variants that do not have segment index")
         boolean ignoreMissedSegmentation = false;
 
@@ -296,7 +299,10 @@ class CopyToMIPsStore extends AbstractCmd {
         }
         try {
             LOG.debug("cp {} {}", fileData, dest);
-            Files.copy(fdStream, dest, StandardCopyOption.REPLACE_EXISTING);
+            if (args.forceFlag)
+                Files.copy(fdStream, dest, StandardCopyOption.REPLACE_EXISTING);
+            else
+                Files.copy(fdStream, dest);
         } catch (Exception e) {
             LOG.error("Error copying {} -> {}", fileData, dest, e);
         } finally {
