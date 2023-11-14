@@ -309,7 +309,7 @@ class CopyToMIPsStore extends AbstractCmd {
     private void simulateCopyFileData(FileData fileData, Path dest) {
         LOG.info("cp {} {}", fileData, dest);
         if (Files.exists(dest)) {
-            LOG.warn("Destination file: {} already exists");
+            LOG.warn("Destination file: {} already exists", dest);
         }
     }
 }
