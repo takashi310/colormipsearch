@@ -83,6 +83,10 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 variableArity = true)
         List<String> maskTags = new ArrayList<>();
 
+        @Parameter(names = {"--target-tags"}, description = "Tags associated with the target of the match to be scored",
+                variableArity = true)
+        List<String> targetTags = new ArrayList<>();
+
         @Parameter(names = {"--targets-libraries"}, description = "Target libraries for the selected matches", variableArity = true)
         List<String> targetsLibraries;
 
@@ -307,14 +311,19 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         }
         List<CDMatchEntity<M, T>> allCDMatches = cdsMatchesReader.readMatchesByMask(
                 args.alignmentSpace,
-                null, /* maskLibraries */
-                null, /* maskPublishedNames */
+                /* maskLibraries */null,
+                /* maskPublishedNames */null,
                 Collections.singletonList(maskCDMipId),
-                null, args.targetsLibraries,
+                args.maskTags,
+                /*maskExcludedTags*/null,
+                args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
-                null, args.matchTags,
-                null, neuronsMatchScoresFilter,
+                args.targetTags,
+                /*targetExcludedTags*/null,
+                args.matchTags,
+                /*matchExcludedTags*/null,
+                neuronsMatchScoresFilter,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));

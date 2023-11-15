@@ -100,13 +100,18 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
                     dataSourceParam.getLibraries(),
                     dataSourceParam.getNames(),
                     Collections.singletonList(maskId),
-                    null, null /* targetLibraries */,
-                    null /* targetPublishedNames */,
-                    null /* targetMIPIDs */,
-                    null, null /* matchTags */, // use the tags for selecting the masks but not for selecting the matches
-                    null, scoresFilter,
+                    /* maskTags */null,
+                    /* maskExcludedTags */null,
+                    /* targetLibraries */null,
+                    /* targetPublishedNames */null,
+                    /* targetMIPIDs */null,
+                    /* targetTags */null,
+                    /* targetExcludedTags */null,
+                    /* matchTags */null,  // use the tags for selecting the masks but not for selecting the matches
+                    /* matchExcludedTags */null,
+                    scoresFilter,
                     Collections.singletonList(
-                            new SortCriteria("rank", SortDirection.ASC)
+                        new SortCriteria("rank", SortDirection.ASC)
                     ));
             LOG.info("Filter out PPP matches without any images for {}", maskId);
             List<PPPMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesForMask = allMatchesForMask.stream()

@@ -38,11 +38,13 @@ import org.slf4j.LoggerFactory;
 public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
     private final List<String> targetLibraries;
+    private final List<String> targetTags;
     private final List<String> targetExcludedTags;
 
     public EMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                List<String> targetLibraries,
+                               List<String> targetTags,
                                List<String> targetExcludedTags,
                                List<String> matchesExcludedTags,
                                ScoresFilter scoresFilter,
@@ -67,6 +69,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                 resultMatchesWriter,
                 processingPartitionSize);
         this.targetLibraries = targetLibraries;
+        this.targetTags = targetTags;
         this.targetExcludedTags = targetExcludedTags;
     }
 
@@ -95,10 +98,12 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     /* maskLibraries */null,
                     /* maskPublishedNames */null,
                     Collections.singletonList(maskMipId), /* maskMIPIds */
+                    /* maskTags */dataSourceParam.getTags(),
                     /* maskExcludedTags */dataSourceParam.getExcludedTags(), // use the tags for selecting the masks but not for selecting the matches
                     /* targetLibraries */targetLibraries,
                     /* targetPublishedNames */null,
                     /* targetMIPIDs */null,
+                    /* targetTags */targetTags,
                     /* targetExcludedTags */targetExcludedTags,
                     /* matchTags */null,
                     /* matchExcludedTags */matchesExcludedTags,

@@ -123,6 +123,10 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-neuron-tags"}, description = "Neuron tags to be excluded from export", variableArity = true)
         List<String> excludedNeuronTags = new ArrayList<>();
 
+        @Parameter(names = {"--target-tags"}, description = "Target neuron tags to be exported",
+                variableArity = true)
+        List<String> targetNeuronTags = new ArrayList<>();
+
         @Parameter(names = {"--excluded-target-tags"}, description = "Target neuron tags to be excluded from export",
                 variableArity = true)
         List<String> excludedTargetNeuronTags = new ArrayList<>();
@@ -248,6 +252,7 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataHelper,
                         dataSource,
                         args.targetLibraries,
+                        args.targetNeuronTags,
                         args.excludedTargetNeuronTags,
                         args.excludedMatchesTags,
                         getCDScoresFilter(),

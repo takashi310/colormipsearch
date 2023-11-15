@@ -91,19 +91,21 @@ public class JSONReadWriteTest {
                 .forEach(f -> {
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
                             em2lmMatchesReader.readMatchesByMask(
-                                    null /* alignmentSpace */,
-                                    null /* maskLibraries */,
-                                    null, /* maskPublishedNames */
+                                    /* alignmentSpace */null,
+                                    /* maskLibraries */null,
+                                    /* maskPublishedNames */null,
                                     Collections.singletonList(f),
-                                    null,
-                                    null /* targetLibraries */,
-                                    null /* targetPublishedNames */,
-                                    null /* targetMIPIDs */,
-                                    null,
-                                    null /* matchTags */,
-                                    null,
-                                    null /* matchScoresFilter */,
-                                    null /* sortCriteria */);
+                                    /* maskTags */null,
+                                    /* maskExcludedTags */null,
+                                    /* targetLibraries */null,
+                                    /* targetPublishedNames */null,
+                                    /* targetMIPIDs */null,
+                                    /* targetTags */null,
+                                    /* targetExcludedTags */null,
+                                    /* matchTags */null,
+                                    /* matchExcludedTags */null,
+                                    /* matchScoresFilter */null,
+                                    /* sortCriteria */null);
                     assertTrue(matchesFromFile.size() > 0);
                     String mId = FilenameUtils.getBaseName(f);
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> testMatchesWithSameMask = cdMatches.stream()

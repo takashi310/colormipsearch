@@ -57,11 +57,16 @@ public class JSONNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                                      Collection<String> maskLibraries,
                                      Collection<String> maskPublishedNames,
                                      Collection<String> maskMipIds,
-                                     Collection<String> maskExcludedTags, Collection<String> targetLibraries,
+                                     Collection<String> maskTags,
+                                     Collection<String> maskExcludedTags,
+                                     Collection<String> targetLibraries,
                                      Collection<String> targetPublishedNames,
                                      Collection<String> targetMipIds,
-                                     Collection<String> targetExcludedTags, Collection<String> matchTags,
-                                     Collection<String> matchExcludedTags, ScoresFilter matchScoresFilter,
+                                     Collection<String> targetTags,
+                                     Collection<String> targetExcludedTags,
+                                     Collection<String> matchTags,
+                                     Collection<String> matchExcludedTags,
+                                     ScoresFilter matchScoresFilter,
                                      List<SortCriteria> sortCriteriaList) {
         return (List<R>) maskMipIds.stream()
                 .flatMap(maskMipId -> CollectionUtils.isEmpty(maskLibraries)
