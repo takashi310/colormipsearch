@@ -281,6 +281,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.computeFiles.putAll(that.getComputeFiles());
         this.addAllTags(that.getTags());
         this.setProcessedTags(that.getProcessedTags());
+        this.addDatasetLabels(that.getDatasetLabels());
     }
 
 }
