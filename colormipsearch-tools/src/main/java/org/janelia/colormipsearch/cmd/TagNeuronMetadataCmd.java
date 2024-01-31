@@ -37,6 +37,9 @@ class TagNeuronMetadataCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-data-tags"}, variableArity = true, description = "If any of these tags is present do not assign the new tag")
         List<String> excludedDataTags = new ArrayList<>();
 
+        @Parameter(names = {"--mip-ids"}, variableArity = true, description = "MIP IDs to tag")
+        List<String> mipIds = new ArrayList<>();
+
         @Parameter(names = {"--tag"}, required = true, description = "Tag to assign")
         String tag;
 
@@ -66,6 +69,7 @@ class TagNeuronMetadataCmd extends AbstractCmd {
         NeuronSelector neuronSelector = new NeuronSelector()
                 .setAlignmentSpace(args.alignmentSpace)
                 .addLibraries(args.libraries)
+                .addMipIDs(args.mipIds)
                 .addTags(args.dataTags)
                 .addExcludedTags(args.excludedDataTags);
         args.processingTags.forEach(nv -> neuronSelector.addNewProcessedTagsSelection(nv.argName, nv.argValues));
