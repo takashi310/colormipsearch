@@ -19,6 +19,7 @@ public class NeuronSelector {
     private final Set<String> libraries = new HashSet<>(); // library names
     private final Set<String> names = new HashSet<>(); // matching published names
     private final Set<String> mipIDs = new HashSet<>(); // matching MIP IDs
+    private final Set<String> sourceRefIds = new HashSet<>(); // matching source Sample or Body IDs
     private final Set<Number> entityIds = new HashSet<>(); // matching internal entity IDs
     private final Set<String> tags = new HashSet<>(); // matching tags
     private final Set<String> excludedTags = new HashSet<>();
@@ -111,6 +112,25 @@ public class NeuronSelector {
     public boolean hasMipIDs() {
         return CollectionUtils.isNotEmpty(mipIDs);
     }
+
+    public Set<String> getSourceRefIds() {
+        return sourceRefIds;
+    }
+
+    public NeuronSelector addSourceRefId(String sourceRefId) {
+        if (StringUtils.isNotBlank(sourceRefId)) this.sourceRefIds.add(sourceRefId);
+        return this;
+    }
+
+    public NeuronSelector addSourceRefIds(Collection<String> sourceRefIds) {
+        if (sourceRefIds != null) sourceRefIds.forEach(this::addSourceRefId);
+        return this;
+    }
+
+    public boolean hasSourceRefIds() {
+        return CollectionUtils.isNotEmpty(sourceRefIds);
+    }
+
 
     public Set<Number> getEntityIds() {
         return entityIds;

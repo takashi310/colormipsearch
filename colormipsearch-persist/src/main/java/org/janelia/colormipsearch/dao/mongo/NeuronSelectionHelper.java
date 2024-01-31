@@ -52,6 +52,9 @@ class NeuronSelectionHelper {
         if (neuronSelector.hasMipIDs()) {
             filter.add(Filters.in(qualifier + "mipId", neuronSelector.getMipIDs()));
         }
+        if (neuronSelector.hasSourceRefIds()) {
+            filter.add(Filters.in(qualifier + "sourceRefId", neuronSelector.getSourceRefIds()));
+        }
         if (neuronSelector.hasTags()) {
             filter.add(Filters.in(qualifier + "tags", neuronSelector.getTags()));
         }

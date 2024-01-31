@@ -43,6 +43,12 @@ class TagNeuronMetadataCmd extends AbstractCmd {
                 description = "MIP IDs to tag")
         List<String> mipIds = new ArrayList<>();
 
+        @Parameter(names = {"--source-refs"},
+                converter = ListValueAsFileArgConverter.class,
+                variableArity = true,
+                description = "Sample or Body references to tag")
+        List<String> sourceRefs = new ArrayList<>();
+
         @Parameter(names = {"--published-names"},
                 converter = ListValueAsFileArgConverter.class,
                 variableArity = true,
@@ -79,6 +85,7 @@ class TagNeuronMetadataCmd extends AbstractCmd {
                 .setAlignmentSpace(args.alignmentSpace)
                 .addLibraries(args.libraries)
                 .addMipIDs(args.mipIds)
+                .addSourceRefIds(args.sourceRefs)
                 .addNames(args.publishedNames)
                 .addTags(args.dataTags)
                 .addExcludedTags(args.excludedDataTags);
