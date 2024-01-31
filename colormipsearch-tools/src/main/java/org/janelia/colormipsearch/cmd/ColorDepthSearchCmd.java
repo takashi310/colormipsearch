@@ -88,8 +88,14 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--masks-tags"}, description = "Masks MIPs tags to be selected for CDS", variableArity = true)
         List<String> masksTags;
 
+        @Parameter(names = {"--masks-datasets"}, description = "Masks MIPs datasets to be selected for CDS", variableArity = true)
+        List<String> masksDatasets;
+
         @Parameter(names = {"--targets-tags"}, description = "Targets MIPs tags to be selected for CDS", variableArity = true)
         List<String> targetsTags;
+
+        @Parameter(names = {"--targets-datasets"}, description = "Targets MIPs datasets to be selected for CDS", variableArity = true)
+        List<String> targetsDatasets;
 
         @Parameter(names = {"--masks-published-names"}, description = "Masks MIPs published names to be selected for CDS", variableArity = true)
         List<String> masksPublishedNames;
@@ -160,6 +166,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.masksLibraries,
                 args.masksPublishedNames,
                 args.masksTags,
+                args.masksDatasets,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
@@ -167,6 +174,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsTags,
+                args.targetsDatasets,
                 args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
         if (maskMips.isEmpty() || targetMips.isEmpty()) {
@@ -290,6 +298,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                                           List<ListArg> mipsLibraries,
                                                           List<String> mipsPublishedNames,
                                                           List<String> mipsTags,
+                                                          List<String> mipsDatasets,
                                                           long startIndexArg, int length,
                                                           Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
@@ -300,6 +309,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                 .addLibrary(libraryInput.input)
                                 .addNames(mipsPublishedNames)
                                 .addTags(mipsTags)
+                                .addDatasets(mipsDatasets)
                                 .setOffset(libraryInput.offset)
                                 .setSize(libraryInput.length)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||

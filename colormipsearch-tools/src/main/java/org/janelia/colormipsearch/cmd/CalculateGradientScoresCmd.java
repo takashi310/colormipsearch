@@ -79,9 +79,17 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         @Parameter(names = {"--masks-mips"}, description = "Selected mask MIPs", variableArity = true)
         List<String> masksMIPIDs;
 
+        @Parameter(names = {"--mask-datasets"}, description = "Datasets associated with the mask of the match to be scored",
+                variableArity = true)
+        List<String> maskDatasets = new ArrayList<>();
+
         @Parameter(names = {"--mask-tags"}, description = "Tags associated with the mask of the match to be scored",
                 variableArity = true)
         List<String> maskTags = new ArrayList<>();
+
+        @Parameter(names = {"--target-datasets"}, description = "Datasets associated with the target of the match to be scored",
+                variableArity = true)
+        List<String> targetDatasets = new ArrayList<>();
 
         @Parameter(names = {"--target-tags"}, description = "Tags associated with the target of the match to be scored",
                 variableArity = true)
@@ -314,11 +322,13 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 /* maskLibraries */null,
                 /* maskPublishedNames */null,
                 Collections.singletonList(maskCDMipId),
+                args.maskDatasets,
                 args.maskTags,
                 /*maskExcludedTags*/null,
                 args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
+                args.targetDatasets,
                 args.targetTags,
                 /*targetExcludedTags*/null,
                 args.matchTags,
