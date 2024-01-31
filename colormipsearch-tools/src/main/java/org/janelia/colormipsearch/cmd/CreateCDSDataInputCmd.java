@@ -419,6 +419,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronEntity.setPublishedName(cdmip.emBodyId());
         neuronEntity.setNeuronInstance(cdmip.neuronInstance);
         neuronEntity.setNeuronType(cdmip.neuronType);
+        neuronEntity.addDatasetLabel(cdmip.emDataset());
         // set source color depth image
         neuronEntity.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         if (cdmip.emBody != null && cdmip.emBody.files != null) {
@@ -445,6 +446,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronEntity.setAnatomicalArea(cdmip.anatomicalArea);
         neuronEntity.setGender(Gender.fromVal(cdmip.gender()));
         neuronEntity.setObjective(cdmip.objective);
+        neuronEntity.addDatasetLabels(cdmip.lmReleaseNames());
         // set source color depth image
         neuronEntity.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));
         return new InputCDMipNeuron<>(cdmip, neuronEntity);
