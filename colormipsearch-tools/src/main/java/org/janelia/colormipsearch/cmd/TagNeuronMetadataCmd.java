@@ -32,12 +32,12 @@ class TagNeuronMetadataCmd extends AbstractCmd {
         List<NameValueArg> processingTags = new ArrayList<>();
 
         @Parameter(names = {"--data-labels"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true, description = "Data labels to select")
         List<String> dataLabels = new ArrayList<>();
 
         @Parameter(names = {"--data-tags"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true, description = "Data tags to select")
         List<String> dataTags = new ArrayList<>();
 

@@ -85,11 +85,13 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         ListArg library;
 
         @Parameter(names = {"--releases", "-r"},
+                listConverter = ListValueAsFileArgConverter.class,
                 description = "Which specific releases to be included.",
                 variableArity = true)
         List<String> releases;
 
         @Parameter(names = {"--mips"},
+                listConverter = ListValueAsFileArgConverter.class,
                 description = "If set only create inputs for these specific mips",
                 variableArity = true)
         List<String> includedMIPs;
