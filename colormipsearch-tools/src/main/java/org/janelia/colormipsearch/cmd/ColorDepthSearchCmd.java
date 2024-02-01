@@ -165,16 +165,16 @@ class ColorDepthSearchCmd extends AbstractCmd {
         List<M> maskMips = (List<M>) readMIPs(cdmipsReader,
                 args.masksLibraries,
                 args.masksPublishedNames,
-                args.masksTags,
                 args.masksDatasets,
+                args.masksTags,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         @SuppressWarnings("unchecked")
         List<T> targetMips = (List<T>) readMIPs(cdmipsReader,
                 args.targetsLibraries,
                 args.targetsPublishedNames,
-                args.targetsTags,
                 args.targetsDatasets,
+                args.targetsTags,
                 args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
         if (maskMips.isEmpty() || targetMips.isEmpty()) {
@@ -297,8 +297,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
     private List<? extends AbstractNeuronEntity> readMIPs(CDMIPsReader mipsReader,
                                                           List<ListArg> mipsLibraries,
                                                           List<String> mipsPublishedNames,
-                                                          List<String> mipsTags,
                                                           List<String> mipsDatasets,
+                                                          List<String> mipsTags,
                                                           long startIndexArg, int length,
                                                           Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
@@ -308,8 +308,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                 .setAlignmentSpace(args.alignmentSpace)
                                 .addLibrary(libraryInput.input)
                                 .addNames(mipsPublishedNames)
-                                .addTags(mipsTags)
                                 .addDatasets(mipsDatasets)
+                                .addTags(mipsTags)
                                 .setOffset(libraryInput.offset)
                                 .setSize(libraryInput.length)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||
