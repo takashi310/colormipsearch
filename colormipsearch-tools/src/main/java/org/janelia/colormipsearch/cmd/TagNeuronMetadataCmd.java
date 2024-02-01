@@ -42,24 +42,24 @@ class TagNeuronMetadataCmd extends AbstractCmd {
         List<String> dataTags = new ArrayList<>();
 
         @Parameter(names = {"--excluded-data-tags"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true, description = "If any of these tags is present do not assign the new tag")
         List<String> excludedDataTags = new ArrayList<>();
 
         @Parameter(names = {"--mip-ids"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true,
                 description = "MIP IDs to tag")
         List<String> mipIds = new ArrayList<>();
 
         @Parameter(names = {"--source-refs"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true,
                 description = "Sample or Body references to tag")
         List<String> sourceRefs = new ArrayList<>();
 
         @Parameter(names = {"--published-names"},
-                converter = ListValueAsFileArgConverter.class,
+                listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true,
                 description = "Published names to tag")
         List<String> publishedNames = new ArrayList<>();
