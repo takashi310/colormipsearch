@@ -85,6 +85,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         ListArg library;
 
         @Parameter(names = {"--releases", "-r"},
+                converter = ListValueAsFileArgConverter.class,
                 listConverter = ListValueAsFileArgConverter.class,
                 description = "Which specific releases to be included.",
                 variableArity = true)
