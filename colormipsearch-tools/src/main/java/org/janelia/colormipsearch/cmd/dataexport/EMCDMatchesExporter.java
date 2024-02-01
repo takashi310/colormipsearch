@@ -58,8 +58,10 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                                int processingPartitionSize) {
         super(jacsDataHelper,
                 dataSourceParam,
-                targetLibraries, targetExcludedTags,
-                matchesExcludedTags, scoresFilter,
+                targetLibraries,
+                targetExcludedTags,
+                matchesExcludedTags,
+                scoresFilter,
                 urlTransformer,
                 imageStoreMapping,
                 outputDir,
