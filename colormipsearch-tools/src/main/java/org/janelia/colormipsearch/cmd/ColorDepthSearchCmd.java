@@ -85,22 +85,34 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--targets-length"}, description = "Input image file(s) length")
         int targetsLength;
 
-        @Parameter(names = {"--masks-tags"}, description = "Masks MIPs tags to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--masks-tags"}, description = "Masks MIPs tags to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> masksTags;
 
-        @Parameter(names = {"--masks-datasets"}, description = "Masks MIPs datasets to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--masks-datasets"}, description = "Masks MIPs datasets to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> masksDatasets;
 
-        @Parameter(names = {"--targets-tags"}, description = "Targets MIPs tags to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--targets-tags"}, description = "Targets MIPs tags to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> targetsTags;
 
-        @Parameter(names = {"--targets-datasets"}, description = "Targets MIPs datasets to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--targets-datasets"}, description = "Targets MIPs datasets to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> targetsDatasets;
 
-        @Parameter(names = {"--masks-published-names"}, description = "Masks MIPs published names to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--masks-published-names"}, description = "Masks MIPs published names to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> masksPublishedNames;
 
-        @Parameter(names = {"--targets-published-names"}, description = "Targets MIPs published names to be selected for CDS", variableArity = true)
+        @Parameter(names = {"--targets-published-names"}, description = "Targets MIPs published names to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
         List<String> targetsPublishedNames;
 
         @Parameter(names = {"--processing-tag"}, required = true,
