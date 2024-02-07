@@ -171,6 +171,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 .addLibrary(larg.input)
                                 .addNames(args.masksPublishedNames)
                                 .addMipIDs(args.masksMIPIDs)
+                                .addDatasets(args.maskDatasets)
                                 .addTags(args.maskTags)
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
