@@ -62,16 +62,19 @@ public class ImageOperationsTest {
         final int border = 0;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .unsafeMaxFilter(radius);
+        RankFilters maxFilter = new RankFilters();
 
         for (int i = 0; i < 5; i++) {
             String testImageName = "src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif";
             ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
+            long startTime = System.currentTimeMillis();
             ImageArray<?> maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP, border, border, border, border)
                     .toImageArray();
-            RankFilters maxFilter = new RankFilters();
+            long endMaxFilterTime = System.currentTimeMillis();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
+            long endIJ1MaxFilterTime = System.currentTimeMillis();
             for (int r = border; r < testMIP.getHeight() - border; r++) {
                 for (int c = border; c < testMIP.getWidth() - border; c++) {
                     int j = r * testMIP.getWidth() + c;
@@ -80,6 +83,8 @@ public class ImageOperationsTest {
                             (maxFilteredImage.get(j) & 0x00FFFFFF));
                 }
             }
+            System.out.printf("MaxFilter time %f vs %f - IJ1 maxFilter time\n",
+                    (endMaxFilterTime-startTime)/1000., (endIJ1MaxFilterTime-endMaxFilterTime)/1000.);
         }
     }
 
@@ -88,16 +93,19 @@ public class ImageOperationsTest {
         final int radius = 10;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .maxFilter(radius);
+        RankFilters maxFilter = new RankFilters();
 
         for (int i = 1; i < 5; i++) {
             String testImageName = "src/test/resources/colormipsearch/api/imageprocessing/minmaxTest" + (i % 2 + 1) + ".tif";
             ImagePlus testImage = new Opener().openTiff(testImageName, 1);
             ImageArray<?> testMIP = ImageArrayUtils.fromImagePlus(testImage);
+            long startTime = System.currentTimeMillis();
             ImageArray<?> maxFilteredImage = maxFilterProcessing
                     .applyTo(testMIP, 0, 0, 0, 0)
                     .toImageArray();
-            RankFilters maxFilter = new RankFilters();
+            long endMaxFilterTime = System.currentTimeMillis();
             maxFilter.rank(testImage.getProcessor(), radius, RankFilters.MAX);
+            long endIJ1MaxFilterTime = System.currentTimeMillis();
 
             for (int r = 0; r < testMIP.getHeight(); r++) {
                 for (int c = 0; c < testMIP.getWidth(); c++) {
@@ -107,6 +115,8 @@ public class ImageOperationsTest {
                             (maxFilteredImage.get(j) & 0x00FFFFFF));
                 }
             }
+            System.out.printf("MaxFilter time %f vs %f - IJ1 maxFilter time\n",
+                    (endMaxFilterTime-startTime)/1000., (endIJ1MaxFilterTime-endMaxFilterTime)/1000.);
         }
     }
 
