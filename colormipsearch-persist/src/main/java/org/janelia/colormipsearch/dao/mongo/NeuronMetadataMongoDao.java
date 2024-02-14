@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
@@ -45,6 +46,9 @@ import org.janelia.colormipsearch.model.ProcessingType;
 public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends AbstractMongoDao<N>
         implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
+    private static final Set<String> ITERABLEFIELDS_TO_SET_NOT_APPEND = ImmutableSet.of(
+            "datasetLabels"
+    );
 
     private final ClientSession session;
 
@@ -103,7 +107,10 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                 neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
         );
         neuron.updateableFieldValues().forEach((fn, fv) -> {
-            if (fv instanceof Iterable) {
+            // if the field is iterable but it should be always set as is instead of appending
+            // handle it with a SetValueHandler instead of appending the new values
+            // an example of such field is the datasetLabel which should hold the current release only
+            if (fv instanceof Iterable && !ITERABLEFIELDS_TO_SET_NOT_APPEND.contains(fn)) {
                 updates.add(MongoDaoHelper.getFieldUpdate(fn, new AppendFieldValueHandler<>(fv)));
             } else {
                 updates.add(MongoDaoHelper.getFieldUpdate(fn, new SetFieldValueHandler<>(fv)));

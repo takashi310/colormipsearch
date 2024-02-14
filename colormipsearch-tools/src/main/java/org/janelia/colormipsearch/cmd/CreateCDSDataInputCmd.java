@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
@@ -466,6 +465,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         neuronEntity.setAnatomicalArea(cdmip.anatomicalArea);
         neuronEntity.setGender(Gender.fromVal(cdmip.gender()));
         neuronEntity.setObjective(cdmip.objective);
+        neuronEntity.setNotStaged(cdmip.lmIsNotStaged());
+        neuronEntity.setPublishError(cdmip.lmPublishError());
         neuronEntity.addDatasetLabels(cdmip.lmReleaseNames());
         // set source color depth image
         neuronEntity.setComputeFileData(ComputeFileType.SourceColorDepthImage, FileData.fromString(cdmip.filepath));

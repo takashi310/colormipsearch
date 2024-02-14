@@ -19,6 +19,8 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
     private String anatomicalArea;
     private Gender gender;
     private String objective;
+    private Boolean notStaged;
+    private String publishError;
 
     @Override
     public String getNeuronId() {
@@ -66,6 +68,22 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         this.objective = objective;
     }
 
+    public Boolean getNotStaged() {
+        return notStaged;
+    }
+
+    public void setNotStaged(Boolean notStaged) {
+        this.notStaged = notStaged;
+    }
+
+    public String getPublishError() {
+        return publishError;
+    }
+
+    public void setPublishError(String publishError) {
+        this.publishError = publishError;
+    }
+
     @Override
     public Map<String, Object> updateableFieldValues() {
         Map<String, Object> dict = new HashMap<>(super.updateableFieldValues());
@@ -73,6 +91,8 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         dict.put("anatomicalArea", anatomicalArea);
         dict.put("gender", gender);
         dict.put("objective", objective);
+        dict.put("notStaged", notStaged);
+        dict.put("publishError", publishError);
         return dict;
     }
 
@@ -85,6 +105,8 @@ public class LMNeuronEntity extends AbstractNeuronEntity {
         n.anatomicalArea = this.getAnatomicalArea();
         n.gender = this.getGender();
         n.objective = this.getObjective();
+        n.notStaged = this.notStaged;
+        n.publishError = this.getPublishError();
         return n;
     }
 
