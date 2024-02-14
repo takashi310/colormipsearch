@@ -9,10 +9,14 @@ import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertTrue;
 
 public class ImageOperationsTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ImageOperationsTest.class);
 
     @Test
     public void overExpressesMaskExpression() {
@@ -83,7 +87,7 @@ public class ImageOperationsTest {
                             (maxFilteredImage.get(j) & 0x00FFFFFF));
                 }
             }
-            System.out.printf("MaxFilter time %f vs %f - IJ1 maxFilter time\n",
+            LOG.info("MaxFilter time {} vs {} - IJ1 maxFilter time",
                     (endMaxFilterTime-startTime)/1000., (endIJ1MaxFilterTime-endMaxFilterTime)/1000.);
         }
     }
@@ -115,7 +119,7 @@ public class ImageOperationsTest {
                             (maxFilteredImage.get(j) & 0x00FFFFFF));
                 }
             }
-            System.out.printf("MaxFilter time %f vs %f - IJ1 maxFilter time\n",
+            LOG.info("MaxFilter time {} vs {} - IJ1 maxFilter time",
                     (endMaxFilterTime-startTime)/1000., (endIJ1MaxFilterTime-endMaxFilterTime)/1000.);
         }
     }
