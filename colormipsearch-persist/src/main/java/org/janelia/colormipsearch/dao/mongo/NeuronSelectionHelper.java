@@ -56,7 +56,7 @@ class NeuronSelectionHelper {
             filter.add(Filters.in(qualifier + "sourceRefId", neuronSelector.getSourceRefIds()));
         }
         if (neuronSelector.hasDatasetLabels()) {
-            filter.add(Filters.in(qualifier + "datasetLabel", neuronSelector.getDatasetLabels()));
+            filter.add(Filters.in(qualifier + "datasetLabels", neuronSelector.getDatasetLabels()));
         }
         if (neuronSelector.hasTags()) {
             filter.add(Filters.in(qualifier + "tags", neuronSelector.getTags()));

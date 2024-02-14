@@ -273,6 +273,8 @@ public class NeuronSelector {
                 && !hasEntityIds()
                 && !hasTags()
                 && !hasExcludedTags()
+                && !hasDatasetLabels()
+                && !hasSourceRefIds()
                 && !hasProcessedTags();
     }
 

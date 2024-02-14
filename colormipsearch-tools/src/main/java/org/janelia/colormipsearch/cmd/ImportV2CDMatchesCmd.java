@@ -204,16 +204,18 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
                 /* maskLibraries */null,
                 /* maskPublishedNames */null,
                 Collections.singletonList(maskCDMipId),
+                /* maskDatasets */null,
                 /* maskTags */null,
                 /* maskExcludedTags */null,
                 /* targetLibraries */null,
                 /* targetPublishedNames */null,
                 /* targetMIPIDs */null,
+                /* targetDatasets */null,
                 /* targetTags */null,
                 /* targetExcludedTags */null,
                 /* matchTags */null,
                 /* matchExcludedTags */null,
-                /* matchScoresFilter */null ,
+                /* matchScoresFilter */null,
                 Collections.singletonList(
                         new SortCriteria("normalizedScore", SortDirection.DESC)
                 ));
