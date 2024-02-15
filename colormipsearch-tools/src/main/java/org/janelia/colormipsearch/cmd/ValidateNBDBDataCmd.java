@@ -66,7 +66,26 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                 variableArity = true)
         List<String> libraries = new ArrayList<>();
 
+        @Parameter(names = {"--validated-samples"},
+                listConverter = ListValueAsFileArgConverter.class,
+                description = "If set only validate the specified samples or bodyIDs",
+                variableArity = true)
+        List<String> validatedSamples = new ArrayList<>();
+
+        @Parameter(names = {"--validated-releases"},
+                listConverter = ListValueAsFileArgConverter.class,
+                description = "If set only validate the specified releases",
+                variableArity = true)
+        List<String> validatedReleases = new ArrayList<>();
+
+        @Parameter(names = {"--validated-tags"},
+                listConverter = ListValueAsFileArgConverter.class,
+                description = "If set only validate the specified tags",
+                variableArity = true)
+        List<String> validatedTags = new ArrayList<>();
+
         @Parameter(names = {"--validated-names"},
+                listConverter = ListValueAsFileArgConverter.class,
                 description = "If set only validate the specified names",
                 variableArity = true)
         List<String> validatedNames = new ArrayList<>();
@@ -161,7 +180,10 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         List<AbstractNeuronEntity> neuronEntities = neuronMetadataDao.findNeurons(
                 new NeuronSelector()
                         .setAlignmentSpace(args.alignmentSpace)
+                        .addSourceRefIds(args.validatedSamples)
                         .addNames(args.validatedNames)
+                        .addDatasetLabels(args.validatedReleases)
+                        .addTags(args.validatedTags)
                         .addLibraries(args.libraries),
                 new PagedRequest()
                         .setFirstPageOffset(args.offset)
@@ -243,20 +265,20 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         Set<String> errors = new HashSet<>();
         ColorDepthMIP colorDepthMIP = dataHelper.getColorDepthMIP(ne.getMipId());
         if (colorDepthMIP == null) {
-            errors.add(String.format("No color depth mip in JACS for %s", ne));
+            errors.add(String.format("No color depth mip in JACS for MIP %s", ne.getMipId()));
         } else {
             // check that the library is correct
             if (!colorDepthMIP.libraries.contains(ne.getLibraryName())) {
-                errors.add(String.format("Entity %s is in %s but not in the %s library",
-                        ne, colorDepthMIP.libraries, ne.getLibraryName()));
+                errors.add(String.format("MIP %s is in %s but not in the %s library",
+                        ne.getMipId(), colorDepthMIP.libraries, ne.getLibraryName()));
             }
             if (CollectionUtils.isNotEmpty(args.excludedLibraries) &&
                 CollectionUtils.containsAny(colorDepthMIP.libraries, args.excludedLibraries)) {
                 // typically if excludedLibraries is specified we want it to be only in the one that is a subset of the other;
                 // for example in JACS mips from Annotator MCFO are both in MCFO and in Annotator MCFO
                 // but in NeuronBridge we want the Annotator MCFO ones to only be treated as Annotator MCFO
-                errors.add(String.format("Entity %s is also in %s libraries and should be both in %s and in %s",
-                        ne, colorDepthMIP.libraries, args.libraries, args.excludedLibraries));
+                errors.add(String.format("MIP %s is also in %s libraries and should be both in %s and in %s",
+                        ne.getMipId(), colorDepthMIP.libraries, args.libraries, args.excludedLibraries));
             }
         }
         // check file types
@@ -278,13 +300,13 @@ class ValidateNBDBDataCmd extends AbstractCmd {
                                   ComputeFileType computeFileType,
                                   Collection<String> errors) {
         if (!ne.hasComputeFile(computeFileType)) {
-            errors.add(String.format("Entity %s has no file type %s", ne, computeFileType));
+            errors.add(String.format("Missing attribute for file type %s", computeFileType));
         } else {
             FileData fd = ne.getComputeFileData(computeFileType);
             if (!NeuronMIPUtils.exists(fd)) {
                 errors.add(String.format(
-                        "Compute file type %s:%s for %s was not found",
-                        computeFileType, fd.getName(), ne));
+                        "Compute file type %s:%s for was not found",
+                        computeFileType, fd.getName()));
             }
         }
     }
