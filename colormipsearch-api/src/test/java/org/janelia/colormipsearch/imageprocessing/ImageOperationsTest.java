@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.imageprocessing;
 import java.util.function.BiPredicate;
 
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.io.Opener;
 import ij.plugin.filter.RankFilters;
 import ij.process.ImageConverter;
@@ -66,6 +67,7 @@ public class ImageOperationsTest {
         final int border = 0;
         ImageProcessing maxFilterProcessing = ImageProcessing.create()
                 .unsafeMaxFilter(radius);
+        Prefs.setThreads(1);
         RankFilters maxFilter = new RankFilters();
 
         for (int i = 0; i < 5; i++) {
