@@ -360,7 +360,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                     Set<T> targetsToUpdate = cdMatches.stream()
                             .map(AbstractMatchEntity::getMatchedImage).collect(Collectors.toSet());
                     cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, Collections.singleton(args.getProcessingTag()));
-                    cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, Collections.singleton(args.getProcessingTag()));
+                    cdmipsWriter.addProcessingTags(targetsToUpdate, ProcessingType.GradientScore, Collections.singleton(args.getProcessingTag()));
                     return masksToUpdate.size() + targetsToUpdate.size();
                 })
                 .orElse(0);
