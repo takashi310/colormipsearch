@@ -23,23 +23,25 @@ public class ColorDepthSearchAlgorithmProviderFactory {
      * @param mirrorMask          flag whether to use mirroring
      * @param targetThreshold     data threshold
      * @param pixColorFluctuation z - gap tolerance - sometimes called pixel color fluctuation
-     * @param xyShift             - x-y translation for searching for a match
+     * @param xyShiftParam        x-y translation when searching for a match - this is an even number
+     *                            because a shift by 1 pixel is too small so we always shift by
+     *                            multiples of 2 pixels
      * @return a color depth search search provider
      */
     public static ColorDepthSearchAlgorithmProvider<PixelMatchScore> createPixMatchCDSAlgorithmProvider(
             boolean mirrorMask,
             int targetThreshold,
             double pixColorFluctuation,
-            int xyShift,
+            int xyShiftParam,
             ImageRegionDefinition ignoredRegionsProvider) {
         LOG.info("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
-                mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
+                mirrorMask, targetThreshold, pixColorFluctuation, xyShiftParam);
         return new ColorDepthSearchAlgorithmProvider<PixelMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
                     .setParam("mirrorMask", mirrorMask)
                     .setParam("dataThreshold", targetThreshold)
                     .setParam("pixColorFluctuation", pixColorFluctuation)
-                    .setParam("xyShift", xyShift);
+                    .setParam("xyShift", xyShiftParam);
 
             @Override
             public ColorDepthSearchParams getDefaultCDSParams() {
@@ -53,6 +55,10 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                                                                                               ColorDepthSearchParams cdsParams) {
                 Double pixColorFluctuationParam = cdsParams.getDoubleParam("pixColorFluctuation", pixColorFluctuation);
                 double zTolerance = pixColorFluctuationParam == null ? 0. : pixColorFluctuationParam / 100;
+                int xyShift = cdsParams.getIntParam("xyShift", xyShiftParam);
+                if ((xyShift & 0x1) == 1) {
+                    throw new IllegalArgumentException("XY shift parameter must be an even number.");
+                }
                 return new PixelMatchColorDepthSearchAlgorithm(
                         queryImageArray,
                         queryThreshold,
@@ -62,7 +68,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                         false,
                         cdsParams.getIntParam("dataThreshold", targetThreshold),
                         zTolerance,
-                        cdsParams.getIntParam("xyShift", xyShift),
+                        xyShift,
                         ignoredRegionsProvider);
             }
         };
