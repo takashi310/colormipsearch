@@ -28,15 +28,15 @@ public class ShapeMatchColorDepthSearchAlgorithm implements ColorDepthSearchAlgo
     private static final int DEFAULT_COLOR_FLUX = 40; // 40um
     private static final int GAP_THRESHOLD = 3;
 
-    private static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (gradScorePix, maskPix, dilatedPix) -> {
-        if ((maskPix & 0xFFFFFF) != 0 && (dilatedPix & 0xFFFFFF) != 0) {
-            int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(maskPix, dilatedPix);
+    private static final TriFunction<Integer, Integer, Integer, Integer> PIXEL_GAP_OP = (targetGradPix, queryPix, targetDilatedPix) -> {
+        if ((queryPix & 0xFFFFFF) != 0 && (targetDilatedPix & 0xFFFFFF) != 0) {
+            int pxGapSlice = GradientAreaGapUtils.calculateSliceGap(queryPix, targetDilatedPix);
             if (DEFAULT_COLOR_FLUX <= pxGapSlice - DEFAULT_COLOR_FLUX) {
                 // negative score value
                 return pxGapSlice - DEFAULT_COLOR_FLUX;
             }
         }
-        return gradScorePix;
+        return targetGradPix; // this is conditioned actually by the querySignal
     };
 
     private final LImage queryImage;
@@ -65,7 +65,10 @@ public class ShapeMatchColorDepthSearchAlgorithm implements ColorDepthSearchAlgo
         this.mirrorQuery = mirrorQuery;
         this.clearLabels = clearLabels;
         this.negativeRadiusDilation = negativeRadiusDilation;
-        gapOp = (p1, p2, p3, p4) -> PIXEL_GAP_OP.apply(p1 * p2, p3, p4);
+        this.gapOp = (/*querySignal*/p1,
+                      /*targetGrad*/p2,
+                      /*queryPix*/p3,
+                      /*target20pxDilation*/p4) -> PIXEL_GAP_OP.apply(p1 * p2, p3, p4);
     }
 
     @Override
