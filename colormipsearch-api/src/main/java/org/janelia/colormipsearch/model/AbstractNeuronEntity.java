@@ -242,7 +242,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         fieldList.add(new EntityField<>("datasetLabels", false, datasetLabels));
         fieldList.add(new EntityField<>("validationErrors", true, validationErrors));
         computeFiles.forEach((ft, fd) ->
-                fieldList.add(new EntityField<>("computeFiles." + ft.name(), true, fd)));
+                fieldList.add(new EntityField<>("computeFiles." + ft.name(), false, fd)));
         processedTags.forEach((pt, t) ->
                 fieldList.add(new EntityField<>("processedTags." + pt.name(), true, t)));
         return fieldList;
