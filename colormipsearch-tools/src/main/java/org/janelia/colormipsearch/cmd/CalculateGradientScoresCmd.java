@@ -1,6 +1,5 @@
 package org.janelia.colormipsearch.cmd;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -66,67 +65,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CalculateGradientScoresCmd.class);
 
-    @Parameters(commandDescription = "Color depth search for a batch of MIPs")
-    static class GradientScoresArgs extends AbstractColorDepthMatchArgs {
-
-        @Parameter(names = {"--alignment-space", "-as"}, description = "Alignment space: {JRC2018_Unisex_20x_HR, JRC2018_VNC_Unisex_40x_DS} ", required = true)
-        String alignmentSpace;
-
-        @Parameter(names = {"--masks-libraries", "-md"}, required = true, variableArity = true,
-                converter = ListArg.ListArgConverter.class,
-                description = "Masks libraries; for JSON results this is interpreted as the location of the match files")
-        List<ListArg> masksLibraries;
-
-        @Parameter(names = {"--masks-published-names"}, description = "Masks published names to be selected for gradient scoring",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> masksPublishedNames = new ArrayList<>();
-
-        @Parameter(names = {"--masks-mips"}, description = "Selected mask MIPs",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> masksMIPIDs;
-
-        @Parameter(names = {"--masks-datasets"}, description = "Datasets associated with the mask of the match to be scored",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> maskDatasets = new ArrayList<>();
-
-        @Parameter(names = {"--masks-tags"}, description = "Tags associated with the mask of the match to be scored",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> maskTags = new ArrayList<>();
-
-        @Parameter(names = {"--targets-datasets"}, description = "Datasets associated with the target of the match to be scored",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> targetDatasets = new ArrayList<>();
-
-        @Parameter(names = {"--targets-tags"}, description = "Tags associated with the target of the match to be scored",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> targetTags = new ArrayList<>();
-
-        @Parameter(names = {"--targets-libraries"}, description = "Target libraries for the selected matches",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> targetsLibraries;
-
-        @Parameter(names = {"--targets-published-names"}, description = "Selected target names",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> targetsPublishedNames;
-
-        @Parameter(names = {"--targets-mips"}, description = "Selected target MIPs",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> targetsMIPIDs;
-
-        @Parameter(names = {"--match-tags"}, description = "Match tags to be scored",
-                listConverter = ListValueAsFileArgConverter.class,
-                variableArity = true)
-        List<String> matchTags = new ArrayList<>();
-
+    @Parameters(commandDescription = "Calculate gradient scores")
+    static class CalculateGradientScoresArgs extends AbstractGradientScoresArgs {
         @Parameter(names = {"--nBestLines"},
                 description = "Specifies the number of the top distinct lines to be used for gradient score")
         int numberOfBestLines;
@@ -139,20 +79,13 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 description = "Number of best matches for each sample to be used for gradient scoring")
         int numberOfBestMatchesPerSample;
 
-        @Parameter(names = {"--processing-tag"},
-                description = "Associate this tag with the run. Also all MIPs that are color depth searched will be stamped with this processing tag")
-        String processingTag;
 
-        GradientScoresArgs(CommonArgs commonArgs) {
+        CalculateGradientScoresArgs(CommonArgs commonArgs) {
             super(commonArgs);
-        }
-
-        String getProcessingTag() {
-            return processingTag.trim();
         }
     }
 
-    private final GradientScoresArgs args;
+    private final CalculateGradientScoresArgs args;
     private final Supplier<Long> cacheSizeSupplier;
     private final ObjectMapper mapper;
 
@@ -160,7 +93,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                CommonArgs commonArgs,
                                Supplier<Long> cacheSizeSupplier) {
         super(commandName);
-        this.args = new GradientScoresArgs(commonArgs);
+        this.args = new CalculateGradientScoresArgs(commonArgs);
         this.cacheSizeSupplier = cacheSizeSupplier;
         this.mapper = new ObjectMapper()
                 .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
@@ -169,7 +102,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
     }
 
     @Override
-    GradientScoresArgs getArgs() {
+    CalculateGradientScoresArgs getArgs() {
         return args;
     }
 
@@ -359,8 +292,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             .map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet());
                     Set<T> targetsToUpdate = cdMatches.stream()
                             .map(AbstractMatchEntity::getMatchedImage).collect(Collectors.toSet());
-                    cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, Collections.singleton(args.getProcessingTag()));
-                    cdmipsWriter.addProcessingTags(targetsToUpdate, ProcessingType.GradientScore, Collections.singleton(args.getProcessingTag()));
+                    cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, processingTags);
+                    cdmipsWriter.addProcessingTags(targetsToUpdate, ProcessingType.GradientScore, processingTags);
                     return masksToUpdate.size() + targetsToUpdate.size();
                 })
                 .orElse(0);
