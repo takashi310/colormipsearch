@@ -1,7 +1,9 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -119,7 +121,7 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
                         // normalize the grad scores
                         LOG.info("Normalize grad scores for {} matches of {}", cdMatchesForMask.size(), maskIdToProcess);
                         updateNormalizedScores(cdMatchesForMask);
-
+                        // write the updated scores
                         long writtenUpdates = updateCDMatches(cdMatchesForMask);
                         LOG.info("Updated {} grad scores for {} matches of {}", writtenUpdates, cdMatchesForMask.size(), maskIdToProcess);
                         if (StringUtils.isNotBlank(args.processingTag)) {
@@ -139,20 +141,6 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                 (Runtime.getRuntime().totalMemory() / _1M));
-    }
-
-    /**
-     * The ROI mask is typically the hemibrain mask that should be applied when the color depth search is done from LM to EM.
-     *
-     * @param queryROIMask the location of the ROI mask
-     * @return
-     */
-    private ImageArray<?> loadQueryROIMask(String queryROIMask) {
-        if (StringUtils.isBlank(queryROIMask)) {
-            return null;
-        } else {
-            return NeuronMIPUtils.loadImageFromFileData(FileData.fromString(queryROIMask));
-        }
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> NeuronMatchesReader<CDMatchEntity<M, T>> getCDMatchesReader() {
@@ -197,6 +185,9 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
      * @param <T>                        target type
      */
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void updateNormalizedScores(List<CDMatchEntity<M, T>> cdMatches) {
+        Set<String> masksNames = cdMatches.stream()
+                .map(cdm -> cdm.getMaskImage().getPublishedName())
+                .collect(Collectors.toSet());
         // get max scores for normalization
         CombinedMatchScore maxScores = cdMatches.stream()
                 .map(m -> new CombinedMatchScore(m.getMatchingPixels(), m.getGradScore()))
@@ -204,7 +195,7 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
                         (s1, s2) -> new CombinedMatchScore(
                                 Math.max(s1.getPixelMatches(), s2.getPixelMatches()),
                                 Math.max(s1.getGradScore(), s2.getGradScore())));
-
+        LOG.info("Max scores for {} matches is {}", masksNames, maxScores);
         // update normalized score
         cdMatches.forEach(m -> m.setNormalizedScore((float) GradientAreaGapUtils.calculateNormalizedScore(
                 m.getMatchingPixels(),
@@ -219,8 +210,9 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
         NeuronMatchesWriter<CDMatchEntity<M, T>> matchesWriter = getCDMatchesWriter();
         return matchesWriter.writeUpdates(
                 cdMatches,
-                Collections.singletonList(
-                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore()) // only update the normalized score
+                Arrays.asList(
+                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore()), // only update the normalized score
+                        m -> ImmutablePair.of("updatedDate", new Date())
                 ));
     }
 

@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -280,7 +281,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 Arrays.asList(
                         m -> ImmutablePair.of("gradientAreaGap", m.getGradientAreaGap()),
                         m -> ImmutablePair.of("highExpressionArea", m.getHighExpressionArea()),
-                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore())
+                        m -> ImmutablePair.of("normalizedScore", m.getNormalizedScore()),
+                        m -> ImmutablePair.of("updatedDate", new Date())
                 ));
     }
 
