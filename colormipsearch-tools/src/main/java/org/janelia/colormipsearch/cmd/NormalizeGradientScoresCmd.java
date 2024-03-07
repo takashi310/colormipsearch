@@ -136,7 +136,7 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));
                 });
-        LOG.info("Finished calculating gradient scores for {} items in {}s - memory usage {}M out of {}M",
+        LOG.info("Finished normalizing gradient scores for {} items in {}s - memory usage {}M out of {}M",
                 size,
                 (System.currentTimeMillis() - startTime) / 1000.,
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
