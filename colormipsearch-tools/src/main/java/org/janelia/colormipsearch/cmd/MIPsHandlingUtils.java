@@ -76,7 +76,9 @@ class MIPsHandlingUtils {
     }
 
     static boolean isEmLibrary(String lname) {
-        return lname != null && StringUtils.startsWithIgnoreCase(lname, "flyem");
+        return lname != null && (
+                StringUtils.startsWithIgnoreCase(lname, "flyem") ||
+                StringUtils.startsWithIgnoreCase(lname, "flywire"));
     }
 
     static <N extends AbstractNeuronEntity> List<N> findNeuronMIPs(N neuronMetadata,

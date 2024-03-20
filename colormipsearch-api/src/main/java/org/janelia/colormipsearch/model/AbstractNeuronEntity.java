@@ -91,6 +91,15 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.publishedName = publishedName;
     }
 
+    public boolean hasPublishedName() {
+        return StringUtils.isNotBlank(publishedName);
+    }
+
+    @JsonIgnore
+    public boolean isValid() {
+        return hasPublishedName();
+    }
+
     public String getSourceRefId() {
         return sourceRefId;
     }
