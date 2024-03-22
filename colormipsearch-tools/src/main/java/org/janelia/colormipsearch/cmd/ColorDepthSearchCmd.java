@@ -182,6 +182,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.masksTags,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
+        LOG.info("Read {} masks", maskMips.size());
         @SuppressWarnings("unchecked")
         List<T> targetMips = (List<T>) readMIPs(cdmipsReader,
                 args.targetsLibraries,
@@ -190,6 +191,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.targetsTags,
                 args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
+        LOG.info("Read {} targets", targetMips.size());
         if (maskMips.isEmpty() || targetMips.isEmpty()) {
             LOG.info("Nothing to do for {} masks and {} targets", maskMips.size(), targetMips.size());
             return;
@@ -241,9 +243,13 @@ class ColorDepthSearchCmd extends AbstractCmd {
             // start the pairwise color depth search
             List<CDMatchEntity<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
             NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
-            LOG.info("Start writing {} color depth search results", cdsResults.size());
-            cdsResultsWriter.write(cdsResults);
-            LOG.info("Finished writing {} color depth search results", cdsResults.size());
+            if (cdsResults.isEmpty()) {
+                LOG.info("No matches found!!!");
+            } else {
+                LOG.info("Start writing {} color depth search results", cdsResults.size());
+                cdsResultsWriter.write(cdsResults);
+                LOG.info("Finished writing {} color depth search results", cdsResults.size());
+            }
         } finally {
             LOG.info("Set processing tags to {}:{}", ProcessingType.ColorDepthSearch, processingTags);
             // update the mips processing tags

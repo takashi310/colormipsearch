@@ -1,6 +1,13 @@
-FROM azul/zulu-openjdk:21.0.2-21.32-jre
+FROM azul/zulu-openjdk:21.0.2-jdk as builder
 
-RUN mkdir /neuron-search-tools
+RUN apt update && \
+    apt install -y git
+
+WORKDIR /neuron-search-tools
+RUN git clone https://github.com/JaneliaSciComp/colormipsearch.git . && \
+    ./mvnw package
+
+FROM azul/zulu-openjdk:21.0.2-jdk
 
 WORKDIR /app
-COPY target ../neuron-search-tools/target
+COPY --from=builder /neuron-search-tools/target/colormipsearch-3.1.0-jar-with-dependencies.jar ./colormipsearch-3.1.0-jar-with-dependencies.jar
