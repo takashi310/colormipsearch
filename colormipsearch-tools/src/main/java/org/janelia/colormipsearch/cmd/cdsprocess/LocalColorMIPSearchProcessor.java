@@ -82,7 +82,7 @@ public class LocalColorMIPSearchProcessor<M extends AbstractNeuronEntity, T exte
                                                                                   List<T> targetMIPs) {
         NeuronMIP<M> queryImage = NeuronMIPUtils.loadComputeFile(queryMIP, ComputeFileType.InputColorDepthImage); // load image - no caching for the mask
         if (queryImage == null || queryImage.hasNoImageArray()) {
-            LOG.error("No input color depth image found for {}", queryMIP)
+            LOG.error("No input color depth image found for {}", queryMIP);
             return Collections.singletonList(
                     CompletableFuture.completedFuture(Collections.emptyList())
             );
