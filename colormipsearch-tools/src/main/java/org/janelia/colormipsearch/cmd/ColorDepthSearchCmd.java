@@ -255,11 +255,17 @@ class ColorDepthSearchCmd extends AbstractCmd {
             if (cdsResults.isEmpty()) {
                 LOG.info("No matches found!!!");
             } else {
-                LOG.info("Start writing {} color depth search results", cdsResults.size());
+                LOG.info("Start writing {} color depth search results - memory usage {}M out of {}M",
+                        cdsResults.size(),
+                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                        (Runtime.getRuntime().totalMemory() / _1M));
                 if (args.writeBatchSize > 0) {
                     ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                             .forEach((i, resultsBatch) -> {
-                                LOG.info("Results batch: {} - write {} matches", i, resultsBatch.size());
+                                LOG.info("Results batch: {} - write {} matches -memory usage {}M out of {}M",
+                                        i, resultsBatch.size(),
+                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                        (Runtime.getRuntime().totalMemory() / _1M));
                                 NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
                                 cdsResultsWriter.write(cdsResults);
                             });
@@ -267,7 +273,10 @@ class ColorDepthSearchCmd extends AbstractCmd {
                     NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
                     cdsResultsWriter.write(cdsResults);
                 }
-                LOG.info("Finished writing {} color depth search results", cdsResults.size());
+                LOG.info("Finished writing {} color depth search results  - memory usage {}M out of {}M",
+                        cdsResults.size(),
+                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                        (Runtime.getRuntime().totalMemory() / _1M));
             }
         } catch (Exception e) {
             LOG.error("Error writing color depth match results", e);
