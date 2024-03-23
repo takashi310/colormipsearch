@@ -40,6 +40,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ProcessingType;
+import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,6 +119,9 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--processing-tag"}, required = true,
                 description = "Associate this tag with the run. Also all MIPs that are color depth searched will be stamped with this processing tag")
         String processingTag;
+
+        @Parameter(names = {"--write-batch-size"}, description = "If this is set the results will be written in batches of this size")
+        int writeBatchSize = 0;
 
         @Parameter(names = {"--use-spark"}, arity = 0,
                    description = "If set, use spark to run color depth search process")
@@ -239,17 +243,34 @@ class ColorDepthSearchCmd extends AbstractCmd {
                     processingTags
             );
         }
+        List<CDMatchEntity<M, T>> cdsResults;
         try {
             // start the pairwise color depth search
-            List<CDMatchEntity<M, T>> cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
-            NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+             cdsResults = colorMIPSearchProcessor.findAllColorDepthMatches(maskMips, targetMips);
+        } catch (Exception e) {
+            LOG.error("Error while finding color depth matches", e);
+            throw new IllegalStateException(e);
+        }
+        try {
             if (cdsResults.isEmpty()) {
                 LOG.info("No matches found!!!");
             } else {
                 LOG.info("Start writing {} color depth search results", cdsResults.size());
-                cdsResultsWriter.write(cdsResults);
+                if (args.writeBatchSize > 0) {
+                    ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
+                            .forEach((i, resultsBatch) -> {
+                                LOG.info("Results batch: {} - write {} matches", i, resultsBatch.size());
+                                NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+                                cdsResultsWriter.write(cdsResults);
+                            });
+                } else {
+                    NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+                    cdsResultsWriter.write(cdsResults);
+                }
                 LOG.info("Finished writing {} color depth search results", cdsResults.size());
             }
+        } catch (Exception e) {
+            LOG.error("Error writing color depth match results", e);
         } finally {
             LOG.info("Set processing tags to {}:{}", ProcessingType.ColorDepthSearch, processingTags);
             // update the mips processing tags
