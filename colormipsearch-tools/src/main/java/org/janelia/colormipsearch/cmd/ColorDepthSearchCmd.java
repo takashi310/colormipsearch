@@ -255,6 +255,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
             if (cdsResults.isEmpty()) {
                 LOG.info("No matches found!!!");
             } else {
+                System.gc();
                 LOG.info("Start writing {} color depth search results - memory usage {}M out of {}M",
                         cdsResults.size(),
                         (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
