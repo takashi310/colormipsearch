@@ -255,6 +255,9 @@ class ColorDepthSearchCmd extends AbstractCmd {
             if (cdsResults.isEmpty()) {
                 LOG.info("No matches found!!!");
             } else {
+                // clean up the cache as the mips are no longer needed at this point
+                CachedMIPsUtils.cleanCache();
+                // Then force a gc
                 System.gc();
                 LOG.info("Start writing {} color depth search results - memory usage {}M out of {}M",
                         cdsResults.size(),

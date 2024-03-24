@@ -74,6 +74,10 @@ public class CachedMIPsUtils {
         }
     }
 
+    public static void cleanCache() {
+        mipsImagesCache.invalidateAll();
+    }
+
     @SuppressWarnings("unchecked")
     public static <N extends AbstractNeuronEntity> NeuronMIP<N> loadMIP(N mipInfo, ComputeFileType computeFileType) {
         try {
