@@ -275,8 +275,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                     if (args.parallelWriteResults && args.commonArgs.resultsStorage == StorageType.DB) {
                         cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                                 .entrySet()
-                                .stream()
-                                .parallel();
+                                .parallelStream();
                     } else {
                         cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                                 .entrySet()
@@ -286,21 +285,10 @@ class ColorDepthSearchCmd extends AbstractCmd {
                             .forEach(e -> {
                                 Integer i = e.getKey();
                                 List<CDMatchEntity<M, T>> resultsBatch = e.getValue();
-                                LOG.info("Results batch: {} - write {} matches - memory usage {}M out of {}M",
-                                        i, resultsBatch.size(),
-                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                        (Runtime.getRuntime().totalMemory() / _1M));
-                                NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
-                                cdsResultsWriter.write(cdsResults);
-                                LOG.info("Finished batch: {} - {} matches - memory usage {}M out of {}M",
-                                        i, resultsBatch.size(),
-                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
-                                        (Runtime.getRuntime().totalMemory() / _1M));
-                                System.gc(); // force garbage collection after each batch
+                                saveCDSResults(i, resultsBatch);
                             });
                 } else {
-                    NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
-                    cdsResultsWriter.write(cdsResults);
+                    saveCDSResults(0, cdsResults);
                 }
                 LOG.info("Finished writing {} color depth search results  - memory usage {}M out of {}M",
                         cdsResults.size(),
@@ -407,4 +395,18 @@ class ColorDepthSearchCmd extends AbstractCmd {
         return neurons.stream().filter(n -> n.hasProcessedTags(ProcessingType.ColorDepthSearch, processedTags)).collect(Collectors.toList());
     }
 
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long saveCDSResults(int batchId, List<CDMatchEntity<M, T>> cdsBatchResults) {
+        LOG.info("Results batch: {} - write {} matches - memory usage {}M out of {}M",
+                batchId, cdsBatchResults.size(),
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
+        NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
+        long n = cdsResultsWriter.write(cdsBatchResults);
+        LOG.info("Finished batch: {} - {} matches - memory usage {}M out of {}M",
+                batchId, n,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
+        System.gc(); // force garbage collection after each batch
+        return n;
+    }
 }
