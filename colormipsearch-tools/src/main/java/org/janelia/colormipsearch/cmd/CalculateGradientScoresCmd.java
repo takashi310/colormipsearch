@@ -168,6 +168,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             long updatesWithProcessedTag = updateProcessingTag(cdMatchesForMask);
                             LOG.info("Set processing tag {} for {} mips", args.getProcessingTag(), updatesWithProcessedTag);
                         }
+                        System.gc(); // explicitly garbage collect
                     });
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             indexedPartition.getKey(),
