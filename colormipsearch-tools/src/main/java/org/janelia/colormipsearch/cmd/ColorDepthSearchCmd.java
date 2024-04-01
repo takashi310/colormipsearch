@@ -276,6 +276,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                         i, resultsBatch.size(),
                                         (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                         (Runtime.getRuntime().totalMemory() / _1M));
+                                System.gc(); // force garbage collection after each batch
                             });
                 } else {
                     NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
