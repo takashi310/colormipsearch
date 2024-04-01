@@ -3,10 +3,12 @@ package org.janelia.colormipsearch.cmd;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -122,6 +124,10 @@ class ColorDepthSearchCmd extends AbstractCmd {
 
         @Parameter(names = {"--write-batch-size"}, description = "If this is set the results will be written in batches of this size")
         int writeBatchSize = 0;
+
+        @Parameter(names = {"--parallel-result-writing"},
+                description = "If set, parallelize writing batch results", arity = 0)
+        boolean parallelizeResultWriting = false;
 
         @Parameter(names = {"--use-spark"}, arity = 0,
                    description = "If set, use spark to run color depth search process")
@@ -264,8 +270,20 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                         (Runtime.getRuntime().totalMemory() / _1M));
                 if (args.writeBatchSize > 0) {
-                    ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
-                            .forEach((i, resultsBatch) -> {
+                    Stream<Map.Entry<Integer, List<CDMatchEntity<M, T>>>> cdsResultsPartitionedStream;
+                    if (args.parallelizeResultWriting) {
+                        cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
+                                .entrySet()
+                                .parallelStream();
+                    } else {
+                        cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
+                                .entrySet()
+                                .stream();
+                    }
+                    cdsResultsPartitionedStream
+                            .forEach(e -> {
+                                Integer i = e.getKey();
+                                List<CDMatchEntity<M, T>> resultsBatch = e.getValue();
                                 LOG.info("Results batch: {} - write {} matches - memory usage {}M out of {}M",
                                         i, resultsBatch.size(),
                                         (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
