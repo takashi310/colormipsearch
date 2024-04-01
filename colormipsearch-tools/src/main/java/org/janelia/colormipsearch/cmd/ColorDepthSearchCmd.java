@@ -266,12 +266,16 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 if (args.writeBatchSize > 0) {
                     ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                             .forEach((i, resultsBatch) -> {
-                                LOG.info("Results batch: {} - write {} matches -memory usage {}M out of {}M",
+                                LOG.info("Results batch: {} - write {} matches - memory usage {}M out of {}M",
                                         i, resultsBatch.size(),
                                         (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                         (Runtime.getRuntime().totalMemory() / _1M));
                                 NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
                                 cdsResultsWriter.write(cdsResults);
+                                LOG.info("Finished batch: {} - {} matches - memory usage {}M out of {}M",
+                                        i, resultsBatch.size(),
+                                        (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                        (Runtime.getRuntime().totalMemory() / _1M));
                             });
                 } else {
                     NeuronMatchesWriter<CDMatchEntity<M, T>> cdsResultsWriter = getCDSMatchesWriter();
@@ -297,6 +301,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         ProcessingType.ColorDepthSearch,
                         processingTags);
             });
+            LOG.info("Finished setting processing tags to {}:{}", ProcessingType.ColorDepthSearch, processingTags);
             colorMIPSearchProcessor.terminate();
         }
     }
