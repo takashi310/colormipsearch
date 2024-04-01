@@ -125,9 +125,10 @@ class ColorDepthSearchCmd extends AbstractCmd {
         @Parameter(names = {"--write-batch-size"}, description = "If this is set the results will be written in batches of this size")
         int writeBatchSize = 0;
 
-        @Parameter(names = {"--parallel-result-writing"},
-                description = "If set, parallelize writing batch results", arity = 0)
-        boolean parallelizeResultWriting = false;
+        @Parameter(names = {"--parallel-write-results"},
+                description = "If set, result batches are written concurrently. This option is used only when the results destination is the database",
+                arity = 0)
+        boolean parallelWriteResults = false;
 
         @Parameter(names = {"--use-spark"}, arity = 0,
                    description = "If set, use spark to run color depth search process")
@@ -271,7 +272,7 @@ class ColorDepthSearchCmd extends AbstractCmd {
                         (Runtime.getRuntime().totalMemory() / _1M));
                 if (args.writeBatchSize > 0) {
                     Stream<Map.Entry<Integer, List<CDMatchEntity<M, T>>>> cdsResultsPartitionedStream;
-                    if (args.parallelizeResultWriting) {
+                    if (args.parallelWriteResults && args.commonArgs.resultsStorage == StorageType.DB) {
                         cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                                 .entrySet()
                                 .parallelStream();
