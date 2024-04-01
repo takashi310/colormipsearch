@@ -275,7 +275,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                     if (args.parallelWriteResults && args.commonArgs.resultsStorage == StorageType.DB) {
                         cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                                 .entrySet()
-                                .parallelStream();
+                                .stream()
+                                .parallel();
                     } else {
                         cdsResultsPartitionedStream = ItemsHandling.partitionCollection(cdsResults, args.writeBatchSize)
                                 .entrySet()
