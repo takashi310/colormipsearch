@@ -42,7 +42,7 @@ public class DaosProvider {
                 config.getStringPropertyValue("MongoDB.Password"),
                 config.getStringPropertyValue("MongoDB.ReplicaSet"),
                 config.getBooleanPropertyValue("MongoDB.UseSSL"),
-                config.getIntegerPropertyValue("MongoDB.Connections", 0),
+                config.getIntegerPropertyValue("MongoDB.Connections", 0), // connections per host
                 config.getIntegerPropertyValue("MongoDB.ConnectionTimeoutMillis", 0),
                 config.getIntegerPropertyValue("MongoDB.MaxConnecting", 0),
                 config.getIntegerPropertyValue("MongoDB.MaxConnectTimeSecs", 0),
