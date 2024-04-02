@@ -357,40 +357,44 @@ class CalculateGradientScoresCmd extends AbstractCmd {
             LOG.error("No image found for {}", mask);
             return Collections.emptyList();
         }
-        ColorDepthSearchAlgorithm<ShapeMatchScore> gradScoreAlgorithm =
-                gradScoreAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(
-                        maskImage.getImageArray(),
-                        args.maskThreshold,
-                        args.borderSize);
-        Set<ComputeFileType> requiredVariantTypes = gradScoreAlgorithm.getRequiredTargetVariantTypes();
-        return selectedMatches.stream()
-                .map(cdsMatch -> CompletableFuture.supplyAsync(() -> {
-                            long startCalcTime = System.currentTimeMillis();
-                            T matchedTarget = cdsMatch.getMatchedImage();
-                            NeuronMIP<T> matchedTargetImage = CachedMIPsUtils.loadMIP(matchedTarget, ComputeFileType.InputColorDepthImage);
-                            if (NeuronMIPUtils.hasImageArray(matchedTargetImage)) {
-                                LOG.debug("Calculate grad score between {} and {}",
-                                        cdsMatch.getMaskImage(), cdsMatch.getMatchedImage());
-                                ShapeMatchScore gradScore = gradScoreAlgorithm.calculateMatchingScore(
-                                        matchedTargetImage.getImageArray(),
-                                        NeuronMIPUtils.getImageLoaders(
-                                                matchedTarget,
-                                                requiredVariantTypes,
-                                                (n, cft) -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(n, cft))
-                                        )
-                                );
-                                cdsMatch.setGradientAreaGap(gradScore.getGradientAreaGap());
-                                cdsMatch.setHighExpressionArea(gradScore.getHighExpressionArea());
-                                cdsMatch.setNormalizedScore(gradScore.getNormalizedScore());
-                                LOG.debug("Finished calculating negative score between {} and {} in {}ms",
-                                        cdsMatch.getMaskImage(), cdsMatch.getMatchedImage(), System.currentTimeMillis() - startCalcTime);
-                            } else {
-                                cdsMatch.setGradientAreaGap(-1L);
-                            }
-                            return cdsMatch;
-                        },
-                        executor))
-                .collect(Collectors.toList());
+        try {
+            ColorDepthSearchAlgorithm<ShapeMatchScore> gradScoreAlgorithm =
+                    gradScoreAlgorithmProvider.createColorDepthQuerySearchAlgorithmWithDefaultParams(
+                            maskImage.getImageArray(),
+                            args.maskThreshold,
+                            args.borderSize);
+            Set<ComputeFileType> requiredVariantTypes = gradScoreAlgorithm.getRequiredTargetVariantTypes();
+            return selectedMatches.stream()
+                    .map(cdsMatch -> CompletableFuture.supplyAsync(() -> {
+                                long startCalcTime = System.currentTimeMillis();
+                                T matchedTarget = cdsMatch.getMatchedImage();
+                                NeuronMIP<T> matchedTargetImage = CachedMIPsUtils.loadMIP(matchedTarget, ComputeFileType.InputColorDepthImage);
+                                if (NeuronMIPUtils.hasImageArray(matchedTargetImage)) {
+                                    LOG.debug("Calculate grad score between {} and {}",
+                                            cdsMatch.getMaskImage(), cdsMatch.getMatchedImage());
+                                    ShapeMatchScore gradScore = gradScoreAlgorithm.calculateMatchingScore(
+                                            matchedTargetImage.getImageArray(),
+                                            NeuronMIPUtils.getImageLoaders(
+                                                    matchedTarget,
+                                                    requiredVariantTypes,
+                                                    (n, cft) -> NeuronMIPUtils.getImageArray(CachedMIPsUtils.loadMIP(n, cft))
+                                            )
+                                    );
+                                    cdsMatch.setGradientAreaGap(gradScore.getGradientAreaGap());
+                                    cdsMatch.setHighExpressionArea(gradScore.getHighExpressionArea());
+                                    cdsMatch.setNormalizedScore(gradScore.getNormalizedScore());
+                                    LOG.debug("Finished calculating negative score between {} and {} in {}ms",
+                                            cdsMatch.getMaskImage(), cdsMatch.getMatchedImage(), System.currentTimeMillis() - startCalcTime);
+                                } else {
+                                    cdsMatch.setGradientAreaGap(-1L);
+                                }
+                                return cdsMatch;
+                            },
+                            executor))
+                    .collect(Collectors.toList());
+        } finally {
+            maskImage = null;
+        }
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> void updateNormalizedScores(List<CDMatchEntity<M, T>> cdMatches) {
