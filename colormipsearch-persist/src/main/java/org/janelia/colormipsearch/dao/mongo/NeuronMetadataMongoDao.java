@@ -17,7 +17,6 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BulkWriteOptions;
@@ -53,8 +52,8 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
 
-    public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
-        super(mongoClient, mongoDatabase, idGenerator);
+    public NeuronMetadataMongoDao(MongoDatabase mongoDatabase, IdGenerator idGenerator) {
+        super(mongoDatabase, idGenerator);
         createDocumentIndexes();
     }
 

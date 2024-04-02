@@ -15,9 +15,9 @@ import org.janelia.colormipsearch.dao.mongo.support.MongoDBHelper;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.AbstractSessionEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
+import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 import org.janelia.colormipsearch.model.PPPMatchEntity;
 import org.janelia.colormipsearch.model.PPPmURLs;
-import org.janelia.colormipsearch.model.NeuronPublishedURLs;
 
 public class DaosProvider {
 
@@ -55,34 +55,34 @@ public class DaosProvider {
 
     public <T extends AbstractSessionEntity> MatchSessionDao<T>
     getMatchParametersDao() {
-        return new MatchSessionMongoDao<>(mongoClient, mongoDatabase, idGenerator);
+        return new MatchSessionMongoDao<>(mongoDatabase, idGenerator);
     }
 
     public <R extends CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getCDMatchesDao() {
-        return new CDMatchesMongoDao<>(mongoClient, mongoDatabase, idGenerator);
+        return new CDMatchesMongoDao<>(mongoDatabase, idGenerator);
     }
 
     public <R extends PPPMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> NeuronMatchesDao<R>
     getPPPMatchesDao() {
-        return new PPPMatchesMongoDao<>(mongoClient, mongoDatabase, idGenerator);
+        return new PPPMatchesMongoDao<>(mongoDatabase, idGenerator);
     }
 
     public <N extends AbstractNeuronEntity> NeuronMetadataDao<N>
     getNeuronMetadataDao() {
-        return new NeuronMetadataMongoDao<>(mongoClient, mongoDatabase, idGenerator);
+        return new NeuronMetadataMongoDao<>(mongoDatabase, idGenerator);
     }
 
     public PublishedLMImageDao getPublishedImageDao() {
-        return new PublishedLMImageMongoDao(mongoClient, mongoDatabase, idGenerator);
+        return new PublishedLMImageMongoDao(mongoDatabase, idGenerator);
     }
 
     public PublishedURLsDao<NeuronPublishedURLs> getNeuronPublishedUrlsDao() {
-        return new PublishedURLsMongoDao(mongoClient, mongoDatabase, idGenerator);
+        return new PublishedURLsMongoDao(mongoDatabase, idGenerator);
     }
 
     public PublishedURLsDao<PPPmURLs> getPPPmUrlsDao() {
-        return new PPPmURLsMongoDao(mongoClient, mongoDatabase, idGenerator);
+        return new PPPmURLsMongoDao(mongoDatabase, idGenerator);
     }
 
 }
