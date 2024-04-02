@@ -185,8 +185,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                     (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                     (Runtime.getRuntime().totalMemory() / _1M));
                         }
-                        System.gc(); // explicitly garbage collect
                     });
+                    System.gc(); // explicitly garbage collect
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             partitionId,
                             partionMasks.size(),

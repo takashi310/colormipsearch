@@ -5,7 +5,7 @@ RUN apt update && \
 
 WORKDIR /neuron-search-tools
 RUN git clone https://github.com/JaneliaSciComp/colormipsearch.git . && \
-    ./mvnw -Pjdk21 package
+    ./mvnw package
 
 FROM azul/zulu-openjdk:21.0.2-jdk
 
