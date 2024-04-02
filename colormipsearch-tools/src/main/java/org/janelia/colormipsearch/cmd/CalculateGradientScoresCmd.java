@@ -156,12 +156,18 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 .distinct()
                                 .count();
                         // calculate the grad scores
-                        LOG.info("Calculate grad scores for {} matches ({} lines) of {}", cdMatchesForMask.size(), nPublishedLines, maskIdToProcess);
+                        LOG.info("Calculate grad scores for {} matches ({} lines) of {} - memory usage {}M out of {}M",
+                                cdMatchesForMask.size(), nPublishedLines, maskIdToProcess,
+                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                (Runtime.getRuntime().totalMemory() / _1M));
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWithGradScores = calculateGradientScores(
                                 gradScoreAlgorithmProvider,
                                 cdMatchesForMask,
                                 executor);
-                        LOG.info("Completed grad scores for {} matches of {}", cdMatchesWithGradScores.size(), maskIdToProcess);
+                        LOG.info("Completed grad scores for {} matches of {} - memory usage {}M out of {}M",
+                                cdMatchesWithGradScores.size(), maskIdToProcess,
+                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                (Runtime.getRuntime().totalMemory() / _1M));
                         long writtenUpdates = updateCDMatches(cdMatchesWithGradScores);
                         LOG.info("Updated {} grad scores for {} matches of {}", writtenUpdates, cdMatchesWithGradScores.size(), maskIdToProcess);
                         if (StringUtils.isNotBlank(args.processingTag)) {
