@@ -173,14 +173,19 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                 (Runtime.getRuntime().totalMemory() / _1M));
                         long writtenUpdates = updateCDMatches(cdMatchesWithGradScores);
-                        LOG.info("Partition {} - updated {} grad scores for {} matches of {}",
+                        LOG.info("Partition {} - updated {} grad scores for {} matches of {} - memory usage {}M out of {}M",
                                 partitionId,
-                                writtenUpdates, cdMatchesWithGradScores.size(), maskIdToProcess);
+                                writtenUpdates, cdMatchesWithGradScores.size(), maskIdToProcess,
+                                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                (Runtime.getRuntime().totalMemory() / _1M));
                         if (StringUtils.isNotBlank(args.processingTag)) {
                             long updatesWithProcessedTag = updateProcessingTag(cdMatchesForMask);
-                            LOG.info("Partition {} - set processing tag {} for {} mips",
-                                    partitionId, args.getProcessingTag(), updatesWithProcessedTag);
+                            LOG.info("Partition {} - set processing tag {} for {} mips - memory usage {}M out of {}M",
+                                    partitionId, args.getProcessingTag(), updatesWithProcessedTag,
+                                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                                    (Runtime.getRuntime().totalMemory() / _1M));
                         }
+                        System.gc(); // explicitly garbage collect
                     });
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             partitionId,
@@ -188,7 +193,6 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));
-                    System.gc(); // explicitly garbage collect when a partition is done
                 });
         LOG.info("Finished calculating gradient scores for {} items in {}s - memory usage {}M out of {}M",
                 size,
