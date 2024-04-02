@@ -174,7 +174,6 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             long updatesWithProcessedTag = updateProcessingTag(cdMatchesForMask);
                             LOG.info("Set processing tag {} for {} mips", args.getProcessingTag(), updatesWithProcessedTag);
                         }
-                        System.gc(); // explicitly garbage collect
                     });
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             indexedPartition.getKey(),
@@ -182,6 +181,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             (System.currentTimeMillis() - startProcessingPartitionTime) / 1000.,
                             (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                             (Runtime.getRuntime().totalMemory() / _1M));
+                    System.gc(); // explicitly garbage collect when a partition is done
                 });
         LOG.info("Finished calculating gradient scores for {} items in {}s - memory usage {}M out of {}M",
                 size,
@@ -350,10 +350,14 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                                                           List<CDMatchEntity<M, T>> selectedMatches,
                                                                           ColorDepthSearchAlgorithmProvider<ShapeMatchScore> gradScoreAlgorithmProvider,
                                                                           Executor executor) {
+        if (CollectionUtils.isEmpty(selectedMatches)) {
+            LOG.error("No matches were selected for {}", mask);
+            return Collections.emptyList();
+        }
         LOG.info("Prepare gradient score computations for {} with {} matches", mask, selectedMatches.size());
         LOG.info("Load query image {}", mask);
         NeuronMIP<M> maskImage = NeuronMIPUtils.loadComputeFile(mask, ComputeFileType.InputColorDepthImage);
-        if (NeuronMIPUtils.hasNoImageArray(maskImage) || CollectionUtils.isEmpty(selectedMatches)) {
+        if (NeuronMIPUtils.hasNoImageArray(maskImage)) {
             LOG.error("No image found for {}", mask);
             return Collections.emptyList();
         }
@@ -393,7 +397,9 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             executor))
                     .collect(Collectors.toList());
         } finally {
-            maskImage = null;
+            maskImage = null; // I am explicitly nullifying it because the method returns promises
+                              // so I think the var may appear as it is still used even though
+                              // the promises use only the imageArray inside it
         }
     }
 

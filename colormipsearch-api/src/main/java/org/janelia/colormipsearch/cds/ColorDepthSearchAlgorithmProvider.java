@@ -32,7 +32,7 @@ public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScor
                                                                  ColorDepthSearchParams cdsParams);
 
     default ColorDepthSearchAlgorithm<S> createColorDepthQuerySearchAlgorithmWithDefaultParams(ImageArray<?> queryImage, int queryThreshold, int queryBorderSize) {
-        return createColorDepthSearchAlgorithm(queryImage, queryThreshold, queryBorderSize, new ColorDepthSearchParams());
+        return createColorDepthSearchAlgorithm(queryImage, queryThreshold, queryBorderSize, getDefaultCDSParams());
     }
 
 }
