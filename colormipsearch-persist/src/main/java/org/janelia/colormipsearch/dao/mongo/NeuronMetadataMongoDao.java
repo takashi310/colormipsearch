@@ -13,12 +13,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
@@ -55,12 +53,9 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         implements NeuronMetadataDao<N> {
     private static final int MAX_UPDATE_RETRIES = 3;
 
-    private final ClientSession session;
-
     public NeuronMetadataMongoDao(MongoClient mongoClient, MongoDatabase mongoDatabase, IdGenerator idGenerator) {
         super(mongoClient, mongoDatabase, idGenerator);
         createDocumentIndexes();
-        session = mongoClient.startSession();
     }
 
     @Override
@@ -128,7 +123,6 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
                         .withWriteConcern(WriteConcern.MAJORITY)
                         .withReadPreference(ReadPreference.primaryPreferred())
                         .findOneAndUpdate(
-                                session,
                                 MongoDaoHelper.createBsonFilterCriteria(selectFilters),
                                 MongoDaoHelper.combineUpdates(updates),
                                 updateOptions
