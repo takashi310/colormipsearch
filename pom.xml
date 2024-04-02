@@ -30,6 +30,13 @@
             </properties>
         </profile>
         <profile>
+            <id>jdk21</id>
+            <properties>
+                <maven.compiler.source>21</maven.compiler.source>
+                <maven.compiler.target>21</maven.compiler.target>
+            </properties>
+        </profile>
+        <profile>
             <id>itest</id>
             <build>
                 <defaultGoal>integration-test</defaultGoal>
