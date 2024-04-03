@@ -126,6 +126,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 excludedRegions
         );
         NeuronMatchesReader<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesReader = getCDMatchesReader();
+        NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> matchesWriter = getCDMatchesWriter();
+        CDMIPsWriter cdmipsWriter = getCDMipsWriter();
         List<String> matchesMasksToProcess = cdMatchesReader.listMatchesLocations(
                 args.masksLibraries.stream()
                         .map(larg -> new DataSourceParam()
@@ -149,7 +151,7 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                             partitionId,
                             partionMasks.size());
                     long startProcessingPartitionTime = System.currentTimeMillis();
-                    // process each item from the current partition sequentially 
+                    // process each item from the current partition sequentially
                     partionMasks.forEach(maskIdToProcess -> {
                         // read all matches for the current mask
                         List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesForMask = getCDMatchesForMask(cdMatchesReader, maskIdToProcess);
@@ -172,21 +174,21 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 cdMatchesWithGradScores.size(), maskIdToProcess,
                                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                 (Runtime.getRuntime().totalMemory() / _1M));
-                        long writtenUpdates = updateCDMatches(cdMatchesWithGradScores);
+                        long writtenUpdates = updateCDMatches(cdMatchesWithGradScores, matchesWriter);
                         LOG.info("Partition {} - updated {} grad scores for {} matches of {} - memory usage {}M out of {}M",
                                 partitionId,
                                 writtenUpdates, cdMatchesWithGradScores.size(), maskIdToProcess,
                                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                 (Runtime.getRuntime().totalMemory() / _1M));
                         if (StringUtils.isNotBlank(args.processingTag)) {
-                            long updatesWithProcessedTag = updateProcessingTag(cdMatchesForMask);
+                            long updatesWithProcessedTag = updateProcessingTag(cdMatchesForMask, cdmipsWriter);
                             LOG.info("Partition {} - set processing tag {} for {} mips - memory usage {}M out of {}M",
                                     partitionId, args.getProcessingTag(), updatesWithProcessedTag,
                                     (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
                                     (Runtime.getRuntime().totalMemory() / _1M));
                         }
+                        System.gc(); // explicitly garbage collect
                     });
-                    System.gc(); // explicitly garbage collect
                     LOG.info("Finished partition {} ({} items) in {}s - memory usage {}M out of {}M",
                             partitionId,
                             partionMasks.size(),
@@ -241,11 +243,11 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         }
     }
 
-    private Optional<CDMIPsWriter> getCDMipsWriter() {
+    private CDMIPsWriter getCDMipsWriter() {
         if (args.commonArgs.resultsStorage == StorageType.DB) {
-            return Optional.of(new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao()));
+            return new DBCheckedCDMIPsWriter(getDaosProvider().getNeuronMetadataDao());
         } else {
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -292,8 +294,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         return matchesWithGradScores;
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long updateCDMatches(List<CDMatchEntity<M, T>> cdMatches) {
-        NeuronMatchesWriter<CDMatchEntity<M, T>> matchesWriter = getCDMatchesWriter();
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long updateCDMatches(List<CDMatchEntity<M, T>> cdMatches,
+                                                                                                  NeuronMatchesWriter<CDMatchEntity<M, T>> matchesWriter) {
         return matchesWriter.writeUpdates(
                 cdMatches,
                 Arrays.asList(
@@ -304,19 +306,20 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 ));
     }
 
-    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long updateProcessingTag(List<CDMatchEntity<M, T>> cdMatches) {
-        Set<String> processingTags = Collections.singleton(args.getProcessingTag());
-        return getCDMipsWriter()
-                .map(cdmipsWriter -> {
-                    Set<M> masksToUpdate = cdMatches.stream()
-                            .map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet());
-                    Set<T> targetsToUpdate = cdMatches.stream()
-                            .map(AbstractMatchEntity::getMatchedImage).collect(Collectors.toSet());
-                    cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, processingTags);
-                    cdmipsWriter.addProcessingTags(targetsToUpdate, ProcessingType.GradientScore, processingTags);
-                    return masksToUpdate.size() + targetsToUpdate.size();
-                })
-                .orElse(0);
+    private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity> long updateProcessingTag(List<CDMatchEntity<M, T>> cdMatches,
+                                                                                                      CDMIPsWriter cdmipsWriter) {
+        if (cdmipsWriter != null) {
+            Set<String> processingTags = Collections.singleton(args.getProcessingTag());
+            Set<M> masksToUpdate = cdMatches.stream()
+                    .map(AbstractMatchEntity::getMaskImage).collect(Collectors.toSet());
+            Set<T> targetsToUpdate = cdMatches.stream()
+                    .map(AbstractMatchEntity::getMatchedImage).collect(Collectors.toSet());
+            cdmipsWriter.addProcessingTags(masksToUpdate, ProcessingType.GradientScore, processingTags);
+            cdmipsWriter.addProcessingTags(targetsToUpdate, ProcessingType.GradientScore, processingTags);
+            return masksToUpdate.size() + targetsToUpdate.size();
+        } else {
+            return 0;
+        }
     }
 
     private <M extends AbstractNeuronEntity, T extends AbstractNeuronEntity>
