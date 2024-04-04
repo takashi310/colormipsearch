@@ -77,7 +77,7 @@ public abstract class ColorTransformation implements BiFunction<ImageType, Integ
         return (int) (gray / oldMax * newMax);
     }
 
-    static ColorTransformation toGray8WithNoGammaCorrection() {
+    public static ColorTransformation toGray8WithNoGammaCorrection() {
         return new ColorTransformation(pt -> ImageType.GRAY8) {
             @Override
             public Integer apply(ImageType pt, Integer pv) {

@@ -14,11 +14,11 @@ public class ColorImageArray extends ImageArray<byte[]> {
         return bytePixels;
     }
 
-    ColorImageArray(ImageType type, int width, int height, byte[] pixels) {
+    public ColorImageArray(ImageType type, int width, int height, byte[] pixels) {
         super(type, width, height, pixels);
     }
 
-    ColorImageArray(ImageType type, int width, int height, int[] pixels) {
+    public ColorImageArray(ImageType type, int width, int height, int[] pixels) {
         super(type, width, height, ColorImageArray.createPixelsArray(width, height, pixels));
     }
 

@@ -62,7 +62,7 @@ public abstract class ImageArray<T> implements Serializable {
         set(id, p);
     }
 
-    T getPixels() {
+    public T getPixels() {
         return pixels;
     }
 }

@@ -2,7 +2,7 @@ package org.janelia.colormipsearch.imageprocessing;
 
 public class ByteImageArray extends ImageArray<byte[]> {
 
-    ByteImageArray(ImageType type, int width, int height, byte[] pixels) {
+    public ByteImageArray(ImageType type, int width, int height, byte[] pixels) {
         super(type, width, height, pixels);
     }
 

@@ -168,4 +168,56 @@ public class ColorDepthSearchAlgorithmProviderFactory {
         };
     }
 
+    public static ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> createBidirectionalShapeMatchCDSAlgorithmProvider(
+            boolean mirrorMask,
+            int negativeRadius,
+            int borderSize,
+            String segmentedVolumePath,
+            String mask2dPath,
+            boolean isEM2LM,
+            boolean isBrain,
+            ImageRegionGenerator ignoredRegionsProvider) {
+        if (negativeRadius <= 0) {
+            throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
+        }
+        return new ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore>() {
+            ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
+                    .setParam("mirrorMask", mirrorMask)
+                    .setParam("negativeRadius", negativeRadius)
+                    .setParam("borderSize", borderSize);
+
+            @Override
+            public ColorDepthSearchParams getDefaultCDSParams() {
+                return defaultCDSParams;
+            }
+
+            @Override
+            public ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> createColorDepthQuerySearchAlgorithm(ImageArray<?> queryImageArray,
+                                                                                                                int queryThreshold,
+                                                                                                                int queryBorderSize,
+                                                                                                                ColorDepthSearchParams cdsParams) {
+                ImageTransformation clearIgnoredRegions = ImageTransformation.clearRegion(ignoredRegionsProvider.getRegion(queryImageArray));
+
+                ImageProcessing negativeRadiusDilation = ImageProcessing.create(clearIgnoredRegions)
+                        .applyColorTransformation(ColorTransformation.mask(queryThreshold))
+                        .unsafeMaxFilter(cdsParams.getIntParam("negativeRadius", negativeRadius));
+
+                LImage queryImage = LImageUtils.create(queryImageArray, borderSize, borderSize, borderSize, borderSize).mapi(clearIgnoredRegions);
+
+                BidirectionalShapeMatchColorDepthSearchAlgorithm maskNegativeScoresCalculator = new BidirectionalShapeMatchColorDepthSearchAlgorithm(
+                        queryImage,
+                        cdsParams.getIntParam("queryThreshold", queryThreshold),
+                        cdsParams.getBoolParam("mirrorMask", mirrorMask),
+                        segmentedVolumePath,
+                        mask2dPath,
+                        isEM2LM,
+                        isBrain,
+                        clearIgnoredRegions,
+                        negativeRadiusDilation
+                );
+
+                return maskNegativeScoresCalculator;
+            }
+        };
+    }
 }

@@ -3,7 +3,7 @@ package org.janelia.colormipsearch.imageprocessing;
 
 public class ShortImageArray extends ImageArray<short[]> {
 
-    ShortImageArray(ImageType type, int width, int height, short[] pixels) {
+    public ShortImageArray(ImageType type, int width, int height, short[] pixels) {
         super(type, width, height, pixels);
     }
 

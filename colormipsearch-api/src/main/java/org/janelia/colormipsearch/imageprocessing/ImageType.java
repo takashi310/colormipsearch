@@ -12,7 +12,7 @@ import ij.ImagePlus;
  *      B - bits 16-23
  *      this type is used for ARGB pixels as well where alpha is in the most significant byte position - 24-32
  */
-enum ImageType {
+public enum ImageType {
     UNKNOWN(-1),
     GRAY8(ImagePlus.GRAY8),
     GRAY16(ImagePlus.GRAY16),
