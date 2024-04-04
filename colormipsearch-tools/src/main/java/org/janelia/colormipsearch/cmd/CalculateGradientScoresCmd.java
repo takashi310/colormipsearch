@@ -5,12 +5,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -80,6 +81,10 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 description = "Number of best matches for each sample to be used for gradient scoring")
         int numberOfBestMatchesPerSample;
 
+        @Parameter(names = {"--process-partitions-concurrently"},
+                description = "If set, process mask partitions concurrently",
+                arity = 0)
+        boolean processPartitionsConcurrently = false;
 
         CalculateGradientScoresArgs(CommonArgs commonArgs) {
             super(commonArgs);
@@ -142,9 +147,18 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 .collect(Collectors.toList()));
         int size = matchesMasksToProcess.size();
         Executor executor = CmdUtils.createCmdExecutor(args.commonArgs);
-        // partition matches and process all partitions concurrently
-        ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize).entrySet().stream().parallel()
-                .forEach(indexedPartition -> {
+        Stream<Map.Entry<Integer, List<String>>> masksPartitionedStream;
+        // partition masks
+        if (args.processPartitionsConcurrently) {
+            masksPartitionedStream = ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize)
+                    .entrySet()
+                    .parallelStream();
+        } else {
+            masksPartitionedStream = ItemsHandling.partitionCollection(matchesMasksToProcess, args.processingPartitionSize)
+                    .entrySet()
+                    .stream();
+        }
+        masksPartitionedStream.forEach(indexedPartition -> {
                     int partitionId = indexedPartition.getKey(); // unbox it
                     List<String> partionMasks = indexedPartition.getValue();
                     LOG.info("Start processing partition {} ({} items)",
