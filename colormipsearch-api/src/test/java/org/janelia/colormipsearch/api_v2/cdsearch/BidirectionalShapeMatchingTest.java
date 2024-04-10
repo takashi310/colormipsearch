@@ -108,7 +108,7 @@ public class BidirectionalShapeMatchingTest {
         final String target_cdm = "src/test/resources/colormipsearch/api/cdsearch/GMR_31G04_AE_01-20190813_66_F3-40x-Brain-JRC2018_Unisex_20x_HR-2704505419467849826-CH2-07_CDM.tif";
         final String mask2d_path = "src/test/resources/colormipsearch/api/cdsearch/MAX_JRC2018_UNISEX_20x_HR_2DMASK.tif";
         final String tarSegmentedVolumePath = "src/test/resources/colormipsearch/api/cdsearch/test_TargetSegmentedLM.tif";
-        
+
         int queryThreshold = 20;
         int negativeRadius = 10;
 
@@ -117,14 +117,10 @@ public class BidirectionalShapeMatchingTest {
         ColorImageArray queryImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(queryImageImg);
         LImage queryImage = LImageUtils.create(queryImageArray);
 
-        saveImageAsPNG(queryImageImg, "/Users/kawaset/cdm_test/queryImage.png");
-
         Img<IntegerType> tarSegmentedVolume = ( Img<IntegerType> ) IO.openImgs(tarSegmentedVolumePath).get(0);
         ContrastEnhancer.scaleHistogram(tarSegmentedVolume, 3, 0, 255, 0);
         Img<ARGBType> targetImageImg = LM_EM_Segmentation.GenerateCDM(tarSegmentedVolume, mask2d_path);
         ColorImageArray targetImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(targetImageImg);
-
-        saveImageAsPNG(targetImageImg, "/Users/kawaset/cdm_test/targetImage.png");
 
         long start, end;
         start = System.currentTimeMillis();
@@ -150,8 +146,6 @@ public class BidirectionalShapeMatchingTest {
         );
 
         Img<IntegerType> querySegmentedVolumeResult = maskNegativeScoresCalculator.getSegmentedQueryVolumeImage();
-
-        saveAsTiff(querySegmentedVolumeResult, "/Users/kawaset/cdm_test/querySegmentedVolumeResult.tif");
 
         maskNegativeScoresCalculator.setTargetSegmentedVolumePath(tarSegmentedVolumePath);
 

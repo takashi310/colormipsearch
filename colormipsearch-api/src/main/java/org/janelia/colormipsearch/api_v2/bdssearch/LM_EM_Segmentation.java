@@ -219,14 +219,10 @@ public class LM_EM_Segmentation {
                 tarSegResult = flipHorizontally(tarSegmentedVolumeBeforeFlipping);
             }//if(segVolume=="LM"){
 
-            saveAsTiff(tarSegResult, "/Users/kawaset/cdm_test/tarSegResult.tif");
-
             Img<IntegerType> tarMaskedSegmentedVolume = ImageANDOperation.andOperation(tarSegResult, segResult);
             IntegerType min = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
             IntegerType max = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
             ComputeMinMax.computeMinMax(tarMaskedSegmentedVolume, min, max);
-
-            saveAsTiff(tarMaskedSegmentedVolume, "/Users/kawaset/cdm_test/tarMaskedSegmentedVolume.tif");
 
             int maxvalue = max.getInteger();
             long volumeRight = 0;
@@ -236,16 +232,11 @@ public class LM_EM_Segmentation {
                 volumeRight = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolume);
             }
 
-            saveAsTiff(tarMaskedSegmentedVolume, "/Users/kawaset/cdm_test/ThreeDconnect_component.tif");
-
             Img<IntegerType> tarSegResultFL = tarSegmentedVolumeBeforeFlipping != null ? tarSegmentedVolumeBeforeFlipping : segmentedVolumeBeforeFlipping ;
             Img<IntegerType> tarMaskedSegmentedVolumeFL = ImageANDOperation.andOperation(tarSegResultFL, segResult);
             IntegerType minFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
             IntegerType maxFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
             ComputeMinMax.computeMinMax(tarMaskedSegmentedVolumeFL, minFL, maxFL);
-
-            saveAsTiff(tarSegResultFL, "/Users/kawaset/cdm_test/tarSegResultFL.tif");
-            saveAsTiff(tarMaskedSegmentedVolumeFL, "/Users/kawaset/cdm_test/tarMaskedSegmentedVolumeFL.tif");
 
             int maxvalueFL = maxFL.getInteger();
             long volumeFL = 0;
@@ -254,8 +245,6 @@ public class LM_EM_Segmentation {
                 tarMaskedSegmentedVolumeFL = ThreeDconnect_component(tarMaskedSegmentedVolumeFL);
                 volumeFL = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolumeFL);
             }
-
-            saveAsTiff(tarMaskedSegmentedVolumeFL, "/Users/kawaset/cdm_test/ThreeDconnect_component2.tif");
 
             if(volumeRight >= volumeFL){
                 if(tarMaskedSegmentedVolume != null){
