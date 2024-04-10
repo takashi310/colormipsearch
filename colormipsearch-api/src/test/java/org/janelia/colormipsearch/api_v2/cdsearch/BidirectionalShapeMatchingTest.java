@@ -136,7 +136,6 @@ public class BidirectionalShapeMatchingTest {
         BidirectionalShapeMatchColorDepthSearchAlgorithm maskNegativeScoresCalculator = new BidirectionalShapeMatchColorDepthSearchAlgorithm(
                 queryImage,
                 20,
-                false,
                 em_path,
                 mask2d_path,
                 true,

@@ -59,7 +59,6 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
     //private final LImage queryHighExpressionMask; // pix(x,y) = 1 if there's too much expression surrounding x,y
     //private final LImage queryROIMaskImage;
     private final int queryThreshold;
-    private final boolean mirrorQuery;
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
     public final QuadFunction<Integer, Integer, Integer, Integer, Integer> gapOp;
@@ -70,7 +69,6 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
 
     BidirectionalShapeMatchColorDepthSearchAlgorithm(LImage queryImage,
                                                      int queryThreshold,
-                                                     boolean mirrorQuery,
                                                      String segmentedVolumePath,
                                                      String mask2dPath,
                                                      boolean isEM2LM,
@@ -79,7 +77,6 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
                                                      ImageProcessing negativeRadiusDilation) {
         this.queryImage = queryImage;
         this.queryThreshold = queryThreshold;
-        this.mirrorQuery = mirrorQuery;
         this.clearLabels = clearLabels;
         this.negativeRadiusDilation = negativeRadiusDilation;
         gapOp = (p1, p2, p3, p4) -> PIXEL_GAP_OP.apply(p1 * p2, p3, p4);

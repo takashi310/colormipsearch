@@ -169,7 +169,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
     }
 
     public static ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> createBidirectionalShapeMatchCDSAlgorithmProvider(
-            boolean mirrorMask,
             int negativeRadius,
             int borderSize,
             String segmentedVolumePath,
@@ -182,7 +181,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
         }
         return new ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore>() {
             ColorDepthSearchParams defaultCDSParams = new ColorDepthSearchParams()
-                    .setParam("mirrorMask", mirrorMask)
                     .setParam("negativeRadius", negativeRadius)
                     .setParam("borderSize", borderSize);
 
@@ -207,7 +205,6 @@ public class ColorDepthSearchAlgorithmProviderFactory {
                 BidirectionalShapeMatchColorDepthSearchAlgorithm maskNegativeScoresCalculator = new BidirectionalShapeMatchColorDepthSearchAlgorithm(
                         queryImage,
                         cdsParams.getIntParam("queryThreshold", queryThreshold),
-                        cdsParams.getBoolParam("mirrorMask", mirrorMask),
                         segmentedVolumePath,
                         mask2dPath,
                         isEM2LM,
