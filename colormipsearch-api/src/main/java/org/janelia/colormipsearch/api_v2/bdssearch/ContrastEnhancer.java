@@ -15,7 +15,7 @@ public class ContrastEnhancer {
 
         // Convert the upper saturation limit to the number of pixels
         long totalPixels = image.size();
-        long upperPixelCount = (long) (totalPixels * (1.0 - saturated));
+        long upperPixelCount = (long) (totalPixels * (100.0 - saturated * 0.5) / 100.0);
 
         // Collect pixel values
         ArrayList<Integer> pixelValues = new ArrayList<>();
@@ -35,6 +35,9 @@ public class ContrastEnhancer {
             maxIntensity = def_maxIntensity;
         if (minIntensity < 0)
             minIntensity = def_minIntensity;
+
+        if (upperThreshold <= minIntensity)
+            return;
 
         // Stretch the histogram considering the upper saturation
         cursor.reset();
@@ -62,6 +65,8 @@ public class ContrastEnhancer {
             T pixel = cursor.next();
             int value = pixel.getInteger();
             double scaledValue = (dstMaxIntensity - dstMinIntensity) * (value - srcMinIntensity) / (srcMaxIntensity - srcMinIntensity) + dstMinIntensity;
+            if (scaledValue > dstMaxIntensity)
+                scaledValue = dstMaxIntensity;
             pixel.setInteger(Math.round(scaledValue));
         }
     }

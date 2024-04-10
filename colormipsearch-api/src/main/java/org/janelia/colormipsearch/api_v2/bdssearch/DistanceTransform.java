@@ -38,7 +38,7 @@ public class DistanceTransform {
         long w = input.dimension(0);
         long h = input.dimension(1);
 
-        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>();
+        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
         Img<UnsignedShortType> result = factory.create(w, h);
 
         Cursor<ARGBType> srcCursor = input.cursor();
@@ -53,7 +53,7 @@ public class DistanceTransform {
         long w = input.dimension(0);
         long h = input.dimension(1);
 
-        ArrayImgFactory<FloatType> factory = new ArrayImgFactory<>();
+        ArrayImgFactory<FloatType> factory = new ArrayImgFactory<>(new FloatType());
         Img<FloatType> result = factory.create(w, h);
 
         Cursor<UnsignedShortType> srcCursor = input.cursor();
@@ -68,7 +68,7 @@ public class DistanceTransform {
         long w = input.dimension(0);
         long h = input.dimension(1);
 
-        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>();
+        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
         Img<UnsignedShortType> result = factory.create(w, h);
 
         Cursor<FloatType> srcCursor = input.cursor();
@@ -85,7 +85,7 @@ public class DistanceTransform {
 
         Img<UnsignedShortType> input16 = ConvertARGBToGray16(input);
 
-        int[] span_max = {radius, radius, radius};
+        int[] span_max = {radius, radius};
         CenteredRectangleShape neighborhood = new CenteredRectangleShape(span_max, true); // true for including center
         Img<UnsignedShortType> dilatedInput16 = Dilation.dilate(input16, neighborhood, 1);
         Img<FloatType> dilatedInput32 = ConvertGray16ToFloat32(dilatedInput16);

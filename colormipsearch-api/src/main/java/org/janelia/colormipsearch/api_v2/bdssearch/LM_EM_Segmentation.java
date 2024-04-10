@@ -4,7 +4,11 @@ import java.io.File;
 import java.lang.String;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
+import io.scif.SCIFIO;
+import io.scif.config.SCIFIOConfig;
+import io.scif.img.ImgSaver;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.algorithm.morphology.Dilation;
@@ -35,6 +39,31 @@ public class LM_EM_Segmentation {
     Img< IntegerType > segResult = null;
     Img< IntegerType > segmentedVolumeBeforeFlipping = null;
 
+    public static void saveAsTiff(Img<?> img, String filePath) {
+        SCIFIO scifio = new SCIFIO();
+        ImgSaver saver = new ImgSaver(scifio.context());
+
+        // Check if the output file exists. If yes, delete it to allow overwriting.
+        File outputFile = new File(filePath);
+        if (outputFile.exists()) {
+            boolean deleted = outputFile.delete();
+            if (!deleted) {
+                System.err.println("Failed to delete existing file: " + filePath);
+                return;
+            }
+        }
+
+        try {
+            // Use SCIFIO to save the image as TIFF
+            saver.saveImg(filePath, img, new SCIFIOConfig().writerSetCompression("LZW"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            saver.context().dispose();
+            scifio.context().dispose();
+        }
+    }
+
     public static void fillWithBlackUsingCursor(Img<ARGBType> image, long offsetX, long offsetY, long width, long height) {
         // Define the region as a rectangle [minX, minY] to [maxX, maxY]
         long[] min = new long[]{offsetX, offsetY}; // Starting coordinates of the rectangle
@@ -63,6 +92,10 @@ public class LM_EM_Segmentation {
         }
     }
 
+    public Img<IntegerType> getSegmentedQueryImage() {
+        return segResult;
+    }
+
     public LM_EM_Segmentation(String segmented_volume_path, String mask2d_path, boolean isEM2LM, boolean isBrain) {
         if (isEM2LM)
             segVolume = "LM";
@@ -86,15 +119,15 @@ public class LM_EM_Segmentation {
             fileext = segmentedVolumePath.substring(i+1);
         }
 
-        if(segVolume == "EM"){ // LM to EM search
+        if(segVolume.equals("EM")){ // LM to EM search
             //maskLM_STOri = open(segmentedLMdir+maskLM_ST+".nrrd");
             segmentedVolumeBeforeFlipping = ( Img<IntegerType> ) IO.openImgs(segmentedVolumePath).get(0);
             segResult = flipHorizontally(segmentedVolumeBeforeFlipping);
             fileext="nrrd";
         }
-        else if(segVolume=="LM") { // EM to LM search
+        else if(segVolume.equals("LM")) { // EM to LM search
             Img<IntegerType> segmentedVolume = null;
-            if (fileext == "swc") {
+            if (fileext.equals("swc")) {
                 if (tissue == "brain")
                     //run("swc draw single 3d", "input="+segmentedLMdir+maskLM_ST+".swc width=605 height=283 depth=87 voxel_w=1.0378322 voxel_h=1.0378322 voxel_d=2.0000000 radius=1 ignore");
                     segmentedVolume = (Img<IntegerType>) SWCDraw.draw(segmentedVolumePath, 605, 283, 87, 1.0378322, 1.0378322, 2.0, 1, true);
@@ -133,20 +166,26 @@ public class LM_EM_Segmentation {
             }
 
             Img<IntegerType> scaled_segmentedVolume = null;
-            if (tissue == "brain")
+            if (tissue.equals("brain"))
                 scaled_segmentedVolume = Scale3DImage.scaleImage(segmentedVolume, 605, 283, 87); //run("Size...", "width=605 height=283 depth=87 constrain average interpolation=Bicubic");
             else
                 scaled_segmentedVolume = Scale3DImage.scaleImage(segmentedVolume, 287, 560, 110);//run("Size...", "width=287 height=560 depth=110 average interpolation=Bicubic");
 
-            //MaxedNeuron=getTitle();
-
-            int[] span_max = {XYmaxSize, XYmaxSize, ZmaxSize};
-            CenteredRectangleShape neighborhood = new CenteredRectangleShape(span_max, true); // true for including center
+            ArrayList<CenteredRectangleShape> shapes = new ArrayList<CenteredRectangleShape>();
+            int[] span_max_x = {XYmaxSize, 0, 0};
+            CenteredRectangleShape neighborhoodX = new CenteredRectangleShape(span_max_x, true); // true for including center
+            shapes.add(neighborhoodX);
+            int[] span_max_y = {0, XYmaxSize, 0};
+            CenteredRectangleShape neighborhoodY = new CenteredRectangleShape(span_max_y, true); // true for including center
+            shapes.add(neighborhoodY);
+            int[] span_max_z = {0, 0, ZmaxSize};
+            CenteredRectangleShape neighborhoodZ = new CenteredRectangleShape(span_max_z, true); // true for including center
+            shapes.add(neighborhoodZ);
             // Perform the dilation (maximum filter)
-            Img<IntegerType> dilated_segmentedVolume = Dilation.dilate(scaled_segmentedVolume, neighborhood, 1);
+            Img<IntegerType> dilated_segmentedVolume = Dilation.dilate(scaled_segmentedVolume, shapes, 1);
 
             Img<IntegerType> scaled_segmentedVolume2 = null;
-            if (tissue == "brain")
+            if (tissue.equals("brain"))
                 scaled_segmentedVolume2 = Scale3DImage.scaleImage(dilated_segmentedVolume, 1210, 566, 174); //run("Size...", "width=1210 height=566 depth=174 constrain average interpolation=Bicubic");
             else
                 scaled_segmentedVolume2 = Scale3DImage.scaleImage(dilated_segmentedVolume, 572, 1119, 219); //run("Size...", "width=573 height=1119 depth=219 average interpolation=Bicubic");
@@ -157,33 +196,37 @@ public class LM_EM_Segmentation {
 
             if (maxvalue > 2000)
                 segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 2000, 65535);
-            else if (maxvalue == 255)
-                segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 1, 255);
+            else
+                segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 20, 65535);
         }
     }
 
-    public Img<ARGBType> Run(String tarSegmenedVolumePath) {
+    public Img<ARGBType> Run(String tarSegmentedVolumePath) {
         Img<ARGBType> andCDM = null;
         if(segResult != null){
             Img<IntegerType> tarSegmentedVolume = null;
             Img<IntegerType> tarSegmentedVolumeBeforeFlipping = null;
             Img<IntegerType> tarSegResult = null;
-            if(segVolume=="EM"){
-                if(tissue=="brain")
-                    tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmenedVolumePath, 1210, 566, 174, 0.5189161, 0.5189161, 1.0, 20, true);
+            if(segVolume.equals("EM")){
+                if(tissue.equals("brain"))
+                    tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmentedVolumePath, 1210, 566, 174, 0.5189161, 0.5189161, 1.0, 20, true);
                 else
-                    tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmenedVolumePath, 573, 1119, 219, 0.4611220, 0.4611220, 0.7, 20, true);
+                    tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmentedVolumePath, 573, 1119, 219, 0.4611220, 0.4611220, 0.7, 20, true);
                 tarSegResult = ImageThresholding.createBinaryImage( tarSegmentedVolume,4, 200);
             }
-            if(segVolume=="LM"){
-                tarSegmentedVolumeBeforeFlipping = ( Img<IntegerType> ) IO.openImgs(tarSegmenedVolumePath).get(0);
+            if(segVolume.equals("LM")){
+                tarSegmentedVolumeBeforeFlipping = ( Img<IntegerType> ) IO.openImgs(tarSegmentedVolumePath).get(0);
                 tarSegResult = flipHorizontally(tarSegmentedVolumeBeforeFlipping);
             }//if(segVolume=="LM"){
+
+            saveAsTiff(tarSegResult, "/Users/kawaset/cdm_test/tarSegResult.tif");
 
             Img<IntegerType> tarMaskedSegmentedVolume = ImageANDOperation.andOperation(tarSegResult, segResult);
             IntegerType min = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
             IntegerType max = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
             ComputeMinMax.computeMinMax(tarMaskedSegmentedVolume, min, max);
+
+            saveAsTiff(tarMaskedSegmentedVolume, "/Users/kawaset/cdm_test/tarMaskedSegmentedVolume.tif");
 
             int maxvalue = max.getInteger();
             long volumeRight = 0;
@@ -193,11 +236,16 @@ public class LM_EM_Segmentation {
                 volumeRight = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolume);
             }
 
+            saveAsTiff(tarMaskedSegmentedVolume, "/Users/kawaset/cdm_test/ThreeDconnect_component.tif");
+
             Img<IntegerType> tarSegResultFL = tarSegmentedVolumeBeforeFlipping != null ? tarSegmentedVolumeBeforeFlipping : segmentedVolumeBeforeFlipping ;
             Img<IntegerType> tarMaskedSegmentedVolumeFL = ImageANDOperation.andOperation(tarSegResultFL, segResult);
             IntegerType minFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
             IntegerType maxFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
             ComputeMinMax.computeMinMax(tarMaskedSegmentedVolumeFL, minFL, maxFL);
+
+            saveAsTiff(tarSegResultFL, "/Users/kawaset/cdm_test/tarSegResultFL.tif");
+            saveAsTiff(tarMaskedSegmentedVolumeFL, "/Users/kawaset/cdm_test/tarMaskedSegmentedVolumeFL.tif");
 
             int maxvalueFL = maxFL.getInteger();
             long volumeFL = 0;
@@ -207,16 +255,18 @@ public class LM_EM_Segmentation {
                 volumeFL = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolumeFL);
             }
 
+            saveAsTiff(tarMaskedSegmentedVolumeFL, "/Users/kawaset/cdm_test/ThreeDconnect_component2.tif");
+
             if(volumeRight >= volumeFL){
                 if(tarMaskedSegmentedVolume != null){
-                    andCDM = GenerateCDM(tarMaskedSegmentedVolume);
+                    andCDM = GenerateCDM(tarMaskedSegmentedVolume, mask2DPath);
                     //run("Select All");
                     //run("Copy");
                 }
                 //CDMname=hitEM
             }else{
                 if(tarMaskedSegmentedVolumeFL != null) {
-                    andCDM = GenerateCDM(tarMaskedSegmentedVolumeFL);
+                    andCDM = GenerateCDM(tarMaskedSegmentedVolumeFL, mask2DPath);
                     //CDMname=hitEM+"_FL";
                 }
             }
@@ -225,7 +275,7 @@ public class LM_EM_Segmentation {
         return andCDM;
     }
 
-    public <T extends IntegerType< T >> Img<ARGBType> GenerateCDM(Img<T> input){
+    public static <T extends IntegerType< T >> Img<ARGBType> GenerateCDM(Img<T> input, String mask2DPath){
         boolean easyADJ=true;
         String AutoBRVST="Segmentation based no lower value cut";
         int AutoBRV=0;
@@ -238,7 +288,7 @@ public class LM_EM_Segmentation {
         boolean reverse0=false;
         int desiredmean=198;
         String usingLUT="PsychedelicRainBow2";
-        int startMIP=1;
+        int startMIP=0;
         int endMIP=1000;
         boolean expand=false;
         int gammavalue=1;
@@ -286,7 +336,7 @@ public class LM_EM_Segmentation {
         }
 
         int applyV = Math.round(Inimax);
-        ContrastEnhancer.stretchHistogram(zProjectedImage, 0.0, Inimax, -1);
+        ContrastEnhancer.scaleHistogram(zProjectedImage, Inimax, 0, DefMaxValue, 0);
 
         if(easyADJ){
             long sumval=0;
@@ -304,7 +354,7 @@ public class LM_EM_Segmentation {
             long aveval = Math.round((double)sumval/sumnumpx/16);
 
             if(DefMaxValue!=65535){
-                if(Inimax > aveval)
+                if(Inimax > aveval && aveval > 0)
                     applyV = (int)aveval;
             }
         }//if(easyADJ==true){
@@ -388,7 +438,7 @@ public class LM_EM_Segmentation {
 
         /// foreground 0 value measurement;
         int lowerweight = 0;
-        if(AutoBRVST=="Segmentation based no lower value cut")
+        if(AutoBRVST.equals("Segmentation based no lower value cut"))
             lowerweight = 0;
 
         //mask2Dext=File.exists(MaskDir+MaskName2D);
@@ -397,14 +447,14 @@ public class LM_EM_Segmentation {
         long zeronumberpxPre = 0;
 
         Img<IntegerType> mask2D = null;
-        if(AutoBRVST!="Segmentation based no lower value cut"){
+        if(!AutoBRVST.equals("Segmentation based no lower value cut")){
             if(mask2Dext){
                 mask2D = ( Img<IntegerType> ) IO.openImgs(mask2DPath).get(0);
                 //open(MaskDir+MaskName2D);
                 zeronumberpxPre = VoxelCounter.countZeroVoxels(zProjectedImage, mask2D);
             }
 
-            if (MaskName2D==""){
+            if (MaskName2D.isEmpty()){
                 fillWithZeroUsingCursor(zProjectedImage, (int)Math.round(width*0.1), (int)Math.round(height*0.1), (int)Math.round(width*0.7), (int)Math.round(height*0.7));
             }
 
@@ -431,7 +481,7 @@ public class LM_EM_Segmentation {
                 ContrastEnhancer.stretchHistogram(input, 0.0, applyV, 0);
             }
 
-            if(AutoBRVST=="Segmentation based no lower value cut")
+            if(AutoBRVST.equals("Segmentation based no lower value cut"))
                 Inimin=0;
 
             if(AutoBRV==1){
@@ -487,7 +537,7 @@ public class LM_EM_Segmentation {
         return cdm;
     }
 
-    public <T extends IntegerType< T >> Img<ARGBType> ColorCoder(
+    public static <T extends IntegerType< T >> Img<ARGBType> ColorCoder(
             Img<T> stack,
             int slicesOri,
             int applyV,
@@ -516,18 +566,21 @@ public class LM_EM_Segmentation {
         int height = (int)stack.dimension(1);
         int slices = (int)stack.dimension(2);
 
+        if (startMIP < 0) startMIP = 0;
+        if (endMIP > slices || endMIP < 0) endMIP = slices;
+
         //rename("Original_Stack.tif"); Original_Stack -> stack
 
         int[] lut_table = new int[slices];
 
-        for(int xxx = 0; xxx < slices; xxx++){
-            double per = xxx / slices;
-            double colv = 255*per;
+        for(int s = 0; s < slices; s++){
+            double per = (double)s / slices;
+            double colv = 255.0 * per;
             int val = (int)Math.round(colv);
-            lut_table[xxx] = val;
+            lut_table[s] = val;
         }
 
-        ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>();
+        ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>(new ARGBType());
         Img<ARGBType> cdm = factory.create(width, height);
 
         // Iterate over the 2D projection image
@@ -542,9 +595,7 @@ public class LM_EM_Segmentation {
             cdmCursor.get().set(0xFF000000);
 
             // Find the maximum intensity along the Z-axis for this x,y position
-            int maxIntensity = 0;
-            int argminZ = 0;
-            for (int z = startMIP - 1; z < endMIP - 1; z++) {
+            for (int z = startMIP; z < endMIP; z++) {
                 int RG1=0; int BG1=0; int GR1=0; int GB1=0; int RB1=0; int BR1=0;
                 int RG2=0; int BG2=0; int GR2=0; int GB2=0; int RB2=0; int BR2=0;
                 int max1=0;
@@ -557,13 +608,13 @@ public class LM_EM_Segmentation {
                 randomAccess.setPosition(z, 2);
                 int val = randomAccess.get().getInteger();
                 if (val > 0) {
-                    int lut_r = lut[lut_table[argminZ]*3];
-                    int lut_g = lut[lut_table[argminZ]*3 + 1];
-                    int lut_b = lut[lut_table[argminZ]*3 + 2];
+                    int lut_r = lut[lut_table[z]*3];
+                    int lut_g = lut[lut_table[z]*3 + 1];
+                    int lut_b = lut[lut_table[z]*3 + 2];
 
-                    int red1   = (int)(val/255.0*(double)lut_r);
-                    int green1 = (int)(val/255.0*(double)lut_g);
-                    int blue1  = (int)(val/255.0*(double)lut_b);
+                    int red1   = (int)((double)val/255.0*(double)lut_r);
+                    int green1 = (int)((double)val/255.0*(double)lut_g);
+                    int blue1  = (int)((double)val/255.0*(double)lut_b);
 
                     if(red1>blue1 && red1>green1){//RB1 & RG1
                         max1=red1;
@@ -758,11 +809,11 @@ public class LM_EM_Segmentation {
         return cdm;
     }
 
-    public void cdmMax(ARGBType pix, int red1, int red2, int green1, int green2, int blue1, int blue2, String MIPtwoST2){
+    public static void cdmMax(ARGBType pix, int red1, int red2, int green1, int green2, int blue1, int blue2, String MIPtwoST2){
 
         int rgb1 = 0;
 
-        if(MIPtwoST2=="RB2"){
+        if(MIPtwoST2.equals("RB2")){
 
             rgb1 = red2;
 
@@ -778,7 +829,7 @@ public class LM_EM_Segmentation {
             rgb1 = (rgb1 << 8) + blue2;
             pix.set(0xFF000000 | rgb1);
 
-        }else if(MIPtwoST2=="RG2"){
+        }else if(MIPtwoST2.equals("RG2")){
 
             rgb1 = red2;
             rgb1 = (rgb1 << 8) + green2;
@@ -793,7 +844,7 @@ public class LM_EM_Segmentation {
             }
             pix.set(0xFF000000 | rgb1);
 
-        }else if(MIPtwoST2=="GB2"){
+        }else if(MIPtwoST2.equals("GB2")){
 
             if(red2>red1)
                 rgb1 = red2;
@@ -809,7 +860,7 @@ public class LM_EM_Segmentation {
 
             pix.set(0xFF000000 | rgb1);
 
-        }else if(MIPtwoST2=="GR2"){
+        }else if(MIPtwoST2.equals("GR2")){
 
             rgb1 = red2;
             rgb1 = (rgb1 << 8) + green2;
@@ -825,7 +876,7 @@ public class LM_EM_Segmentation {
 
             pix.set(0xFF000000 | rgb1);
 
-        }else if(MIPtwoST2=="BR2"){
+        }else if(MIPtwoST2.equals("BR2")){
 
             rgb1 = red2;
 
@@ -842,7 +893,7 @@ public class LM_EM_Segmentation {
 
             pix.set(0xFF000000 | rgb1);
 
-        }else if(MIPtwoST2=="BG2"){
+        }else if(MIPtwoST2.equals("BG2")){
 
             if(red2>red1)
                 rgb1 = red2;

@@ -218,7 +218,7 @@ public class SWCDraw {
             ex.printStackTrace();
         }
 
-        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>();
+        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
         Img<UnsignedShortType> imp = factory.create(w, h, d);
 
         for (int i = 0; i < edges.size(); i++) {

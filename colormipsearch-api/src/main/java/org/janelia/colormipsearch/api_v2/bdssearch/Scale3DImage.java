@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api_v2.bdssearch;
 import net.imglib2.Cursor;
 import net.imglib2.RealPoint;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.algorithm.interpolation.randomaccess.BSplineCoefficientsInterpolatorFactory;
 import net.imglib2.algorithm.interpolation.randomaccess.BSplineInterpolatorFactory;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -12,13 +13,16 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 public class Scale3DImage {
     public static < T extends RealType< T > > Img<T> scaleImage(Img<T> img, int width, int height, int depth) {
         // Create a continuous view of the image with bi-cubic interpolation
-        RealRandomAccessible<T> interpolated = Views.interpolate(Views.extendBorder(img), new BSplineInterpolatorFactory<>());
+        BSplineCoefficientsInterpolatorFactory factory = new BSplineCoefficientsInterpolatorFactory<>( img, 3, false );
+        RealRandomAccessible<DoubleType> realImg = Views.interpolate( img, factory);
 
         // Calculate the dimensions of the scaled image
         long[] newDimensions = new long[3];
@@ -44,7 +48,9 @@ public class Scale3DImage {
                 samplePoint[d] = samplePoint[d] / scaleFactor[d];
             }
             // Sample the continuous view at the calculated position
-            scaledCursor.get().setReal(interpolated.realRandomAccess().setPositionAndGet(samplePoint[0], samplePoint[1], samplePoint[2]).getRealDouble());
+            double val = realImg.getAt(samplePoint[0], samplePoint[1], samplePoint[2]).getRealDouble();
+            if (val < 0.0) val = 0.0;
+            scaledCursor.get().setReal(val);
         };
 
         return scaledImg;

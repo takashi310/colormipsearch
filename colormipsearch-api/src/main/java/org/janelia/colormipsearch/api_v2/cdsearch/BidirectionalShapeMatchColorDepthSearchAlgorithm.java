@@ -62,9 +62,11 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
     private final boolean mirrorQuery;
     private final ImageTransformation clearLabels;
     private final ImageProcessing negativeRadiusDilation;
-    private final QuadFunction<Integer, Integer, Integer, Integer, Integer> gapOp;
+    public final QuadFunction<Integer, Integer, Integer, Integer, Integer> gapOp;
 
     private final LM_EM_Segmentation segmentator;
+
+    private String tarSegmentedVolumePath;
 
     BidirectionalShapeMatchColorDepthSearchAlgorithm(LImage queryImage,
                                                      int queryThreshold,
@@ -151,7 +153,7 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         });
     }
 
-    private static <T extends Type< T >>  ImageArray<?> convertImgLib2ImgToImageArray(Img<T> img) {
+    public static <T extends Type< T >>  ImageArray<?> convertImgLib2ImgToImageArray(Img<T> img) {
         int width = (int) img.dimension(0);
         int height = (int) img.dimension(1);
         int numPixels = width * height;
@@ -191,14 +193,14 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         }
     }
 
-    private static Img<?> convertImageArrayToImgLib2Img(ImageArray<?> img) {
+    public static Img<?> convertImageArrayToImgLib2Img(ImageArray<?> img) {
         int width = img.getWidth();
         int height = img.getHeight();
         int numPixels = width * height;
 
         if (img instanceof ByteImageArray) {
             byte[] array = ((ByteImageArray) img).getPixels();
-            ArrayImgFactory<ByteType> factory = new ArrayImgFactory<>();
+            ArrayImgFactory<ByteType> factory = new ArrayImgFactory<>(new ByteType());
             Img<ByteType> imp = factory.create(width, height);
             Cursor<ByteType> cursor = imp.cursor();
             int i = 0;
@@ -208,7 +210,7 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
             return imp;
         } else if (img instanceof ShortImageArray) {
             short[] array = ((ShortImageArray) img).getPixels();
-            ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>();
+            ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
             Img<UnsignedShortType> imp = factory.create(width, height);
             Cursor<UnsignedShortType> cursor = imp.cursor();
             int i = 0;
@@ -218,12 +220,12 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
             return imp;
         } else if (img instanceof ColorImageArray) {
             byte[] array = ((ColorImageArray) img).getPixels();
-            ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>();
+            ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>(new ARGBType());
             Img<ARGBType> imp = factory.create(width, height);
             Cursor<ARGBType> cursor = imp.cursor();
             int i = 0;
             while (cursor.hasNext()) {
-                int argb = 0xFF000000 & (array[3*i] << 16) & (array[3*i+1] << 8) & array[3*i+2];
+                int argb = 0xFF000000 & ((int)array[3*i] << 16) & ((int)array[3*i+1] << 8) & (int)array[3*i+2];
                 cursor.next().set(argb);
                 i++;
             }
@@ -233,16 +235,20 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         }
     }
 
+    public void setTargetSegmentedVolumePath(String path) {
+        tarSegmentedVolumePath = path;
+    }
+
+    public Img<IntegerType> getSegmentedQueryVolumeImage() {
+        return segmentator.getSegmentedQueryImage();
+    }
+
     @Override
     public Set<String> getRequiredTargetVariantTypes() {
         return REQUIRED_VARIANT_TYPES;
     }
 
     /**
-     * Calculate area gap between the encapsulated mask and the given image with the corresponding image gradients and zgaps.
-     * The gradient image must be non-null but the z-gap image can be null in which case it is calculated using
-     * a dilation transformation.
-     *
      * @param targetImageArray
      * @param variantTypeSuppliers
      * @return
@@ -250,37 +256,6 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
     @Override
     public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
                                                                Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
-        //ImagePlus impEMstack = WindowManager.getImage(wList[MaskE]); //EM mask
-        //ImagePlus impLMsegstack = WindowManager.getImage(wList[LMsegStack]); //Segmented CDM
-        //ImagePlus impOriginalCDM = WindowManager.getImage(wList[OriginalCDM]); //CDM before Segmentation (not necessary)
-
-        //if(CDMrun == true) EM->SegLM CDMSearch --> CDMResult
-        //else CDMResult = impLMsegstack
-        //CDM_area_measure ( CDMResult(SegmentedCDM), impEMstack, impOriginalCDM )
-        //delete color bars from SegmentedCDM and EMMask.
-
-        //dilate SegmentedCDM with a given radius (negativeradiusEM). -> imp10pxRGB_LM
-        //EMMask_Gradient = GradientConv(EMMask,5); -> impEMgradient
-        //dilate EMMask with a given radius (negativeradiusEM). -> imp10pxRGBEM ???
-        //Line 2126 imp10pxRGB_LM=MaxF(imp10pxRGBEM,Integer.parseInt(negativeradiusEM),1);  ??? imp10pxRGB_LM -> imp10pxRGBEM ???
-        //setsignal1(SegmentedCDM) // set 1 if pixel value > 1 --> originalValue1IP
-        //originalValue1IP * ipEMgradient(impEMgradient) if ipEMgradient > 0 --> originalValue1imp
-        //originalValue1imp = deleteMatchZandCreateZnegativeScoreIMG (originalValue1imp, segmentedCDM, imp10pxRGBEM);
-        //deleteMatchZandCreateZnegativeScoreIMG: if (colorFlux <= pxGapSlice-colorFlux ??) originalValue1imp.set(pxGapSlice-colorFlux); use calc_slicegap_px in GradientAreaGapUtils
-        //EMtoSampleNegativeScore = number of pixels that have larger intensities than 3. (from originalValue1imp) sumPXmeasure
-
-        //Stack2IMP (duplicated segmented CDM) = GradientConv(Stack2IMP,10); -> originalGradientStack
-        //EMMask RGB thresholding if (R <= TH && G <= TH && B <= TH) set 0 -> ipEMslice2
-        //setsignal1(ipEMslice2) // set 1 if pixel value > 1 --> impEMsliceValue1
-        //originalGradientStack(Gradient Map of Segmented LM) * impEMsliceValue1 --> impEMsliceValue1
-        //impEMsliceValue1 = deleteMatchZandCreateZnegativeScoreIMG (impEMsliceValue1, EMMask, imp10pxRGB_LM(10px dilated SegmentedCDM));
-        //SampleToMask = number of pixels that have larger intensities than 3. (from impEMsliceValue1) sumPXmeasure
-        //long score = (SampleToMask + EMtoSampleNegativeScore) / 2;
-
-        long startTime = System.currentTimeMillis();
-
-        String tarSegmentedVolumePath = "/path/to/a/segmented/target/volume/data"; // TODO: tarSegmentedVolumePath must be a parameter
-
         Img<ARGBType> segmentedCDMImg = segmentator.Run(tarSegmentedVolumePath);
         ColorImageArray segmentedCDMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(segmentedCDMImg);
         LImage segmentedCDM = LImageUtils.create(segmentedCDMImageArray);

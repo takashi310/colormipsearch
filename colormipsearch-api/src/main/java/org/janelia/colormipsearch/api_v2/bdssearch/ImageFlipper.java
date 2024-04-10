@@ -31,7 +31,7 @@ public class ImageFlipper {
         while (inputCursor.hasNext()) {
             inputCursor.fwd();
             outputCursor.fwd();
-            outputCursor.get().set(inputCursor.get());
+            outputCursor.get().set(inputCursor.get().copy());
         }
         return outputImg;
     }

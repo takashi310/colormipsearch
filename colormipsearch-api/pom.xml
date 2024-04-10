@@ -64,12 +64,6 @@
             <artifactId>validation-api</artifactId>
         </dependency>
 
-        <!-- ImgLib2 dependency -->
-        <dependency>
-            <groupId>net.imglib2</groupId>
-            <artifactId>imglib2</artifactId>
-            <version>5.9.2</version>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/net.imglib2/imglib2-algorithm -->
         <dependency>
             <groupId>net.imglib2</groupId>
@@ -87,6 +81,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
+            <version>3.32.0</version>
             <scope>test</scope>
         </dependency>
 
