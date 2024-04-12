@@ -22,16 +22,16 @@ public class ImageThresholding {
         Cursor<T> grayscaleCursor = grayscaleImage.cursor();
         Cursor<T> binaryCursor = binaryImage.cursor();
 
-        final T maxval = binaryImage.firstElement().createVariable();
-        maxval.setReal( binaryImage.firstElement().getMaxValue() );
+        final T maxvalT = binaryImage.firstElement().createVariable();
+        maxvalT.setReal( binaryImage.firstElement().getMaxValue() );
+        int maxval = maxvalT.getInteger();
 
         // Iterate over the images and apply thresholding
         while (grayscaleCursor.hasNext() && binaryCursor.hasNext()) {
-            grayscaleCursor.fwd();
-            binaryCursor.fwd();
+            int val = grayscaleCursor.next().getInteger();
 
             // Set the binary pixel based on the threshold
-            binaryCursor.get().setInteger(grayscaleCursor.get().getInteger() >= lowerThreshold && grayscaleCursor.get().getInteger() <= upperThreshold ? maxval.getInteger() : 0);
+            binaryCursor.next().setInteger(val >= lowerThreshold && val <= upperThreshold ? maxval : 0);
         }
 
         return binaryImage;

@@ -5,12 +5,13 @@ import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.list.ListImgFactory;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 
 public class ImageZProjection {
-    public static <T extends RealType<T> > Img<T> maxIntensityProjection(Img<T> image3D, long startZ) {
+    public static <T extends IntegerType<T>> Img<T> maxIntensityProjection(Img<T> image3D, long startZ) {
         // Create a 2D image for the projection (same width and height as the 3D image)
         long width = image3D.dimension(0);
         long height = image3D.dimension(1);
@@ -26,16 +27,16 @@ public class ImageZProjection {
             long y = projectionCursor.getIntPosition(1);
 
             // Find the maximum intensity along the Z-axis for this x,y position
-            double maxIntensity = 0;
+            int maxIntensity = 0;
+            randomAccess.setPosition(x, 0);
+            randomAccess.setPosition(y, 1);
             for (long z = startZ; z < image3D.dimension(2); z++) {
-                randomAccess.setPosition(x, 0);
-                randomAccess.setPosition(y, 1);
                 randomAccess.setPosition(z, 2);
-                maxIntensity = Math.max(maxIntensity, randomAccess.get().getRealDouble());
+                maxIntensity = Math.max(maxIntensity, randomAccess.get().getInteger());
             }
 
             // Set the pixel in the projected image
-            projectionCursor.get().setReal(maxIntensity);
+            projectionCursor.get().setInteger(maxIntensity);
         }
 
         return projection;

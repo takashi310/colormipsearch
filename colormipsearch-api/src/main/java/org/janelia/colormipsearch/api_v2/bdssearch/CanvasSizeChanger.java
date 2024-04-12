@@ -20,7 +20,7 @@ public class CanvasSizeChanger {
         Img<T> newCanvasImage = originalImage.factory().create(newWidth, newHeight);
 
         long[] min = new long[]{xOffset, yOffset}; // Starting coordinates of the rectangle
-        long[] max = new long[]{xOffset+newWidth, yOffset+newHeight}; // Ending coordinates of the rectangle
+        long[] max = new long[]{xOffset+newWidth-1, yOffset+newHeight-1}; // Ending coordinates of the rectangle
 
         // Create a view on the specified interval
         IntervalView<T> srcRegion = Views.interval(originalImage, min, max);

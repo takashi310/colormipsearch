@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api_v2.bdssearch;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -17,78 +18,20 @@ import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
+import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.*;
+
 public class DistanceTransform {
-    private static short argbToGray16(int argb) {
-        if ((argb & 0x00FFFFFF) == 0) {
-            return 0;
-        } else {
-            int r = (argb >> 16) & 0xFF;
-            int g = (argb >> 8) & 0xFF;
-            int b = (argb & 0xFF);
-
-            double rw = 1 / 3.;
-            double gw = 1 / 3.;
-            double bw = 1 / 3.;
-
-            return (short) (r*rw + g*gw + b*bw + 0.5);
-        }
-    }
-
-    private static Img<UnsignedShortType> ConvertARGBToGray16(Img<ARGBType> input) {
-        long w = input.dimension(0);
-        long h = input.dimension(1);
-
-        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
-        Img<UnsignedShortType> result = factory.create(w, h);
-
-        Cursor<ARGBType> srcCursor = input.cursor();
-        Cursor<UnsignedShortType> dstCursor = result.cursor();
-        while (srcCursor.hasNext() && dstCursor.hasNext()) {
-            dstCursor.next().set(argbToGray16(srcCursor.next().get()));
-        }
-        return result;
-    }
-
-    private static Img<FloatType> ConvertGray16ToFloat32(Img<UnsignedShortType> input) {
-        long w = input.dimension(0);
-        long h = input.dimension(1);
-
-        ArrayImgFactory<FloatType> factory = new ArrayImgFactory<>(new FloatType());
-        Img<FloatType> result = factory.create(w, h);
-
-        Cursor<UnsignedShortType> srcCursor = input.cursor();
-        Cursor<FloatType> dstCursor = result.cursor();
-        while (srcCursor.hasNext() && dstCursor.hasNext()) {
-            dstCursor.next().set((float)srcCursor.next().get());
-        }
-        return result;
-    }
-
-    private static Img<UnsignedShortType> ConvertFloat32ToGray16(Img<FloatType> input) {
-        long w = input.dimension(0);
-        long h = input.dimension(1);
-
-        ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
-        Img<UnsignedShortType> result = factory.create(w, h);
-
-        Cursor<FloatType> srcCursor = input.cursor();
-        Cursor<UnsignedShortType> dstCursor = result.cursor();
-        while (srcCursor.hasNext() && dstCursor.hasNext()) {
-            dstCursor.next().set((short)srcCursor.next().get());
-        }
-        return result;
-    }
 
     public static Img<?> GenerateDistanceTransform(Img<ARGBType> input, int radius) {
         final long width = input.dimension(0);
         final long height = input.dimension(1);
 
         Img<UnsignedShortType> input16 = ConvertARGBToGray16(input);
+        Img<UnsignedShortType> temp = input16.factory().create(input16);
+        MaximumFilter.applyX(input16, temp, radius);
+        MaximumFilter.applyY(temp, input16, radius);
+        Img<FloatType> dilatedInput32 = ConvertGray16ToFloat32(input16);
 
-        int[] span_max = {radius, radius};
-        CenteredRectangleShape neighborhood = new CenteredRectangleShape(span_max, true); // true for including center
-        Img<UnsignedShortType> dilatedInput16 = Dilation.dilate(input16, neighborhood, 1);
-        Img<FloatType> dilatedInput32 = ConvertGray16ToFloat32(dilatedInput16);
         Cursor<FloatType> cursor = dilatedInput32.cursor();
         while (cursor.hasNext()) {
             cursor.fwd();
@@ -98,6 +41,24 @@ public class DistanceTransform {
             else
                 cursor.get().set(Float.MAX_VALUE);
         }
+        dt(dilatedInput32);
+        Img<?> distanceMap = ConvertFloat32ToGray16(dilatedInput32);
+
+        return distanceMap;
+    }
+
+    public static Img<?> GenerateDistanceTransformWithoutDilation(Img<ARGBType> input) {
+        Img<FloatType> dilatedInput32 = ConvertARGBToFloat32(input);
+        Cursor<FloatType> cursor = dilatedInput32.cursor();
+        while (cursor.hasNext()) {
+            cursor.fwd();
+            float val = cursor.get().get();
+            if (val > 1)
+                cursor.get().set(0.0f);
+            else
+                cursor.get().set(Float.MAX_VALUE);
+        }
+
         dt(dilatedInput32);
         Img<?> distanceMap = ConvertFloat32ToGray16(dilatedInput32);
 
@@ -118,8 +79,10 @@ public class DistanceTransform {
 
         // transform along columns
         for (int x = 0; x < width; x++) {
+            ra.setPosition(x, 0);
             for (int y = 0; y < height; y++) {
-                f[y] = ra.setPositionAndGet(x, y).get();
+                ra.setPosition(y, 1);
+                f[y] = ra.get().get();
             }
 
             int k = 0;
@@ -145,14 +108,17 @@ public class DistanceTransform {
                 d[q] = (q-v[k])*(q-v[k]) + f[v[k]];
             }
             for (int y = 0; y < height; y++) {
-                ra.setPositionAndGet(x, y).set(d[y]);
+                ra.setPosition(y, 1);
+                ra.get().set(d[y]);
             }
         }
 
         // transform along rows
         for (int y = 0; y < height; y++) {
+            ra.setPosition(y, 1);
             for (int x = 0; x < width; x++) {
-                f[x] = ra.setPositionAndGet(x, y).get();
+                ra.setPosition(x, 0);
+                f[x] = ra.get().get();
             }
 
             int k = 0;
@@ -179,7 +145,8 @@ public class DistanceTransform {
             }
 
             for (int x = 0; x < width; x++) {
-                ra.setPositionAndGet(x, y).set(d[x]);
+                ra.setPosition(x, 0);
+                ra.get().set(d[x]);
             }
         }
 

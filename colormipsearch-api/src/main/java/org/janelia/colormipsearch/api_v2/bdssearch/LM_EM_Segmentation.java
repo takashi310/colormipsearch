@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import io.scif.SCIFIO;
 import io.scif.config.SCIFIOConfig;
+import io.scif.img.ImgOpener;
 import io.scif.img.ImgSaver;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
@@ -26,6 +27,8 @@ import net.imglib2.view.Views;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 import net.imglib2.algorithm.stats.Max;
 import org.janelia.colormipsearch.imageprocessing.ColorImageArray;
+import org.janelia.colormipsearch.mips.NeuronMIPUtils;
+import org.janelia.colormipsearch.model.FileData;
 
 import static org.janelia.colormipsearch.api_v2.bdssearch.ImageFlipper.flipHorizontally;
 import static org.janelia.colormipsearch.api_v2.bdssearch.ImageZProjection.maxIntensityProjection;
@@ -126,6 +129,10 @@ public class LM_EM_Segmentation {
             fileext="nrrd";
         }
         else if(segVolume.equals("LM")) { // EM to LM search
+
+            long start, end;
+            start = System.currentTimeMillis();
+
             Img<IntegerType> segmentedVolume = null;
             if (fileext.equals("swc")) {
                 if (tissue == "brain")
@@ -133,11 +140,16 @@ public class LM_EM_Segmentation {
                     segmentedVolume = (Img<IntegerType>) SWCDraw.draw(segmentedVolumePath, 605, 283, 87, 1.0378322, 1.0378322, 2.0, 1, true);
                 else
                     //run("swc draw single 3d", "input="+segmentedLMdir+maskLM_ST+".swc width=573 height=1119 depth=219 voxel_w=0.4611220 voxel_h=0.4611220 voxel_d=0.7 radius=1 ignore");
-                    segmentedVolume = (Img<IntegerType>) SWCDraw.draw(segmentedVolumePath, 573, 1119, 219, 0.4611220, 0.4611220, 0.7, 1, true);
+                    segmentedVolume = (Img<IntegerType>) SWCDraw.draw(segmentedVolumePath, 287, 560, 110, 0.922244, 0.922244, 1.4, 1, true);
             } else {
                 segmentedVolume = (Img<IntegerType>) IO.openImgs(segmentedVolumePath).get(0);
                 //open(segmentedLMdir + maskLM_ST + ".nrrd");
             }
+
+            end = System.currentTimeMillis();
+            System.out.println("segmentedVolume loading time: "+((float)(end-start)/1000)+"sec");
+
+            start = System.currentTimeMillis();
 
             //bitd=bitDepth();
             Img<IntegerType> zProjectedSegVolume = maxIntensityProjection(segmentedVolume, 0);
@@ -146,9 +158,13 @@ public class LM_EM_Segmentation {
             IntegerType max = (IntegerType) zProjectedSegVolume.firstElement().createVariable();
             ComputeMinMax.computeMinMax(zProjectedSegVolume, min, max);
 
+            end = System.currentTimeMillis();
+            System.out.println("Zprojection+ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
+
             //segmentedVolume selectWindow(maskLM_ST+"."+fileext);
 
             if (max.getRealDouble() != 255) {
+                start = System.currentTimeMillis();
                 //setMinAndMax(0, max);
                 //run("Apply LUT", "stack");
                 double newMin = 0.0;
@@ -163,14 +179,19 @@ public class LM_EM_Segmentation {
                     double scaledValue = pixel.getRealDouble() * scale + offset;
                     pixel.setReal(scaledValue);
                 }
+                end = System.currentTimeMillis();
+                System.out.println("Brightness Adjustment time: "+((float)(end-start)/1000)+"sec");
             }
 
-            Img<IntegerType> scaled_segmentedVolume = null;
-            if (tissue.equals("brain"))
-                scaled_segmentedVolume = Scale3DImage.scaleImage(segmentedVolume, 605, 283, 87); //run("Size...", "width=605 height=283 depth=87 constrain average interpolation=Bicubic");
-            else
-                scaled_segmentedVolume = Scale3DImage.scaleImage(segmentedVolume, 287, 560, 110);//run("Size...", "width=287 height=560 depth=110 average interpolation=Bicubic");
+            Img<IntegerType> scaledSegmentedVolume = segmentedVolume;
+            //if (tissue.equals("brain"))
+            //    scaled_segmentedVolume = Scale3DImage.scaleImage2(segmentedVolume, 605, 283, 87); //run("Size...", "width=605 height=283 depth=87 constrain average interpolation=Bicubic");
+            //else
+            //    scaled_segmentedVolume = Scale3DImage.scaleImage2(segmentedVolume, 287, 560, 110);//run("Size...", "width=287 height=560 depth=110 average interpolation=Bicubic");
 
+            start = System.currentTimeMillis();
+
+            /*
             ArrayList<CenteredRectangleShape> shapes = new ArrayList<CenteredRectangleShape>();
             int[] span_max_x = {XYmaxSize, 0, 0};
             CenteredRectangleShape neighborhoodX = new CenteredRectangleShape(span_max_x, true); // true for including center
@@ -182,13 +203,29 @@ public class LM_EM_Segmentation {
             CenteredRectangleShape neighborhoodZ = new CenteredRectangleShape(span_max_z, true); // true for including center
             shapes.add(neighborhoodZ);
             // Perform the dilation (maximum filter)
-            Img<IntegerType> dilated_segmentedVolume = Dilation.dilate(scaled_segmentedVolume, shapes, 1);
+            Img<IntegerType> dilated_segmentedVolume = Dilation.dilate(scaledSegmentedVolume, shapes, 1);
+            */
+            Img<IntegerType> temp_scaledSegmentedVolume = scaledSegmentedVolume.factory().create(scaledSegmentedVolume);
+            MaximumFilter.applyX(scaledSegmentedVolume, temp_scaledSegmentedVolume, XYmaxSize);
+            MaximumFilter.applyY(temp_scaledSegmentedVolume, scaledSegmentedVolume, XYmaxSize);
+            MaximumFilter.applyZ(scaledSegmentedVolume, temp_scaledSegmentedVolume, ZmaxSize);
+            Img<IntegerType> dilated_segmentedVolume = temp_scaledSegmentedVolume;
+
+            end = System.currentTimeMillis();
+            System.out.println("Dilation time: "+((float)(end-start)/1000)+"sec");
+
+            start = System.currentTimeMillis();
 
             Img<IntegerType> scaled_segmentedVolume2 = null;
             if (tissue.equals("brain"))
-                scaled_segmentedVolume2 = Scale3DImage.scaleImage(dilated_segmentedVolume, 1210, 566, 174); //run("Size...", "width=1210 height=566 depth=174 constrain average interpolation=Bicubic");
+                scaled_segmentedVolume2 = Scale3DImage.scaleImage3(dilated_segmentedVolume, 1210, 566, 174); //run("Size...", "width=1210 height=566 depth=174 constrain average interpolation=Bicubic");
             else
-                scaled_segmentedVolume2 = Scale3DImage.scaleImage(dilated_segmentedVolume, 572, 1119, 219); //run("Size...", "width=573 height=1119 depth=219 average interpolation=Bicubic");
+                scaled_segmentedVolume2 = Scale3DImage.scaleImage3(dilated_segmentedVolume, 573, 1119, 219); //run("Size...", "width=573 height=1119 depth=219 average interpolation=Bicubic");
+
+            end = System.currentTimeMillis();
+            System.out.println("Scaling time: "+((float)(end-start)/1000)+"sec");
+
+            start = System.currentTimeMillis();
 
             //run("Max value");
             Cursor<IntegerType> maxCur = Max.findMax(scaled_segmentedVolume2);
@@ -197,13 +234,23 @@ public class LM_EM_Segmentation {
             if (maxvalue > 2000)
                 segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 2000, 65535);
             else
-                segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 20, 65535);
+                segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 1, 65535);
+
+            end = System.currentTimeMillis();
+            System.out.println("Binary Image Conversion time: "+((float)(end-start)/1000)+"sec");
         }
     }
 
     public Img<ARGBType> Run(String tarSegmentedVolumePath) {
+        long start, end;
+        start = System.currentTimeMillis();
+
+        long start2, end2;
+
         Img<ARGBType> andCDM = null;
         if(segResult != null){
+            start2 = System.currentTimeMillis();
+
             Img<IntegerType> tarSegmentedVolume = null;
             Img<IntegerType> tarSegmentedVolumeBeforeFlipping = null;
             Img<IntegerType> tarSegResult = null;
@@ -212,12 +259,16 @@ public class LM_EM_Segmentation {
                     tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmentedVolumePath, 1210, 566, 174, 0.5189161, 0.5189161, 1.0, 20, true);
                 else
                     tarSegmentedVolume = (Img<IntegerType>) SWCDraw.draw(tarSegmentedVolumePath, 573, 1119, 219, 0.4611220, 0.4611220, 0.7, 20, true);
-                tarSegResult = ImageThresholding.createBinaryImage( tarSegmentedVolume,4, 200);
+                tarSegResult = ImageThresholding.createBinaryImage( tarSegmentedVolume,4, 255);
             }
             if(segVolume.equals("LM")){
                 tarSegmentedVolumeBeforeFlipping = ( Img<IntegerType> ) IO.openImgs(tarSegmentedVolumePath).get(0);
+                //tarSegmentedVolumeBeforeFlipping = ( Img<IntegerType> ) ImgUtils.loadImageFromFileData(FileData.fromString(tarSegmentedVolumePath));
                 tarSegResult = flipHorizontally(tarSegmentedVolumeBeforeFlipping);
             }//if(segVolume=="LM"){
+
+            end2 = System.currentTimeMillis();
+            System.out.println("Loading tarSegmentedVolume time: "+((float)(end2-start2)/1000)+"sec");
 
             Img<IntegerType> tarMaskedSegmentedVolume = ImageANDOperation.andOperation(tarSegResult, segResult);
             IntegerType min = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
@@ -227,12 +278,21 @@ public class LM_EM_Segmentation {
             int maxvalue = max.getInteger();
             long volumeRight = 0;
 
+            System.out.println("max: "+ maxvalue);
+
             if(maxvalue > 25){
+                start2 = System.currentTimeMillis();
+
                 tarMaskedSegmentedVolume = ThreeDconnect_component(tarMaskedSegmentedVolume);
                 volumeRight = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolume);
+
+                System.out.println("volumeRight: "+ volumeRight);
+
+                end2 = System.currentTimeMillis();
+                System.out.println("Connecting Component time: "+((float)(end2-start2)/1000)+"sec");
             }
 
-            Img<IntegerType> tarSegResultFL = tarSegmentedVolumeBeforeFlipping != null ? tarSegmentedVolumeBeforeFlipping : segmentedVolumeBeforeFlipping ;
+            Img<IntegerType> tarSegResultFL = tarSegmentedVolumeBeforeFlipping != null ? tarSegmentedVolumeBeforeFlipping : segmentedVolumeBeforeFlipping;
             Img<IntegerType> tarMaskedSegmentedVolumeFL = ImageANDOperation.andOperation(tarSegResultFL, segResult);
             IntegerType minFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
             IntegerType maxFL = (IntegerType) tarMaskedSegmentedVolumeFL.firstElement().createVariable();
@@ -242,9 +302,18 @@ public class LM_EM_Segmentation {
             long volumeFL = 0;
 
             if(maxvalueFL > 25 ){
+                start2 = System.currentTimeMillis();
+
                 tarMaskedSegmentedVolumeFL = ThreeDconnect_component(tarMaskedSegmentedVolumeFL);
                 volumeFL = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolumeFL);
+
+                System.out.println("volumeFL: "+ volumeFL);
+
+                end2 = System.currentTimeMillis();
+                System.out.println("Connecting Component Flipped time: "+((float)(end2-start2)/1000)+"sec");
             }
+
+            start2 = System.currentTimeMillis();
 
             if(volumeRight >= volumeFL){
                 if(tarMaskedSegmentedVolume != null){
@@ -259,7 +328,13 @@ public class LM_EM_Segmentation {
                     //CDMname=hitEM+"_FL";
                 }
             }
+
+            end2 = System.currentTimeMillis();
+            System.out.println("GenerateCDM time: "+((float)(end2-start2)/1000)+"sec");
         }//if(SkipSeg==0){
+
+        end = System.currentTimeMillis();
+        System.out.println("LM EM Segmentation time: "+((float)(end-start)/1000)+"sec");
 
         return andCDM;
     }
@@ -282,12 +357,21 @@ public class LM_EM_Segmentation {
         boolean expand=false;
         int gammavalue=1;
 
+        long start, end;
+
+        start = System.currentTimeMillis();
+
         Img<T> zProjectedImage = ImageZProjection.maxIntensityProjection(input, 0);
         T minT = zProjectedImage.firstElement().createVariable();
         T maxT = zProjectedImage.firstElement().createVariable();
         ComputeMinMax.computeMinMax(zProjectedImage, minT, maxT);
         int max = maxT.getInteger();
         int Inimin = minT.getInteger();
+
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
 
         int DefMaxValue = 65535;
         if(max>255 && max<4096)
@@ -324,10 +408,19 @@ public class LM_EM_Segmentation {
                 Inimax=(int)Math.round(Inimax*1.1);
         }
 
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM ComputeMinMax 2 time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
+
         int applyV = Math.round(Inimax);
-        ContrastEnhancer.scaleHistogram(zProjectedImage, Inimax, 0, DefMaxValue, 0);
+        ContrastEnhancer.scaleHistogramRight(zProjectedImage, Inimax, DefMaxValue);
+
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM scaleHistogram time: "+((float)(end-start)/1000)+"sec");
 
         if(easyADJ){
+            start = System.currentTimeMillis();
             long sumval=0;
             long sumnumpx=0;
             Cursor<T> cursor = zProjectedImage.cursor();
@@ -346,6 +439,8 @@ public class LM_EM_Segmentation {
                 if(Inimax > aveval && aveval > 0)
                     applyV = (int)aveval;
             }
+            end = System.currentTimeMillis();
+            System.out.println("GenerateCDM easyADJ time: "+((float)(end-start)/1000)+"sec");
         }//if(easyADJ==true){
 
         int width = (int)input.dimension(0);
@@ -438,14 +533,19 @@ public class LM_EM_Segmentation {
         Img<IntegerType> mask2D = null;
         if(!AutoBRVST.equals("Segmentation based no lower value cut")){
             if(mask2Dext){
+                start = System.currentTimeMillis();
                 mask2D = ( Img<IntegerType> ) IO.openImgs(mask2DPath).get(0);
                 //open(MaskDir+MaskName2D);
                 zeronumberpxPre = VoxelCounter.countZeroVoxels(zProjectedImage, mask2D);
+                end = System.currentTimeMillis();
+                System.out.println("GenerateCDM Load Mask2D time: "+((float)(end-start)/1000)+"sec");
             }
 
             if (MaskName2D.isEmpty()){
                 fillWithZeroUsingCursor(zProjectedImage, (int)Math.round(width*0.1), (int)Math.round(height*0.1), (int)Math.round(width*0.7), (int)Math.round(height*0.7));
             }
+
+            start = System.currentTimeMillis();
 
             /// background measurement, other than tissue
             long total = 0;
@@ -461,20 +561,26 @@ public class LM_EM_Segmentation {
 
             //		zerovalue=counts[0];
             Inimin = (int)Math.round(((double)total/((height*width)-zerovalue))*0.8);//239907 is female VNC size
+
+            end = System.currentTimeMillis();
+            System.out.println("GenerateCDM background measurement time: "+((float)(end-start)/1000)+"sec");
         }
+
+        start = System.currentTimeMillis();
 
         if(Inimin!=0 || Inimax!=65535){
             //selectWindow(stackSt);
 
             if(easyADJ==true || AutoBRV==1){
-                ContrastEnhancer.stretchHistogram(input, 0.0, applyV, 0);
+                //ContrastEnhancer.stretchHistogram(input, 0.0, applyV, 0);
+                ContrastEnhancer.scaleHistogramRight(input, applyV, DefMaxValue);
             }
 
             if(AutoBRVST.equals("Segmentation based no lower value cut"))
                 Inimin=0;
 
             if(AutoBRV==1){
-                ContrastEnhancer.stretchHistogram(input, 0.0, 65535, Inimin);
+                //ContrastEnhancer.stretchHistogram(input, 0.0, 65535, Inimin);
                 //setMinAndMax(Inimin, 65535);
                 //run("Apply LUT", "stack");
 
@@ -497,33 +603,72 @@ public class LM_EM_Segmentation {
             }
         }
 
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM brightness adjustment time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
+
         Img<T> zProjectedAdjustedInput = ImageZProjection.maxIntensityProjection(input, 15);
+
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM maxIntensityProjection time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
+
         long newWidth = Math.round(width*0.95);
         long newHeight = Math.round(height*0.95);
         long ox = Math.round((width - newWidth) * 0.5);
         long oy = Math.round((height - newHeight) * 0.5);
         CanvasSizeChanger.changeCanvasSize(zProjectedAdjustedInput, ox, oy, newWidth, newHeight);
 
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM changeCanvasSize time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
+
         T minAdjustedT = zProjectedAdjustedInput.firstElement().createVariable();
         T maxAdjustedT = zProjectedAdjustedInput.firstElement().createVariable();
         ComputeMinMax.computeMinMax(zProjectedAdjustedInput, minAdjustedT, maxAdjustedT);
         int maxAdjusted = maxAdjustedT.getInteger();
+
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM ComputeMinMax final time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
 
         if(AutoBRV==0){
             if(easyADJ==false)
                 applyV = 255;
             if(input.firstElement() instanceof UnsignedShortType){
                 if(easyADJ==false)
-                    ContrastEnhancer.scaleHistogram(input, DefMaxValue, 0, 255, 0);
+                    ContrastEnhancer.scaleHistogramRight(input, DefMaxValue, 255);
                 else
-                    ContrastEnhancer.scaleHistogram(input, maxAdjusted, 0, 255, 0);
+                    ContrastEnhancer.scaleHistogramRight(input, maxAdjusted, 255);
             }
         }//if(AutoBRV==0){
 
+        end = System.currentTimeMillis();
+        System.out.println("GenerateCDM final adjustment time: "+((float)(end-start)/1000)+"sec");
+
+
+        start = System.currentTimeMillis();
 
         Img<ARGBType> cdm = ColorCoder(input, slices, applyV, AutoBRV, CLAHE, colorscale, reverse0, colorcoding, usingLUT, DefMaxValue, startMIP, endMIP, expand, gammavalue, easyADJ);
 
+        end = System.currentTimeMillis();
+        System.out.println("ColorCoder time: "+((float)(end-start)/1000)+"sec");
+
         return cdm;
+    }
+
+    enum MIPTWO {
+        NONE,
+        RB2,
+        RG2,
+        GB2,
+        GR2,
+        BR2,
+        BG2
     }
 
     public static <T extends IntegerType< T >> Img<ARGBType> ColorCoder(
@@ -583,6 +728,9 @@ public class LM_EM_Segmentation {
 
             cdmCursor.get().set(0xFF000000);
 
+            randomAccess.setPosition(x, 0);
+            randomAccess.setPosition(y, 1);
+
             // Find the maximum intensity along the Z-axis for this x,y position
             for (int z = startMIP; z < endMIP; z++) {
                 int RG1=0; int BG1=0; int GR1=0; int GB1=0; int RB1=0; int BR1=0;
@@ -590,10 +738,8 @@ public class LM_EM_Segmentation {
                 int max1=0;
                 int max2=0;
                 int MIPtwo=0;
-                String MIPtwoST="";
+                MIPTWO MIPtwoST = MIPTWO.NONE;
 
-                randomAccess.setPosition(x, 0);
-                randomAccess.setPosition(y, 1);
                 randomAccess.setPosition(z, 2);
                 int val = randomAccess.get().getInteger();
                 if (val > 0) {
@@ -637,33 +783,33 @@ public class LM_EM_Segmentation {
                             if(blue2>green2){//1
                                 RB2=red2+blue2;
                                 MIPtwo=RB2;
-                                MIPtwoST="RB2";
+                                MIPtwoST=MIPTWO.RB2;
                             }else{//2
                                 RG2=red2+green2;
                                 MIPtwo=RG2;
-                                MIPtwoST="RG2";
+                                MIPtwoST=MIPTWO.RG2;
                             }
                         }else if(green2>blue2 && green2>red2){
                             max2=green2;
                             if(blue2>red2){//3
                                 GB2=green2+blue2;
                                 MIPtwo=GB2;
-                                MIPtwoST="GB2";
+                                MIPtwoST=MIPTWO.GB2;
                             }else{//4
                                 GR2=green2+red2;
                                 MIPtwo=GR2;
-                                MIPtwoST="GR2";
+                                MIPtwoST=MIPTWO.GR2;
                             }
                         }else if(blue2>red2 && blue2>green2){
                             max2=blue2;
                             if(red2>green2){//5
                                 BR2=blue2+red2;
                                 MIPtwo=BR2;
-                                MIPtwoST="BR2";
+                                MIPtwoST=MIPTWO.BR2;
                             }else{//6
                                 BG2=blue2+green2;
                                 MIPtwo=BG2;
-                                MIPtwoST="BG2";
+                                MIPtwoST=MIPTWO.BG2;
                             }
                         }//if(red2>=blue2 && red2>=green2){
 
@@ -798,105 +944,101 @@ public class LM_EM_Segmentation {
         return cdm;
     }
 
-    public static void cdmMax(ARGBType pix, int red1, int red2, int green1, int green2, int blue1, int blue2, String MIPtwoST2){
+    public static void cdmMax(ARGBType pix, int red1, int red2, int green1, int green2, int blue1, int blue2, MIPTWO MIPtwoST2){
 
         int rgb1 = 0;
 
-        if(MIPtwoST2.equals("RB2")){
-
-            rgb1 = red2;
-
-            if(green2>green1)
-                rgb1 = (rgb1 << 8) + green2;
-            else{//green2<green1
-                if(green1<blue2)
-                    rgb1 = (rgb1 << 8) + green1;
-                else//(green1>=blue2)
-                    rgb1 = (rgb1 << 8) + green2;
-            }
-
-            rgb1 = (rgb1 << 8) + blue2;
-            pix.set(0xFF000000 | rgb1);
-
-        }else if(MIPtwoST2.equals("RG2")){
-
-            rgb1 = red2;
-            rgb1 = (rgb1 << 8) + green2;
-
-            if(blue2>blue1)
-                rgb1 = (rgb1 << 8) + blue2;
-            else{//blue2<blue1
-                if(blue1<green2)
-                    rgb1 = (rgb1 << 8) + blue1;
-                else//(blue1>=green2)
-                    rgb1 = (rgb1 << 8) + blue2;
-            }
-            pix.set(0xFF000000 | rgb1);
-
-        }else if(MIPtwoST2.equals("GB2")){
-
-            if(red2>red1)
+        switch(MIPtwoST2) {
+            case RB2:
                 rgb1 = red2;
-            else{//red2<red1
-                if(red1<blue2)
-                    rgb1 = red1;
-                else//(red1>=blue2){
-                    rgb1 = red2;
-            }
 
-            rgb1 = (rgb1 << 8) + green2;
-            rgb1 = (rgb1 << 8) + blue2;
-
-            pix.set(0xFF000000 | rgb1);
-
-        }else if(MIPtwoST2.equals("GR2")){
-
-            rgb1 = red2;
-            rgb1 = (rgb1 << 8) + green2;
-
-            if(blue2>blue1)
-                rgb1 = (rgb1 << 8) + blue2;
-            else{//blue2<blue1
-                if(blue1<red2)
-                    rgb1 = (rgb1 << 8) + blue1;
-                else//(blue1>=red2)
-                    rgb1 = (rgb1 << 8) + blue2;
-            }
-
-            pix.set(0xFF000000 | rgb1);
-
-        }else if(MIPtwoST2.equals("BR2")){
-
-            rgb1 = red2;
-
-            if(green2>green1)
-                rgb1 = (rgb1 << 8) + green2;
-            else{//green2<green1
-                if(green1<red2)
-                    rgb1 = (rgb1 << 8) + green1;
-                else//(green1>=red2)
+                if(green2>green1)
                     rgb1 = (rgb1 << 8) + green2;
-            }
+                else{//green2<green1
+                    if(green1<blue2)
+                        rgb1 = (rgb1 << 8) + green1;
+                    else//(green1>=blue2)
+                        rgb1 = (rgb1 << 8) + green2;
+                }
 
-            rgb1 = (rgb1 << 8) + blue2;
-
-            pix.set(0xFF000000 | rgb1);
-
-        }else if(MIPtwoST2.equals("BG2")){
-
-            if(red2>red1)
+                rgb1 = (rgb1 << 8) + blue2;
+                pix.set(0xFF000000 | rgb1);
+                break;
+            case RG2:
                 rgb1 = red2;
-            else{//red2<red1
-                if(red1<green2)
-                    rgb1 = red1;
-                else//(red1>=green2)
+                rgb1 = (rgb1 << 8) + green2;
+
+                if(blue2>blue1)
+                    rgb1 = (rgb1 << 8) + blue2;
+                else{//blue2<blue1
+                    if(blue1<green2)
+                        rgb1 = (rgb1 << 8) + blue1;
+                    else//(blue1>=green2)
+                        rgb1 = (rgb1 << 8) + blue2;
+                }
+                pix.set(0xFF000000 | rgb1);
+                break;
+            case GB2:
+                if(red2>red1)
                     rgb1 = red2;
-            }
+                else{//red2<red1
+                    if(red1<blue2)
+                        rgb1 = red1;
+                    else//(red1>=blue2){
+                        rgb1 = red2;
+                }
 
-            rgb1 = (rgb1 << 8) + green2;
-            rgb1 = (rgb1 << 8) + blue2;
+                rgb1 = (rgb1 << 8) + green2;
+                rgb1 = (rgb1 << 8) + blue2;
 
-            pix.set(0xFF000000 | rgb1);
+                pix.set(0xFF000000 | rgb1);
+                break;
+            case GR2:
+                rgb1 = red2;
+                rgb1 = (rgb1 << 8) + green2;
+
+                if(blue2>blue1)
+                    rgb1 = (rgb1 << 8) + blue2;
+                else{//blue2<blue1
+                    if(blue1<red2)
+                        rgb1 = (rgb1 << 8) + blue1;
+                    else//(blue1>=red2)
+                        rgb1 = (rgb1 << 8) + blue2;
+                }
+
+                pix.set(0xFF000000 | rgb1);
+                break;
+            case BR2:
+                rgb1 = red2;
+
+                if(green2>green1)
+                    rgb1 = (rgb1 << 8) + green2;
+                else{//green2<green1
+                    if(green1<red2)
+                        rgb1 = (rgb1 << 8) + green1;
+                    else//(green1>=red2)
+                        rgb1 = (rgb1 << 8) + green2;
+                }
+
+                rgb1 = (rgb1 << 8) + blue2;
+
+                pix.set(0xFF000000 | rgb1);
+                break;
+            case BG2:
+                if(red2>red1)
+                    rgb1 = red2;
+                else{//red2<red1
+                    if(red1<green2)
+                        rgb1 = red1;
+                    else//(red1>=green2)
+                        rgb1 = red2;
+                }
+
+                rgb1 = (rgb1 << 8) + green2;
+                rgb1 = (rgb1 << 8) + blue2;
+
+                pix.set(0xFF000000 | rgb1);
+                break;
         }
     }
 

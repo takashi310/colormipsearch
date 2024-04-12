@@ -23,7 +23,7 @@ public class ImageArrayUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImageArrayUtils.class);
 
-    private enum ImageFormat {
+    public enum ImageFormat {
         BMP,
         GIF,
         JPG,
@@ -148,7 +148,7 @@ public class ImageArrayUtils {
         }
     }
 
-    private static ImageFormat getImageFormat(String name) {
+    public static ImageFormat getImageFormat(String name) {
         String lowerCaseName = name.toLowerCase();
 
         if (lowerCaseName.endsWith(".bmp")) {
@@ -169,11 +169,11 @@ public class ImageArrayUtils {
         return ImageFormat.UNKNOWN;
     }
 
-    private static ImagePlus readImagePlusWithImageIO(String title, InputStream stream) throws Exception {
+    public static ImagePlus readImagePlusWithImageIO(String title, InputStream stream) throws Exception {
         return new ImagePlus(title, ImageIO.read(stream));
     }
 
-    private static ImagePlus readImagePlusWithTiffReader(String title, InputStream stream) throws Exception {
+    public static ImagePlus readImagePlusWithTiffReader(String title, InputStream stream) throws Exception {
         return new Opener().openTiff(stream, title);
     }
 

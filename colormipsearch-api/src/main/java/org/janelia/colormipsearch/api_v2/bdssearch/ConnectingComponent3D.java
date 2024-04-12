@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static org.janelia.colormipsearch.api_v2.bdssearch.LM_EM_Segmentation.saveAsTiff;
+
 public class ConnectingComponent3D {
 
 
@@ -28,9 +30,9 @@ public class ConnectingComponent3D {
         final int h = imageH+2;
         final int d = imageD+2;
 
-        Img<T> newimg = img.factory().create(img.dimension(0), img.dimension(1), img.dimension(2));
+        Img<T> bboximg = img.factory().create(img.dimension(0), img.dimension(1), img.dimension(2));
         RandomAccess<T> istack = img.randomAccess();
-        RandomAccess<T> ostack = newimg.randomAccess();
+        RandomAccess<T> ostack = bboximg.randomAccess();
 
         int imagesize = w*h*d;
 
@@ -176,20 +178,29 @@ public class ConnectingComponent3D {
         }
 
         final int vt = min_volume;
+        int newsegid = 1;
+        for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            if (entry.getValue() > vt) {
+                entry.setValue(newsegid++);
+            } else
+                entry.setValue(-1);
+        }
 
+        Img<T> finalImg = img.factory().create(img.dimension(0), img.dimension(1), img.dimension(2));
+        RandomAccess<T> fStack = finalImg.randomAccess();
         for (int z = 0; z < boxd; z++) {
             for(int y = 0; y < boxh; y++) {
                 for(int x = 0; x < boxw; x++) {
                     int val = tstack.setPositionAndGet(x+1, y+1, z+1).getInteger();
                     if (map.containsKey(val)) {
                         int num = map.get(val);
-                        ostack.setPositionAndGet(x+fminx,y+fminy,z+fminz).setInteger((num == -1) ? 0 : num);
+                        fStack.setPositionAndGet(x+fminx,y+fminy,z+fminz).setInteger((num == -1) ? 0 : num);
                     }
                 }
             }
         }
 
-        return newimg;
+        return finalImg;
 
     }
 }

@@ -34,8 +34,11 @@ import net.imglib2.RandomAccess;
 
 import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 
+import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveAsTiff;
+import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveImageAsPNG;
+import static org.janelia.colormipsearch.api_v2.bdssearch.MaximumFilter.apply2D_ARGB;
+
 public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore>{
-    private static final Logger LOG = LoggerFactory.getLogger(GradientBasedNegativeScoreColorDepthSearchAlgorithm.class);
     private static final Set<String> REQUIRED_VARIANT_TYPES = new HashSet<String>() {{
         //add("gradient");
     }};
@@ -222,7 +225,7 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
             Cursor<ARGBType> cursor = imp.cursor();
             int i = 0;
             while (cursor.hasNext()) {
-                int argb = 0xFF000000 & ((int)array[3*i] << 16) & ((int)array[3*i+1] << 8) & (int)array[3*i+2];
+                int argb = 0xFF000000 | (((int)array[3*i] << 16) | ((int)array[3*i+1] << 8) | (int)array[3*i+2]);
                 cursor.next().set(argb);
                 i++;
             }
@@ -253,16 +256,29 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
     @Override
     public NegativeColorDepthMatchScore calculateMatchingScore(@Nonnull ImageArray<?> targetImageArray,
                                                                Map<String, Supplier<ImageArray<?>>> variantTypeSuppliers) {
+        long start, end;
+        start = System.currentTimeMillis();
+
+        long start2, end2;
+
         Img<ARGBType> segmentedCDMImg = segmentator.Run(tarSegmentedVolumePath);
         ColorImageArray segmentedCDMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(segmentedCDMImg);
         LImage segmentedCDM = LImageUtils.create(segmentedCDMImageArray);
         LImage segmentedCDMMask1 = segmentedCDM.map(ColorTransformation.rgbToSignal(1));
 
         Img<ARGBType> emMask = (Img<ARGBType>)convertImageArrayToImgLib2Img(queryImage.toImageArray());
+        start2 = System.currentTimeMillis();
         Img<UnsignedShortType> emMaskGradientImg = (Img<UnsignedShortType>)DistanceTransform.GenerateDistanceTransform(emMask, 5);
+        end2 = System.currentTimeMillis();
+        System.out.println("GenerateDistanceTransform time: "+((float)(end2-start2)/1000)+"sec");
         ShortImageArray emMaskGradientImageArray = (ShortImageArray)convertImgLib2ImgToImageArray(emMaskGradientImg);
         LImage emMaskGradient = LImageUtils.create(emMaskGradientImageArray);
-        LImage imp10pxRGBEM = negativeRadiusDilation.applyTo(queryImage.map(ColorTransformation.mask(queryThreshold)));
+        start2 = System.currentTimeMillis();
+        ColorImageArray imp10pxRGBEMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(apply2D_ARGB(emMask, 10, queryThreshold));
+        LImage imp10pxRGBEM = LImageUtils.create(imp10pxRGBEMImageArray);
+        end2 = System.currentTimeMillis();
+        System.out.println("negativeRadiusDilation time: "+((float)(end2-start2)/1000)+"sec");
+        start2 = System.currentTimeMillis();
         LImage gaps = LImageUtils.combine4(
                 segmentedCDMMask1,
                 emMaskGradient,
@@ -270,11 +286,17 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
                 imp10pxRGBEM,
                 gapOp.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
+        end2 = System.currentTimeMillis();
+        System.out.println("combine4 time: "+((float)(end2-start2)/1000)+"sec");
+        start2 = System.currentTimeMillis();
         long EMtoSampleNegativeScore = gaps.fold(0L, Long::sum);
+        end2 = System.currentTimeMillis();
+        System.out.println("fold time: "+((float)(end2-start2)/1000)+"sec");
 
-
-        LImage imp10pxRGBLM = negativeRadiusDilation.applyTo(segmentedCDM.map(ColorTransformation.mask(queryThreshold)));
-        Img<UnsignedShortType> originalGradientImg = (Img<UnsignedShortType>)DistanceTransform.GenerateDistanceTransform(segmentedCDMImg, 10);
+        Img<ARGBType> dilatedsegmentedCDMImg = apply2D_ARGB(segmentedCDMImg, 10, queryThreshold);
+        ColorImageArray imp10pxRGBLMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(dilatedsegmentedCDMImg);
+        LImage imp10pxRGBLM = LImageUtils.create(imp10pxRGBLMImageArray);
+        Img<UnsignedShortType> originalGradientImg = (Img<UnsignedShortType>)DistanceTransform.GenerateDistanceTransformWithoutDilation(dilatedsegmentedCDMImg);
         ShortImageArray originalGradientImageArray = (ShortImageArray)convertImgLib2ImgToImageArray(originalGradientImg);
         LImage originalGradient = LImageUtils.create(originalGradientImageArray);
         LImage queryMask1 = queryImage.map(ColorTransformation.rgbToSignal(queryThreshold));
@@ -288,6 +310,9 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         long SampleToMask = gaps2.fold(0L, Long::sum);
 
         long score = (SampleToMask + EMtoSampleNegativeScore) / 2;
+
+        end = System.currentTimeMillis();
+        System.out.println("calculateMatchingScore time: "+((float)(end-start)/1000)+"sec");
 
         return new NegativeColorDepthMatchScore(score, 0, false);
     }

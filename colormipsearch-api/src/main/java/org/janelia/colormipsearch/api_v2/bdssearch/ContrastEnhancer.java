@@ -18,18 +18,32 @@ public class ContrastEnhancer {
         long upperPixelCount = (long) (totalPixels * (100.0 - saturated * 0.5) / 100.0);
 
         // Collect pixel values
-        ArrayList<Integer> pixelValues = new ArrayList<>();
+        int[] bins = new int[65536];
         Cursor<T> cursor = Views.iterable(image).cursor();
         while (cursor.hasNext()) {
-            pixelValues.add((int) cursor.next().getRealDouble());
+            int val = cursor.next().getInteger();
+            bins[val] = bins[val] + 1;
         }
-        Collections.sort(pixelValues);
 
         // Determine the upper intensity threshold
-        int upperThreshold = pixelValues.get((int) Math.max(0, upperPixelCount - 1));
-
-        int def_minIntensity = pixelValues.get(0);
-        int def_maxIntensity = pixelValues.get(pixelValues.size()-1);
+        int def_minIntensity = -1;
+        int def_maxIntensity = 0;
+        int upperThreshold = 0;
+        int count = 0;
+        for (int i = 0; i < 65535; i++) {
+            int bin = bins[i];
+            count += bin;
+            if (count >= upperPixelCount && upperThreshold == 0) {
+                upperThreshold = i;
+            }
+            if (bin > 0) {
+                if (def_minIntensity == 0)
+                    def_minIntensity = i;
+                def_maxIntensity = i;
+            }
+        }
+        if (def_minIntensity < 0)
+            def_minIntensity = 0;
 
         if (maxIntensity < 0)
             maxIntensity = def_maxIntensity;
@@ -47,27 +61,25 @@ public class ContrastEnhancer {
             if (value >= upperThreshold) {
                 pixel.setInteger(maxIntensity);
             } else {
-                double scaledValue = maxIntensity * (value - minIntensity) / (upperThreshold - minIntensity);
+                double scaledValue = (double)(maxIntensity * (value - minIntensity)) / (double)(upperThreshold - minIntensity);
                 pixel.setInteger((int) scaledValue);
             }
         }
     }
 
-    public static <T extends IntegerType< T >> void scaleHistogram(Img<T> image, int srcMaxIntensity, int srcMinIntensity, int dstMaxIntensity, int dstMinIntensity) {
-
-        // Convert the upper saturation limit to the number of pixels
-        long totalPixels = image.size();
-        Cursor<T> cursor = Views.iterable(image).cursor();
-
-        // Stretch the histogram considering the upper saturation
-        cursor.reset();
+    public static <T extends IntegerType< T >> void scaleHistogramRight(Img<T> image, int srcMaxIntensity, int dstMaxIntensity) {
+        if (srcMaxIntensity == 0)
+            return;
+        Cursor<T> cursor = image.cursor();
         while (cursor.hasNext()) {
             T pixel = cursor.next();
             int value = pixel.getInteger();
-            double scaledValue = (dstMaxIntensity - dstMinIntensity) * (value - srcMinIntensity) / (srcMaxIntensity - srcMinIntensity) + dstMinIntensity;
-            if (scaledValue > dstMaxIntensity)
-                scaledValue = dstMaxIntensity;
-            pixel.setInteger(Math.round(scaledValue));
+            if (value > 0) {
+                double scaledValue = (double)dstMaxIntensity * value / srcMaxIntensity;
+                if (scaledValue > dstMaxIntensity)
+                    scaledValue = dstMaxIntensity;
+                pixel.setInteger(Math.round(scaledValue));
+            }
         }
     }
 }

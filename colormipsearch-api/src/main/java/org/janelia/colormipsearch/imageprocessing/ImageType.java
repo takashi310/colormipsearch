@@ -24,7 +24,7 @@ public enum ImageType {
         this.ipType = ipType;
     }
 
-    static ImageType fromImagePlusType(int ipType) {
+    public static ImageType fromImagePlusType(int ipType) {
         for (ImageType it : ImageType.values()) {
             if (it.ipType == ipType) {
                 return it;
