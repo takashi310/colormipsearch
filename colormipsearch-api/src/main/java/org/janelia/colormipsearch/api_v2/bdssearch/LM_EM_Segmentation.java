@@ -147,7 +147,7 @@ public class LM_EM_Segmentation {
             }
 
             end = System.currentTimeMillis();
-            System.out.println("segmentedVolume loading time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("segmentedVolume loading time: "+((float)(end-start)/1000)+"sec");
 
             start = System.currentTimeMillis();
 
@@ -159,7 +159,7 @@ public class LM_EM_Segmentation {
             ComputeMinMax.computeMinMax(zProjectedSegVolume, min, max);
 
             end = System.currentTimeMillis();
-            System.out.println("Zprojection+ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("Zprojection+ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
 
             //segmentedVolume selectWindow(maskLM_ST+"."+fileext);
 
@@ -180,7 +180,7 @@ public class LM_EM_Segmentation {
                     pixel.setReal(scaledValue);
                 }
                 end = System.currentTimeMillis();
-                System.out.println("Brightness Adjustment time: "+((float)(end-start)/1000)+"sec");
+                //System.out.println("Brightness Adjustment time: "+((float)(end-start)/1000)+"sec");
             }
 
             Img<IntegerType> scaledSegmentedVolume = segmentedVolume;
@@ -212,7 +212,7 @@ public class LM_EM_Segmentation {
             Img<IntegerType> dilated_segmentedVolume = temp_scaledSegmentedVolume;
 
             end = System.currentTimeMillis();
-            System.out.println("Dilation time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("Dilation time: "+((float)(end-start)/1000)+"sec");
 
             start = System.currentTimeMillis();
 
@@ -223,7 +223,7 @@ public class LM_EM_Segmentation {
                 scaled_segmentedVolume2 = Scale3DImage.scaleImage3(dilated_segmentedVolume, 573, 1119, 219); //run("Size...", "width=573 height=1119 depth=219 average interpolation=Bicubic");
 
             end = System.currentTimeMillis();
-            System.out.println("Scaling time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("Scaling time: "+((float)(end-start)/1000)+"sec");
 
             start = System.currentTimeMillis();
 
@@ -237,7 +237,7 @@ public class LM_EM_Segmentation {
                 segResult = ImageThresholding.createBinaryImage(scaled_segmentedVolume2, 1, 65535);
 
             end = System.currentTimeMillis();
-            System.out.println("Binary Image Conversion time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("Binary Image Conversion time: "+((float)(end-start)/1000)+"sec");
         }
     }
 
@@ -268,7 +268,7 @@ public class LM_EM_Segmentation {
             }//if(segVolume=="LM"){
 
             end2 = System.currentTimeMillis();
-            System.out.println("Loading tarSegmentedVolume time: "+((float)(end2-start2)/1000)+"sec");
+            //System.out.println("Loading tarSegmentedVolume time: "+((float)(end2-start2)/1000)+"sec");
 
             Img<IntegerType> tarMaskedSegmentedVolume = ImageANDOperation.andOperation(tarSegResult, segResult);
             IntegerType min = (IntegerType) tarMaskedSegmentedVolume.firstElement().createVariable();
@@ -278,7 +278,7 @@ public class LM_EM_Segmentation {
             int maxvalue = max.getInteger();
             long volumeRight = 0;
 
-            System.out.println("max: "+ maxvalue);
+            //System.out.println("max: "+ maxvalue);
 
             if(maxvalue > 25){
                 start2 = System.currentTimeMillis();
@@ -286,10 +286,10 @@ public class LM_EM_Segmentation {
                 tarMaskedSegmentedVolume = ThreeDconnect_component(tarMaskedSegmentedVolume);
                 volumeRight = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolume);
 
-                System.out.println("volumeRight: "+ volumeRight);
+                //System.out.println("volumeRight: "+ volumeRight);
 
                 end2 = System.currentTimeMillis();
-                System.out.println("Connecting Component time: "+((float)(end2-start2)/1000)+"sec");
+                //System.out.println("Connecting Component time: "+((float)(end2-start2)/1000)+"sec");
             }
 
             Img<IntegerType> tarSegResultFL = tarSegmentedVolumeBeforeFlipping != null ? tarSegmentedVolumeBeforeFlipping : segmentedVolumeBeforeFlipping;
@@ -307,10 +307,10 @@ public class LM_EM_Segmentation {
                 tarMaskedSegmentedVolumeFL = ThreeDconnect_component(tarMaskedSegmentedVolumeFL);
                 volumeFL = VoxelCounter.countNonZeroVoxels(tarMaskedSegmentedVolumeFL);
 
-                System.out.println("volumeFL: "+ volumeFL);
+                //System.out.println("volumeFL: "+ volumeFL);
 
                 end2 = System.currentTimeMillis();
-                System.out.println("Connecting Component Flipped time: "+((float)(end2-start2)/1000)+"sec");
+                //System.out.println("Connecting Component Flipped time: "+((float)(end2-start2)/1000)+"sec");
             }
 
             start2 = System.currentTimeMillis();
@@ -330,11 +330,11 @@ public class LM_EM_Segmentation {
             }
 
             end2 = System.currentTimeMillis();
-            System.out.println("GenerateCDM time: "+((float)(end2-start2)/1000)+"sec");
+            //System.out.println("GenerateCDM time: "+((float)(end2-start2)/1000)+"sec");
         }//if(SkipSeg==0){
 
         end = System.currentTimeMillis();
-        System.out.println("LM EM Segmentation time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("LM EM Segmentation time: "+((float)(end-start)/1000)+"sec");
 
         return andCDM;
     }
@@ -369,7 +369,7 @@ public class LM_EM_Segmentation {
         int Inimin = minT.getInteger();
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM ComputeMinMax time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
@@ -409,7 +409,7 @@ public class LM_EM_Segmentation {
         }
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM ComputeMinMax 2 time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM ComputeMinMax 2 time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
@@ -417,7 +417,7 @@ public class LM_EM_Segmentation {
         ContrastEnhancer.scaleHistogramRight(zProjectedImage, Inimax, DefMaxValue);
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM scaleHistogram time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM scaleHistogram time: "+((float)(end-start)/1000)+"sec");
 
         if(easyADJ){
             start = System.currentTimeMillis();
@@ -440,7 +440,7 @@ public class LM_EM_Segmentation {
                     applyV = (int)aveval;
             }
             end = System.currentTimeMillis();
-            System.out.println("GenerateCDM easyADJ time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("GenerateCDM easyADJ time: "+((float)(end-start)/1000)+"sec");
         }//if(easyADJ==true){
 
         int width = (int)input.dimension(0);
@@ -538,7 +538,7 @@ public class LM_EM_Segmentation {
                 //open(MaskDir+MaskName2D);
                 zeronumberpxPre = VoxelCounter.countZeroVoxels(zProjectedImage, mask2D);
                 end = System.currentTimeMillis();
-                System.out.println("GenerateCDM Load Mask2D time: "+((float)(end-start)/1000)+"sec");
+                //System.out.println("GenerateCDM Load Mask2D time: "+((float)(end-start)/1000)+"sec");
             }
 
             if (MaskName2D.isEmpty()){
@@ -563,7 +563,7 @@ public class LM_EM_Segmentation {
             Inimin = (int)Math.round(((double)total/((height*width)-zerovalue))*0.8);//239907 is female VNC size
 
             end = System.currentTimeMillis();
-            System.out.println("GenerateCDM background measurement time: "+((float)(end-start)/1000)+"sec");
+            //System.out.println("GenerateCDM background measurement time: "+((float)(end-start)/1000)+"sec");
         }
 
         start = System.currentTimeMillis();
@@ -604,14 +604,14 @@ public class LM_EM_Segmentation {
         }
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM brightness adjustment time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM brightness adjustment time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
         Img<T> zProjectedAdjustedInput = ImageZProjection.maxIntensityProjection(input, 15);
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM maxIntensityProjection time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM maxIntensityProjection time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
@@ -622,7 +622,7 @@ public class LM_EM_Segmentation {
         CanvasSizeChanger.changeCanvasSize(zProjectedAdjustedInput, ox, oy, newWidth, newHeight);
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM changeCanvasSize time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM changeCanvasSize time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
@@ -632,7 +632,7 @@ public class LM_EM_Segmentation {
         int maxAdjusted = maxAdjustedT.getInteger();
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM ComputeMinMax final time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM ComputeMinMax final time: "+((float)(end-start)/1000)+"sec");
 
         start = System.currentTimeMillis();
 
@@ -648,7 +648,7 @@ public class LM_EM_Segmentation {
         }//if(AutoBRV==0){
 
         end = System.currentTimeMillis();
-        System.out.println("GenerateCDM final adjustment time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("GenerateCDM final adjustment time: "+((float)(end-start)/1000)+"sec");
 
 
         start = System.currentTimeMillis();
@@ -656,7 +656,7 @@ public class LM_EM_Segmentation {
         Img<ARGBType> cdm = ColorCoder(input, slices, applyV, AutoBRV, CLAHE, colorscale, reverse0, colorcoding, usingLUT, DefMaxValue, startMIP, endMIP, expand, gammavalue, easyADJ);
 
         end = System.currentTimeMillis();
-        System.out.println("ColorCoder time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("ColorCoder time: "+((float)(end-start)/1000)+"sec");
 
         return cdm;
     }

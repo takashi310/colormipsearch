@@ -34,8 +34,7 @@ import net.imglib2.RandomAccess;
 
 import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 
-import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveAsTiff;
-import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveImageAsPNG;
+import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.*;
 import static org.janelia.colormipsearch.api_v2.bdssearch.MaximumFilter.apply2D_ARGB;
 
 public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore>{
@@ -153,88 +152,6 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         });
     }
 
-    public static <T extends Type< T >>  ImageArray<?> convertImgLib2ImgToImageArray(Img<T> img) {
-        int width = (int) img.dimension(0);
-        int height = (int) img.dimension(1);
-        int numPixels = width * height;
-
-        if (img.firstElement() instanceof UnsignedByteType) {
-            byte[] array = new byte[numPixels];
-            Cursor<T> cursor = img.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                cursor.fwd();
-                ByteType p = (ByteType)cursor.get();
-                array[i++] = p.get();
-            }
-            return new ByteImageArray(ImageType.GRAY8, width, height, array);
-        } else if (img.firstElement() instanceof UnsignedShortType) {
-            short[] array = new short[numPixels];
-            Cursor<T> cursor = img.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                cursor.fwd();
-                UnsignedShortType p = (UnsignedShortType)cursor.get();
-                array[i++] = p.getShort();
-            }
-            return new ShortImageArray(ImageType.GRAY16, width, height, array);
-        } else if (img.firstElement() instanceof ARGBType) {
-            int[] array = new int[numPixels];
-            Cursor<T> cursor = img.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                cursor.fwd();
-                ARGBType p = (ARGBType)cursor.get();
-                array[i++] = p.get();
-            }
-            return new ColorImageArray(ImageType.RGB, width, height, array);
-        } else {
-            throw new IllegalArgumentException("Unsupported image type");
-        }
-    }
-
-    public static Img<?> convertImageArrayToImgLib2Img(ImageArray<?> img) {
-        int width = img.getWidth();
-        int height = img.getHeight();
-        int numPixels = width * height;
-
-        if (img instanceof ByteImageArray) {
-            byte[] array = ((ByteImageArray) img).getPixels();
-            ArrayImgFactory<ByteType> factory = new ArrayImgFactory<>(new ByteType());
-            Img<ByteType> imp = factory.create(width, height);
-            Cursor<ByteType> cursor = imp.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                cursor.next().set(array[i++]);
-            }
-            return imp;
-        } else if (img instanceof ShortImageArray) {
-            short[] array = ((ShortImageArray) img).getPixels();
-            ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
-            Img<UnsignedShortType> imp = factory.create(width, height);
-            Cursor<UnsignedShortType> cursor = imp.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                cursor.next().set(array[i++]);
-            }
-            return imp;
-        } else if (img instanceof ColorImageArray) {
-            byte[] array = ((ColorImageArray) img).getPixels();
-            ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>(new ARGBType());
-            Img<ARGBType> imp = factory.create(width, height);
-            Cursor<ARGBType> cursor = imp.cursor();
-            int i = 0;
-            while (cursor.hasNext()) {
-                int argb = 0xFF000000 | (((int)array[3*i] << 16) | ((int)array[3*i+1] << 8) | (int)array[3*i+2]);
-                cursor.next().set(argb);
-                i++;
-            }
-            return imp;
-        } else {
-            throw new IllegalArgumentException("Unsupported image type");
-        }
-    }
-
     public void setTargetSegmentedVolumePath(String path) {
         tarSegmentedVolumePath = path;
     }
@@ -270,14 +187,14 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         start2 = System.currentTimeMillis();
         Img<UnsignedShortType> emMaskGradientImg = (Img<UnsignedShortType>)DistanceTransform.GenerateDistanceTransform(emMask, 5);
         end2 = System.currentTimeMillis();
-        System.out.println("GenerateDistanceTransform time: "+((float)(end2-start2)/1000)+"sec");
+        //System.out.println("GenerateDistanceTransform time: "+((float)(end2-start2)/1000)+"sec");
         ShortImageArray emMaskGradientImageArray = (ShortImageArray)convertImgLib2ImgToImageArray(emMaskGradientImg);
         LImage emMaskGradient = LImageUtils.create(emMaskGradientImageArray);
         start2 = System.currentTimeMillis();
         ColorImageArray imp10pxRGBEMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(apply2D_ARGB(emMask, 10, queryThreshold));
         LImage imp10pxRGBEM = LImageUtils.create(imp10pxRGBEMImageArray);
         end2 = System.currentTimeMillis();
-        System.out.println("negativeRadiusDilation time: "+((float)(end2-start2)/1000)+"sec");
+        //System.out.println("negativeRadiusDilation time: "+((float)(end2-start2)/1000)+"sec");
         start2 = System.currentTimeMillis();
         LImage gaps = LImageUtils.combine4(
                 segmentedCDMMask1,
@@ -287,11 +204,11 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
                 gapOp.andThen(gap -> gap > GAP_THRESHOLD ? gap : 0)
         );
         end2 = System.currentTimeMillis();
-        System.out.println("combine4 time: "+((float)(end2-start2)/1000)+"sec");
+        //System.out.println("combine4 time: "+((float)(end2-start2)/1000)+"sec");
         start2 = System.currentTimeMillis();
         long EMtoSampleNegativeScore = gaps.fold(0L, Long::sum);
         end2 = System.currentTimeMillis();
-        System.out.println("fold time: "+((float)(end2-start2)/1000)+"sec");
+        //System.out.println("fold time: "+((float)(end2-start2)/1000)+"sec");
 
         Img<ARGBType> dilatedsegmentedCDMImg = apply2D_ARGB(segmentedCDMImg, 10, queryThreshold);
         ColorImageArray imp10pxRGBLMImageArray = (ColorImageArray)convertImgLib2ImgToImageArray(dilatedsegmentedCDMImg);
@@ -312,7 +229,7 @@ public class BidirectionalShapeMatchColorDepthSearchAlgorithm implements ColorDe
         long score = (SampleToMask + EMtoSampleNegativeScore) / 2;
 
         end = System.currentTimeMillis();
-        System.out.println("calculateMatchingScore time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("calculateMatchingScore time: "+((float)(end-start)/1000)+"sec");
 
         return new NegativeColorDepthMatchScore(score, 0, false);
     }

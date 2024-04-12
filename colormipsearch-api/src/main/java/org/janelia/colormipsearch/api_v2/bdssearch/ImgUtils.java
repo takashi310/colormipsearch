@@ -9,8 +9,10 @@ import io.scif.img.ImgSaver;
 import net.imglib2.Cursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.Type;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
@@ -37,6 +39,88 @@ import static org.janelia.colormipsearch.imageprocessing.ImageArrayUtils.*;
 public class ImgUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImgUtils.class);
+
+    public static <T extends Type< T >>  ImageArray<?> convertImgLib2ImgToImageArray(Img<T> img) {
+        int width = (int) img.dimension(0);
+        int height = (int) img.dimension(1);
+        int numPixels = width * height;
+
+        if (img.firstElement() instanceof UnsignedByteType) {
+            byte[] array = new byte[numPixels];
+            Cursor<T> cursor = img.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                cursor.fwd();
+                ByteType p = (ByteType)cursor.get();
+                array[i++] = p.get();
+            }
+            return new ByteImageArray(ImageType.GRAY8, width, height, array);
+        } else if (img.firstElement() instanceof UnsignedShortType) {
+            short[] array = new short[numPixels];
+            Cursor<T> cursor = img.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                cursor.fwd();
+                UnsignedShortType p = (UnsignedShortType)cursor.get();
+                array[i++] = p.getShort();
+            }
+            return new ShortImageArray(ImageType.GRAY16, width, height, array);
+        } else if (img.firstElement() instanceof ARGBType) {
+            int[] array = new int[numPixels];
+            Cursor<T> cursor = img.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                cursor.fwd();
+                ARGBType p = (ARGBType)cursor.get();
+                array[i++] = p.get();
+            }
+            return new ColorImageArray(ImageType.RGB, width, height, array);
+        } else {
+            throw new IllegalArgumentException("Unsupported image type");
+        }
+    }
+
+    public static Img<?> convertImageArrayToImgLib2Img(ImageArray<?> img) {
+        int width = img.getWidth();
+        int height = img.getHeight();
+        int numPixels = width * height;
+
+        if (img instanceof ByteImageArray) {
+            byte[] array = ((ByteImageArray) img).getPixels();
+            ArrayImgFactory<ByteType> factory = new ArrayImgFactory<>(new ByteType());
+            Img<ByteType> imp = factory.create(width, height);
+            Cursor<ByteType> cursor = imp.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                cursor.next().set(array[i++]);
+            }
+            return imp;
+        } else if (img instanceof ShortImageArray) {
+            short[] array = ((ShortImageArray) img).getPixels();
+            ArrayImgFactory<UnsignedShortType> factory = new ArrayImgFactory<>(new UnsignedShortType());
+            Img<UnsignedShortType> imp = factory.create(width, height);
+            Cursor<UnsignedShortType> cursor = imp.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                cursor.next().set(array[i++]);
+            }
+            return imp;
+        } else if (img instanceof ColorImageArray) {
+            byte[] array = ((ColorImageArray) img).getPixels();
+            ArrayImgFactory<ARGBType> factory = new ArrayImgFactory<>(new ARGBType());
+            Img<ARGBType> imp = factory.create(width, height);
+            Cursor<ARGBType> cursor = imp.cursor();
+            int i = 0;
+            while (cursor.hasNext()) {
+                int argb = 0xFF000000 | (((int)array[3*i] << 16) | ((int)array[3*i+1] << 8) | (int)array[3*i+2]);
+                cursor.next().set(argb);
+                i++;
+            }
+            return imp;
+        } else {
+            throw new IllegalArgumentException("Unsupported image type");
+        }
+    }
 
     public static void saveAsTiff(Img<?> img, String filePath) {
         SCIFIO scifio = new SCIFIO();

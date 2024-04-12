@@ -30,9 +30,7 @@ import org.junit.Test;
 
 import javax.imageio.ImageIO;
 
-import static org.janelia.colormipsearch.api_v2.bdssearch.ImageZProjection.maxIntensityProjection;
-import static org.janelia.colormipsearch.api_v2.cdsearch.BidirectionalShapeMatchColorDepthSearchAlgorithm.convertImageArrayToImgLib2Img;
-import static org.janelia.colormipsearch.api_v2.cdsearch.BidirectionalShapeMatchColorDepthSearchAlgorithm.convertImgLib2ImgToImageArray;
+import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.convertImgLib2ImgToImageArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -83,7 +81,10 @@ public class BidirectionalShapeMatchingTest {
                 negativeRadiusDilation
         );
 
-        Img<IntegerType> querySegmentedVolumeResult = maskNegativeScoresCalculator.getSegmentedQueryVolumeImage();
+        end = System.currentTimeMillis();
+        System.out.println("Query Segmentation elapsed time: "+((float)(end-start)/1000)+"sec");
+
+        start = System.currentTimeMillis();
 
         maskNegativeScoresCalculator.setTargetSegmentedVolumePath(tarSegmentedVolumePath);
 
@@ -92,7 +93,9 @@ public class BidirectionalShapeMatchingTest {
         System.out.println("score: " + score.getScore());
 
         end = System.currentTimeMillis();
-        System.out.println("time: "+((float)(end-start)/1000)+"sec");
+        System.out.println("Score Calculation elapsed time: "+((float)(end-start)/1000)+"sec");
+
+        assertEquals(0, score.getScore());
     }
 
 
