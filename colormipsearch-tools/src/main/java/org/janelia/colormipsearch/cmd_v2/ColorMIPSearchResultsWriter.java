@@ -25,6 +25,7 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class ColorMIPSearchResultsWriter {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultsWriter.class);
 

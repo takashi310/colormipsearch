@@ -6,6 +6,10 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * @see org.janelia.colormipsearch.cds.ColorDepthSearchParams
+ */
+@Deprecated
 public class ColorDepthSearchParams implements Serializable {
     private final Map<String, Object> params = new LinkedHashMap<>();
 

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 import java.util.Map;
 
+@Deprecated
 class PublishedImage implements Serializable {
     @JsonProperty("_id")
     String id;

@@ -31,13 +31,14 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorDepthSearchAlgorithmProvi
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
 import org.janelia.colormipsearch.api_v2.cdsearch.GradientAreaGapUtils;
-import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.api_v2.cdsearch.NegativeColorDepthMatchScore;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class CalculateNegativeScoresCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CalculateNegativeScoresCmd.class);
 
@@ -111,7 +112,7 @@ class CalculateNegativeScoresCmd extends AbstractCmd {
     }
 
     private void calculateGradientAreaScore(NegativeScoreResultsArgs args) {
-        ImageRegionGenerator labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
+        ImageRegionDefinition labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
         ColorDepthSearchAlgorithmProvider<NegativeColorDepthMatchScore> negativeMatchCDSArgorithmProvider =
                 ColorDepthSearchAlgorithmProviderFactory.createNegativeMatchCDSAlgorithmProvider(
                         args.mirrorMask,

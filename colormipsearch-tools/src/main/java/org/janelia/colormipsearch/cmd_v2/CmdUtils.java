@@ -16,10 +16,11 @@ import javax.annotation.Nullable;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class CmdUtils {
     private static final Logger LOG = LoggerFactory.getLogger(CmdUtils.class);
 
@@ -88,7 +89,7 @@ class CmdUtils {
         }
     }
 
-    static <A extends AbstractColorDepthMatchArgs> ImageRegionGenerator getLabelsRegionGenerator(A args) {
+    static <A extends AbstractColorDepthMatchArgs> ImageRegionDefinition getLabelsRegionGenerator(A args) {
         // define the label regions
         return img -> {
             int imgWidth = img.getWidth();

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SourceSkeletonMatch {
     private String id;

@@ -9,6 +9,7 @@ import com.beust.jcommander.Parameter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 class CommonArgs {
     @Parameter(names = {"--outputDir", "--output-dir", "-od"}, description = "Output directory")
     String outputDir;

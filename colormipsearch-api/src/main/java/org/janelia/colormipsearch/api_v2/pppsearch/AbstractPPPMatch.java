@@ -20,6 +20,7 @@ import org.janelia.colormipsearch.api_v2.FileType;
  * These are the source PPP matches as they are imported from the original matches.
  * This object contains all fields currently read from the original result file.
  */
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonAutoDetect(
         fieldVisibility = JsonAutoDetect.Visibility.NONE,

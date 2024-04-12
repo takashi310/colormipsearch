@@ -20,7 +20,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This calculates the gradient area gap between an encapsulated EM mask and an LM (segmented) image.
+ * @see org.janelia.colormipsearch.cds.ShapeMatchColorDepthSearchAlgorithm
  */
+@Deprecated
 public class GradientBasedNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<NegativeColorDepthMatchScore> {
 
     private static final Logger LOG = LoggerFactory.getLogger(GradientBasedNegativeScoreColorDepthSearchAlgorithm.class);

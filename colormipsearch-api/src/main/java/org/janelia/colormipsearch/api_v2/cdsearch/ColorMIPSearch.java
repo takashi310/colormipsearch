@@ -8,7 +8,9 @@ import org.janelia.colormipsearch.api_v2.cdmips.MIPImage;
 
 /**
  * Creates a color depth search for a given mask.
+ * @see org.janelia.colormipsearch.cds.ColorMIPSearch
  */
+@Deprecated
 public class ColorMIPSearch implements Serializable {
 
     private final ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;

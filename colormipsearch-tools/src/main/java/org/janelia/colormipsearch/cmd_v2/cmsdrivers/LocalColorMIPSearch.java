@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
+@Deprecated
 public class LocalColorMIPSearch implements ColorMIPSearchDriver {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalColorMIPSearch.class);

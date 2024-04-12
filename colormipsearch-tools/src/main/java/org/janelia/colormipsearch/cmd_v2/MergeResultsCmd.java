@@ -29,6 +29,7 @@ import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class MergeResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(MergeResultsCmd.class);
 

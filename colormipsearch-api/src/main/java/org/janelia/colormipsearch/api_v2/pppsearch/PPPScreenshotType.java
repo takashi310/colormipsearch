@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.api_v2.pppsearch;
 
 import org.janelia.colormipsearch.api_v2.FileType;
 
+@Deprecated
 public enum PPPScreenshotType {
     RAW(FileType.SignalMip),
     MASKED_RAW(FileType.SignalMipMasked),

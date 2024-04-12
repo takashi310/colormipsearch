@@ -4,7 +4,9 @@ import javax.annotation.Nullable;
 
 /**
  * ColorMIPCompareOutput represents the color depth match summary result.
+ * @see org.janelia.colormipsearch.cds.PixelMatchScore
  */
+@Deprecated
 public class ColorMIPMatchScore implements ColorDepthMatchScore {
     public static ColorMIPMatchScore NO_MATCH = new ColorMIPMatchScore(0, 0, false, null);
 

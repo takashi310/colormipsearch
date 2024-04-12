@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.function.BiPredicate;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 
 /**
  * Common methods that can be used by various ColorDepthQuerySearchAlgorithm implementations.
+ * @see org.janelia.colormipsearch.cds.AbstractColorDepthSearchAlgorithm
  * @param <S> score type
  */
+@Deprecated
 public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> implements ColorDepthSearchAlgorithm<S> {
 
     private static class PixelPositions implements Serializable {
@@ -41,14 +44,14 @@ public abstract class AbstractColorDepthSearchAlgorithm<S extends ColorDepthMatc
     final ImageArray<?> negQueryImage;
     final PixelPositions queryPositions;
     final PixelPositions negQueryPositions;
-    final ImageRegionGenerator ignoredRegionsProvider;
+    final ImageRegionDefinition ignoredRegionsProvider;
     final int targetThreshold;
     final double zTolerance;
 
     protected AbstractColorDepthSearchAlgorithm(ImageArray<?> queryImage, int queryThreshold,
                                                 ImageArray<?> negQueryImage, int negQueryThreshold,
                                                 int targetThreshold, double zTolerance,
-                                                ImageRegionGenerator ignoredRegionsProvider) {
+                                                ImageRegionDefinition ignoredRegionsProvider) {
         this.queryImage = queryImage;
         this.negQueryImage = negQueryImage;
         this.targetThreshold = targetThreshold;

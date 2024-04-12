@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 
+@Deprecated
 @JsonClassDescription("Color Depth MIP")
 class ColorDepthMetadata extends AbstractMetadata {
     @JsonInclude(JsonInclude.Include.NON_NULL)

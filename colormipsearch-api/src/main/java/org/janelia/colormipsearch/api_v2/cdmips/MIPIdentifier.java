@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api_v2.cdmips;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+@Deprecated
 public class MIPIdentifier {
     private final String id;
     private final String publishedName;

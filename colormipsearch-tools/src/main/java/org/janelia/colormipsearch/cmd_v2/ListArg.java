@@ -12,6 +12,7 @@ import com.beust.jcommander.IStringConverter;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 class ListArg {
 
     static class ListArgConverter implements IStringConverter<ListArg> {

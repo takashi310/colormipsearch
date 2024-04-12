@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api_v2.cdmips;
 
+@Deprecated
 public class MIPMetadata extends AbstractMetadata {
 
     public MIPMetadata variantAsMIP(String variant) {

@@ -56,6 +56,7 @@ import org.janelia.colormipsearch.results.ItemsHandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 public class ConvertPPPResultsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ConvertPPPResultsCmd.class);
     private static final Random RAND = new Random();

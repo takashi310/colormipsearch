@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.cmd_v2;
 
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 abstract class AbstractCmd {
     static final long _1M = 1024 * 1024;
 

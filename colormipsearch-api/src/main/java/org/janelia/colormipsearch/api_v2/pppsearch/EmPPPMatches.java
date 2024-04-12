@@ -15,6 +15,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.janelia.colormipsearch.api_v2.Results;
 
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"maskId", "maskPublishedName", "maskLibraryName", "neuronType", "neuronInstance", "sourceMaskName", "results"})
 public class EmPPPMatches extends Results<List<EmPPPMatch>> {

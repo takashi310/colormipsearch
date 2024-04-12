@@ -12,6 +12,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api_v2.cdmips.AbstractMetadata;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 
+@Deprecated
 @JsonClassDescription("Color Depth Search Match")
 public class ColorMIPSearchMatchMetadata extends AbstractMetadata {
 

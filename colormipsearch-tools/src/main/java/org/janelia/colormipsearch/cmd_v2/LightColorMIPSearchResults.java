@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api_v2.Results;
 
+@Deprecated
 public class LightColorMIPSearchResults extends Results<List<LightColorMIPSearchMatch>> {
 
     private final String sourceId;

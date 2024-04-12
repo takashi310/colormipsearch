@@ -33,6 +33,7 @@ import org.janelia.colormipsearch.api_v2.cdmips.MIPsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class CopyColorDepthMIPVariantsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(CopyColorDepthMIPVariantsCmd.class);
 

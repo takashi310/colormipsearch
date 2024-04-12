@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api_v2;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated
 public class Results<T> {
     @JsonProperty
     public final T results;

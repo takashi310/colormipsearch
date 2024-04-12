@@ -18,6 +18,7 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 abstract class AbstractColorDepthSearchCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractColorDepthSearchCmd.class);

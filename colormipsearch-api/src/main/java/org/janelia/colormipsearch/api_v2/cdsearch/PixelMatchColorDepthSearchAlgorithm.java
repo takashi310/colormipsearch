@@ -8,13 +8,16 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 
 /**
  * PixelMatchColorDepthQuerySearchAlgorithm - implements the color depth mip comparison
  * using internal arrays containg the positions from the mask that are above the mask threshold
  * and the positions after applying the specified x-y shift and mirroring transformations.
  * The mask pixels are compared against the target pixels tht
+ * @see org.janelia.colormipsearch.cds.PixelMatchColorDepthSearchAlgorithm
  */
+@Deprecated
 public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearchAlgorithm<ColorMIPMatchScore> {
 
     private final int[][] targetMasksList;
@@ -28,7 +31,7 @@ public class PixelMatchColorDepthSearchAlgorithm extends AbstractColorDepthSearc
                                                ImageArray<?> negQueryImage, int negQueryThreshold,
                                                boolean mirrorNegQuery, int targetThreshold,
                                                double zTolerance, int xyshift,
-                                               ImageRegionGenerator ignoredRegionsProvider) {
+                                               ImageRegionDefinition ignoredRegionsProvider) {
         super(queryImage, queryThreshold, negQueryImage, negQueryThreshold, targetThreshold, zTolerance, ignoredRegionsProvider);
         // shifting
         targetMasksList = generateShiftedMasks(queryPixelPositions(), xyshift, queryImage.getWidth(), queryImage.getHeight());

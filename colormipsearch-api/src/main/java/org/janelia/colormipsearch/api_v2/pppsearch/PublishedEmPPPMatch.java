@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * This is the published PPP match. It is very similar with the source PPP match
  * but without internal fields that we do not to want to expose.
  */
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "id", "publishedName", "libraryName",

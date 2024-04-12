@@ -12,7 +12,9 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 /**
  * ColorMIPMaskCompare encapsulates a query image and it provides a method to search
  * the enclosed query in other target images.
+ * @see org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithm
  */
+@Deprecated
 public interface ColorDepthSearchAlgorithm<S extends ColorDepthMatchScore> extends Serializable {
 
     /**

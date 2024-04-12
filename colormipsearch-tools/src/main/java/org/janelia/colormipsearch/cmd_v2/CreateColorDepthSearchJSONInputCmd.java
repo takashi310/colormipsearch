@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
+@Deprecated
 public class CreateColorDepthSearchJSONInputCmd extends AbstractCmd {
 
     private static final Logger LOG = LoggerFactory.getLogger(CreateColorDepthSearchJSONInputCmd.class);

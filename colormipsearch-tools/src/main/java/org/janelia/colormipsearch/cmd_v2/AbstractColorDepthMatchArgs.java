@@ -10,6 +10,7 @@ import com.beust.jcommander.ParametersDelegate;
 
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 class AbstractColorDepthMatchArgs extends AbstractCmdArgs {
     @Parameter(names = "--app")
     String appName = "ColorMIPSearch";

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
+@Deprecated
 public class SparkMainEntry {
 
     private static class MainArgs {

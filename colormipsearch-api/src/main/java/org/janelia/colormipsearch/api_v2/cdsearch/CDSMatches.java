@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.janelia.colormipsearch.api_v2.Results;
 import org.janelia.colormipsearch.api_v2.cdmips.MIPIdentifier;
 
+@Deprecated
 public class CDSMatches extends Results<List<ColorMIPSearchMatchMetadata>> {
 
     public static CDSMatches EMPTY = new CDSMatches(

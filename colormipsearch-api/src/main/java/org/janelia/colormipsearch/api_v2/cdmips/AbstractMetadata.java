@@ -19,6 +19,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Deprecated
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractMetadata implements Serializable {
     private String id;

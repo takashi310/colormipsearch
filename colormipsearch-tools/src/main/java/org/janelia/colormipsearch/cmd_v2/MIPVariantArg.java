@@ -10,6 +10,7 @@ import com.google.common.base.Splitter;
 
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 class MIPVariantArg {
 
     public static class MIPVariantArgValidator implements IValueValidator<MIPVariantArg> {

@@ -2,6 +2,10 @@ package org.janelia.colormipsearch.api_v2.cdsearch;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+/**
+ * @see org.janelia.colormipsearch.cds.ShapeMatchScore
+ */
+@Deprecated
 public class NegativeColorDepthMatchScore implements ColorDepthMatchScore {
     private final long gradientAreaGap;
     private final long highExpressionArea;

@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.api_v2.cdsearch;
 import org.janelia.colormipsearch.imageprocessing.ColorTransformation;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageProcessing;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.janelia.colormipsearch.imageprocessing.ImageTransformation;
 import org.janelia.colormipsearch.imageprocessing.LImage;
 import org.janelia.colormipsearch.imageprocessing.LImageUtils;
@@ -11,7 +12,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Factory for a color depth search comparator.
+ * @see org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProviderFactory
  */
+@Deprecated
 public class ColorDepthSearchAlgorithmProviderFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchAlgorithmProviderFactory.class);
@@ -30,7 +33,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int targetThreshold,
             double pixColorFluctuation,
             int xyShift,
-            ImageRegionGenerator ignoredRegionsProvider) {
+            ImageRegionDefinition ignoredRegionsProvider) {
         LOG.info("Create mask comparator with mirrorQuery={}, dataThreshold={}, pixColorFluctuation={}, xyShift={}",
                 mirrorMask, targetThreshold, pixColorFluctuation, xyShift);
         return new ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore>() {
@@ -71,7 +74,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int negativeRadius,
             int borderSize,
             ImageArray<?> roiMaskImageArray,
-            ImageRegionGenerator ignoredRegionsProvider) {
+            ImageRegionDefinition ignoredRegionsProvider) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }
@@ -135,7 +138,7 @@ public class ColorDepthSearchAlgorithmProviderFactory {
             int xyShift,
             int negativeRadius,
             ImageArray<?> roiMaskImageArray,
-            ImageRegionGenerator ignoredRegionsProvider) {
+            ImageRegionDefinition ignoredRegionsProvider) {
         if (negativeRadius <= 0) {
             throw new IllegalArgumentException("The value for negative radius must be a positive integer - current value is " + negativeRadius);
         }

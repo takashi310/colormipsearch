@@ -33,6 +33,10 @@ import org.janelia.colormipsearch.imageprocessing.ImageArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @see org.janelia.colormipsearch.mips.NeuronMIPUtils
+ */
+@Deprecated
 public class MIPsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(MIPsUtils.class);

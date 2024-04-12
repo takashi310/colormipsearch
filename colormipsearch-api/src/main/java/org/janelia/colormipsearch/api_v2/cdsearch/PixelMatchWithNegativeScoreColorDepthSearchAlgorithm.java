@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
+@Deprecated
 public class PixelMatchWithNegativeScoreColorDepthSearchAlgorithm implements ColorDepthSearchAlgorithm<ColorMIPMatchScore> {
 
     private final Set<String> requiredVariantTypes = new LinkedHashSet<>();

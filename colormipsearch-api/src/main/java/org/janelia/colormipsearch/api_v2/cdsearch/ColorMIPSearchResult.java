@@ -12,6 +12,7 @@ import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
+@Deprecated
 public class ColorMIPSearchResult implements Serializable {
 
     private final MIPMetadata maskMIP;

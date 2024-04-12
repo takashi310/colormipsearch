@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Entry point for some NeuronBridge tools.
  */
+@Deprecated
 public class Main {
 
     private static class MainArgs {

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * These are the source PPP matches as they are imported from the original matches.
  * This object contains all fields currently read from the original result file.
  */
+@Deprecated
 @JsonClassDescription("Patch per Pixel Match")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({

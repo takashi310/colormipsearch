@@ -27,6 +27,7 @@ import org.janelia.colormipsearch.api_v2.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class MergeMipsCmd extends AbstractCmd {
     private static final Logger LOG = LoggerFactory.getLogger(MergeMipsCmd.class);
 

@@ -1,5 +1,9 @@
 package org.janelia.colormipsearch.api_v2;
 
+/**
+ * @see org.janelia.colormipsearch.model.FileType
+ */
+@Deprecated
 public enum FileType {
     SignalMip("_1_raw.png"),
     SignalMipMasked("_2_masked_raw.png"),

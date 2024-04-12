@@ -28,6 +28,7 @@ import org.janelia.colormipsearch.api_v2.cdmips.MIPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 public class ColorMIPSearchResultUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ColorMIPSearchResultUtils.class);
 

@@ -2,7 +2,10 @@ package org.janelia.colormipsearch.api_v2.cdsearch;
 
 /**
  * Utils for calculating gradient area gap scores.
+ * This utility is only used in the commonad line tools so this clqss
+ * has been moved actually in the colormipsearch-tools module.
  */
+@Deprecated
 public class GradientAreaGapUtils {
 
     public static final int HIGH_EXPRESSION_FACTOR = 2;

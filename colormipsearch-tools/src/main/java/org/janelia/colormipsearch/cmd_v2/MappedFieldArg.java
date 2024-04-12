@@ -8,6 +8,7 @@ import com.beust.jcommander.IStringConverter;
 
 import org.apache.commons.lang3.StringUtils;
 
+@Deprecated
 class MappedFieldArg {
 
     static class MappedFieldArgConverter implements IStringConverter<MappedFieldArg> {

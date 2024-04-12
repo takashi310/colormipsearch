@@ -3,6 +3,7 @@ package org.janelia.colormipsearch.cmd_v2;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchMatchMetadata;
 
+@Deprecated
 public class LightColorMIPSearchMatch {
 
     private String sourceId;

@@ -33,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class MIPsHandlingUtils {
     private static final Logger LOG = LoggerFactory.getLogger(MIPsHandlingUtils.class);
     private static final int MAX_IMAGE_DATA_DEPTH = 5;

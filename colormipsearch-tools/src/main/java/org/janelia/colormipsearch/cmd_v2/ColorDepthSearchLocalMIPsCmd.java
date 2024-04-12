@@ -16,13 +16,14 @@ import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPMatchScore;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearch;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResult;
 import org.janelia.colormipsearch.api_v2.cdsearch.ColorMIPSearchResultUtils;
-import org.janelia.colormipsearch.api_v2.cdsearch.ImageRegionGenerator;
 import org.janelia.colormipsearch.cmd_v2.cmsdrivers.ColorMIPSearchDriver;
 import org.janelia.colormipsearch.cmd_v2.cmsdrivers.LocalColorMIPSearch;
 import org.janelia.colormipsearch.cmd_v2.cmsdrivers.SparkColorMIPSearch;
+import org.janelia.colormipsearch.imageprocessing.ImageRegionDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated
 class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     private static final Logger LOG = LoggerFactory.getLogger(ColorDepthSearchLocalMIPsCmd.class);
 
@@ -75,7 +76,7 @@ class ColorDepthSearchLocalMIPsCmd extends AbstractColorDepthSearchCmd {
     private void runSearchForLocalMIPFiles(LocalMIPFilesSearchArgs args) {
         ColorMIPSearchDriver colorMIPSearchDriver;
         ColorDepthSearchAlgorithmProvider<ColorMIPMatchScore> cdsAlgorithmProvider;
-        ImageRegionGenerator labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
+        ImageRegionDefinition labelRegionsProvider = CmdUtils.getLabelsRegionGenerator(args);
         if (args.onlyPositiveScores()) {
             cdsAlgorithmProvider = ColorDepthSearchAlgorithmProviderFactory.createPixMatchCDSAlgorithmProvider(
                     args.mirrorMask,

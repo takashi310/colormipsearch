@@ -6,9 +6,11 @@ import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
 /**
  * Creator of a ColorMIPQuerySearch for a given mask that generates a certain score type.
+ * @see org.janelia.colormipsearch.cds.ColorDepthSearchAlgorithmProvider
  *
  * @param <S> color depth match score type
  */
+@Deprecated
 public interface ColorDepthSearchAlgorithmProvider<S extends ColorDepthMatchScore> extends Serializable {
     /**
      * @return default color depth search parameters.

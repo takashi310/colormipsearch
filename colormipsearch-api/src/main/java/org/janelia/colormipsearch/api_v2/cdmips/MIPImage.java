@@ -5,6 +5,10 @@ import java.io.Serializable;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 
+/**
+ * @see org.janelia.colormipsearch.mips.NeuronMIP
+ */
+@Deprecated
 public class MIPImage implements Serializable {
     private final MIPMetadata mipInfo;
     private final ImageArray<?> imageArray;
