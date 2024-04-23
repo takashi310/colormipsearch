@@ -137,7 +137,7 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                     // but we are no longer doing that we expect this to be uploaded and its URL "published" in the proper collection
                     LOG.error("No published URLs or no searchable neuron URL for match {} target {}:{} -> {}",
                             target.getMatchInternalId(),
-                            target.getTargetImage().getInternalId(), resultMatches.getKey(), target);
+                            target.getTargetImage().getInternalId(), target.getTargetImage(), target);
                     target.setMatchFile(FileType.CDMMatch, null);
                 } else {
                     target.setMatchFile(FileType.CDMMatch, relativizeURL(FileType.CDMMatch, tagetImageURL));
