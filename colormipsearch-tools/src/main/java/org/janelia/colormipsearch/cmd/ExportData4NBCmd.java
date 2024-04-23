@@ -163,14 +163,15 @@ class ExportData4NBCmd extends AbstractCmd {
 
     ExportData4NBCmd(String commandName, CommonArgs commonArgs) {
         super(commandName);
-        this.args = new ExportMatchesCmdArgs(commonArgs);
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        Validator validator = factory.getValidator();
-        this.mapper = new ObjectMapper()
-                .registerModule(new SimpleModule().setSerializerModifier(new ValidatingSerializerModifier(validator)))
-                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        ;
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            this.args = new ExportMatchesCmdArgs(commonArgs);
+            Validator validator = factory.getValidator();
+            this.mapper = new ObjectMapper()
+                    .registerModule(new SimpleModule().setSerializerModifier(new ValidatingSerializerModifier(validator)))
+                    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            ;
+        }
     }
 
     @Override
