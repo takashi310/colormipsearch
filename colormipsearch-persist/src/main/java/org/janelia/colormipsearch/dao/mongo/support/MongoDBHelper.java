@@ -94,7 +94,7 @@ public class MongoDBHelper {
             mongoClientSettingsBuilder.applyToClusterSettings(builder -> builder.requiredReplicaSetName(mongoReplicaSet));
         }
         if (StringUtils.isNotBlank(mongoUsername)) {
-            LOG.info("Authenticate to MongoDB ({}@{})", mongoAuthDatabase, StringUtils.defaultIfBlank(mongoServer, mongoConnectionURL),
+            LOG.info("Authenticate to MongoDB ({}@{}){}", mongoAuthDatabase, StringUtils.defaultIfBlank(mongoServer, mongoConnectionURL),
                     StringUtils.isBlank(mongoUsername) ? "" : " as user " + mongoUsername);
             char[] passwordChars = StringUtils.isBlank(mongoPassword) ? null : mongoPassword.toCharArray();
             mongoClientSettingsBuilder.credential(MongoCredential.createCredential(mongoUsername, mongoAuthDatabase, passwordChars));
