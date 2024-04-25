@@ -62,7 +62,7 @@ class ValidateNBDBDataCmd extends AbstractCmd {
         String alignmentSpace;
 
         @Parameter(names = {"-l", "--library"},
-                description = "Library names from which mips or matches are selected for export",
+                description = "Library names from which mips or matches are selected to be validated",
                 variableArity = true)
         List<String> libraries = new ArrayList<>();
 
