@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
+import com.mongodb.ReadConcern;
+import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
@@ -50,6 +52,9 @@ public class MongoDBHelper {
                         MongoClientSettings.getDefaultCodecRegistry(),
                         codecRegistry))
                 .writeConcern(WriteConcern.JOURNALED)
+                .readConcern(ReadConcern.AVAILABLE)
+                .readPreference(ReadPreference.secondaryPreferred())
+                .retryReads(true)
                 .applyToConnectionPoolSettings(builder -> {
                     if (connectionsPerHost > 0) {
                         builder.maxSize(connectionsPerHost);
