@@ -54,6 +54,7 @@ public class MongoDBHelper {
                 .writeConcern(WriteConcern.JOURNALED)
                 .readConcern(ReadConcern.AVAILABLE)
                 .readPreference(ReadPreference.secondaryPreferred())
+                .retryWrites(true)
                 .retryReads(true)
                 .applyToConnectionPoolSettings(builder -> {
                     if (connectionsPerHost > 0) {
