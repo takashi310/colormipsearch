@@ -80,7 +80,7 @@ public class EMPPPMatchesExporter extends AbstractDataExporter {
     public void runExport() {
         long startProcessingTime = System.currentTimeMillis();
         List<String> masks = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
-        List<CompletableFuture<Void>> allExportsJobs = ItemsHandling.partitionCollection(masks, processingPartitionSize).entrySet().stream().parallel()
+        List<CompletableFuture<Void>> allExportsJobs = ItemsHandling.partitionCollection(masks, processingPartitionSize).entrySet().stream()
                 .map(indexedPartition -> CompletableFuture.<Void>supplyAsync(() -> {
                     runExportForMaskIds(indexedPartition.getKey(), indexedPartition.getValue());
                     return null;

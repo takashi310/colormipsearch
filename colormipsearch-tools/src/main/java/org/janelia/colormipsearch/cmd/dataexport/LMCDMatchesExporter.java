@@ -71,9 +71,10 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         long startProcessingTime = System.currentTimeMillis();
         List<String> targets = neuronMatchesReader.listMatchesLocations(Collections.singletonList(dataSourceParam));
         List<CompletableFuture<Void>> allExportsJobs = ItemsHandling.partitionCollection(targets, processingPartitionSize)
-                .entrySet().stream().parallel()
+                .entrySet().stream()
                 .map(indexedPartition -> CompletableFuture.<Void>supplyAsync(() -> {
                     runExportForTargetIds(indexedPartition.getKey(), indexedPartition.getValue());
+                    LOG.info("Completed partition {}", indexedPartition.getKey());
                     return null;
                 }, executor))
                 .collect(Collectors.toList());
@@ -124,7 +125,8 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetMipId);
             writeResults(selectedMatchesForTarget);
         });
-        LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis() - startProcessingTime) / 1000.);
+        LOG.info("Finished processing partition {} containing {} mips in {}s",
+                jobId, targetMipIds.size(), (System.currentTimeMillis() - startProcessingTime) / 1000.);
     }
 
     private <M extends EMNeuronMetadata, T extends LMNeuronMetadata> void
