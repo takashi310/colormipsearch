@@ -33,8 +33,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
+    static final long _1M = 1024 * 1024;
     private static final Logger LOG = LoggerFactory.getLogger(AbstractCDMatchesExporter.class);
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
+
     final List<String> targetLibraries;
     final List<String> targetExcludedTags;
     final List<String> matchesExcludedTags;

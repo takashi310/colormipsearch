@@ -125,8 +125,11 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Write {} color depth matches for {}", selectedMatchesForTarget.size(), targetMipId);
             writeResults(selectedMatchesForTarget);
         });
-        LOG.info("Finished processing partition {} containing {} mips in {}s",
-                jobId, targetMipIds.size(), (System.currentTimeMillis() - startProcessingTime) / 1000.);
+        LOG.info("Finished processing partition {} containing {} mips in {}s - memory usage {}M out of {}M",
+                jobId, targetMipIds.size(), (System.currentTimeMillis() - startProcessingTime) / 1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
+        System.gc();
     }
 
     private <M extends EMNeuronMetadata, T extends LMNeuronMetadata> void

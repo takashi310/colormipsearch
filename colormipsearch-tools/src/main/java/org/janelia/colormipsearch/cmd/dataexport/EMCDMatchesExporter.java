@@ -131,7 +131,11 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Write {} color depth matches for {}", selectedMatchesForMask.size(), maskMipId);
             writeResults(selectedMatchesForMask);
         });
-        LOG.info("Finished processing partition {} in {}s", jobId, (System.currentTimeMillis()-startProcessingTime)/1000.);
+        LOG.info("Finished processing partition {} containig {} mips in {}s - memory usage {}M out of {}",
+                jobId, maskMipIds.size(), (System.currentTimeMillis()-startProcessingTime)/1000.,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / _1M + 1, // round up
+                (Runtime.getRuntime().totalMemory() / _1M));
+        System.gc();
     }
 
     private <M extends EMNeuronMetadata, T extends LMNeuronMetadata> void
