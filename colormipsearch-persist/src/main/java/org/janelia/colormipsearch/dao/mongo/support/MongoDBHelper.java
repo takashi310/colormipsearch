@@ -52,10 +52,8 @@ public class MongoDBHelper {
                         MongoClientSettings.getDefaultCodecRegistry(),
                         codecRegistry))
                 .writeConcern(WriteConcern.JOURNALED)
-                .readConcern(ReadConcern.AVAILABLE)
-                .readPreference(ReadPreference.secondaryPreferred())
+                .readPreference(ReadPreference.primaryPreferred())
                 .retryWrites(true)
-                .retryReads(true)
                 .applyToConnectionPoolSettings(builder -> {
                     if (connectionsPerHost > 0) {
                         builder.maxSize(connectionsPerHost);

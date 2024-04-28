@@ -86,7 +86,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         long startProcessingTime = System.currentTimeMillis();
         LOG.info("Start processing {} targets from partition {}", targetMipIds.size(), jobId);
         targetMipIds.forEach(targetMipId -> {
-            LOG.info("Read LM color depth matches for {}", targetMipId);
+            LOG.info("Read LM color depth matches for mip {}", targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesByTarget(
                     dataSourceParam.getAlignmentSpace(),
                     /* maskLibraries */targetLibraries, // for LM -> EM targetLibraries should be EM libraries so they are mask libs
