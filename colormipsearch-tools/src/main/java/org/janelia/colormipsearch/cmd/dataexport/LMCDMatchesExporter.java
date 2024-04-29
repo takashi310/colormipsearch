@@ -105,6 +105,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     /* matchExcludedTags */matchesExcludedTags,
                     scoresFilter,
                     null/* no sorting yet because it uses too much memory on the server */);
+            LOG.info("Found {} color depth matches for mip {}", allMatchesForTarget.size(), targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
             if (allMatchesForTarget.isEmpty()) {
                 // this can happen even when there are EM - LM matches but the match is low ranked and it has no gradient score

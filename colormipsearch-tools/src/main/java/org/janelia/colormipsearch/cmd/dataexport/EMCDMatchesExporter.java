@@ -114,6 +114,7 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     scoresFilter,
                     null/*no sorting because it uses too much memory on the server*/);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForMask;
+            LOG.info("Found {} color depth matches for mip {}", allMatchesForMask.size(), maskMipId);
             if (allMatchesForMask.isEmpty()) {
                 // this occurs only when there really aren't any matches between the EM MIP and any of the LM MIPs
                 PagedResult<AbstractNeuronEntity> neurons = neuronMetadataDao.findNeurons(new NeuronSelector().addMipID(maskMipId), new PagedRequest());
