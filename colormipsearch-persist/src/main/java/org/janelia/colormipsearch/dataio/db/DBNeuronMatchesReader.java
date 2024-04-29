@@ -47,6 +47,7 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                         .addMipIDs(cdMatchInput.getMipIDs())
                                         .addNames(cdMatchInput.getNames())
                                         .addTags(cdMatchInput.getTags())
+                                        .addExcludedTags(cdMatchInput.getExcludedTags())
                                         .addDatasetLabels(cdMatchInput.getDatasets()),
                                 new PagedRequest()
                                         .setFirstPageOffset(cdMatchInput.getOffset())
