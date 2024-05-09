@@ -73,12 +73,16 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                      Collection<String> maskDatasets,
                                      Collection<String> maskTags,
                                      Collection<String> maskExcludedTags,
+                                     Collection<String> maskAnnotations,
+                                     Collection<String> excludedMaskAnnotations,
                                      Collection<String> targetLibraries,
                                      Collection<String> targetPublishedNames,
                                      Collection<String> targetMipIds,
                                      Collection<String> targetDatasets,
                                      Collection<String> targetTags,
                                      Collection<String> targetExcludedTags,
+                                     Collection<String> targetAnnotations,
+                                     Collection<String> excludedTargetAnnotations,
                                      Collection<String> matchTags,
                                      Collection<String> matchExcludedTags,
                                      ScoresFilter matchScoresFilter,
@@ -90,7 +94,9 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                 .addMipIDs(maskMipIds)
                 .addDatasetLabels(maskDatasets)
                 .addTags(maskTags)
-                .addExcludedTags(maskExcludedTags);
+                .addExcludedTags(maskExcludedTags)
+                .addAnnotations(maskAnnotations)
+                .addExcludedAnnotations(excludedMaskAnnotations);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
@@ -98,7 +104,9 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                 .addMipIDs(targetMipIds)
                 .addDatasetLabels(targetDatasets)
                 .addTags(targetTags)
-                .addExcludedTags(targetExcludedTags);
+                .addExcludedTags(targetExcludedTags)
+                .addAnnotations(targetAnnotations)
+                .addExcludedAnnotations(excludedTargetAnnotations);
         List<Number> maskEntityIds = getNeuronEntityIds(maskSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
@@ -117,12 +125,16 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                                        Collection<String> maskDatasets,
                                        Collection<String> maskTags,
                                        Collection<String> maskExcludedTags,
+                                       Collection<String> maskAnnotations,
+                                       Collection<String> excludedMaskAnnotations,
                                        Collection<String> targetLibraries,
                                        Collection<String> targetPublishedNames,
                                        Collection<String> targetMipIds,
                                        Collection<String> targetDatasets,
                                        Collection<String> targetTags,
                                        Collection<String> targetExcludedTags,
+                                       Collection<String> targetAnnotations,
+                                       Collection<String> excludedTargetAnnotations,
                                        Collection<String> matchTags,
                                        Collection<String> matchExcludedTags,
                                        ScoresFilter matchScoresFilter,
@@ -134,7 +146,9 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                 .addMipIDs(maskMipIds)
                 .addDatasetLabels(maskDatasets)
                 .addTags(maskTags)
-                .addExcludedTags(maskExcludedTags);
+                .addExcludedTags(maskExcludedTags)
+                .addAnnotations(maskAnnotations)
+                .addExcludedAnnotations(excludedMaskAnnotations);
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
                 .addLibraries(targetLibraries)
@@ -142,7 +156,9 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
                 .addMipIDs(targetMipIds)
                 .addDatasetLabels(targetDatasets)
                 .addTags(targetTags)
-                .addExcludedTags(targetExcludedTags);
+                .addExcludedTags(targetExcludedTags)
+                .addAnnotations(targetAnnotations)
+                .addExcludedAnnotations(excludedTargetAnnotations);
         List<Number> targetEntityIds = getNeuronEntityIds(targetSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)

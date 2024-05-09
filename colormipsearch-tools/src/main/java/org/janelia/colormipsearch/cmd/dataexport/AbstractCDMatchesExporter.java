@@ -38,7 +38,10 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     private static final Pattern SUSPICIOUS_MATCH_PATTERN = Pattern.compile("Suspicious match from .+ import");
 
     final List<String> targetLibraries;
+    final List<String> targetTags;
     final List<String> targetExcludedTags;
+    final List<String> targetAnnotations;
+    final List<String> targetExcludedAnnotations;
     final List<String> matchesExcludedTags;
     final ScoresFilter scoresFilter;
     final NeuronMatchesReader<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> neuronMatchesReader;
@@ -49,7 +52,10 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
     protected AbstractCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                         DataSourceParam dataSourceParam,
                                         List<String> targetLibraries,
+                                        List<String> targetTags,
                                         List<String> targetExcludedTags,
+                                        List<String> targetAnnotations,
+                                        List<String> targetExcludedAnnotations,
                                         List<String> matchesExcludedTags,
                                         ScoresFilter scoresFilter,
                                         URLTransformer urlTransformer,
@@ -62,8 +68,11 @@ public abstract class AbstractCDMatchesExporter extends AbstractDataExporter {
                                         int processingPartitionSize) {
         super(jacsDataHelper, dataSourceParam, urlTransformer, imageStoreMapping, outputDir, executor);
         this.targetLibraries = targetLibraries;
+        this.targetTags = targetTags;
         this.targetExcludedTags = targetExcludedTags;
         this.matchesExcludedTags = matchesExcludedTags;
+        this.targetAnnotations = targetAnnotations;
+        this.targetExcludedAnnotations = targetExcludedAnnotations;
         this.scoresFilter = scoresFilter;
         this.neuronMatchesReader = neuronMatchesReader;
         this.neuronMetadataDao = neuronMetadataDao;

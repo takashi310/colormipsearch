@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.dto;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -47,6 +48,7 @@ public abstract class AbstractNeuronMetadata {
     private String alignmentSpace;
     private String anatomicalArea;
     private Gender gender;
+    private List<String> terms;
     private boolean unpublished;
     // neuronFiles holds S3 files used by the NeuronBridge app
     private final Map<FileType, String> neuronFiles = new HashMap<>();
@@ -152,6 +154,14 @@ public abstract class AbstractNeuronMetadata {
 
     public void setGender(Gender gender) {
         this.gender = gender;
+    }
+
+    public List<String> getTerms() {
+        return terms;
+    }
+
+    public void setTerms(List<String> terms) {
+        this.terms = terms;
     }
 
     @JsonIgnore

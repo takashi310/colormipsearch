@@ -30,12 +30,16 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param maskDatasets
      * @param maskTags
      * @param maskExcludedTags
+     * @param maskAnnotations
+     * @param excludedMaskAnnotations
      * @param targetLibraries
      * @param targetPublishedNames
      * @param targetMipIds
      * @param targetDatasets
      * @param targetTags
      * @param targetExcludedTags
+     * @param targetAnnotations
+     * @param excludedTargetAnnotations
      * @param matchTags
      * @param matchExcludedTags
      * @param matchScoresFilter
@@ -49,12 +53,16 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                               Collection<String> maskDatasets,
                               Collection<String> maskTags,
                               Collection<String> maskExcludedTags,
+                              Collection<String> maskAnnotations,
+                              Collection<String> excludedMaskAnnotations,
                               Collection<String> targetLibraries,
                               Collection<String> targetPublishedNames,
                               Collection<String> targetMipIds,
                               Collection<String> targetDatasets,
                               Collection<String> targetTags,
                               Collection<String> targetExcludedTags,
+                              Collection<String> targetAnnotations,
+                              Collection<String> excludedTargetAnnotations,
                               Collection<String> matchTags,
                               Collection<String> matchExcludedTags,
                               ScoresFilter matchScoresFilter,
@@ -70,12 +78,16 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
      * @param maskDatasets
      * @param maskTags
      * @param maskExcludedTags
+     * @param maskAnnotations
+     * @param excludedMaskAnnotations
      * @param targetLibraries
      * @param targetPublishedNames
      * @param targetMipIds
      * @param targetDatasets
      * @param targetTags
      * @param targetExcludedTags
+     * @param targetAnnotations
+     * @param excludedTargetAnnotations
      * @param matchTags
      * @param matchExcludedTags
      * @param matchScoresFilter
@@ -89,12 +101,16 @@ public interface NeuronMatchesReader<R extends AbstractMatchEntity<? extends Abs
                                 Collection<String> maskDatasets,
                                 Collection<String> maskTags,
                                 Collection<String> maskExcludedTags,
+                                Collection<String> maskAnnotations,
+                                Collection<String> excludedMaskAnnotations,
                                 Collection<String> targetLibraries,
                                 Collection<String> targetPublishedNames,
                                 Collection<String> targetMipIds,
                                 Collection<String> targetDatasets,
                                 Collection<String> targetTags,
                                 Collection<String> targetExcludedTags,
+                                Collection<String> targetAnnotations,
+                                Collection<String> excludedTargetAnnotations,
                                 Collection<String> matchTags,
                                 Collection<String> matchExcludedTags,
                                 ScoresFilter matchScoresFilter,

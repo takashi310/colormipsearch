@@ -41,7 +41,10 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                List<String> maskLibraries,
+                               List<String> maskTags,
                                List<String> maskExcludedTags,
+                               List<String> maskAnnotations,
+                               List<String> maskExcludedAnnotations,
                                List<String> matchesExcludedTags,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
@@ -54,8 +57,13 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                                int processingPartitionSize) {
         super(jacsDataHelper,
                 dataSourceParam,
-                maskLibraries, maskExcludedTags,
-                matchesExcludedTags, scoresFilter,
+                maskLibraries,
+                maskTags,
+                maskExcludedTags,
+                maskAnnotations,
+                maskExcludedAnnotations,
+                matchesExcludedTags,
+                scoresFilter,
                 urlTransformer,
                 imageStoreMapping,
                 outputDir,
@@ -95,16 +103,19 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     /* maskDatasets */null,
                     /* maskTags */null,
                     /* maskExcludedTags */targetExcludedTags,
+                    targetAnnotations,
+                    targetExcludedAnnotations,
                     /* targetLibraries */null,
                     /* targetPublishedNames */null,
-                    /* targetMIPIds */Collections.singletonList(targetMipId),
-                    /* targetDatasets */dataSourceParam.getDatasets(),
-                    /* targetTags */dataSourceParam.getTags(),
-                    /* targetExcludedTags */dataSourceParam.getExcludedTags(), // use the tags for selecting the targets but not for selecting the matches
-                    /* matchTags */null,
+                    /* targetMIPIds */null,
+                    /* targetDatasets */Collections.singletonList(targetMipId),
+                    /* targetTags */dataSourceParam.getDatasets(),
+                    /* targetExcludedTags */dataSourceParam.getTags(), // use the tags for selecting the targets but not for selecting the matches
+                    /* targetAnnotations */dataSourceParam.getAnnotations(),
+                    /* targtExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
+                    /* matchTags */dataSourceParam.getExcludedTags(),
                     /* matchExcludedTags */matchesExcludedTags,
-                    scoresFilter,
-                    null/* no sorting yet because it uses too much memory on the server */);
+                    scoresFilter, /* no sorting yet because it uses too much memory on the server */null);
             LOG.info("Found {} color depth matches for mip {}", allMatchesForTarget.size(), targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
             if (allMatchesForTarget.isEmpty()) {

@@ -142,6 +142,8 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                                 .addMipIDs(args.masksMIPIDs)
                                 .addDatasets(args.maskDatasets)
                                 .addTags(args.maskTags)
+                                .addAnnotations(args.maskAnnotations)
+                                .addExcludedAnnotations(args.excludedMaskAnnotations)
                                 .setOffset(larg.offset)
                                 .setSize(larg.length))
                 .collect(Collectors.toList()));
@@ -351,12 +353,16 @@ class CalculateGradientScoresCmd extends AbstractCmd {
                 args.maskDatasets,
                 args.maskTags,
                 /*maskExcludedTags*/null,
+                args.maskAnnotations,
+                args.excludedMaskAnnotations,
                 args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
                 args.targetDatasets,
                 args.targetTags,
                 /*targetExcludedTags*/null,
+                args.targetAnnotations,
+                args.excludedTargetAnnotations,
                 args.matchTags,
                 /*matchExcludedTags*/null,
                 neuronsMatchScoresFilter,

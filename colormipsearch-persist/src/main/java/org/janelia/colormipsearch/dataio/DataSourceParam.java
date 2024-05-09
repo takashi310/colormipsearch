@@ -17,8 +17,10 @@ public class DataSourceParam {
     private Collection<String> mipIDs = new HashSet<>();
     private Collection<String> names = new HashSet<>();
     private Collection<String> tags = new HashSet<>();
-    private Collection<String> datasets = new HashSet<>();
     private Collection<String> excludedTags = new HashSet<>();
+    private Collection<String> datasets = new HashSet<>();
+    private Collection<String> annotations = new HashSet<>();
+    private Collection<String> excludedAnnotations = new HashSet<>();
     private long offset;
     private int size;
 
@@ -82,6 +84,15 @@ public class DataSourceParam {
         return this;
     }
 
+    public Collection<String> getExcludedTags() {
+        return excludedTags;
+    }
+
+    public DataSourceParam addExcludedTags(Collection<String> excludedTags) {
+        if (excludedTags != null) excludedTags.stream().filter(StringUtils::isNotBlank).forEach(t -> this.excludedTags.add(t));
+        return this;
+    }
+
     public Collection<String> getDatasets() {
         return datasets;
     }
@@ -89,15 +100,23 @@ public class DataSourceParam {
     public DataSourceParam addDatasets(Collection<String> datasets) {
         if (datasets != null) datasets.stream().filter(StringUtils::isNotBlank).forEach(ds -> this.datasets.add(ds));
         return this;
-
     }
 
-    public Collection<String> getExcludedTags() {
-        return excludedTags;
+    public Collection<String> getAnnotations() {
+        return annotations;
     }
 
-    public DataSourceParam addExcludedTags(Collection<String> excludedTags) {
-        if (excludedTags != null) excludedTags.stream().filter(StringUtils::isNotBlank).forEach(t -> this.excludedTags.add(t));
+    public DataSourceParam addAnnotations(Collection<String> annotations) {
+        if (annotations != null) annotations.stream().filter(StringUtils::isNotBlank).forEach(a -> this.annotations.add(a));
+        return this;
+    }
+
+    public Collection<String> getExcludedAnnotations() {
+        return excludedAnnotations;
+    }
+
+    public DataSourceParam addExcludedAnnotations(Collection<String> annotations) {
+        if (annotations != null) annotations.stream().filter(StringUtils::isNotBlank).forEach(a -> this.excludedAnnotations.add(a));
         return this;
     }
 

@@ -123,6 +123,12 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-neuron-tags"}, description = "Neuron tags to be excluded from export", variableArity = true)
         List<String> excludedNeuronTags = new ArrayList<>();
 
+        @Parameter(names = {"--neuron-terms"}, description = "Neuron annotations to be exported", variableArity = true)
+        List<String> neuronAnnotations = new ArrayList<>();
+
+        @Parameter(names = {"--excluded-neuron-terms"}, description = "Neuron terms to be excluded from export", variableArity = true)
+        List<String> excludedNeuronAnnotations = new ArrayList<>();
+
         @Parameter(names = {"--target-tags"}, description = "Target neuron tags to be exported",
                 variableArity = true)
         List<String> targetNeuronTags = new ArrayList<>();
@@ -130,6 +136,14 @@ class ExportData4NBCmd extends AbstractCmd {
         @Parameter(names = {"--excluded-target-tags"}, description = "Target neuron tags to be excluded from export",
                 variableArity = true)
         List<String> excludedTargetNeuronTags = new ArrayList<>();
+
+        @Parameter(names = {"--target-terms"}, description = "Target neuron annotations to be exported",
+                variableArity = true)
+        List<String> targetNeuronAnnotations = new ArrayList<>();
+
+        @Parameter(names = {"--excluded-target-terms"}, description = "Target neuron annotations to be excluded from export",
+                variableArity = true)
+        List<String> excludedTargetNeuronAnnotations = new ArrayList<>();
 
         @Parameter(names = {"--excluded-matches-tags"}, description = "Matches tags to be excluded from export", variableArity = true)
         List<String> excludedMatchesTags = new ArrayList<>();
@@ -234,6 +248,8 @@ class ExportData4NBCmd extends AbstractCmd {
                 .addLibraries(args.libraries)
                 .addTags(args.neuronTags)
                 .addExcludedTags(args.excludedNeuronTags)
+                .addAnnotations(args.neuronAnnotations)
+                .addExcludedAnnotations(args.excludedNeuronAnnotations)
                 .addNames(args.exportedNames)
                 .setOffset(args.offset)
                 .setSize(args.size);
@@ -255,6 +271,8 @@ class ExportData4NBCmd extends AbstractCmd {
                         args.targetLibraries,
                         args.targetNeuronTags,
                         args.excludedTargetNeuronTags,
+                        args.targetNeuronAnnotations,
+                        args.excludedTargetNeuronAnnotations,
                         args.excludedMatchesTags,
                         getCDScoresFilter(),
                         urlTransformer,
@@ -275,7 +293,10 @@ class ExportData4NBCmd extends AbstractCmd {
                         dataHelper,
                         dataSource,
                         args.targetLibraries,
+                        args.targetNeuronTags,
                         args.excludedTargetNeuronTags,
+                        args.targetNeuronAnnotations,
+                        args.excludedTargetNeuronAnnotations,
                         args.excludedMatchesTags,
                         getCDScoresFilter(),
                         urlTransformer,

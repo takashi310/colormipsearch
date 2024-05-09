@@ -40,6 +40,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     // This will be used to identify the matched neurons for PPP since the color depth MIPs are not
     // part of the PPP match process at all.
     private String sourceRefId;
+    private List<String> neuronTerms;
     // computeFileData holds local files used either for precompute or upload
     private final Map<ComputeFileType, FileData> computeFiles = new HashMap<>();
     // processed tags holds the corresponding processing tag used for the ColorDepthSearch or PPPM import
@@ -121,6 +122,14 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
                 return sourceRefId.substring(separatorIndex+1);
             }
         }
+    }
+
+    public List<String> getNeuronTerms() {
+        return neuronTerms;
+    }
+
+    public void setNeuronTerms(List<String> neuronTerms) {
+        this.neuronTerms = neuronTerms;
     }
 
     @JsonProperty
@@ -246,6 +255,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         fieldList.add(new EntityField<>("libraryName", false, libraryName));
         fieldList.add(new EntityField<>("publishedName", false, publishedName));
         fieldList.add(new EntityField<>("sourceRefId", false, sourceRefId));
+        fieldList.add(new EntityField<>("neuronTerms", false, neuronTerms));
         fieldList.add(new EntityField<>("updatedDate", false, getUpdatedDate()));
         // datasetLabels is a collection but will always be replaced instead of appended to existing values
         fieldList.add(new EntityField<>("datasetLabels", false, datasetLabels));
@@ -309,6 +319,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         this.libraryName = that.getLibraryName();
         this.publishedName = that.getPublishedName();
         this.sourceRefId = that.getSourceRefId();
+        this.neuronTerms = that.getNeuronTerms();
         this.computeFiles.clear();
         this.computeFiles.putAll(that.getComputeFiles());
         this.addAllTags(that.getTags());

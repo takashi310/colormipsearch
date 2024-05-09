@@ -93,6 +93,16 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 variableArity = true)
         List<String> masksTags;
 
+        @Parameter(names = {"--masks-terms"}, description = "Masks MIPs annotations (terms) to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
+        List<String> masksAnnotations;
+
+        @Parameter(names = {"--excluded-masks-terms"}, description = "Masks MIPs annotations (terms) to be excluded for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
+        List<String> excludedMasksAnnotations;
+
         @Parameter(names = {"--masks-datasets"}, description = "Masks MIPs datasets to be selected for CDS",
                 listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true)
@@ -102,6 +112,16 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 listConverter = ListValueAsFileArgConverter.class,
                 variableArity = true)
         List<String> targetsTags;
+
+        @Parameter(names = {"--targets-terms"}, description = "Targets MIPs annotations (terms) to be selected for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
+        List<String> targetsAnnotations;
+
+        @Parameter(names = {"--excluded-targets-terms"}, description = "Targets MIPs annotations (terms) to be excluded for CDS",
+                listConverter = ListValueAsFileArgConverter.class,
+                variableArity = true)
+        List<String> excludedTargetsAnnotations;
 
         @Parameter(names = {"--targets-datasets"}, description = "Targets MIPs datasets to be selected for CDS",
                 listConverter = ListValueAsFileArgConverter.class,
@@ -191,6 +211,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.masksPublishedNames,
                 args.masksDatasets,
                 args.masksTags,
+                args.masksAnnotations,
+                args.excludedMasksAnnotations,
                 args.masksStartIndex, args.masksLength,
                 args.maskMIPsFilter);
         LOG.info("Read {} masks", maskMips.size());
@@ -200,6 +222,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                 args.targetsPublishedNames,
                 args.targetsDatasets,
                 args.targetsTags,
+                args.targetsAnnotations,
+                args.excludedTargetsAnnotations,
                 args.targetsStartIndex, args.targetsLength,
                 args.libraryMIPsFilter);
         LOG.info("Read {} targets", targetMips.size());
@@ -368,6 +392,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                                           List<String> mipsPublishedNames,
                                                           List<String> mipsDatasets,
                                                           List<String> mipsTags,
+                                                          List<String> mipsAnnotations,
+                                                          List<String> excludedMipsAnnotations,
                                                           long startIndexArg, int length,
                                                           Set<String> filter) {
         long startIndex = startIndexArg > 0 ? startIndexArg : 0;
@@ -379,6 +405,8 @@ class ColorDepthSearchCmd extends AbstractCmd {
                                 .addNames(mipsPublishedNames)
                                 .addDatasets(mipsDatasets)
                                 .addTags(mipsTags)
+                                .addAnnotations(mipsAnnotations)
+                                .addExcludedAnnotations(excludedMipsAnnotations)
                                 .setOffset(libraryInput.offset)
                                 .setSize(libraryInput.length)).stream())
                 .filter(neuronMetadata -> CollectionUtils.isEmpty(filter) ||

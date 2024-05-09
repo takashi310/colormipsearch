@@ -37,7 +37,6 @@ import org.janelia.colormipsearch.dataio.fs.JSONNeuronMatchesWriter;
 import org.janelia.colormipsearch.datarequests.ScoresFilter;
 import org.janelia.colormipsearch.datarequests.SortCriteria;
 import org.janelia.colormipsearch.datarequests.SortDirection;
-import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.mips.NeuronMIP;
 import org.janelia.colormipsearch.mips.NeuronMIPUtils;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
@@ -45,7 +44,6 @@ import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.CDMatchEntity;
 import org.janelia.colormipsearch.model.ComputeFileType;
 import org.janelia.colormipsearch.model.EMNeuronEntity;
-import org.janelia.colormipsearch.model.FileData;
 import org.janelia.colormipsearch.model.LMNeuronEntity;
 import org.janelia.colormipsearch.model.ProcessingType;
 import org.janelia.colormipsearch.results.ItemsHandling;
@@ -249,12 +247,16 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
                 args.maskDatasets,
                 args.maskTags,
                 /*maskExcludedTags*/null,
+                args.maskAnnotations,
+                args.excludedMaskAnnotations,
                 args.targetsLibraries,
                 args.targetsPublishedNames,
                 args.targetsMIPIDs,
                 args.targetDatasets,
                 args.targetTags,
                 /*targetExcludedTags*/null,
+                args.targetAnnotations,
+                args.excludedTargetAnnotations,
                 args.matchTags,
                 /*matchExcludedTags*/null,
                 neuronsMatchScoresFilter,

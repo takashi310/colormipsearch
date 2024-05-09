@@ -37,15 +37,14 @@ import org.slf4j.LoggerFactory;
 
 public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
     private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
-    private final List<String> targetLibraries;
-    private final List<String> targetTags;
-    private final List<String> targetExcludedTags;
 
     public EMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,
                                List<String> targetLibraries,
                                List<String> targetTags,
                                List<String> targetExcludedTags,
+                               List<String> targetAnnotations,
+                               List<String> targetExcludedAnnotations,
                                List<String> matchesExcludedTags,
                                ScoresFilter scoresFilter,
                                URLTransformer urlTransformer,
@@ -59,7 +58,10 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
         super(jacsDataHelper,
                 dataSourceParam,
                 targetLibraries,
+                targetTags,
                 targetExcludedTags,
+                targetAnnotations,
+                targetExcludedAnnotations,
                 matchesExcludedTags,
                 scoresFilter,
                 urlTransformer,
@@ -70,9 +72,6 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                 neuronMetadataDao,
                 resultMatchesWriter,
                 processingPartitionSize);
-        this.targetLibraries = targetLibraries;
-        this.targetTags = targetTags;
-        this.targetExcludedTags = targetExcludedTags;
     }
 
     @Override
@@ -103,12 +102,16 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
                     /* maskDatasets */dataSourceParam.getDatasets(),
                     /* maskTags */dataSourceParam.getTags(), // use the tags for selecting the masks but not for selecting the matches
                     /* maskExcludedTags */dataSourceParam.getExcludedTags(),
+                    /* maskAnnotations */dataSourceParam.getAnnotations(),
+                    /* maskExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
                     /* targetLibraries */targetLibraries,
                     /* targetPublishedNames */null,
                     /* targetMIPIDs */null,
                     /* targetDatasets */null,
                     /* targetTags */targetTags,
                     /* targetExcludedTags */targetExcludedTags,
+                    targetAnnotations,
+                    targetExcludedAnnotations,
                     /* matchTags */null,
                     /* matchExcludedTags */matchesExcludedTags,
                     scoresFilter,
