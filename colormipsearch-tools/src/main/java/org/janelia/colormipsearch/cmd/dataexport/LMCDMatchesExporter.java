@@ -113,7 +113,7 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
                     /* targetExcludedTags */dataSourceParam.getExcludedTags(),
                     /* targetAnnotations */dataSourceParam.getAnnotations(),
                     /* targetExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
-                    /* matchTags */dataSourceParam.getExcludedTags(),
+                    /* matchTags */null,
                     /* matchExcludedTags */matchesExcludedTags,
                     /* matchesScoresFilter */scoresFilter,
                     /* no sorting yet because it uses too much memory on the server */null);

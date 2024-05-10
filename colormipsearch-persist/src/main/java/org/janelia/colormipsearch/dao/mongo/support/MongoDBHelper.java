@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
-import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
@@ -24,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.janelia.colormipsearch.model.AbstractBaseEntity;
-import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
