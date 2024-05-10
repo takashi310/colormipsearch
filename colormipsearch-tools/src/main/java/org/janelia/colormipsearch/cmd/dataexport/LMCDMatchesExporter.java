@@ -96,26 +96,27 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         targetMipIds.forEach(targetMipId -> {
             LOG.info("Read LM color depth matches for mip {}", targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesByTarget(
-                    dataSourceParam.getAlignmentSpace(),
+                    /* alignmentSpace */dataSourceParam.getAlignmentSpace(),
                     /* maskLibraries */targetLibraries, // for LM -> EM targetLibraries should be EM libraries so they are mask libs
                     /* maskPublishedNames */null,
                     /* maskMIPIds */null,
                     /* maskDatasets */null,
-                    /* maskTags */null,
+                    /* maskTags */targetTags,
                     /* maskExcludedTags */targetExcludedTags,
-                    targetAnnotations,
-                    targetExcludedAnnotations,
+                    /* maskAnnotations */targetAnnotations,
+                    /* maskExcludedAnnotations*/targetExcludedAnnotations,
                     /* targetLibraries */null,
                     /* targetPublishedNames */null,
-                    /* targetMIPIds */null,
-                    /* targetDatasets */Collections.singletonList(targetMipId),
-                    /* targetTags */dataSourceParam.getDatasets(),
-                    /* targetExcludedTags */dataSourceParam.getTags(), // use the tags for selecting the targets but not for selecting the matches
+                    /* targetMIPIds */Collections.singletonList(targetMipId),
+                    /* targetDatasets */dataSourceParam.getDatasets(),
+                    /* targetTags */dataSourceParam.getTags(),
+                    /* targetExcludedTags */dataSourceParam.getExcludedTags(),
                     /* targetAnnotations */dataSourceParam.getAnnotations(),
-                    /* targtExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
+                    /* targetExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
                     /* matchTags */dataSourceParam.getExcludedTags(),
                     /* matchExcludedTags */matchesExcludedTags,
-                    scoresFilter, /* no sorting yet because it uses too much memory on the server */null);
+                    /* matchesScoresFilter */scoresFilter,
+                    /* no sorting yet because it uses too much memory on the server */null);
             LOG.info("Found {} color depth matches for mip {}", allMatchesForTarget.size(), targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> selectedMatchesForTarget;
             if (allMatchesForTarget.isEmpty()) {
