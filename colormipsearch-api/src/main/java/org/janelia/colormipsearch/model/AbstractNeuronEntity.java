@@ -254,6 +254,7 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
         fieldList.add(new EntityField<>("alignmentSpace", false, alignmentSpace));
         fieldList.add(new EntityField<>("libraryName", false, libraryName));
         fieldList.add(new EntityField<>("publishedName", false, publishedName));
+        fieldList.add(new EntityField<>("mipId", false, getMipId()));
         fieldList.add(new EntityField<>("sourceRefId", false, sourceRefId));
         fieldList.add(new EntityField<>("neuronTerms", false, neuronTerms));
         fieldList.add(new EntityField<>("updatedDate", false, getUpdatedDate()));
@@ -270,7 +271,6 @@ public abstract class AbstractNeuronEntity extends AbstractBaseEntity {
     public List<EntityField<?>>  updateableFieldsOnInsert() {
         List<EntityField<?>> fieldList = new ArrayList<>();
         fieldList.add(new EntityField<>("class", false, getEntityClass()));
-        fieldList.add(new EntityField<>("mipId", false, getMipId()));
         fieldList.add(new EntityField<>("tags", true, getTags()));
         return fieldList;
     }
