@@ -20,6 +20,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BulkWriteOptions;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Projections;
@@ -94,17 +95,19 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         } else {
             selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
         }
+        List<Bson> mipSelectFilter = new ArrayList<>();
         if (neuron.hasMipID()) {
-            selectFilters.add(MongoDaoHelper.createEqFilter("mipId", neuron.getMipId()));
+            mipSelectFilter.add(MongoDaoHelper.createEqFilter("mipId", neuron.getMipId()));
         }
-        selectFilters.add(MongoDaoHelper.createEqFilter(
-                "computeFiles.InputColorDepthImage",
-                neuron.getComputeFileName(ComputeFileType.InputColorDepthImage))
-        );
-        selectFilters.add(MongoDaoHelper.createEqFilter(
-                "computeFiles.SourceColorDepthImage",
-                neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
-        );
+        mipSelectFilter.add(Filters.and(
+                MongoDaoHelper.createEqFilter(
+                        "computeFiles.InputColorDepthImage",
+                        neuron.getComputeFileName(ComputeFileType.InputColorDepthImage)),
+                MongoDaoHelper.createEqFilter(
+                        "computeFiles.SourceColorDepthImage",
+                        neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
+        ));
+        selectFilters.add(Filters.or(mipSelectFilter));
         neuron.updateableFieldValues().forEach((f) -> {
             if (!f.isToBeAppended()) {
                 updates.add(MongoDaoHelper.getFieldUpdate(f.getFieldName(), new SetFieldValueHandler<>(f.getValue())));
