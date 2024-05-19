@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.janelia.colormipsearch.dataio.DataSourceParam;
 import org.janelia.colormipsearch.dataio.fileutils.FSUtils;
 import org.janelia.colormipsearch.model.AbstractMatchEntity;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
@@ -93,19 +94,10 @@ public class JSONReadWriteTest {
                     List<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>>  matchesFromFile =
                             em2lmMatchesReader.readMatchesByMask(
                                     /* alignmentSpace */null,
-                                    /* maskLibraries */null,
-                                    /* maskPublishedNames */null,
-                                    Collections.singletonList(f),
-                                    /* maskDatasets */null,
-                                    /* maskTags */null,
-                                    /* maskExcludedTags */null,
-                                    /* targetLibraries */null, null, null,
-                                    /* targetPublishedNames */null,
-                                    /* targetMIPIDs */null,
-                                    /* targetDatasets*/null,
-                                    /* targetTags */null,
-                                    /* targetExcludedTags */null,
-                                    /* matchTags */null, null, null,
+                                    new DataSourceParam()
+                                            .addMipID(f),
+                                    new DataSourceParam(),
+                                    /* matchTags */null,
                                     /* matchExcludedTags */null,
                                     /* matchScoresFilter */null,
                                     /* sortCriteria */null);

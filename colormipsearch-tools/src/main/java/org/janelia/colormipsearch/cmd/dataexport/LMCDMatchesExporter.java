@@ -96,23 +96,19 @@ public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
         targetMipIds.forEach(targetMipId -> {
             LOG.info("Read LM color depth matches for mip {}", targetMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForTarget = neuronMatchesReader.readMatchesByTarget(
-                    /* alignmentSpace */dataSourceParam.getAlignmentSpace(),
-                    /* maskLibraries */targetLibraries, // for LM -> EM targetLibraries should be EM libraries so they are mask libs
-                    /* maskPublishedNames */null,
-                    /* maskMIPIds */null,
-                    /* maskDatasets */null,
-                    /* maskTags */targetTags,
-                    /* maskExcludedTags */targetExcludedTags,
-                    /* maskAnnotations */targetAnnotations,
-                    /* maskExcludedAnnotations*/targetExcludedAnnotations,
-                    /* targetLibraries */null,
-                    /* targetPublishedNames */null,
-                    /* targetMIPIds */Collections.singletonList(targetMipId),
-                    /* targetDatasets */dataSourceParam.getDatasets(),
-                    /* targetTags */dataSourceParam.getTags(),
-                    /* targetExcludedTags */dataSourceParam.getExcludedTags(),
-                    /* targetAnnotations */dataSourceParam.getAnnotations(),
-                    /* targetExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
+                    dataSourceParam.getAlignmentSpace(),
+                    new DataSourceParam()
+                            .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
+                            .addLibraries(targetLibraries)
+                            .addTags(targetTags)
+                            .addExcludedTags(targetExcludedTags)
+                            .addAnnotations(targetAnnotations)
+                            .addExcludedAnnotations(targetExcludedAnnotations),
+                    dataSourceParam.duplicate()
+                            .resetLibraries()
+                            .resetNames()
+                            .resetMipIDs()
+                            .addMipID(targetMipId),
                     /* matchTags */null,
                     /* matchExcludedTags */matchesExcludedTags,
                     /* matchesScoresFilter */scoresFilter,

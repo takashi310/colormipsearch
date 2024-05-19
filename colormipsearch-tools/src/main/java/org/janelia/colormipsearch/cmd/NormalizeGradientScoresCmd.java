@@ -241,22 +241,22 @@ class NormalizeGradientScoresCmd extends AbstractCmd {
         // the "targets" filtering will be used for normalizing the score for the selected targets
         return cdsMatchesReader.readMatchesByMask(
                 args.alignmentSpace,
-                /* maskLibraries */null,
-                /* maskPublishedNames */null,
-                /* maskMIPIds*/Collections.singletonList(maskCDMipId),
-                /* maskDatasets */args.maskDatasets,
-                /* maskTags */args.maskTags,
-                /* excludedMaskTags */null,
-                /* maskAnnotations */args.maskAnnotations,
-                /* excludedMaskAnnotations */args.excludedMaskAnnotations,
-                /* targetsLibraries */args.targetsLibraries,
-                /* targetsPublishedNames */args.targetsPublishedNames,
-                /* targetsMIPIDs */args.targetsMIPIDs,
-                /* targetDatasets */args.targetDatasets,
-                /* targetTags */args.targetTags,
-                /* excludedTargetTags */null,
-                /* targetAnnotations */args.targetAnnotations,
-                /* excludedTargetAnnotations */args.excludedTargetAnnotations,
+                new DataSourceParam()
+                        .setAlignmentSpace(args.alignmentSpace)
+                        .addMipID(maskCDMipId)
+                        .addDatasets(args.maskDatasets)
+                        .addTags(args.maskTags)
+                        .addAnnotations(args.maskAnnotations)
+                        .addExcludedAnnotations(args.excludedMaskAnnotations),
+                new DataSourceParam()
+                        .setAlignmentSpace(args.alignmentSpace)
+                        .addLibraries(args.targetsLibraries)
+                        .addNames(args.targetsPublishedNames)
+                        .addMipIDs(args.targetsMIPIDs)
+                        .addDatasets(args.targetDatasets)
+                        .addTags(args.targetTags)
+                        .addAnnotations(args.targetAnnotations)
+                        .addExcludedAnnotations(args.excludedTargetAnnotations),
                 args.matchTags,
                 /*matchExcludedTags*/null,
                 neuronsMatchScoresFilter,

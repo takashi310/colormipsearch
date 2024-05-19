@@ -200,20 +200,11 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         LOG.info("Read all color depth matches for {}", maskCDMipId);
         // it's not clear from the API but the reader is file based so tags are not important here
         return cdsMatchesReader.readMatchesByMask(
-                /* alignmentSpace */null,
-                /* maskLibraries */null,
-                /* maskPublishedNames */null,
-                Collections.singletonList(maskCDMipId),
-                /* maskDatasets */null,
-                /* maskTags */null,
-                /* maskExcludedTags */null,
-                /* targetLibraries */null, null, null,
-                /* targetPublishedNames */null,
-                /* targetMIPIDs */null,
-                /* targetDatasets */null,
-                /* targetTags */null,
-                /* targetExcludedTags */null,
-                /* matchTags */null, null, null,
+                null,
+                new DataSourceParam()
+                        .addMipID(maskCDMipId),
+                new DataSourceParam(),
+                /* matchTags */null,
                 /* matchExcludedTags */null,
                 /* matchScoresFilter */null,
                 Collections.singletonList(

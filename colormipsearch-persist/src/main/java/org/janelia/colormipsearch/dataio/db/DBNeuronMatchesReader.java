@@ -67,46 +67,32 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     @Override
     public List<R> readMatchesByMask(String alignmentSpace,
-                                     Collection<String> maskLibraries,
-                                     Collection<String> maskPublishedNames,
-                                     Collection<String> maskMipIds,
-                                     Collection<String> maskDatasets,
-                                     Collection<String> maskTags,
-                                     Collection<String> maskExcludedTags,
-                                     Collection<String> maskAnnotations,
-                                     Collection<String> excludedMaskAnnotations,
-                                     Collection<String> targetLibraries,
-                                     Collection<String> targetPublishedNames,
-                                     Collection<String> targetMipIds,
-                                     Collection<String> targetDatasets,
-                                     Collection<String> targetTags,
-                                     Collection<String> targetExcludedTags,
-                                     Collection<String> targetAnnotations,
-                                     Collection<String> excludedTargetAnnotations,
+                                     DataSourceParam maskDataSource,
+                                     DataSourceParam targetDataSource,
                                      Collection<String> matchTags,
                                      Collection<String> matchExcludedTags,
                                      ScoresFilter matchScoresFilter,
                                      List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
-                .addLibraries(maskLibraries)
-                .addNames(maskPublishedNames)
-                .addMipIDs(maskMipIds)
-                .addDatasetLabels(maskDatasets)
-                .addTags(maskTags)
-                .addExcludedTags(maskExcludedTags)
-                .addAnnotations(maskAnnotations)
-                .addExcludedAnnotations(excludedMaskAnnotations);
+                .addLibraries(maskDataSource.getLibraries())
+                .addNames(maskDataSource.getNames())
+                .addMipIDs(maskDataSource.getMipIDs())
+                .addDatasetLabels(maskDataSource.getDatasets())
+                .addTags(maskDataSource.getTags())
+                .addExcludedTags(maskDataSource.getExcludedTags())
+                .addAnnotations(maskDataSource.getAnnotations())
+                .addExcludedAnnotations(maskDataSource.getAnnotations());
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
-                .addLibraries(targetLibraries)
-                .addNames(targetPublishedNames)
-                .addMipIDs(targetMipIds)
-                .addDatasetLabels(targetDatasets)
-                .addTags(targetTags)
-                .addExcludedTags(targetExcludedTags)
-                .addAnnotations(targetAnnotations)
-                .addExcludedAnnotations(excludedTargetAnnotations);
+                .addLibraries(targetDataSource.getLibraries())
+                .addNames(targetDataSource.getNames())
+                .addMipIDs(targetDataSource.getMipIDs())
+                .addDatasetLabels(targetDataSource.getDatasets())
+                .addTags(targetDataSource.getTags())
+                .addExcludedTags(targetDataSource.getExcludedTags())
+                .addAnnotations(targetDataSource.getAnnotations())
+                .addExcludedAnnotations(targetDataSource.getExcludedAnnotations());
         List<Number> maskEntityIds = getNeuronEntityIds(maskSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)
@@ -119,46 +105,32 @@ public class DBNeuronMatchesReader<R extends AbstractMatchEntity<? extends Abstr
 
     @Override
     public List<R> readMatchesByTarget(String alignmentSpace,
-                                       Collection<String> maskLibraries,
-                                       Collection<String> maskPublishedNames,
-                                       Collection<String> maskMipIds,
-                                       Collection<String> maskDatasets,
-                                       Collection<String> maskTags,
-                                       Collection<String> maskExcludedTags,
-                                       Collection<String> maskAnnotations,
-                                       Collection<String> excludedMaskAnnotations,
-                                       Collection<String> targetLibraries,
-                                       Collection<String> targetPublishedNames,
-                                       Collection<String> targetMipIds,
-                                       Collection<String> targetDatasets,
-                                       Collection<String> targetTags,
-                                       Collection<String> targetExcludedTags,
-                                       Collection<String> targetAnnotations,
-                                       Collection<String> excludedTargetAnnotations,
+                                       DataSourceParam maskDataSource,
+                                       DataSourceParam targetDataSource,
                                        Collection<String> matchTags,
                                        Collection<String> matchExcludedTags,
                                        ScoresFilter matchScoresFilter,
                                        List<SortCriteria> sortCriteriaList) {
         NeuronSelector maskSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
-                .addLibraries(maskLibraries)
-                .addNames(maskPublishedNames)
-                .addMipIDs(maskMipIds)
-                .addDatasetLabels(maskDatasets)
-                .addTags(maskTags)
-                .addExcludedTags(maskExcludedTags)
-                .addAnnotations(maskAnnotations)
-                .addExcludedAnnotations(excludedMaskAnnotations);
+                .addLibraries(maskDataSource.getLibraries())
+                .addNames(maskDataSource.getNames())
+                .addMipIDs(maskDataSource.getMipIDs())
+                .addDatasetLabels(maskDataSource.getDatasets())
+                .addTags(maskDataSource.getTags())
+                .addExcludedTags(maskDataSource.getExcludedTags())
+                .addAnnotations(maskDataSource.getAnnotations())
+                .addExcludedAnnotations(maskDataSource.getAnnotations());
         NeuronSelector targetSelector = new NeuronSelector()
                 .setAlignmentSpace(alignmentSpace)
-                .addLibraries(targetLibraries)
-                .addNames(targetPublishedNames)
-                .addMipIDs(targetMipIds)
-                .addDatasetLabels(targetDatasets)
-                .addTags(targetTags)
-                .addExcludedTags(targetExcludedTags)
-                .addAnnotations(targetAnnotations)
-                .addExcludedAnnotations(excludedTargetAnnotations);
+                .addLibraries(targetDataSource.getLibraries())
+                .addNames(targetDataSource.getNames())
+                .addMipIDs(targetDataSource.getMipIDs())
+                .addDatasetLabels(targetDataSource.getDatasets())
+                .addTags(targetDataSource.getTags())
+                .addExcludedTags(targetDataSource.getExcludedTags())
+                .addAnnotations(targetDataSource.getAnnotations())
+                .addExcludedAnnotations(targetDataSource.getExcludedAnnotations());
         List<Number> targetEntityIds = getNeuronEntityIds(targetSelector);
         NeuronsMatchFilter<R> neuronsMatchFilter = new NeuronsMatchFilter<R>()
                 .setScoresFilter(matchScoresFilter)

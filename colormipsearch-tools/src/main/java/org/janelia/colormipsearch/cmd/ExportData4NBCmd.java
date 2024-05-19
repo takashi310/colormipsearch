@@ -89,6 +89,9 @@ class ExportData4NBCmd extends AbstractCmd {
                 variableArity = true)
         List<String> targetLibraries = new ArrayList<>();
 
+        @Parameter(names = {"--exported-mips"}, description = "If set only export the specified MIPs", variableArity = true)
+        List<String> exportedMIPIDs = new ArrayList<>();
+
         @Parameter(names = {"--exported-names"}, description = "If set only export the specified names", variableArity = true)
         List<String> exportedNames = new ArrayList<>();
 
@@ -251,6 +254,7 @@ class ExportData4NBCmd extends AbstractCmd {
                 .addAnnotations(args.neuronAnnotations)
                 .addExcludedAnnotations(args.excludedNeuronAnnotations)
                 .addNames(args.exportedNames)
+                .addMipIDs(args.exportedMIPIDs)
                 .setOffset(args.offset)
                 .setSize(args.size);
         Executor exportsExecutor = CmdUtils.createCmdExecutor(args.commonArgs);

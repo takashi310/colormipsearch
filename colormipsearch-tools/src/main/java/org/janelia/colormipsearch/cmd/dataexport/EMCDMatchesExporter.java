@@ -96,22 +96,20 @@ public class EMCDMatchesExporter extends AbstractCDMatchesExporter {
             LOG.info("Read EM color depth matches for {}", maskMipId);
             List<CDMatchEntity<? extends AbstractNeuronEntity, ? extends AbstractNeuronEntity>> allMatchesForMask = neuronMatchesReader.readMatchesByMask(
                     dataSourceParam.getAlignmentSpace(),
-                    /* maskLibraries */null,
-                    /* maskPublishedNames */null,
-                    /* maskMIPIds */Collections.singletonList(maskMipId),
-                    /* maskDatasets */dataSourceParam.getDatasets(),
-                    /* maskTags */dataSourceParam.getTags(), // use the tags for selecting the masks but not for selecting the matches
-                    /* maskExcludedTags */dataSourceParam.getExcludedTags(),
-                    /* maskAnnotations */dataSourceParam.getAnnotations(),
-                    /* maskExcludedAnnotations */dataSourceParam.getExcludedAnnotations(),
-                    /* targetLibraries */targetLibraries,
-                    /* targetPublishedNames */null,
-                    /* targetMIPIDs */null,
-                    /* targetDatasets */null,
-                    /* targetTags */targetTags,
-                    /* targetExcludedTags */targetExcludedTags,
-                    targetAnnotations,
-                    targetExcludedAnnotations,
+                    dataSourceParam.duplicate()
+                            .resetLibraries()
+                            .resetNames()
+                            .resetMipIDs()
+                            .addMipID(maskMipId)
+                            .setOffset(0) // reset size and offset
+                            .setSize(0),
+                    new DataSourceParam()
+                            .setAlignmentSpace(dataSourceParam.getAlignmentSpace())
+                            .addLibraries(targetLibraries)
+                            .addTags(targetTags)
+                            .addExcludedTags(targetExcludedTags)
+                            .addAnnotations(targetAnnotations)
+                            .addExcludedAnnotations(targetExcludedAnnotations),
                     /* matchTags */null,
                     /* matchExcludedTags */matchesExcludedTags,
                     scoresFilter,

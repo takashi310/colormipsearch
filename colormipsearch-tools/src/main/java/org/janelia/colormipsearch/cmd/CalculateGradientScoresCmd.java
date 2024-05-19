@@ -347,22 +347,22 @@ class CalculateGradientScoresCmd extends AbstractCmd {
         }
         List<CDMatchEntity<M, T>> allCDMatches = cdsMatchesReader.readMatchesByMask(
                 args.alignmentSpace,
-                /* maskLibraries */null,
-                /* maskPublishedNames */null,
-                /* maskMIPIDs */Collections.singletonList(maskCDMipId),
-                /* maskDatasets */args.maskDatasets,
-                /* maskTags */args.maskTags,
-                /* maskExcludedTags */null,
-                /* maskAnnotations */args.maskAnnotations,
-                /* excludedMaskAnnotations */args.excludedMaskAnnotations,
-                /* targetsLibraries */args.targetsLibraries,
-                /* targetsPublishedNames */args.targetsPublishedNames,
-                /* targetsMIPIDs */args.targetsMIPIDs,
-                /* targetDatasets */args.targetDatasets,
-                /* targetTags */args.targetTags,
-                /* targetExcludedTags */null,
-                /* targetAnnotations */args.targetAnnotations,
-                /* excludedTargetAnnotations */args.excludedTargetAnnotations,
+                new DataSourceParam()
+                        .setAlignmentSpace(args.alignmentSpace)
+                        .addMipID(maskCDMipId)
+                        .addDatasets(args.maskDatasets)
+                        .addTags(args.maskTags)
+                        .addAnnotations(args.maskAnnotations)
+                        .addExcludedAnnotations(args.excludedMaskAnnotations),
+                new DataSourceParam()
+                        .setAlignmentSpace(args.alignmentSpace)
+                        .addLibraries(args.targetsLibraries)
+                        .addNames(args.targetsPublishedNames)
+                        .addMipIDs(args.targetsMIPIDs)
+                        .addDatasets(args.targetDatasets)
+                        .addTags(args.targetTags)
+                        .addAnnotations(args.targetAnnotations)
+                        .addExcludedAnnotations(args.excludedTargetAnnotations),
                 /* matchTags */args.matchTags,
                 /* matchExcludedTags */null,
                 neuronsMatchScoresFilter,

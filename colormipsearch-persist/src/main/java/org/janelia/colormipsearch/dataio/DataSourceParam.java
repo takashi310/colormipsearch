@@ -47,6 +47,11 @@ public class DataSourceParam {
         return this;
     }
 
+    public DataSourceParam resetLibraries() {
+        libraries.clear();
+        return this;
+    }
+
     public Collection<String> getNames() {
         return names;
     }
@@ -61,6 +66,11 @@ public class DataSourceParam {
         return this;
     }
 
+    public DataSourceParam resetNames() {
+        names.clear();
+        return this;
+    }
+
     public Collection<String> getMipIDs() {
         return mipIDs;
     }
@@ -72,6 +82,11 @@ public class DataSourceParam {
 
     public DataSourceParam addMipIDs(Collection<String> mipIDs) {
         if (mipIDs != null) mipIDs.forEach(this::addMipID);
+        return this;
+    }
+
+    public DataSourceParam resetMipIDs() {
+        mipIDs.clear();
         return this;
     }
 
@@ -153,12 +168,30 @@ public class DataSourceParam {
         params.put("mipIDs", mipIDs);
         params.put("names", names);
         params.put("tags", tags);
+        params.put("excludedTags", excludedTags);
         params.put("datasets", datasets);
+        params.put("annotations", annotations);
+        params.put("excludedAnnotations", excludedAnnotations);
         params.put("offset", hasOffset() ? offset : null);
         params.put("size", hasSize() ? size : null);
         return params;
     }
 
+    public DataSourceParam duplicate() {
+        return new DataSourceParam()
+                .setAlignmentSpace(alignmentSpace)
+                .addLibraries(libraries)
+                .addMipIDs(mipIDs)
+                .addNames(names)
+                .addTags(tags)
+                .addExcludedTags(excludedTags)
+                .addDatasets(datasets)
+                .addAnnotations(annotations)
+                .addExcludedAnnotations(excludedAnnotations)
+                .setOffset(offset)
+                .setSize(size)
+                ;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
