@@ -234,7 +234,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         CDMIPsWriter mipsWriter = getCDSInputWriter();
 
         LibraryVariantArg searchableMipsVariant = getVariantForFileType(lpaths, ComputeFileType.InputColorDepthImage);
-
+        LOG.debug("Path to the searchable input MIPs: {}", searchableMipsVariant);
         Pair<FileData.FileDataType, Map<String, List<String>>> inputImages =
                 getInputImages(lpaths.getLibraryName(),searchableMipsVariant);
 
@@ -254,6 +254,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             );
         } else {
             LibraryVariantArg sourceLibraryMipsVariant = getVariantForFileType(lpaths, ComputeFileType.SourceColorDepthImage);
+            LOG.debug("Path to the source MIPs: {}", sourceLibraryMipsVariant);
 
             Pair<FileData.FileDataType, List<String>> sourceLibraryMips =
                     MIPsHandlingUtils.listLibraryImageFiles(
