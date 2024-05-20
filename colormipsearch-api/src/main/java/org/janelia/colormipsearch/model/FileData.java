@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.model;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -34,7 +35,12 @@ public class FileData {
     }
 
     public static FileData fromComponents(FileDataType fileDataType, String parent, String name, boolean normalize) {
-        Path parentFilePath = Paths.get(parent).toAbsolutePath().normalize();
+        Path parentFilePath;
+        try {
+            parentFilePath = Paths.get(parent).toRealPath();
+        } catch (IOException e) {
+            parentFilePath = Paths.get(parent).toAbsolutePath().normalize();
+        }
         if (fileDataType == FileDataType.zipEntry) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.zipEntry);
