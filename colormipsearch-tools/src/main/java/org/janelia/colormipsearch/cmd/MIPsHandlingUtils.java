@@ -361,7 +361,7 @@ class MIPsHandlingUtils {
 
     private static List<String> listImageFilesFromDir(Path baseDir, String ignorePattern, String nameSuffixFilter) {
         try {
-            return Files.find(baseDir, 1,
+            return Files.find(baseDir.toRealPath(), 1,
                             (p, fa) -> fa.isRegularFile())
                     .map(p -> p.getFileName().toString())
                     .filter(entryName -> {

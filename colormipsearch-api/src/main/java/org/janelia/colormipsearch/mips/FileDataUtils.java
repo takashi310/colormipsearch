@@ -86,8 +86,13 @@ public class FileDataUtils {
                 .filter(Files::exists)
                 .filter(Files::isRegularFile)
                 .findFirst()
-                .map(Path::toAbsolutePath)
-                .map(Path::toString)
+                .map(p -> {
+                    try {
+                        return p.toRealPath().toString();
+                    } catch(IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
                 .map(FileData::fromString)
                 .orElse(null);
     }
