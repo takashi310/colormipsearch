@@ -395,6 +395,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                 }
                             }
                     );
+                    LOG.debug("Set variant {} file data for {} to {}", variantFileType, neuronEntity, variantFileData);
                     neuronEntity.setComputeFileData(variantFileType, variantFileData);
                 });
     }
