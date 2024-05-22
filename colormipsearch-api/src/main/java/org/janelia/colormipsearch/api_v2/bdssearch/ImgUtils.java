@@ -6,9 +6,13 @@ import ij.process.ImageProcessor;
 import io.scif.SCIFIO;
 import io.scif.config.SCIFIOConfig;
 import io.scif.img.ImgSaver;
+import loci.formats.FormatException;
+import loci.formats.IFormatReader;
+import loci.formats.ImageReader;
 import net.imglib2.Cursor;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.ByteType;
@@ -28,6 +32,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,7 +44,78 @@ import static org.janelia.colormipsearch.imageprocessing.ImageArrayUtils.*;
 
 public class ImgUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ImgUtils.class);
+    public static Img<?> readNRRD(String filePath) throws IOException, FormatException {
+        IFormatReader reader = new ImageReader();
+        reader.setId(filePath);
+
+        int bitsPerPixel = reader.getBitsPerPixel();
+
+        Img<?> img;
+        if (bitsPerPixel <= 8) {
+            img = readImageToImg(reader, new UnsignedByteType());
+        } else if (bitsPerPixel <= 16) {
+            img = readImageToImg(reader, new UnsignedShortType());
+        } else if (bitsPerPixel <= 32) {
+            img = readImageToImg(reader, new FloatType());
+        } else {
+            throw new IllegalArgumentException("Unsupported bit depth: " + bitsPerPixel);
+        }
+
+        return img;
+    }
+
+    private static <T extends NativeType<T>> Img<T> readImageToImg(IFormatReader reader, T type) throws FormatException, IOException {
+        int width = reader.getSizeX();
+        int height = reader.getSizeY();
+        int depth = reader.getSizeZ();
+        int numPixels = width * height;
+
+        // Create an Img object with the appropriate type and dimensions
+        ArrayImgFactory<T> imgFactory = new ArrayImgFactory<>(type);
+        Img<T> img = imgFactory.create(new long[]{width, height, depth});
+
+        int bytesPerPixel = reader.getBitsPerPixel() / 8;
+        byte[] imgData = new byte[numPixels * bytesPerPixel];
+
+        if (type instanceof UnsignedByteType) {
+            Cursor<UnsignedByteType> cursor = (Cursor<UnsignedByteType>) img.cursor();
+            for (int z = 0; z < depth; z++) {
+                reader.openBytes(z, imgData);
+                for (int p = 0; p < numPixels; p++) {
+                    cursor.next().setInteger(imgData[p] & 0xff);
+                }
+            }
+        } else if (type instanceof UnsignedShortType) {
+            Cursor<UnsignedShortType> cursor = (Cursor<UnsignedShortType>) img.cursor();
+            for (int z = 0; z < depth; z++) {
+                reader.openBytes(z, imgData);
+                ByteBuffer buffer = ByteBuffer.wrap(imgData).order(ByteOrder.BIG_ENDIAN);
+                for (int p = 0; p < numPixels; p++) {
+                    cursor.next().setInteger(buffer.getShort() & 0xffff);
+                }
+            }
+        } else if (type instanceof FloatType) {
+            Cursor<FloatType> cursor = (Cursor<FloatType>) img.cursor();
+            for (int z = 0; z < depth; z++) {
+                reader.openBytes(z, imgData);
+                ByteBuffer buffer = ByteBuffer.wrap(imgData).order(ByteOrder.BIG_ENDIAN);
+                for (int p = 0; p < numPixels; p++) {
+                    cursor.next().setReal(buffer.getFloat());
+                }
+            }
+        }
+
+        return img;
+    }
+
+    public static void saveImgAsPng(Img<ARGBType> img, String filePath) {
+        try {
+            BufferedImage bufferedImage = convertToBufferedImage(img);
+            ImageIO.write(bufferedImage, "PNG", new File(filePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static <T extends Type< T >>  ImageArray<?> convertImgLib2ImgToImageArray(Img<T> img) {
         int width = (int) img.dimension(0);
@@ -112,7 +189,7 @@ public class ImgUtils {
             Cursor<ARGBType> cursor = imp.cursor();
             int i = 0;
             while (cursor.hasNext()) {
-                int argb = 0xFF000000 | (((int)array[3*i] << 16) | ((int)array[3*i+1] << 8) | (int)array[3*i+2]);
+                int argb = 0xFF000000 | ( ((array[3*i] & 0xFF) << 16) | ((array[3*i+1] & 0xFF) << 8) | (array[3*i+2] & 0xFF) );
                 cursor.next().set(argb);
                 i++;
             }
@@ -358,7 +435,7 @@ public class ImgUtils {
                 throw new IllegalArgumentException("Image '" + name + "' must be in PNG or TIFF format");
         }
         end = System.currentTimeMillis();
-        System.out.println("readImagePlus time: "+((float)(end-start)/1000)+"sec");
+        //System.out.println("readImagePlus time: "+((float)(end-start)/1000)+"sec");
         try {
             return fromImagePlus(imagePlus);
         } finally {
@@ -386,7 +463,6 @@ public class ImgUtils {
                 inputStream.close();
             } catch (IOException ignore) {
             }
-            LOG.trace("Loaded image from {} in {}ms", fd, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -425,7 +501,6 @@ public class ImgUtils {
         if (ze != null) {
             return archiveFile.getInputStream(ze);
         } else {
-            LOG.warn("Full {} archive scan for {}", zipFilePath, entryName);
             String imageFn = Paths.get(entryName).getFileName().toString();
             return archiveFile.stream()
                     .filter(aze -> !aze.isDirectory())

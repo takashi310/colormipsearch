@@ -10,12 +10,7 @@ import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
-
-import static org.janelia.colormipsearch.api_v2.bdssearch.LM_EM_Segmentation.saveAsTiff;
+import java.util.*;
 
 public class ConnectingComponent3D {
 
@@ -177,9 +172,11 @@ public class ConnectingComponent3D {
             }
         }
 
+        List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(map.entrySet());
+        entryList.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
         final int vt = min_volume;
         int newsegid = 1;
-        for(Map.Entry<Integer, Integer> entry : map.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : entryList) {
             if (entry.getValue() > vt) {
                 entry.setValue(newsegid++);
             } else

@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.api_v2.bdssearch;
 
+import loci.formats.in.CellSensReader;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.img.Img;
@@ -13,6 +14,67 @@ import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveAsTiff;
 import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.saveImageAsPNG;
 
 public class MaximumFilter {
+
+    public static <T extends IntegerType<T>> Img<T> MaximumFilterSphere(Img<T> input, int xy_radius, int z_radius) {
+        long width = input.dimension(0);
+        long height = input.dimension(1);
+        long depth = input.dimension(2);
+
+        Img<T> output = input.factory().create(input);
+
+        RandomAccess<T> outputRA = output.randomAccess();
+        RandomAccess<T> inputRA = input.randomAccess();
+
+        boolean[] kernel_mask = new boolean[(xy_radius + 1) * (xy_radius + 1) * (z_radius + 1)];
+        for (int rz = 0; rz <= z_radius; rz++) {
+            for (int ry = 0; ry <= xy_radius; ry++) {
+                for (int rx = 0; rx <= xy_radius; rx++) {
+                    double dd = (double)(rz * rz) / (z_radius * z_radius) + (double)(ry * ry) / (xy_radius * xy_radius) + (double)(rx * rx) / (xy_radius * xy_radius);
+                    int id = rz * (xy_radius + 1) * (xy_radius + 1) + ry * (xy_radius + 1) + rx;
+                    if (dd <= 1.0)
+                        kernel_mask[id] = true;
+                    else
+                        kernel_mask[id] = false;
+                }
+            }
+        }
+
+        for (int z = 0; z < depth; z++) {
+            inputRA.setPosition(z, 2);
+            outputRA.setPosition(z, 2);
+            for (int y = 0; y < height; y++) {
+                inputRA.setPosition(y, 1);
+                outputRA.setPosition(y, 1);
+                for (int x = 0; x < width; x++) {
+                    int maxIntensity = 0;
+                    for (int rz = -z_radius; rz <= z_radius; rz++) {
+                        if (z + rz >= 0 && z + rz < depth) {
+                            inputRA.setPosition(z + rz, 2);
+                            for (int ry = -xy_radius; ry <= xy_radius; ry++) {
+                                if (y + ry >= 0 && y + ry < height) {
+                                    inputRA.setPosition(y + ry, 1);
+                                    for (int rx = -xy_radius; rx <= xy_radius; rx++) {
+                                        if (x + rx >= 0 && x + rx < width) {
+                                            inputRA.setPosition(x + rx, 0);
+                                            int kernel_id = Math.abs(rz) * (xy_radius + 1) * (xy_radius + 1) + Math.abs(ry) * (xy_radius + 1) + Math.abs(rx);
+                                            if (kernel_mask[kernel_id]) {
+                                                int val = inputRA.get().getInteger();
+                                                if (val > maxIntensity) maxIntensity = val;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    outputRA.setPosition(x, 0);
+                    outputRA.get().setInteger(maxIntensity);
+                }
+            }
+        }
+
+        return output;
+    }
 
     public static <T extends IntegerType<T>> void applyX(Img<T> input, Img<T> output, int radius) {
         long width = input.dimension(0);
