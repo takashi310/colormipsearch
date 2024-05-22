@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LMCDMatchesExporter extends AbstractCDMatchesExporter {
-    private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LMCDMatchesExporter.class);
 
     public LMCDMatchesExporter(CachedDataHelper jacsDataHelper,
                                DataSourceParam dataSourceParam,

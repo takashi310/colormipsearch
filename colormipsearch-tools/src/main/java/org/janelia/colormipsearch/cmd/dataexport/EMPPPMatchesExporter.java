@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EMPPPMatchesExporter extends AbstractDataExporter {
-    private static final Logger LOG = LoggerFactory.getLogger(EMCDMatchesExporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EMPPPMatchesExporter.class);
 
     private final Map<String, Set<String>> publishedAlignmentSpaceAliases;
     private final ScoresFilter scoresFilter;
