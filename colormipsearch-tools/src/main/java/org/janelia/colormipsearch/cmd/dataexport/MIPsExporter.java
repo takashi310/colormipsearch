@@ -66,6 +66,9 @@ public class MIPsExporter extends AbstractDataExporter {
                         .addTags(dataSourceParam.getTags())
                         .addExcludedTags(dataSourceParam.getExcludedTags())
                         .addNames(dataSourceParam.getNames())
+                        .addDatasetLabels(dataSourceParam.getDatasets())
+                        .addAnnotations(dataSourceParam.getAnnotations())
+                        .addExcludedAnnotations(dataSourceParam.getExcludedAnnotations())
                         .withValidPubishingName(),
                 new PagedRequest()
                         .setFirstPageOffset(dataSourceParam.getOffset())
