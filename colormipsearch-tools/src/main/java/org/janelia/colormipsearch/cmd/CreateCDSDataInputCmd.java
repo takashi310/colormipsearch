@@ -112,6 +112,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
             put("searchable", ComputeFileType.InputColorDepthImage.name());
             put("searchable_neurons", ComputeFileType.InputColorDepthImage.name());
             put("segmentation", ComputeFileType.InputColorDepthImage.name());
+            put("3d-segmentation", ComputeFileType.Vol3DSegmentation.name());
+            put("vol-segmentation", ComputeFileType.Vol3DSegmentation.name());
             put("fl", ComputeFileType.InputColorDepthImage.name());
             put("grad", ComputeFileType.GradientImage.name());
             put("gradient", ComputeFileType.GradientImage.name());
@@ -363,7 +365,11 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     )
                     .peek(cdmip -> populateOtherComputeFilesFromInput(
                             cdmip.getNeuronMetadata(),
-                            EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
+                            EnumSet.of(
+                                    ComputeFileType.GradientImage,
+                                    ComputeFileType.ZGapImage,
+                                    ComputeFileType.Vol3DSegmentation
+                            ),
                             libraryVariants,
                             searchableLibraryVariant.variantTypeSuffix))
                     .peek(cdmip -> this.updateTag(cdmip.getNeuronMetadata()))
