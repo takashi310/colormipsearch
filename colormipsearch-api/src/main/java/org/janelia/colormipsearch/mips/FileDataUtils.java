@@ -5,6 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.model.FileData;
 
 public class FileDataUtils {
@@ -49,13 +54,11 @@ public class FileDataUtils {
 
     private static FileData lookupVariantFileDataInDir(Path variantPath, String fastLookup, Pattern variantPattern) {
         Map<String, List<String>> variantDirEntries = getDirEntryNames(variantPath);
-        return variantDirEntries.entrySet().stream()
-                .filter(e -> StringUtils.contains(e.getKey(), fastLookup))
+        return variantDirEntries.getOrDefault(fastLookup, Collections.emptyList()).stream()
                 .filter(e -> {
-                    Matcher variantMatcher = variantPattern.matcher(e.getKey());
+                    Matcher variantMatcher = variantPattern.matcher(Paths.get(e).getFileName().toString());
                     return variantMatcher.find();
                 })
-                .flatMap(e -> e.getValue().stream())
                 .findFirst()
                 .map(FileData::fromString)
                 .orElse(null);
@@ -63,13 +66,11 @@ public class FileDataUtils {
 
     private static FileData lookupVariantFileDataInArchive(Path variantPath, String fastLookup, Pattern variantPattern) {
         Map<String, List<String>> variantArchiveEntries = getZipEntryNames(variantPath);
-        return variantArchiveEntries.entrySet().stream()
-                .filter(e -> StringUtils.contains(e.getKey(), fastLookup))
+        return variantArchiveEntries.getOrDefault(fastLookup, Collections.emptyList()).stream()
                 .filter(e -> {
-                    Matcher variantMatcher = variantPattern.matcher(e.getKey());
+                    Matcher variantMatcher = variantPattern.matcher(Paths.get(e).getFileName().toString());
                     return variantMatcher.find();
                 })
-                .flatMap(e -> e.getValue().stream())
                 .findFirst()
                 .map(en -> FileData.fromComponents(FileData.FileDataType.zipEntry, variantPath.toString(), en, true))
                 .orElse(null);
@@ -94,7 +95,9 @@ public class FileDataUtils {
             Map<String, List<String>> zipEntryNames = archiveFile.stream()
                     .filter(ze -> !ze.isDirectory())
                     .map(ZipEntry::getName)
-                    .collect(Collectors.groupingBy(zen -> Paths.get(zen).getFileName().toString(), Collectors.toList()));
+                    .flatMap(ze -> getIndexingComponents(Paths.get(ze)).map(ic -> ImmutablePair.of(ic, ze)))
+                    .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toList())))
+                    ;
             FILE_NAMES_CACHE.put(zipPath, zipEntryNames);
             return zipEntryNames;
         } finally {
@@ -103,6 +106,11 @@ public class FileDataUtils {
             } catch (IOException ignore) {
             }
         }
+    }
+
+    private static Stream<String> getIndexingComponents(Path p) {
+        String fn = RegExUtils.replacePattern(p.getFileName().toString(), "\\..*$", "");
+        return Arrays.stream(StringUtils.split(fn, '-')).filter(StringUtils::isNotBlank).limit(2);
     }
 
     private static Map<String, List<String>> getDirEntryNames(Path dirPath) {
@@ -118,11 +126,14 @@ public class FileDataUtils {
             Map<String, List<String>> dirEntryNames =
                     s.map(p -> {
                         try {
-                            return p.toRealPath().toString();
+                            return p.toRealPath();
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
-                    }).collect(Collectors.groupingBy(f -> Paths.get(f).getFileName().toString(), Collectors.toList()));
+                    })
+                    .flatMap(p -> getIndexingComponents(p).map(ic -> ImmutablePair.of(ic, p)))
+                    .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(p -> p.getValue().toString(), Collectors.toList())))
+                    ;
             FILE_NAMES_CACHE.put(dirPath, dirEntryNames);
             return dirEntryNames;
         } catch (IOException e) {
