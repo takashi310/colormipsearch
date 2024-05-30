@@ -1,5 +1,6 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -386,7 +387,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                                                                      Set<ComputeFileType> computeFileTypes,
                                                                                      List<LibraryVariantArg> libraryVariants,
                                                                                      String computeInputVariantSuffix) {
-        String searchableMIPFile = neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage);
+        String searchableMIPFile = new File(neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage)).getName();
         String searchableMIPBaseName = RegExUtils.replacePattern(searchableMIPFile, "(_CDM)?\\..*$", "");
         String[] searchableMIPNameComps = StringUtils.split(searchableMIPBaseName, "-_");
         StringBuilder patternBuilder = new StringBuilder(".*")
