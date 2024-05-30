@@ -25,7 +25,7 @@ public class FileDataUtils {
 
     private static final Map<Path, Map<String, List<String>>> FILE_NAMES_CACHE = new HashMap<>();
 
-    public static FileData lookupVariantFileData(List<String> variantLocations, Pattern variantPattern, String sourceCDMName, String variantSuffix, Function<String, String> variantSuffixMapping) {
+    public static FileData lookupVariantFileData(List<String> variantLocations, String fastLookup, Pattern variantPattern, String sourceCDMName, String variantSuffix, Function<String, String> variantSuffixMapping) {
         if (CollectionUtils.isEmpty(variantLocations)) {
             return null;
         } else {
@@ -34,9 +34,9 @@ public class FileDataUtils {
                     .map(Paths::get)
                     .map(variantPath -> {
                         if (Files.isDirectory(variantPath)) {
-                            return lookupVariantFileDataInDir(variantPath, variantPattern);
+                            return lookupVariantFileDataInDir(variantPath, fastLookup, variantPattern);
                         } else if (Files.isRegularFile(variantPath)) {
-                            return lookupVariantFileDataInArchive(variantPath, variantPattern);
+                            return lookupVariantFileDataInArchive(variantPath, fastLookup, variantPattern);
                         } else {
                             return null;
                         }
@@ -47,9 +47,10 @@ public class FileDataUtils {
         }
     }
 
-    private static FileData lookupVariantFileDataInDir(Path variantPath, Pattern variantPattern) {
+    private static FileData lookupVariantFileDataInDir(Path variantPath, String fastLookup, Pattern variantPattern) {
         Map<String, List<String>> variantDirEntries = getDirEntryNames(variantPath);
         return variantDirEntries.entrySet().stream()
+                .filter(e -> StringUtils.contains(e.getKey(), fastLookup))
                 .filter(e -> {
                     Matcher variantMatcher = variantPattern.matcher(e.getKey());
                     return variantMatcher.find();
@@ -60,9 +61,10 @@ public class FileDataUtils {
                 .orElse(null);
     }
 
-    private static FileData lookupVariantFileDataInArchive(Path variantPath, Pattern variantPattern) {
+    private static FileData lookupVariantFileDataInArchive(Path variantPath, String fastLookup, Pattern variantPattern) {
         Map<String, List<String>> variantArchiveEntries = getZipEntryNames(variantPath);
         return variantArchiveEntries.entrySet().stream()
+                .filter(e -> StringUtils.contains(e.getKey(), fastLookup))
                 .filter(e -> {
                     Matcher variantMatcher = variantPattern.matcher(e.getKey());
                     return variantMatcher.find();

@@ -418,6 +418,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     ComputeFileType variantFileType = ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType));
                     FileData variantFileData = FileDataUtils.lookupVariantFileData(
                             Collections.singletonList(variant.variantPath),
+                            neuronEntity.getNeuronId(),
                             variantPattern,
                             neuronEntity.getComputeFileName(ComputeFileType.SourceColorDepthImage),
                             variant.variantNameSuffix,
