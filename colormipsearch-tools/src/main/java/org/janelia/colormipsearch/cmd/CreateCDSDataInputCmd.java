@@ -408,9 +408,9 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         patternBuilder.append(searchableMIPNameComps[searchableMIPNameComps.length-1]);
         // add searchable MIP name to the pattern
         patternBuilder.insert(0, "(")
-                .append(")|.*")
+                .append(")|(.*")
                 .append(searchableMIPBaseName)
-                .append(".*");
+                .append(".*)");
         Pattern variantPattern = Pattern.compile(patternBuilder.toString(), Pattern.CASE_INSENSITIVE);
         libraryVariants.stream()
                 .filter(variant -> computeFileTypes.contains(ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType))))
