@@ -110,8 +110,8 @@ class MIPsHandlingUtils {
         }
     }
 
-    static int getColorChannel(ColorDepthMIP cmip) {
-        int channel = cmip.channelNumber();
+    static int getColorChannel(ColorDepthMIP cdmip) {
+        int channel = cdmip.channelNumber();
         if (channel > 0) {
             return channel - 1; // mip channels are 1 based so make it 0 based
         } else {

@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -26,7 +28,7 @@ public class FileDataUtils {
 
     private static final Map<Path, Map<String, List<String>>> ARCHIVE_ENTRIES_CACHE = new HashMap<>();
 
-    public static FileData lookupVariantFileData(String cdInputName, String sourceCDMName, List<String> variantLocations, String variantSuffix, Function<String, String> variantSuffixMapping) {
+    public static FileData lookupVariantFileData(List<String> variantLocations, Pattern variantPattern, String sourceCDMName, String variantSuffix, Function<String, String> variantSuffixMapping) {
         if (CollectionUtils.isEmpty(variantLocations)) {
             return null;
         } else {
@@ -35,9 +37,9 @@ public class FileDataUtils {
                     .map(Paths::get)
                     .map(variantPath -> {
                         if (Files.isDirectory(variantPath)) {
-                            return lookupVariantFileDataInDir(cdInputName, sourceCDMName, variantPath, variantSuffix, variantSuffixMapping);
+                            return lookupVariantFileDataInDir(variantPath, variantPattern);
                         } else if (Files.isRegularFile(variantPath)) {
-                            return lookupVariantFileDataInArchive(cdInputName, variantPath, variantSuffix);
+                            return lookupVariantFileDataInArchive(variantPath, variantPattern);
                         } else {
                             return null;
                         }
@@ -48,69 +50,36 @@ public class FileDataUtils {
         }
     }
 
-    private static FileData lookupVariantFileDataInDir(String cdInputName,
-                                                       String sourceCDMName,
-                                                       Path variantPath,
-                                                       String variantSuffix,
-                                                       Function<String, String> variantSuffixMapping) {
-        Path cdInputPath = Paths.get(cdInputName);
-        Path cdInputParentPath = cdInputPath.getParent();
-        String cdInputNameWithoutExtension = RegExUtils.replacePattern(cdInputPath.getFileName().toString(), "\\..*$", "");
-        List<Path> candidateVariantPaths;
-        if (cdInputParentPath == null) {
-            String sourceMIPNameWithoutExtension = RegExUtils.replacePattern(sourceCDMName, "\\..*$", "");
-            candidateVariantPaths = Arrays.asList(
-                    variantPath.resolve(createMIPName(cdInputNameWithoutExtension, variantSuffix, ".png")),
-                    variantPath.resolve(createMIPName(cdInputNameWithoutExtension, variantSuffix, ".tif")),
-                    variantPath.resolve(createMIPName(variantSuffixMapping.apply(sourceMIPNameWithoutExtension), variantSuffix, ".png")), // search variant based on the transformation of the original mip
-                    variantPath.resolve(createMIPName(variantSuffixMapping.apply(sourceMIPNameWithoutExtension), variantSuffix, ".tiff"))
-            );
-        } else {
-            int nComponents = cdInputParentPath.getNameCount();
-            candidateVariantPaths = Stream.concat(
-                            IntStream.range(0, nComponents)
-                                    .map(i -> nComponents - i - 1)
-                                    .mapToObj(i -> {
-                                        if (i > 0)
-                                            return cdInputParentPath.subpath(0, i).resolve(variantSuffixMapping.apply(cdInputParentPath.getName(i).toString())).toString();
-                                        else
-                                            return variantSuffixMapping.apply(cdInputParentPath.getName(i).toString());
-                                    }),
-                            Stream.of(""))
-                    .flatMap(p -> Stream.of(
-                            variantPath.resolve(p).resolve(createMIPName(cdInputNameWithoutExtension, variantSuffix, ".png")),
-                            variantPath.resolve(p).resolve(createMIPName(cdInputNameWithoutExtension, variantSuffix, ".tif"))))
-                    .collect(Collectors.toList());
+    private static FileData lookupVariantFileDataInDir(Path variantPath,
+                                                       Pattern variantPattern) {
+        try (Stream<Path> s = Files.find(variantPath, 1, (p, a) -> {
+            Matcher variantMatcher = variantPattern.matcher(p.getFileName().toString());
+            return variantMatcher.find();
+        })) {
+            return s.map(p -> {
+                        try {
+                            return p.toRealPath();
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .filter(Files::isRegularFile)
+                    .findFirst()
+                    .map(p -> FileData.fromString(p.toString()))
+                    .orElse(null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        return candidateVariantPaths.stream()
-                .filter(Files::exists)
-                .filter(Files::isRegularFile)
-                .findFirst()
-                .map(p -> {
-                    try {
-                        return p.toRealPath().toString();
-                    } catch(IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .map(FileData::fromString)
-                .orElse(null);
     }
 
-    private static FileData lookupVariantFileDataInArchive(String cdInputName, Path variantPath, String variantSuffix) {
-        Path cdInputPath = Paths.get(cdInputName);
-        String cdInputWithoutExtension = RegExUtils.replacePattern(cdInputPath.getFileName().toString(), "\\..*$", "");
-        String cdInputWithoutObjectNum = RegExUtils.replacePattern(cdInputWithoutExtension, "_\\d\\d*$", "");
+    private static FileData lookupVariantFileDataInArchive(Path variantPath, Pattern variantPattern) {
         Map<String, List<String>> variantArchiveEntries = getZipEntryNames(variantPath);
-        List<String> variantEntryNames = Arrays.asList(
-                createMIPName(cdInputWithoutExtension, variantSuffix, ".png"),
-                createMIPName(cdInputWithoutExtension, variantSuffix, ".tif"),
-                createMIPName(cdInputWithoutObjectNum, variantSuffix, ".png"),
-                createMIPName(cdInputWithoutObjectNum, variantSuffix, ".tif")
-        );
-        return variantEntryNames.stream()
-                .filter(en -> variantArchiveEntries.containsKey(en))
-                .flatMap(en -> variantArchiveEntries.get(en).stream())
+        return variantArchiveEntries.entrySet().stream()
+                .filter(e -> {
+                    Matcher variantMatcher = variantPattern.matcher(e.getKey());
+                    return variantMatcher.find();
+                })
+                .flatMap(e -> e.getValue().stream())
                 .findFirst()
                 .map(en -> FileData.fromComponents(FileData.FileDataType.zipEntry, variantPath.toString(), en, true))
                 .orElse(null);

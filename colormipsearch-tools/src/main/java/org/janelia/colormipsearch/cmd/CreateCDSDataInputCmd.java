@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.colormipsearch.cmd.jacsdata.ColorDepthMIP;
@@ -384,14 +386,39 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                                                                      Set<ComputeFileType> computeFileTypes,
                                                                                      List<LibraryVariantArg> libraryVariants,
                                                                                      String computeInputVariantSuffix) {
+        String searchableMIPFile = neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage);
+        String searchableMIPBaseName = RegExUtils.replacePattern(searchableMIPFile, "(_CDM)?\\..*$", "");
+        String[] searchableMIPNameComps = StringUtils.split(searchableMIPBaseName, "-_");
+        StringBuilder patternBuilder = new StringBuilder(".*")
+                .append(neuronEntity.getNeuronId()).append(".*");
+        if (searchableMIPNameComps.length > 1) {
+            if (!MIPsHandlingUtils.isEmLibrary(neuronEntity.getLibraryName())) {
+                LMNeuronEntity lmNeuronEntity = (LMNeuronEntity) neuronEntity;
+                patternBuilder.append(lmNeuronEntity.getObjective())
+                        .append(".*");
+                patternBuilder
+                        .append(searchableMIPNameComps[searchableMIPNameComps.length-2])
+                        .append("[-_]");
+            }
+        } else {
+            LOG.error("Searchable MIP name '{}' does not have enough components so we may not be able to infer other variants: ",
+                    searchableMIPBaseName);
+        }
+        patternBuilder.append(searchableMIPNameComps[searchableMIPNameComps.length-1]);
+        // add searchable MIP name to the pattern
+        patternBuilder.insert(0, "(")
+                .append(")|.*")
+                .append(searchableMIPBaseName)
+                .append(".*");
+        Pattern variantPattern = Pattern.compile(patternBuilder.toString(), Pattern.CASE_INSENSITIVE);
         libraryVariants.stream()
                 .filter(variant -> computeFileTypes.contains(ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType))))
                 .forEach(variant -> {
                     ComputeFileType variantFileType = ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType));
                     FileData variantFileData = FileDataUtils.lookupVariantFileData(
-                            neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage),
-                            neuronEntity.getComputeFileName(ComputeFileType.SourceColorDepthImage),
                             Collections.singletonList(variant.variantPath),
+                            variantPattern,
+                            neuronEntity.getComputeFileName(ComputeFileType.SourceColorDepthImage),
                             variant.variantNameSuffix,
                             nc -> {
                                 String suffix = StringUtils.defaultIfBlank(variant.variantTypeSuffix, "");
