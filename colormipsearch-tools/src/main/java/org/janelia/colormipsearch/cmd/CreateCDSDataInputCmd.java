@@ -373,8 +373,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                     ComputeFileType.ZGapImage,
                                     ComputeFileType.Vol3DSegmentation
                             ),
-                            libraryVariants,
-                            searchableLibraryVariant.variantTypeSuffix))
+                            libraryVariants))
                     .peek(cdmip -> this.updateTag(cdmip.getNeuronMetadata()))
                     .map(InputCDMipNeuron::getNeuronMetadata)
                     .collect(Collectors.toList());
@@ -385,8 +384,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
 
     private <N extends AbstractNeuronEntity> void populateOtherComputeFilesFromInput(N neuronEntity,
                                                                                      Set<ComputeFileType> computeFileTypes,
-                                                                                     List<LibraryVariantArg> libraryVariants,
-                                                                                     String computeInputVariantSuffix) {
+                                                                                     List<LibraryVariantArg> libraryVariants) {
         String searchableMIPFile = new File(neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage)).getName();
         String searchableMIPBaseName = RegExUtils.replacePattern(searchableMIPFile, "(_CDM)?\\..*$", "");
         String[] searchableMIPNameComps = StringUtils.split(searchableMIPBaseName, "-_");
@@ -411,7 +409,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .append(")|(.*")
                 .append(searchableMIPBaseName)
                 .append(".*)");
-        Pattern variantPattern = Pattern.compile(patternBuilder.toString(), Pattern.CASE_INSENSITIVE);
+        Pattern variantPattern = Pattern.compile(patternBuilder.toString());
         libraryVariants.stream()
                 .filter(variant -> computeFileTypes.contains(ComputeFileType.fromName(args.variantFileTypeMapping.get(variant.variantType))))
                 .forEach(variant -> {
@@ -419,17 +417,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     FileData variantFileData = FileDataUtils.lookupVariantFileData(
                             Collections.singletonList(variant.variantPath),
                             neuronEntity.getNeuronId(),
-                            variantPattern,
-                            neuronEntity.getComputeFileName(ComputeFileType.SourceColorDepthImage),
-                            variant.variantNameSuffix,
-                            nc -> {
-                                String suffix = StringUtils.defaultIfBlank(variant.variantTypeSuffix, "");
-                                if (StringUtils.isNotBlank(computeInputVariantSuffix)) {
-                                    return StringUtils.replaceIgnoreCase(nc, computeInputVariantSuffix, "") + suffix;
-                                } else {
-                                    return nc + suffix;
-                                }
-                            }
+                            variantPattern
                     );
                     LOG.debug("Set variant {} file data for {} to {}", variantFileType, neuronEntity, variantFileData);
                     neuronEntity.setComputeFileData(variantFileType, variantFileData);
@@ -632,8 +620,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .peek(cdmip -> populateOtherComputeFilesFromInput(
                         cdmip.getNeuronMetadata(),
                         EnumSet.of(ComputeFileType.GradientImage, ComputeFileType.ZGapImage),
-                        libraryVariants,
-                        searchableLibraryVariant.variantTypeSuffix))
+                        libraryVariants))
                 .peek(cdmip -> this.updateTag(cdmip.getNeuronMetadata()))
                 .map(InputCDMipNeuron::getNeuronMetadata)
                 .collect(Collectors.toList());

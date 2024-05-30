@@ -25,7 +25,7 @@ public class FileDataUtils {
 
     private static final Map<Path, Map<String, List<String>>> FILE_NAMES_CACHE = new HashMap<>();
 
-    public static FileData lookupVariantFileData(List<String> variantLocations, String fastLookup, Pattern variantPattern, String sourceCDMName, String variantSuffix, Function<String, String> variantSuffixMapping) {
+    public static FileData lookupVariantFileData(List<String> variantLocations, String fastLookup, Pattern variantPattern) {
         if (CollectionUtils.isEmpty(variantLocations)) {
             return null;
         } else {
