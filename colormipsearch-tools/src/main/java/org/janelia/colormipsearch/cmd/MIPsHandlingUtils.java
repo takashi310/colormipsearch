@@ -113,27 +113,6 @@ class MIPsHandlingUtils {
         }
     }
 
-    static String extractObjectiveFromMIPName(String mipName) {
-        Pattern regExPattern = Pattern.compile("[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
-        Matcher objectiveMatcher = regExPattern.matcher(mipName);
-        if (objectiveMatcher.find()) {
-            return objectiveMatcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
-    static String extractGenderFromMIPName(String mipName) {
-        // this assumes the gender is right before the objective
-        Pattern regExPattern = Pattern.compile("(m|f)[_-]([0-9]+x)[_-]", Pattern.CASE_INSENSITIVE);
-        Matcher objectiveMatcher = regExPattern.matcher(mipName);
-        if (objectiveMatcher.find()) {
-            return objectiveMatcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
     static boolean isEmLibrary(String lname) {
         return lname != null && (
                 StringUtils.startsWithIgnoreCase(lname, "flyem") ||

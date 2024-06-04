@@ -76,7 +76,11 @@ class LibraryVariantArg {
     }
 
     String libraryName;
+    // variant type: CDM, grad, zgap, 3d-vol
     String variantType;
+    // there can be more than one location for a specific variant
+    // very often there is a location with significant variants and one with "junk" variants
+    // and we may still want to keep these separate
     Collection<String> variantPaths;
     String variantIgnoredPattern;
     String variantTypeSuffix; // this is typically the suffix appended to a foldername such as _gradient or _RGB20x

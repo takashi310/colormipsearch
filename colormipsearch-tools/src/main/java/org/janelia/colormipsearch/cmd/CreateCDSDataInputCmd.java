@@ -380,14 +380,14 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                                                                                      Set<ComputeFileType> computeFileTypes,
                                                                                      List<LibraryVariantArg> libraryVariants) {
         String searchableMIPFile = new File(neuronEntity.getComputeFileName(ComputeFileType.InputColorDepthImage)).getName();
-        String searchableMIPBaseName = RegExUtils.replacePattern(searchableMIPFile, "(_CDM)?\\..*$", "");
+        String searchableMIPBaseName = RegExUtils.replacePattern(searchableMIPFile, "(?:_CDM)?\\..*$", "");
         String[] searchableMIPNameComps = StringUtils.split(searchableMIPBaseName, "-_");
         StringBuilder patternBuilder = new StringBuilder(".*")
                 .append(neuronEntity.getNeuronId()).append(".*");
         if (searchableMIPNameComps.length > 1) {
             if (!MIPsHandlingUtils.isEmLibrary(neuronEntity.getLibraryName())) {
                 LMNeuronEntity lmNeuronEntity = (LMNeuronEntity) neuronEntity;
-                patternBuilder.append(lmNeuronEntity.getObjective())
+                patternBuilder.append("(?:").append(lmNeuronEntity.getObjective()).append(")?") // make the objective optional
                         .append(".*");
                 patternBuilder
                         .append(searchableMIPNameComps[searchableMIPNameComps.length-2])
@@ -399,8 +399,8 @@ class CreateCDSDataInputCmd extends AbstractCmd {
         }
         patternBuilder.append(searchableMIPNameComps[searchableMIPNameComps.length-1]);
         // add searchable MIP name to the pattern
-        patternBuilder.insert(0, "(")
-                .append(")|(.*")
+        patternBuilder.insert(0, "(?:")
+                .append(")|(?:.*")
                 .append(searchableMIPBaseName)
                 .append(".*)");
         Pattern variantPattern = Pattern.compile(patternBuilder.toString());
