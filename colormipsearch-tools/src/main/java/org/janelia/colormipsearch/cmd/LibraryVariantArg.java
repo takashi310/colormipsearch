@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.beust.jcommander.IStringConverter;
@@ -85,11 +84,10 @@ class LibraryVariantArg {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(libraryName)
-                .append(':').append(variantType)
-                .append(':').append(StringUtils.join(variantPaths, '^'))
-                .toString();
+        return libraryName
+            + ':' + variantType
+            + ':' + StringUtils.join(variantPaths, '^')
+            ;
     }
 
 }

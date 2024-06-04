@@ -504,13 +504,6 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                 .orElse(new LibraryVariantArg());
     }
 
-    private Set<String> getAllVariantsForLibrarySource() {
-        return args.variantFileTypeMapping.entrySet().stream()
-                .filter(e -> e.getValue().equalsIgnoreCase(ComputeFileType.SourceColorDepthImage.name()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-
     private <N extends AbstractNeuronEntity> void updateTag(N n) {
         n.addTag(args.tag);
     }
