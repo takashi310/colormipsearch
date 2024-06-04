@@ -1,16 +1,19 @@
 package org.janelia.colormipsearch.cmd;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.IValueValidator;
 import com.beust.jcommander.ParameterException;
 import com.google.common.base.Splitter;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janelia.colormipsearch.model.FileData;
-import org.janelia.colormipsearch.model.FileType;
 
 class LibraryVariantArg {
 
@@ -23,7 +26,7 @@ class LibraryVariantArg {
             if (value.variantType == null) {
                 throw new ParameterException("Library variant type is not specified for " + value);
             }
-            if (StringUtils.isBlank(value.variantPath)) {
+            if (CollectionUtils.isEmpty(value.variantPaths)) {
                 throw new ParameterException("Library variant path is not specified for " + value);
             }
         }
@@ -56,7 +59,9 @@ class LibraryVariantArg {
                 arg.variantType = argComponents.get(1);
             }
             if (argComponents.size() > 2 && StringUtils.isNotBlank(argComponents.get(2))) {
-                arg.variantPath = argComponents.get(2);
+                arg.variantPaths = Arrays.stream(StringUtils.split(argComponents.get(2), '^'))
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toSet());
             }
             if (argComponents.size() > 3 && StringUtils.isNotBlank(argComponents.get(3))) {
                 arg.variantIgnoredPattern = argComponents.get(3);
@@ -73,7 +78,7 @@ class LibraryVariantArg {
 
     String libraryName;
     String variantType;
-    String variantPath;
+    Collection<String> variantPaths;
     String variantIgnoredPattern;
     String variantTypeSuffix; // this is typically the suffix appended to a foldername such as _gradient or _RGB20x
     String variantNameSuffix; // this is a suffix that ends the filename itself such as _FL
@@ -83,7 +88,7 @@ class LibraryVariantArg {
         return new StringBuilder()
                 .append(libraryName)
                 .append(':').append(variantType)
-                .append(':').append(variantPath)
+                .append(':').append(StringUtils.join(variantPaths, '^'))
                 .toString();
     }
 

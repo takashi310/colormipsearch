@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,7 @@ public class FileDataUtils {
 
     private static final Map<Path, Map<String, List<String>>> FILE_NAMES_CACHE = new HashMap<>();
 
-    public static FileData lookupVariantFileData(List<String> variantLocations, String fastLookup, Pattern variantPattern) {
+    public static FileData lookupVariantFileData(Collection<String> variantLocations, String fastLookup, Pattern variantPattern) {
         if (CollectionUtils.isEmpty(variantLocations)) {
             return null;
         } else {
