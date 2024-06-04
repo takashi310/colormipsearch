@@ -371,6 +371,7 @@ class CreateCDSDataInputCmd extends AbstractCmd {
                     .peek(cdmip -> this.updateTag(cdmip.getNeuronMetadata()))
                     .map(InputCDMipNeuron::getNeuronMetadata)
                     .collect(Collectors.toList());
+            LOG.info("Save {} entries from {} to {} out of {}", cdNeurons.size(), pageOffset, pageOffset + currentPageSize, cdmsCount);
             cdmipsWriter.write(cdNeurons);
         }
         cdmipsWriter.close();
