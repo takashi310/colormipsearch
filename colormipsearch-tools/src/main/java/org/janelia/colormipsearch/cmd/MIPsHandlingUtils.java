@@ -125,7 +125,8 @@ class MIPsHandlingUtils {
                                                                                  int sourceChannel,
                                                                                  Map<String, List<MIPStoreEntry>> indexedSearchableImages,
                                                                                  boolean matchNeuronState,
-                                                                                 int inputImageChannelBase) {
+                                                                                 int inputImageChannelBase,
+                                                                                 boolean useCanonicPath) {
         Predicate<MIPStoreEntry> segmentedImageMatcher;
         if (isEmLibrary(neuronMetadata.getLibraryName())) {
             Pattern emNeuronStateRegExPattern = Pattern.compile("[0-9]+[_-]([0-9A-Z]*)_.*", Pattern.CASE_INSENSITIVE);
@@ -165,7 +166,13 @@ class MIPsHandlingUtils {
                     .filter(segmentedImageMatcher)
                     .map(mipStoreEntry -> {
                         N searchableNeuron = (N) neuronMetadata.duplicate();
-                        searchableNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, FileData.fromComponents(mipStoreEntry.storeEntryType, mipStoreEntry.storeBasePath, mipStoreEntry.imagePath, true));
+                        FileData searchableImage;
+                        if (useCanonicPath) {
+                            searchableImage =  FileData.fromComponentsWithCanonicPath(mipStoreEntry.storeEntryType, mipStoreEntry.storeBasePath, mipStoreEntry.imagePath);
+                        } else {
+                            searchableImage = FileData.fromComponents(mipStoreEntry.storeEntryType, mipStoreEntry.storeBasePath, mipStoreEntry.imagePath);
+                        }
+                        searchableNeuron.setComputeFileData(ComputeFileType.InputColorDepthImage, searchableImage);
                         return searchableNeuron;
                     })
                     .collect(Collectors.toList());

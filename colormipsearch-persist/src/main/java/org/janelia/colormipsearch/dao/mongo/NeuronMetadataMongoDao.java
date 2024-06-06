@@ -100,19 +100,13 @@ public class NeuronMetadataMongoDao<N extends AbstractNeuronEntity> extends Abst
         } else {
             selectFilters.add(MongoDaoHelper.createFilterById(neuron.getEntityId()));
         }
-        List<Bson> mipSelectFilter = new ArrayList<>();
-        if (neuron.hasMipID()) {
-            mipSelectFilter.add(MongoDaoHelper.createEqFilter("mipId", neuron.getMipId()));
-        }
-        mipSelectFilter.add(Filters.and(
-                MongoDaoHelper.createEqFilter(
-                        "computeFiles.InputColorDepthImage",
-                        neuron.getComputeFileName(ComputeFileType.InputColorDepthImage)),
-                MongoDaoHelper.createEqFilter(
-                        "computeFiles.SourceColorDepthImage",
-                        neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
-        ));
-        selectFilters.add(Filters.or(mipSelectFilter));
+        // only use the input files to select the appropriate MIP entry
+        selectFilters.add(MongoDaoHelper.createEqFilter(
+                "computeFiles.InputColorDepthImage", neuron.getComputeFileName(ComputeFileType.InputColorDepthImage))
+        );
+        selectFilters.add(MongoDaoHelper.createEqFilter(
+                "computeFiles.SourceColorDepthImage", neuron.getComputeFileName(ComputeFileType.SourceColorDepthImage))
+        );
         neuron.updateableFieldValues().forEach((f) -> {
             if (!f.isToBeAppended()) {
                 updates.add(MongoDaoHelper.getFieldUpdate(f.getFieldName(), new SetFieldValueHandler<>(f.getValue())));

@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.model;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -34,23 +35,33 @@ public class FileData {
         }
     }
 
-    public static FileData fromComponents(FileDataType fileDataType, String parent, String name, boolean normalize) {
-        Path parentFilePath;
+    public static FileData fromComponents(FileDataType fileDataType, String parent, String name) {
+        return fromComponentsUsingParentPath(fileDataType, Paths.get(parent), name);
+    }
+
+    public static FileData fromComponentsWithCanonicPath(FileDataType fileDataType, String parent, String name) {
+        return fromComponentsUsingParentPath(fileDataType, asCanonicPath(parent), name);
+    }
+
+    private static Path asCanonicPath(String p) {
         try {
-            parentFilePath = Paths.get(parent).toRealPath();
-        } catch (IOException e) {
-            parentFilePath = Paths.get(parent).toAbsolutePath().normalize();
+            return Paths.get(p).toRealPath();
+        } catch (IOException e)  {
+            return Paths.get(p).toAbsolutePath().normalize();
         }
+    }
+
+    public static FileData fromComponentsUsingParentPath(FileDataType fileDataType, Path parentPath, String name) {
         if (fileDataType == FileDataType.zipEntry) {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.zipEntry);
-            fd.setFileName(parentFilePath.toString());
+            fd.setFileName(parentPath.toString());
             fd.setEntryName(name);
             return fd;
         } else {
             FileData fd = new FileData();
             fd.setDataType(FileDataType.file);
-            fd.setFileName(parentFilePath.resolve(name).toString());
+            fd.setFileName(parentPath.resolve(name).toString());
             return fd;
         }
     }
