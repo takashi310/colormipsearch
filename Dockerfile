@@ -1,16 +1,19 @@
 FROM azul/zulu-openjdk:21.0.2-jdk as builder
+ARG COMMIT_HASH=2639638b
+ARG TARGETPLATFORM
 
 RUN apt update && \
     apt install -y git
 
 WORKDIR /neuron-search-tools
-ENV COMMIT_HASH=57b9dd74
 RUN git clone --depth 2 https://github.com/JaneliaSciComp/colormipsearch.git . && \
-    git reset --hard ${COMMIT_HASH} && \
-    ./mvnw package && \
+    git reset --hard ${COMMIT_HASH}
+
+RUN ./mvnw package && \
     echo ${COMMIT_HASH} > .commit
 
 FROM azul/zulu-openjdk:21.0.2-jdk
+ARG TARGETPLATFORM
 
 WORKDIR /app
 COPY --from=builder /neuron-search-tools/.commit ./.commit
