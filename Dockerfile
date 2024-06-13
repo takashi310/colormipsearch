@@ -1,11 +1,9 @@
 FROM azul/zulu-openjdk:21.0.2-jdk as builder
-ARG COMMIT_HASH=8689c27d
+ARG COMMIT_HASH=7d2e7a73
 ARG TARGETPLATFORM
 
 RUN apt update && \
     apt install -y git
-
-#ENV JAVA_OPTS="-XX:-UseG1GC -XX:+UseZGC"
 
 WORKDIR /neuron-search-tools
 RUN git clone --depth 2 https://github.com/JaneliaSciComp/colormipsearch.git . && \
