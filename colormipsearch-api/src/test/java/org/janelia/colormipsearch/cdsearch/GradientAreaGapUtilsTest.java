@@ -1,5 +1,6 @@
-package org.janelia.colormipsearch.api_v2.cdsearch;
+package org.janelia.colormipsearch.cdsearch;
 
+import org.janelia.colormipsearch.api_v2.cdsearch.GradientAreaGapUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

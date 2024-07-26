@@ -1,16 +1,17 @@
-package org.janelia.colormipsearch.api_v2.cdsearch;
+package org.janelia.colormipsearch.cdsearch;
 
 import java.util.Collections;
 
 import ij.ImagePlus;
 import ij.io.Opener;
+import org.janelia.colormipsearch.cds.PixelMatchColorDepthSearchAlgorithm;
+import org.janelia.colormipsearch.cds.PixelMatchScore;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.imageprocessing.ImageArrayUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class PixelMatchColorDepthSearchAlgorithmTest {
 
@@ -32,11 +33,9 @@ public class PixelMatchColorDepthSearchAlgorithmTest {
             2,
             img -> (x, y) -> x >= img.getWidth() - 260 && y < 90 || x < 330 && y < 100
         );
-        ColorMIPMatchScore score = colorDepthSearchAlgorithm.calculateMatchingScore(testTargetArray, Collections.emptyMap());
-        assertTrue(score.isMatch());
-        assertEquals(87, score.getMatchingPixNum());
+        PixelMatchScore score = colorDepthSearchAlgorithm.calculateMatchingScore(testTargetArray, Collections.emptyMap());
+        assertEquals(87, score.getScore());
         assertFalse(score.isMirrored());
     }
-
 
 }
