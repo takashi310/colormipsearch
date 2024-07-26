@@ -2,6 +2,7 @@ package org.janelia.colormipsearch.mips;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.janelia.colormipsearch.imageprocessing.ImageArray;
 import org.janelia.colormipsearch.model.AbstractNeuronEntity;
 import org.janelia.colormipsearch.model.FileData;
@@ -47,5 +48,13 @@ public class NeuronMIP<N extends AbstractNeuronEntity> {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(neuronInfo).append(imageFileData).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("neuronInfo", neuronInfo)
+                .append("imageFileData", imageFileData)
+                .toString();
     }
 }
