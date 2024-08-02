@@ -39,7 +39,7 @@ public class JSONV2Em2LmMatchesReader implements NeuronMatchesReader<CDMatchEnti
     }
 
     @Override
-    public List<String> listMatchesLocations(Collection<DataSourceParam> matchesSource) {
+    public Collection<String> listMatchesLocations(Collection<DataSourceParam> matchesSource) {
         /*
          * libraries attribute contains either the directories location or full path filenames.
          */

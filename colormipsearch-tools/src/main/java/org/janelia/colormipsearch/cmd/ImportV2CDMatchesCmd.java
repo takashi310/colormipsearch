@@ -1,6 +1,7 @@
 package org.janelia.colormipsearch.cmd;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -109,12 +110,12 @@ public class ImportV2CDMatchesCmd extends AbstractCmd {
         NeuronMatchesWriter<CDMatchEntity<EMNeuronEntity, LMNeuronEntity>> cdMatchesWriter = getCDSMatchesWriter();
 
         // GET JSON files
-        List<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
+        Collection<String> cdMatchesLocations = cdMatchesReader.listMatchesLocations(args.cdMatches.stream()
                 .map(larg -> new DataSourceParam()
                         .addLibrary(larg.input)
                         .setOffset(larg.offset)
                         .setSize(larg.length))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toSet()));
         int size = cdMatchesLocations.size();
         // process JSON files
         ItemsHandling.partitionCollection(cdMatchesLocations, args.processingPartitionSize).entrySet().stream().parallel()
