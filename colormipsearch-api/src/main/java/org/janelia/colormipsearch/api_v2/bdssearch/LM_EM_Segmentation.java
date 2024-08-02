@@ -52,6 +52,7 @@ import static org.janelia.colormipsearch.api_v2.bdssearch.ImageFlipper.flipHoriz
 import static org.janelia.colormipsearch.api_v2.bdssearch.ImageZProjection.maxIntensityProjection;
 import static org.janelia.colormipsearch.api_v2.bdssearch.ImgUtils.readNRRD;
 import static org.janelia.colormipsearch.api_v2.bdssearch.MaximumFilter.MaximumFilterSphere;
+import static org.janelia.colormipsearch.api_v2.bdssearch.MaximumFilter.MaximumFilterSphereMT;
 
 import org.scijava.Context;
 import org.scijava.io.location.FileLocation;
@@ -190,6 +191,8 @@ public class LM_EM_Segmentation {
             //MaximumFilter.applyY(temp_scaledSegmentedVolume, scaledSegmentedVolume, XYmaxSize);
             //MaximumFilter.applyZ(scaledSegmentedVolume, temp_scaledSegmentedVolume, ZmaxSize);
             //Img<IntegerType> dilated_segmentedVolume = temp_scaledSegmentedVolume;
+
+            //Img<IntegerType> dilated_segmentedVolume = MaximumFilterSphereMT(scaledSegmentedVolume, XYmaxSize, ZmaxSize, 16);
 
             Img<IntegerType> dilated_segmentedVolume = MaximumFilterSphere(scaledSegmentedVolume, XYmaxSize, ZmaxSize);
 
